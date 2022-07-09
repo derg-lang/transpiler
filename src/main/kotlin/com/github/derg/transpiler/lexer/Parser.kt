@@ -164,8 +164,19 @@ private fun extractAssignment(input: List<Token>, cursor: Int): Parsed
  * Extracts a single leaf expression from the [input] tokens at the [cursor] position. The legal leaf expressions are
  * constants (including custom literals), variable reads, and function calls.
  */
-private fun extractLeafExpression(input: List<Token>, cursor: Int): Parsed =
-    extractFunctionCall(input, cursor) ?: extractVariableRead(input, cursor) ?: extractConstant(input, cursor)
+private fun extractLeafExpression(input: List<Token>, cursor: Int): Parsed
+{
+    // Certain expressions are entire trees of expressions, where the contents in parentheses must be unpacked
+    if (input.getOrNull(cursor)?.isOpenParenthesis == true)
+    {
+        val (expression, index) = extractExpression(input, cursor + 1) ?: return null
+        if (input.getOrNull(index)?.isCloseParenthesis != true) return null // Require a close parenthesis
+        return expression to index + 1
+    }
+    
+    // Otherwise, assume the next expression is an ordinary leaf expression and work from there
+    return extractFunctionCall(input, cursor) ?: extractVariableRead(input, cursor) ?: extractConstant(input, cursor)
+}
 
 private fun extractVariableRead(input: List<Token>, cursor: Int): Parsed
 {
@@ -216,8 +227,8 @@ private fun extractFunctionParameter(input: List<Token>, cursor: Int): Pair<Para
 private fun extractExpression(input: List<Token>, cursor: Int): Parsed
 {
     val (lhs, index) = extractLeafExpression(input, cursor) ?: return null
-    val op = input.getOrNull(index) as? Operator ?: return lhs to index
-    return extractInfixOperator(input, index + 1, lhs, op)
+    val operator = input.getOrNull(index) as? Operator ?: return lhs to index
+    return extractInfixOperator(input, index + 1, lhs, operator)
 }
 
 /**
