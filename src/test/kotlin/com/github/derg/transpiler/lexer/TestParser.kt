@@ -50,13 +50,13 @@ class TestParser
             assertEquals(Function("foo", emptyList()).asList(), parse("foo()"))
             assertEquals(Function("foo", listOf(ParameterNode(null, 0.e))).asList(), parse("foo(0)"))
             assertEquals(Function("foo", listOf(ParameterNode("bar", 0.e))).asList(), parse("foo(bar = 0)"))
-
+            
             val mixedParameters = listOf(
                 ParameterNode(null, 1.e),
                 ParameterNode("name", 2.e),
                 ParameterNode(null, 3.e),
             ).let { Function("foo", it) }
-
+            
             assertEquals(mixedParameters.asList(), parse("foo(1, name = 2, 3)")) // No trailing comma
             assertEquals(mixedParameters.asList(), parse("foo(1, name = 2, 3, )")) // Trailing comma
             
@@ -66,6 +66,15 @@ class TestParser
             ).let { Function("nested", it) }
             
             assertEquals(nestedFunctions.asList(), parse("nested(a = n1(inner = 1), b = n2(foo = 2, bar = 3))"))
+        }
+        
+        @Test
+        fun `Given parenthesis, when parsing, then correctly parsed`()
+        {
+            assertEquals(1.e.asList(), parse("(1)"))
+            assertEquals(Plus(1.e, 2.e).asList(), parse("1 + (2)"))
+            assertEquals(Multiply(1.e, Plus(2.e, 3.e)).asList(), parse("1 * (2 + 3)"))
+            assertEquals(Divide(Plus(1.e, 2.e), Variable("foo")).asList(), parse("(1 + 2) / foo"))
         }
         
         @Test
