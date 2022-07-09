@@ -119,10 +119,15 @@ private fun extractIdentifierWithBacktick(input: String, cursor: Int): Pair<Toke
  */
 private fun extractString(input: String, cursor: Int): Pair<Token, IntRange>?
 {
+    // TODO: Add capability of escaping quotes, raw strings, line breaks, etc.
     if (input[cursor] != '"')
         return null
-    val endIndex = input.indexOfOrNull('"', cursor + 1) ?: return null
-    return Textual(input.substring(cursor + 1, endIndex)) to IntRange(cursor, endIndex + 1)
+    val typeIndex = input.indexOfOrNull('"', cursor + 1) ?: return null
+    val endIndex = input.indexOfFirstOrNull(typeIndex + 1) { !isLegalInIdentifier(it) } ?: input.length
+    
+    val value = input.substring(cursor + 1, typeIndex)
+    val type = input.substringFrom(typeIndex + 1, endIndex).ifBlank { null }
+    return Textual(value, type) to IntRange(cursor, endIndex)
 }
 
 /**
@@ -130,12 +135,15 @@ private fun extractString(input: String, cursor: Int): Pair<Token, IntRange>?
  */
 private fun extractNumber(input: String, cursor: Int): Pair<Token, IntRange>?
 {
-    // Numbers are not allowed to start with `+` or `-` (those are treated as unary operators instead)
+    // TODO: Add capability of separating groups of numbers, hexadecimal, binary, octal numbers, etc.
     if (!isLegalInNumber(input[cursor]))
         return null
-    val endIndex = input.indexOfFirstOrNull(cursor) { !isLegalInNumber(it) } ?: input.length
-    val value = input.substringFrom(cursor, endIndex).toBigDecimalOrNull() ?: return null
-    return Numeric(value) to IntRange(cursor, endIndex)
+    val typeIndex = input.indexOfFirstOrNull(cursor) { !isLegalInNumber(it) } ?: input.length
+    val endIndex = input.indexOfFirstOrNull(typeIndex) { !isLegalInIdentifier(it) } ?: input.length
+    
+    val value = input.substringFrom(cursor, typeIndex).toBigDecimalOrNull() ?: return null
+    val type = input.substringFrom(typeIndex, endIndex).ifBlank { null }
+    return Numeric(value, type) to IntRange(cursor, endIndex)
 }
 
 /**

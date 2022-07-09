@@ -125,8 +125,8 @@ private fun extractConstant(input: List<Token>, cursor: Int): Parsed
     // TODO: Implement handling of custom literals
     return when (val token = input.getOrNull(cursor))
     {
-        is Numeric -> NodeExpression.Numeric(token.value)
-        is Textual -> NodeExpression.Textual(token.value)
+        is Numeric -> NodeExpression.Numeric(token.value, token.type)
+        is Textual -> NodeExpression.Textual(token.value, token.type)
         is Keyword -> convertToBoolExpression(token) ?: return null
         else       -> return null
     } to cursor + 1
