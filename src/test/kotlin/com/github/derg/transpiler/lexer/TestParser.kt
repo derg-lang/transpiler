@@ -51,9 +51,14 @@ class TestParser
         fun `Given function, when parsing, then correctly parsed`()
         {
             assertEquals(Function("foo", emptyList()).asList(), parse("foo()"))
+            assertEquals(Function("f", listOf(ParameterNode(null, Function("b", listOf())))).asList(), parse("f(b())"))
             assertEquals(Function("foo", listOf(ParameterNode(null, 0.e))).asList(), parse("foo(0)"))
             assertEquals(Function("foo", listOf(ParameterNode("bar", 0.e))).asList(), parse("foo(bar = 0)"))
-            
+        }
+        
+        @Test
+        fun `Given named function parameters, when parsing, then correctly parsed`()
+        {
             val mixedParameters = listOf(
                 ParameterNode(null, 1.e),
                 ParameterNode("name", 2.e),
@@ -63,12 +68,34 @@ class TestParser
             assertEquals(mixedParameters.asList(), parse("foo(1, name = 2, 3)")) // No trailing comma
             assertEquals(mixedParameters.asList(), parse("foo(1, name = 2, 3, )")) // Trailing comma
             
+            val sneakyIdentifier = listOf(
+                ParameterNode("a", Variable("b")),
+                ParameterNode(null, Function("c", emptyList())),
+            ).let { Function("bar", it) }
+            
+            assertEquals(sneakyIdentifier.asList(), parse("bar(a = b, c())"))
+        }
+        
+        @Test
+        fun `Given nested functions, when parsing, then correctly parsed`()
+        {
             val nestedFunctions = listOf(
                 ParameterNode("a", Function("n1", listOf(ParameterNode("inner", 1.e)))),
                 ParameterNode("b", Function("n2", listOf(ParameterNode("foo", 2.e), ParameterNode("bar", 3.e)))),
             ).let { Function("nested", it) }
             
             assertEquals(nestedFunctions.asList(), parse("nested(a = n1(inner = 1), b = n2(foo = 2, bar = 3))"))
+        }
+        
+        @Test
+        fun `Given funky function, when parsing, then correctly parsed`()
+        {
+            val expression = listOf(
+                ParameterNode("example", Variable("of")),
+                ParameterNode(null, Function("derg", listOf(ParameterNode(null, Variable("syntax"))))),
+            ).let { Function("is an", it) }
+            
+            assertEquals(Assign("this", expression).asList(), parse("this = `is an`(example = of, derg(syntax))"))
         }
         
         @Test

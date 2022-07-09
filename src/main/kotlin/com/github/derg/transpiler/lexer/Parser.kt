@@ -1,13 +1,9 @@
 package com.github.derg.transpiler.lexer
 
-import com.github.derg.transpiler.core.Localized
-import com.github.derg.transpiler.core.Node
+import com.github.derg.transpiler.core.*
 import com.github.derg.transpiler.core.NodeAssignment.*
-import com.github.derg.transpiler.core.NodeExpression
 import com.github.derg.transpiler.core.NodeExpression.*
 import com.github.derg.transpiler.core.NodeExpression.Function
-import com.github.derg.transpiler.core.ParameterNode
-import com.github.derg.transpiler.util.indexOfFirstOrNull
 
 /**
  *
@@ -38,7 +34,7 @@ private class NodeExtractor(private val input: List<Token>) : Iterator<Node>, It
  */
 private typealias NodeParser = (List<Token>, Int) -> Pair<Node, Int>?
 private typealias Parsed = Pair<NodeExpression, Int>?
-private typealias ExpressionParser = (List<Token>, Int) -> Parsed
+private typealias ExpressionParser = (List<Token>, Int) -> Pair<Node, Int>?
 
 private val Token.isComma: Boolean get() = (this is Structure && type == Structure.Type.COMMA)
 private val Token.isOpenParenthesis: Boolean get() = (this is Structure && type == Structure.Type.OPEN_PARENTHESIS)
@@ -76,7 +72,7 @@ private fun extractNode(input: List<Token>, cursor: Int): Pair<Node, Int>?
  * Converts the [input] tokens into an expression if possible, starting at [cursor].
  */
 private fun extractExpressionTmp(input: List<Token>, cursor: Int): Parsed =
-    EXPRESSIONS.mapNotNull { it(input, cursor) }.maxByOrNull { it.second }
+    EXPRESSIONS.mapNotNull { it(input, cursor) as Parsed }.maxByOrNull { it.second }
 
 private fun extractIncrementOrDecrement(input: List<Token>, cursor: Int): Parsed
 {
@@ -122,7 +118,6 @@ private fun extractNot(input: List<Token>, cursor: Int): Parsed
  */
 private fun extractConstant(input: List<Token>, cursor: Int): Parsed
 {
-    // TODO: Implement handling of custom literals
     return when (val token = input.getOrNull(cursor))
     {
         is Numeric -> NodeExpression.Numeric(token.value, token.type)
@@ -140,10 +135,21 @@ private fun convertToBoolExpression(token: Keyword): Bool? = when (token.type)
 }
 
 /**
+ * Extracts a full expression AST from the [input] tokens at the [cursor] position. The expression will contain all sub-
+ * expressions relevant to the extracted expression, parsed according to all operator precedences.
+ */
+private fun extractExpression(input: List<Token>, cursor: Int): Parsed
+{
+    val (lhs, index) = extractLeafExpression(input, cursor) ?: return null
+    val operator = input.getOrNull(index) as? Operator ?: return lhs to index
+    return extractInfixOperator(input, index + 1, lhs, operator)
+}
+
+/**
  * Extracts a single variable assignment node from the [input] tokens at the [cursor] position. All assignment nodes
  * must contain a valid expression.
  */
-private fun extractAssignment(input: List<Token>, cursor: Int): Parsed
+private fun extractAssignment(input: List<Token>, cursor: Int): Pair<NodeAssignment, Int>?
 {
     val identifier = input.getOrNull(cursor) as? Identifier ?: return null
     val operator = input.getOrNull(cursor + 1) as? Operator ?: return null
@@ -157,7 +163,7 @@ private fun extractAssignment(input: List<Token>, cursor: Int): Parsed
         Operator.Type.ASSIGN_MULTIPLY -> AssignMultiply(identifier.name, expression)
         Operator.Type.ASSIGN_DIVIDE   -> AssignDivide(identifier.name, expression)
         else                          -> return null
-    } to index + 1
+    } to index
 }
 
 /**
@@ -189,7 +195,11 @@ private fun extractFunctionCall(input: List<Token>, cursor: Int): Parsed
     val identifier = input.getOrNull(cursor) as? Identifier ?: return null
     val parameters = mutableListOf<ParameterNode>()
     
-    var current = input.indexOfFirstOrNull(cursor + 1) { it.isOpenParenthesis } ?: return null
+    // All function calls must start with an open parenthesis
+    if (input.getOrNull(cursor + 1)?.isOpenParenthesis != true)
+        return null
+    
+    var current = cursor + 1
     while (++current < input.size)
     {
         if (input[current].isCloseParenthesis) break // Early bail if we find the end of the function call
@@ -207,28 +217,13 @@ private fun extractFunctionCall(input: List<Token>, cursor: Int): Parsed
 
 private fun extractFunctionParameter(input: List<Token>, cursor: Int): Pair<ParameterNode, Int>?
 {
-    val id = input.getOrNull(cursor) as? Identifier
-    val op = input.getOrNull(cursor + 1) as? Operator
-    
-    if (id != null && op?.type != Operator.Type.ASSIGN) return null // Require equal symbol if assignment
-    
-    val (expression, index) = when (id == null)
+    val (assignment, index) = extractAssignment(input, cursor) ?: extractExpression(input, cursor) ?: return null
+    return when (assignment)
     {
-        true  -> extractExpression(input, cursor) ?: return null
-        false -> extractExpression(input, cursor + 2) ?: return null
-    }
-    return ParameterNode(id?.name, expression) to index
-}
-
-/**
- * Extracts a full expression AST from the [input] tokens at the [cursor] position. The expression will contain all sub-
- * expressions relevant to the extracted expression, parsed according to all operator precedences.
- */
-private fun extractExpression(input: List<Token>, cursor: Int): Parsed
-{
-    val (lhs, index) = extractLeafExpression(input, cursor) ?: return null
-    val operator = input.getOrNull(index) as? Operator ?: return lhs to index
-    return extractInfixOperator(input, index + 1, lhs, operator)
+        is Assign         -> ParameterNode(assignment.variable, assignment.expression)
+        is NodeExpression -> ParameterNode(null, assignment)
+        else              -> return null
+    } to index
 }
 
 /**

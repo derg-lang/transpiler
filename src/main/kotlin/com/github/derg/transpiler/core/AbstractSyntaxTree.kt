@@ -10,8 +10,8 @@ sealed class Node
  */
 sealed class NodeDeclaration : Node()
 {
-    data class Variable(val name: Name, val type: Name) : NodeDeclaration()
-    data class Function(val name: Name, val type: Name, val parameters: Map<Name, Name>) : NodeDeclaration()
+    data class Variable(val name: Name, val type: Name?) : NodeDeclaration()
+    data class Function(val name: Name, val type: Name?, val parameters: Map<Name, Name>) : NodeDeclaration()
 }
 
 /**
@@ -29,11 +29,11 @@ sealed class NodeControlFlow : Node()
  */
 sealed class NodeAssignment : Node()
 {
-    data class Assign(val variable: Name, val expression: NodeExpression) : NodeExpression()
-    data class AssignPlus(val variable: Name, val expression: NodeExpression) : NodeExpression()
-    data class AssignMinus(val variable: Name, val expression: NodeExpression) : NodeExpression()
-    data class AssignMultiply(val variable: Name, val expression: NodeExpression) : NodeExpression()
-    data class AssignDivide(val variable: Name, val expression: NodeExpression) : NodeExpression()
+    data class Assign(val variable: Name, val expression: NodeExpression) : NodeAssignment()
+    data class AssignPlus(val variable: Name, val expression: NodeExpression) : NodeAssignment()
+    data class AssignMinus(val variable: Name, val expression: NodeExpression) : NodeAssignment()
+    data class AssignMultiply(val variable: Name, val expression: NodeExpression) : NodeAssignment()
+    data class AssignDivide(val variable: Name, val expression: NodeExpression) : NodeAssignment()
     // ... and so on, just a fair number of assignment options will be added here...
 }
 
