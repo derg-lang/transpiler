@@ -163,10 +163,17 @@ private fun extractAssignment(input: List<Token>, cursor: Int): Parsed
  */
 private fun extractLeafExpression(input: List<Token>, cursor: Int): Parsed
 {
+    if (cursor >= input.size)
+        return null
+    
     // TODO: This does the magic thing of extracting the longest valid expression at the cursor location
-    // TODO: Handle function calls, user-defined literals, variables, parenthesis, etc.
+    // TODO: Handle function calls, user-defined literals, parenthesis, etc.
     // TODO: Handle operators in front of expression, such as unary minus, negate, etc.
-    return extractConstant(input, cursor)
+    return when (val token = input[cursor])
+    {
+        is Identifier -> Variable(token.name) to cursor + 1
+        else          -> extractConstant(input, cursor)
+    }
 }
 
 /**
