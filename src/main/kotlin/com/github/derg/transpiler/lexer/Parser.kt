@@ -123,7 +123,7 @@ private fun extractNot(input: List<Token>, cursor: Int): Parsed
 private fun extractConstant(input: List<Token>, cursor: Int): Parsed
 {
     // TODO: Implement handling of custom literals
-    return when (val token = input[cursor])
+    return when (val token = input.getOrNull(cursor))
     {
         is Numeric -> NodeExpression.Numeric(token.value)
         is Textual -> NodeExpression.Textual(token.value)
@@ -145,12 +145,8 @@ private fun convertToBoolExpression(token: Keyword): Bool? = when (token.type)
  */
 private fun extractAssignment(input: List<Token>, cursor: Int): Parsed
 {
-    // At least three tokens are required - the identifier, the operator, and the expression
-    if (cursor + 3 > input.size)
-        return null
-    
-    val identifier = input[cursor] as? Identifier ?: return null
-    val operator = input[cursor + 1] as? Operator ?: return null
+    val identifier = input.getOrNull(cursor) as? Identifier ?: return null
+    val operator = input.getOrNull(cursor + 1) as? Operator ?: return null
     val (expression, index) = extractExpression(input, cursor + 2) ?: return null
     
     return when (operator.type)
@@ -168,36 +164,18 @@ private fun extractAssignment(input: List<Token>, cursor: Int): Parsed
  * Extracts a single leaf expression from the [input] tokens at the [cursor] position. The legal leaf expressions are
  * constants (including custom literals), variable reads, and function calls.
  */
-private fun extractLeafExpression(input: List<Token>, cursor: Int): Parsed
-{
-    if (cursor >= input.size)
-        return null
-    
-    // TODO: This does the magic thing of extracting the longest valid expression at the cursor location
-    // TODO: Handle user-defined literals, parenthesis, etc.
-    // TODO: Handle operators in front of expression, such as unary minus, negate, etc.
-    return when (input[cursor])
-    {
-        is Identifier -> extractFunctionCall(input, cursor) ?: extractVariableRead(input, cursor)
-        else          -> extractConstant(input, cursor)
-    }
-}
+private fun extractLeafExpression(input: List<Token>, cursor: Int): Parsed =
+    extractFunctionCall(input, cursor) ?: extractVariableRead(input, cursor) ?: extractConstant(input, cursor)
 
 private fun extractVariableRead(input: List<Token>, cursor: Int): Parsed
 {
-    if (cursor >= input.size)
-        return null
-    
-    val identifier = input[cursor] as? Identifier ?: return null
+    val identifier = input.getOrNull(cursor) as? Identifier ?: return null
     return Variable(identifier.name) to cursor + 1
 }
 
 private fun extractFunctionCall(input: List<Token>, cursor: Int): Parsed
 {
-    if (cursor >= input.size)
-        return null
-    
-    val identifier = input[cursor] as? Identifier ?: return null
+    val identifier = input.getOrNull(cursor) as? Identifier ?: return null
     val parameters = mutableListOf<ParameterNode>()
     
     var current = input.indexOfFirstOrNull(cursor + 1) { it.isOpenParenthesis } ?: return null
@@ -218,15 +196,15 @@ private fun extractFunctionCall(input: List<Token>, cursor: Int): Parsed
 
 private fun extractFunctionParameter(input: List<Token>, cursor: Int): Pair<ParameterNode, Int>?
 {
-    if (cursor >= input.size)
-        return null
+    val id = input.getOrNull(cursor) as? Identifier
+    val op = input.getOrNull(cursor + 1) as? Operator
     
-    val id = input[cursor] as? Identifier
-    val op = if (cursor + 1 < input.size) input[cursor + 1] as? Operator else null
-    val (expression, index) = when (id != null && op?.type == Operator.Type.ASSIGN && cursor + 2 < input.size)
+    if (id != null && op?.type != Operator.Type.ASSIGN) return null // Require equal symbol if assignment
+    
+    val (expression, index) = when (id == null)
     {
-        true  -> extractExpression(input, cursor + 2) ?: return null
-        false -> extractExpression(input, cursor) ?: return null
+        true  -> extractExpression(input, cursor) ?: return null
+        false -> extractExpression(input, cursor + 2) ?: return null
     }
     return ParameterNode(id?.name, expression) to index
 }
@@ -238,10 +216,7 @@ private fun extractFunctionParameter(input: List<Token>, cursor: Int): Pair<Para
 private fun extractExpression(input: List<Token>, cursor: Int): Parsed
 {
     val (lhs, index) = extractLeafExpression(input, cursor) ?: return null
-    if (index >= input.size)
-        return lhs to index
-    
-    val op = input[index] as? Operator ?: return lhs to index
+    val op = input.getOrNull(index) as? Operator ?: return lhs to index
     return extractInfixOperator(input, index + 1, lhs, op)
 }
 
@@ -259,17 +234,15 @@ private fun extractExpression(input: List<Token>, cursor: Int): Parsed
 private fun extractInfixOperator(input: List<Token>, cursor: Int, currEx: NodeExpression, currOp: Operator): Parsed
 {
     val (rhs, index) = extractLeafExpression(input, cursor) ?: return null
-    val joined = join(currEx, rhs, currOp) // Note: nullable, cannot return here
+    val joined = join(currEx, rhs, currOp) ?: return null
     
-    // If no more operators exists at this point, we are done parsing infix operators
-    if (index >= input.size) return joined?.let { it to index }
-    val nextOp = input[index] as? Operator ?: return joined?.let { it to index }
-    if (joined == null) return null
-    
-    // If the current operator has a higher priority than the next one, lhs + rhs is left-hand, otherwise only lhs is
+    // If no more operators exists at this point, we are done parsing infix operators. Otherwise, if the current
+    // operator has a higher priority than the next one, lhs + rhs is considered left-hand, otherwise only lhs is.
+    val nextOp = input.getOrNull(index) as? Operator ?: return joined to index
     if (nextOp.type.priority <= currOp.type.priority)
         return extractInfixOperator(input, index + 1, joined, nextOp)
     
+    // If only lhs is left-only, we must recursively parse the right-hand expression
     val (remainder, end) = extractExpression(input, index + 1) ?: return null
     val combined = join(rhs, remainder, nextOp) ?: return null
     return join(currEx, combined, currOp)?.let { it to end + 1 }
