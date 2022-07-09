@@ -46,6 +46,8 @@ sealed class NodeExpression : Node()
     data class Numeric(val value: Number) : NodeExpression()
     data class Textual(val value: String) : NodeExpression()
     
+    data class Variable(val variable: Name) : NodeExpression()
+    
     data class IncrementPost(val variable: Name) : NodeExpression()
     data class IncrementPre(val variable: Name) : NodeExpression()
     data class DecrementPost(val variable: Name) : NodeExpression()

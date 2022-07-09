@@ -37,6 +37,12 @@ class TestParser
         }
         
         @Test
+        fun `Given variable, when parsing, then correctly parsed`()
+        {
+            assertEquals(Variable("foo").asList(), parse("foo"))
+        }
+        
+        @Test
         fun `Given unary operator, when parsing, then correctly parsed`()
         {
             assertEquals(Unary(1.e).asList(), parse("-1"))
@@ -53,10 +59,10 @@ class TestParser
         @Test
         fun `Given increment or decrement operator, when parsing, then correctly parsed`()
         {
-//            assertEquals(IncrementPre("foo").asList(), parse("++foo"))
+            assertEquals(IncrementPre("foo").asList(), parse("++foo"))
             assertEquals(IncrementPost("bar").asList(), parse("bar++"))
-//            assertEquals(DecrementPre("foo").asList(), parse("--foo"))
-//            assertEquals(DecrementPost("bar").asList(), parse("bar--"))
+            assertEquals(DecrementPre("foo").asList(), parse("--foo"))
+            assertEquals(DecrementPost("bar").asList(), parse("bar--"))
         }
         
         @Test
