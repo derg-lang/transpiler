@@ -46,12 +46,13 @@ sealed class NodeExpression : Node()
     data class Numeric(val value: Number) : NodeExpression()
     data class Textual(val value: String) : NodeExpression()
     
-    data class Variable(val variable: Name) : NodeExpression()
+    data class Variable(val name: Name) : NodeExpression()
+    data class Function(val name: Name, val parameters: List<ParameterNode>) : NodeExpression()
     
-    data class IncrementPost(val variable: Name) : NodeExpression()
-    data class IncrementPre(val variable: Name) : NodeExpression()
-    data class DecrementPost(val variable: Name) : NodeExpression()
-    data class DecrementPre(val variable: Name) : NodeExpression()
+    data class IncrementPost(val name: Name) : NodeExpression()
+    data class IncrementPre(val name: Name) : NodeExpression()
+    data class DecrementPost(val name: Name) : NodeExpression()
+    data class DecrementPre(val name: Name) : NodeExpression()
     
     data class Unary(val expression: NodeExpression) : NodeExpression()
     data class Plus(val lhs: NodeExpression, val rhs: NodeExpression) : NodeExpression()
@@ -73,3 +74,5 @@ sealed class NodeExpression : Node()
     data class LogicalNot(val expression: NodeExpression) : NodeExpression()
     // ... and so on, just a CRAPTON of expressions will be added here...
 }
+
+data class ParameterNode(val name: Name?, val expression: NodeExpression)

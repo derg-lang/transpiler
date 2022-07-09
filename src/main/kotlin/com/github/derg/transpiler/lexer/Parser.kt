@@ -5,6 +5,9 @@ import com.github.derg.transpiler.core.Node
 import com.github.derg.transpiler.core.NodeAssignment.*
 import com.github.derg.transpiler.core.NodeExpression
 import com.github.derg.transpiler.core.NodeExpression.*
+import com.github.derg.transpiler.core.NodeExpression.Function
+import com.github.derg.transpiler.core.ParameterNode
+import com.github.derg.transpiler.util.indexOfFirstOrNull
 
 /**
  *
@@ -36,6 +39,10 @@ private class NodeExtractor(private val input: List<Token>) : Iterator<Node>, It
 private typealias NodeParser = (List<Token>, Int) -> Pair<Node, Int>?
 private typealias Parsed = Pair<NodeExpression, Int>?
 private typealias ExpressionParser = (List<Token>, Int) -> Parsed
+
+private val Token.isComma: Boolean get() = (this is Structure && type == Structure.Type.COMMA)
+private val Token.isOpenParenthesis: Boolean get() = (this is Structure && type == Structure.Type.OPEN_PARENTHESIS)
+private val Token.isCloseParenthesis: Boolean get() = (this is Structure && type == Structure.Type.CLOSE_PARENTHESIS)
 
 /**
  * The collection of all parsers which are capable of extracting a node from source code. Exactly one parser must be
@@ -167,13 +174,61 @@ private fun extractLeafExpression(input: List<Token>, cursor: Int): Parsed
         return null
     
     // TODO: This does the magic thing of extracting the longest valid expression at the cursor location
-    // TODO: Handle function calls, user-defined literals, parenthesis, etc.
+    // TODO: Handle user-defined literals, parenthesis, etc.
     // TODO: Handle operators in front of expression, such as unary minus, negate, etc.
-    return when (val token = input[cursor])
+    return when (input[cursor])
     {
-        is Identifier -> Variable(token.name) to cursor + 1
+        is Identifier -> extractFunctionCall(input, cursor) ?: extractVariableRead(input, cursor)
         else          -> extractConstant(input, cursor)
     }
+}
+
+private fun extractVariableRead(input: List<Token>, cursor: Int): Parsed
+{
+    if (cursor >= input.size)
+        return null
+    
+    val identifier = input[cursor] as? Identifier ?: return null
+    return Variable(identifier.name) to cursor + 1
+}
+
+private fun extractFunctionCall(input: List<Token>, cursor: Int): Parsed
+{
+    if (cursor >= input.size)
+        return null
+    
+    val identifier = input[cursor] as? Identifier ?: return null
+    val parameters = mutableListOf<ParameterNode>()
+    
+    var current = input.indexOfFirstOrNull(cursor + 1) { it.isOpenParenthesis } ?: return null
+    while (++current < input.size)
+    {
+        if (input[current].isCloseParenthesis) break // Early bail if we find the end of the function call
+        
+        val (parameter, next) = extractFunctionParameter(input, current) ?: return null
+        parameters.add(parameter)
+        current = next
+        
+        if (current >= input.size) return null // Terminating due to no more tokens is not permitted
+        if (input[current].isCloseParenthesis) break // Late bail if we find the end of the function call
+        if (!input[current].isComma) return null // Require comma-separated parameters
+    }
+    return Function(identifier.name, parameters) to current + 1
+}
+
+private fun extractFunctionParameter(input: List<Token>, cursor: Int): Pair<ParameterNode, Int>?
+{
+    if (cursor >= input.size)
+        return null
+    
+    val id = input[cursor] as? Identifier
+    val op = if (cursor + 1 < input.size) input[cursor + 1] as? Operator else null
+    val (expression, index) = when (id != null && op?.type == Operator.Type.ASSIGN && cursor + 2 < input.size)
+    {
+        true  -> extractExpression(input, cursor + 2) ?: return null
+        false -> extractExpression(input, cursor) ?: return null
+    }
+    return ParameterNode(id?.name, expression) to index
 }
 
 /**
