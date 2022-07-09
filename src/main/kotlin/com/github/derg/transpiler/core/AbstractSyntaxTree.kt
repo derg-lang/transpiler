@@ -43,8 +43,8 @@ sealed class NodeAssignment : Node()
 sealed class NodeExpression : Node()
 {
     data class Bool(val value: Boolean) : NodeExpression()
-    data class Numeric(val value: Number) : NodeExpression()
-    data class Textual(val value: String) : NodeExpression()
+    data class Numeric(val value: Number, val type: Name?) : NodeExpression()
+    data class Textual(val value: String, val type: Name?) : NodeExpression()
     
     data class Variable(val name: Name) : NodeExpression()
     data class Function(val name: Name, val parameters: List<ParameterNode>) : NodeExpression()

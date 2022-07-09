@@ -13,9 +13,9 @@ import org.junit.jupiter.api.Test
 private fun Node.asList() = listOf(this)
 
 private val Boolean.e get() = Bool(this)
-private val Int.e get() = NodeExpression.Numeric(toBigDecimal())
-private val Double.e get() = NodeExpression.Numeric(toBigDecimal())
-private val String.e get() = NodeExpression.Textual(this)
+private val Int.e get() = NodeExpression.Numeric(toBigDecimal(), null)
+private val Double.e get() = NodeExpression.Numeric(toBigDecimal(), null)
+private val String.e get() = NodeExpression.Textual(this, null)
 
 /**
  * Helper for parsing a [input] source code string into an abstract syntax tree.
@@ -36,6 +36,9 @@ class TestParser
             assertEquals(true.e.asList(), parse("true"))
             assertEquals(false.e.asList(), parse("false"))
             assertEquals("Hello World".e.asList(), parse(""" "Hello World" """))
+            
+            assertEquals(NodeExpression.Numeric(0.toBigDecimal(), "s").asList(), parse("0s"))
+            assertEquals(NodeExpression.Textual("", "s").asList(), parse("\"\"s"))
         }
         
         @Test

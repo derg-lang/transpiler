@@ -3,7 +3,8 @@ package com.github.derg.transpiler.lexer
 import com.github.derg.transpiler.core.Localized
 import com.github.derg.transpiler.core.Location
 import com.github.derg.transpiler.lexer.Keyword.Type.*
-import com.github.derg.transpiler.lexer.Operator.Type.*
+import com.github.derg.transpiler.lexer.Operator.Type.ASSIGN
+import com.github.derg.transpiler.lexer.Operator.Type.MINUS
 import com.github.derg.transpiler.lexer.Structure.Type.*
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Nested
@@ -63,18 +64,20 @@ class TestTokenizer
         @Test
         fun `Given numeric literal, when tokenizing, then correct number`()
         {
-            assertEquals(localisedOfAsList(0, 1, Numeric(0.toBigDecimal())), tokenize("0"))
-            assertEquals(localisedOfAsList(0, 1, Numeric(1.toBigDecimal())), tokenize("1"))
-            assertEquals(localisedOfAsList(0, 4, Numeric(3.14.toBigDecimal())), tokenize("3.14"))
-            assertEquals(localisedOfAsList(0, 2, Numeric(0.5.toBigDecimal())), tokenize(".5"))
+            assertEquals(localisedOfAsList(0, 1, Numeric(0.toBigDecimal(), null)), tokenize("0"))
+            assertEquals(localisedOfAsList(0, 1, Numeric(1.toBigDecimal(), null)), tokenize("1"))
+            assertEquals(localisedOfAsList(0, 4, Numeric(3.14.toBigDecimal(), null)), tokenize("3.14"))
+            assertEquals(localisedOfAsList(0, 2, Numeric(0.5.toBigDecimal(), null)), tokenize(".5"))
+            assertEquals(localisedOfAsList(0, 2, Numeric(0.toBigDecimal(), "s")), tokenize("0s"))
         }
         
         @Test
         fun `Given textual literal, when tokenizing, then correct string`()
         {
-            assertEquals(localisedOfAsList(0, 2, Textual("")), tokenize("\"\""))
-            assertEquals(localisedOfAsList(0, 5, Textual("foo")), tokenize("\"foo\""))
-            assertEquals(localisedOfAsList(0, 14, Textual("Hello World!")), tokenize("\"Hello World!\""))
+            assertEquals(localisedOfAsList(0, 2, Textual("", null)), tokenize("\"\""))
+            assertEquals(localisedOfAsList(0, 5, Textual("foo", null)), tokenize("\"foo\""))
+            assertEquals(localisedOfAsList(0, 14, Textual("Hello World!", null)), tokenize("\"Hello World!\""))
+            assertEquals(localisedOfAsList(0, 8, Textual("foo", "bar")), tokenize("\"foo\"bar"))
         }
         
         @Test
@@ -110,7 +113,7 @@ class TestTokenizer
         fun `Given simple literal expression, when tokenizing, then correct sequence`()
         {
             val expected = listOf(
-                localizedOf(0, 1, Numeric(0.toBigDecimal())),
+                localizedOf(0, 1, Numeric(0.toBigDecimal(), null)),
                 localizedOf(1, 1, Structure(SEMICOLON)),
             )
             
@@ -122,7 +125,7 @@ class TestTokenizer
         {
             val expected = listOf(
                 localizedOf(0, 1, Operator(MINUS)),
-                localizedOf(1, 1, Numeric(5.toBigDecimal())),
+                localizedOf(1, 1, Numeric(5.toBigDecimal(), null)),
                 localizedOf(2, 1, Structure(SEMICOLON)),
             )
             
@@ -216,7 +219,7 @@ class TestTokenizer
                     localizedOf(0, 3, Keyword(VAL)),
                     localizedOf(4, 8, Identifier("variable")),
                     localizedOf(13, 1, Operator(ASSIGN)),
-                    localizedOf(15, 2, Numeric(42.toBigDecimal())),
+                    localizedOf(15, 2, Numeric(42.toBigDecimal(), null)),
                     localizedOf(17, 1, Structure(SEMICOLON)),
                 )
                 

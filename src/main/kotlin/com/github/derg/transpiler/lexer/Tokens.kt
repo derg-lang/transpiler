@@ -6,7 +6,6 @@ interface Foo
 }
 
 sealed class Token
-sealed class Literal : Token()
 
 /**
  * All symbols such as variables, functions, type, namespaces, packages, etc. must be given a unique name. The
@@ -103,11 +102,11 @@ data class Operator(val type: Type) : Token()
 }
 
 /**
- * The token holds a raw numerical literal of a specific [value].
+ * The token holds a raw numerical literal of a specific [value] and optional [type].
  */
-data class Numeric(val value: Number) : Literal()
+data class Numeric(val value: Number, val type: String?) : Token()
 
 /**
- * The token holds a raw textual literal of a specific [value].
+ * The token holds a raw textual literal of a specific [value] and optional [type].
  */
-data class Textual(val value: String) : Literal()
+data class Textual(val value: String, val type: String?) : Token()
