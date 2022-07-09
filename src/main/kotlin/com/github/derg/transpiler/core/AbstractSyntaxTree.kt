@@ -25,6 +25,19 @@ sealed class NodeControlFlow : Node()
 }
 
 /**
+ * TODO: Certain source code tokens are considered assignments, and are part of the executable part of the program.
+ */
+sealed class NodeAssignment : Node()
+{
+    data class Assign(val variable: Name, val expression: NodeExpression) : NodeExpression()
+    data class AssignPlus(val variable: Name, val expression: NodeExpression) : NodeExpression()
+    data class AssignMinus(val variable: Name, val expression: NodeExpression) : NodeExpression()
+    data class AssignMultiply(val variable: Name, val expression: NodeExpression) : NodeExpression()
+    data class AssignDivide(val variable: Name, val expression: NodeExpression) : NodeExpression()
+    // ... and so on, just a fair number of assignment options will be added here...
+}
+
+/**
  * TODO: Certain source code tokens are considered expressions, and are the executable part of the program.
  */
 sealed class NodeExpression : Node()
@@ -32,15 +45,13 @@ sealed class NodeExpression : Node()
     data class Bool(val value: Boolean) : NodeExpression()
     data class Numeric(val value: Number) : NodeExpression()
     data class Textual(val value: String) : NodeExpression()
-    data class Assign(val variable: Name, val expression: NodeExpression) : NodeExpression()
     
     data class IncrementPost(val variable: Name) : NodeExpression()
     data class IncrementPre(val variable: Name) : NodeExpression()
     data class DecrementPost(val variable: Name) : NodeExpression()
     data class DecrementPre(val variable: Name) : NodeExpression()
-    data class Unary(val expression: NodeExpression) : NodeExpression()
-    data class Negate(val expression: NodeExpression) : NodeExpression()
     
+    data class Unary(val expression: NodeExpression) : NodeExpression()
     data class Plus(val lhs: NodeExpression, val rhs: NodeExpression) : NodeExpression()
     data class Minus(val lhs: NodeExpression, val rhs: NodeExpression) : NodeExpression()
     data class Multiply(val lhs: NodeExpression, val rhs: NodeExpression) : NodeExpression()
@@ -54,8 +65,9 @@ sealed class NodeExpression : Node()
     data class NotEqual(val lhs: NodeExpression, val rhs: NodeExpression) : NodeExpression()
     data class ThreeWay(val lhs: NodeExpression, val rhs: NodeExpression) : NodeExpression()
     
-    data class And(val lhs: NodeExpression, val rhs: NodeExpression) : NodeExpression()
-    data class Or(val lhs: NodeExpression, val rhs: NodeExpression) : NodeExpression()
-    data class Xor(val lhs: NodeExpression, val rhs: NodeExpression) : NodeExpression()
+    data class LogicalAnd(val lhs: NodeExpression, val rhs: NodeExpression) : NodeExpression()
+    data class LogicalOr(val lhs: NodeExpression, val rhs: NodeExpression) : NodeExpression()
+    data class LogicalXor(val lhs: NodeExpression, val rhs: NodeExpression) : NodeExpression()
+    data class LogicalNot(val expression: NodeExpression) : NodeExpression()
     // ... and so on, just a CRAPTON of expressions will be added here...
 }
