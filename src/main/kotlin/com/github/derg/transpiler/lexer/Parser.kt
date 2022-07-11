@@ -46,6 +46,7 @@ private val Token.isCloseParenthesis: Boolean get() = (this is Structure && type
 private val PARSERS: List<NodeParser> = listOf(
     ::extractAssignment,
     ::extractExpression,
+    ::extractVariable,
 )
 
 /**
@@ -58,6 +59,40 @@ private fun extractNode(input: List<Token>, cursor: Int): Pair<Node, Int>?
     
     return PARSERS.mapNotNull { it(input, cursor) }.maxByOrNull { it.second }
         ?: throw IllegalStateException("No parsers matched '$input' at position $cursor")
+}
+
+/**
+ * Extracts a full variable definition from the [input] tokens at the [cursor] position.
+ */
+private fun extractVariable(input: List<Token>, cursor: Int): Pair<NodeDeclaration, Int>?
+{
+    val keyword = input.getOrNull(cursor) as? Keyword ?: return null
+    val identifier = input.getOrNull(cursor + 1) as? Identifier ?: return null
+    val (expression, index) = extractExpression(input, cursor + 3) ?: return null
+    
+    // Require an equal symbol between identifier and expression
+    if ((input.getOrNull(cursor + 2) as? Operator)?.type != Operator.Type.ASSIGN)
+        return null
+    
+    val kind = when (keyword.type)
+    {
+        Keyword.Type.VAL -> VariableKind.VAL
+        Keyword.Type.VAR -> VariableKind.VAR
+        Keyword.Type.MUT -> VariableKind.MUT
+        else             -> return null
+    }
+    return NodeDeclaration.Variable(kind, identifier.name, null, expression) to index
+}
+
+/**
+ * Extracts a full expression AST from the [input] tokens at the [cursor] position. The expression will contain all sub-
+ * expressions relevant to the extracted expression, parsed according to all operator precedences.
+ */
+private fun extractExpression(input: List<Token>, cursor: Int): Parsed
+{
+    val (lhs, index) = extractLeafExpression(input, cursor) ?: return null
+    val operator = input.getOrNull(index) as? Operator ?: return lhs to index
+    return extractInfixOperator(input, index + 1, lhs, operator)
 }
 
 /**
@@ -81,17 +116,6 @@ private fun convertToBoolExpression(token: Keyword): Bool? = when (token.type)
     Keyword.Type.TRUE  -> Bool(true)
     Keyword.Type.FALSE -> Bool(false)
     else               -> null
-}
-
-/**
- * Extracts a full expression AST from the [input] tokens at the [cursor] position. The expression will contain all sub-
- * expressions relevant to the extracted expression, parsed according to all operator precedences.
- */
-private fun extractExpression(input: List<Token>, cursor: Int): Parsed
-{
-    val (lhs, index) = extractLeafExpression(input, cursor) ?: return null
-    val operator = input.getOrNull(index) as? Operator ?: return lhs to index
-    return extractInfixOperator(input, index + 1, lhs, operator)
 }
 
 /**
