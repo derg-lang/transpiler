@@ -1,11 +1,9 @@
 package com.github.derg.transpiler.lexer
 
-import com.github.derg.transpiler.core.Node
+import com.github.derg.transpiler.core.*
 import com.github.derg.transpiler.core.NodeAssignment.*
-import com.github.derg.transpiler.core.NodeExpression
 import com.github.derg.transpiler.core.NodeExpression.*
 import com.github.derg.transpiler.core.NodeExpression.Function
-import com.github.derg.transpiler.core.ParameterNode
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
@@ -24,6 +22,18 @@ private fun parse(input: String): List<Node> = parse(tokenize(input))
 
 class TestParser
 {
+    @Nested
+    inner class Variables
+    {
+        @Test
+        fun `Given value variable, when parsing, then correctly parsed`()
+        {
+            assertEquals(NodeDeclaration.Variable(VariableKind.VAL, "foo", null, 0.e).asList(), parse("val foo = 0"))
+            assertEquals(NodeDeclaration.Variable(VariableKind.VAR, "bar", null, 1.e).asList(), parse("var bar = 1"))
+            assertEquals(NodeDeclaration.Variable(VariableKind.MUT, "baz", null, 2.e).asList(), parse("mut baz = 2"))
+        }
+    }
+    
     @Nested
     inner class Expressions
     {
@@ -136,7 +146,7 @@ class TestParser
             assertEquals(LogicalAnd(1.e, 2.e).asList(), parse("1 && 2"))
             assertEquals(LogicalOr(1.e, 2.e).asList(), parse("1 || 2"))
             assertEquals(LogicalXor(1.e, 2.e).asList(), parse("1 ^^ 2"))
-    
+            
             // Prefix operators
             assertEquals(Unary(1.e).asList(), parse("-1"))
             assertEquals(LogicalNot(true.e).asList(), parse("!true"))

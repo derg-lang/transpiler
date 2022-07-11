@@ -1,6 +1,19 @@
 package com.github.derg.transpiler.core
 
 /**
+ * The type of the variable determines what is permitted using the variable, and what is not. A value variable does not
+ * permit any changes, neither to the variable itself, nor can the object be mutated. Varying variables does not allow
+ * the variable to change either, although the object may be mutated. A mutable variable may be mutated and re-assigned
+ * as much as the user desires.
+ */
+enum class VariableKind
+{
+    VAL,
+    VAR,
+    MUT
+}
+
+/**
  *
  */
 sealed class Node
@@ -10,8 +23,18 @@ sealed class Node
  */
 sealed class NodeDeclaration : Node()
 {
-    data class Variable(val name: Name, val type: Name?) : NodeDeclaration()
-    data class Function(val name: Name, val type: Name?, val parameters: Map<Name, Name>) : NodeDeclaration()
+    data class Variable(
+        val kind: VariableKind,
+        val name: Name,
+        val type: Name?,
+        val expression: NodeExpression,
+    ) : NodeDeclaration()
+    
+    data class Function(
+        val name: Name,
+        val type: Name?,
+        val parameters: Map<Name, Name>,
+    ) : NodeDeclaration()
 }
 
 /**
