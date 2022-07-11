@@ -108,29 +108,6 @@ class TestParser
         }
         
         @Test
-        fun `Given unary operator, when parsing, then correctly parsed`()
-        {
-            assertEquals(Unary(1.e).asList(), parse("-1"))
-            assertEquals(Unary("foo".e).asList(), parse(""" -"foo" """))
-        }
-        
-        @Test
-        fun `Given negate operator, when parsing, then correctly parsed`()
-        {
-            assertEquals(LogicalNot(true.e).asList(), parse("!true"))
-            assertEquals(LogicalNot(2.e).asList(), parse("!2"))
-        }
-        
-        @Test
-        fun `Given increment or decrement operator, when parsing, then correctly parsed`()
-        {
-            assertEquals(IncrementPre("foo").asList(), parse("++foo"))
-            assertEquals(IncrementPost("bar").asList(), parse("bar++"))
-            assertEquals(DecrementPre("foo").asList(), parse("--foo"))
-            assertEquals(DecrementPost("bar").asList(), parse("bar--"))
-        }
-        
-        @Test
         fun `Given single operator, when parsing, then correctly parsed`()
         {
             // Assignment
@@ -159,6 +136,16 @@ class TestParser
             assertEquals(LogicalAnd(1.e, 2.e).asList(), parse("1 && 2"))
             assertEquals(LogicalOr(1.e, 2.e).asList(), parse("1 || 2"))
             assertEquals(LogicalXor(1.e, 2.e).asList(), parse("1 ^^ 2"))
+    
+            // Prefix operators
+            assertEquals(Unary(1.e).asList(), parse("-1"))
+            assertEquals(LogicalNot(true.e).asList(), parse("!true"))
+            assertEquals(IncrementPre("foo").asList(), parse("++foo"))
+            assertEquals(DecrementPre("foo").asList(), parse("--foo"))
+            
+            // Postfix operators
+            assertEquals(IncrementPost("bar").asList(), parse("bar++"))
+            assertEquals(DecrementPost("bar").asList(), parse("bar--"))
         }
         
         @Test
