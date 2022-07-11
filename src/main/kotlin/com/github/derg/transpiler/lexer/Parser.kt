@@ -34,7 +34,6 @@ private class NodeExtractor(private val input: List<Token>) : Iterator<Node>, It
  */
 private typealias NodeParser = (List<Token>, Int) -> Pair<Node, Int>?
 private typealias Parsed = Pair<NodeExpression, Int>?
-private typealias ExpressionParser = (List<Token>, Int) -> Pair<Node, Int>?
 
 private val Token.isComma: Boolean get() = (this is Structure && type == Structure.Type.COMMA)
 private val Token.isOpenParenthesis: Boolean get() = (this is Structure && type == Structure.Type.OPEN_PARENTHESIS)
@@ -45,15 +44,8 @@ private val Token.isCloseParenthesis: Boolean get() = (this is Structure && type
  * used to retrieve the next node from the source code.
  */
 private val PARSERS: List<NodeParser> = listOf(
-    ::extractExpressionTmp,
-)
-
-private val EXPRESSIONS: List<ExpressionParser> = listOf(
-    ::extractUnary,
-    ::extractNot,
-    ::extractIncrementOrDecrement,
-    ::extractExpression,
     ::extractAssignment,
+    ::extractExpression,
 )
 
 /**
@@ -66,49 +58,6 @@ private fun extractNode(input: List<Token>, cursor: Int): Pair<Node, Int>?
     
     return PARSERS.mapNotNull { it(input, cursor) }.maxByOrNull { it.second }
         ?: throw IllegalStateException("No parsers matched '$input' at position $cursor")
-}
-
-/**
- * Converts the [input] tokens into an expression if possible, starting at [cursor].
- */
-private fun extractExpressionTmp(input: List<Token>, cursor: Int): Parsed =
-    EXPRESSIONS.mapNotNull { it(input, cursor) as Parsed }.maxByOrNull { it.second }
-
-private fun extractIncrementOrDecrement(input: List<Token>, cursor: Int): Parsed
-{
-    if (cursor + 1 >= input.size)
-        return null
-    
-    val isPre = input[cursor] is Operator
-    val operator = input[if (isPre) cursor else cursor + 1] as? Operator ?: return null
-    val variable = input[if (isPre) cursor + 1 else cursor] as? Identifier ?: return null
-    
-    return when (operator.type)
-    {
-        Operator.Type.DECREMENT -> if (isPre) DecrementPre(variable.name) else DecrementPost(variable.name)
-        Operator.Type.INCREMENT -> if (isPre) IncrementPre(variable.name) else IncrementPost(variable.name)
-        else                    -> return null
-    } to cursor + 2
-}
-
-private fun extractUnary(input: List<Token>, cursor: Int): Parsed
-{
-    val token = input[cursor] as? Operator ?: return null
-    if (token.type != Operator.Type.MINUS || cursor >= input.size)
-        return null
-    
-    val (expression, index) = extractExpressionTmp(input, cursor + 1) ?: return null
-    return Unary(expression) to index
-}
-
-private fun extractNot(input: List<Token>, cursor: Int): Parsed
-{
-    val token = input[cursor] as? Operator ?: return null
-    if (token.type != Operator.Type.NOT || cursor >= input.size)
-        return null
-    
-    val (expression, index) = extractExpressionTmp(input, cursor + 1) ?: return null
-    return LogicalNot(expression) to index
 }
 
 /**
@@ -172,6 +121,8 @@ private fun extractAssignment(input: List<Token>, cursor: Int): Pair<NodeAssignm
  */
 private fun extractLeafExpression(input: List<Token>, cursor: Int): Parsed
 {
+    extractPrefixOperator(input, cursor)?.let { return it }
+    
     // Certain expressions are entire trees of expressions, where the contents in parentheses must be unpacked
     if (input.getOrNull(cursor)?.isOpenParenthesis == true)
     {
@@ -184,10 +135,35 @@ private fun extractLeafExpression(input: List<Token>, cursor: Int): Parsed
     return extractFunctionCall(input, cursor) ?: extractVariableRead(input, cursor) ?: extractConstant(input, cursor)
 }
 
+private fun extractPrefixOperator(input: List<Token>, cursor: Int): Parsed
+{
+    val operator = input.getOrNull(cursor) as? Operator ?: return null
+    val (expression, index) = extractExpression(input, cursor + 1) ?: return null
+    return when (operator.type)
+    {
+        Operator.Type.MINUS -> Unary(expression) to index
+        Operator.Type.NOT   -> LogicalNot(expression) to index
+        else                -> null
+    }
+}
+
 private fun extractVariableRead(input: List<Token>, cursor: Int): Parsed
 {
-    val identifier = input.getOrNull(cursor) as? Identifier ?: return null
-    return Variable(identifier.name) to cursor + 1
+    val prefix = input.getOrNull(cursor) as? Operator
+    val identifier = input.getOrNull(if (prefix == null) cursor else cursor + 1) as? Identifier ?: return null
+    val postfix = input.getOrNull(if (prefix == null) cursor + 1 else cursor + 2) as? Operator
+    
+    if (prefix != null && postfix != null)
+        return null
+    if (prefix == null && postfix == null)
+        return Variable(identifier.name) to cursor + 1
+    
+    return when (prefix?.type ?: postfix?.type)
+    {
+        Operator.Type.INCREMENT -> if (prefix == null) IncrementPost(identifier.name) else IncrementPre(identifier.name)
+        Operator.Type.DECREMENT -> if (prefix == null) DecrementPost(identifier.name) else DecrementPre(identifier.name)
+        else                    -> return null
+    } to cursor + 2
 }
 
 private fun extractFunctionCall(input: List<Token>, cursor: Int): Parsed
