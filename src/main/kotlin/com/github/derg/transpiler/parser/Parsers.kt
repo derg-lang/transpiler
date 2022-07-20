@@ -34,6 +34,7 @@ private object ParserSubExpression : Pattern<Expression>
         ParserText,
         ParserVariable,
         ParserParenthesis,
+        ParserPrefixOperator,
     )
     
     override fun parse(context: Context): Result<Expression, String> = pattern.parse(context)
@@ -115,6 +116,59 @@ class ParseStructure(private val structure: Structure.Type) : Pattern<Unit>
     }
 }
 
+
+/**
+ * Certain operators act only on one expression to their immediate right. Such operators require special care when
+ * parsing source code, to ensure precedence rules are respected.
+ */
+object ParserPrefixOperator : Pattern<Expression>
+{
+    override fun parse(context: Context): Result<Expression, String>
+    {
+        val op = parseOperator(context).valueOr { return failureOf(it) }
+        val rhs = ParserSubExpression.parse(context).valueOr { return failureOf(it) }
+        return join(rhs, op)
+    }
+    
+    private fun join(rhs: Expression, op: Operator): Result<Expression, String> = when
+    {
+        op.type == Operator.Type.PLUS  -> UnaryPlus(rhs).toSuccess()
+        op.type == Operator.Type.MINUS -> UnaryMinus(rhs).toSuccess()
+        op.type == Operator.Type.NOT   -> Not(rhs).toSuccess()
+        rhs is Access.Variable         -> assign(rhs, op)
+        else                           -> failureOf("'${op.type.word}' is not a legal prefix operator")
+    }
+    
+    private fun assign(rhs: Access.Variable, op: Operator): Result<Expression, String> = when (op.type)
+    {
+        Operator.Type.DECREMENT -> PreDecrement(rhs).toSuccess()
+        Operator.Type.INCREMENT -> PreIncrement(rhs).toSuccess()
+        else                    -> failureOf("'${op.type.word}' is not a legal prefix operator")
+    }
+}
+
+/**
+ * Certain operators act only on one expression to their immediate left. Such operators require special care when
+ * parsing source code, to ensure precedence rules are respected.
+ */
+object ParserPostfixOperator : Pattern<Expression>
+{
+    override fun parse(context: Context): Result<Expression, String>
+    {
+        val lhs = ParserSubExpression.parse(context).valueOr { return failureOf(it) }
+        val op = parseOperator(context).valueOr { return failureOf(it) }
+        if (lhs !is Access.Variable)
+            return failureOf("'${op.type.word}' is not a legal postfix operator here")
+        return join(lhs, op)
+    }
+    
+    private fun join(lhs: Access.Variable, op: Operator): Result<Expression, String> = when (op.type)
+    {
+        Operator.Type.DECREMENT -> PostDecrement(lhs).toSuccess()
+        Operator.Type.INCREMENT -> PostIncrement(lhs).toSuccess()
+        else                    -> failureOf("'${op.type.word}' is not a legal postfix operator")
+    }
+}
 
 /**
  * Many operators require a left-hand and right-hand expression when performing some operation. These operators require

@@ -130,6 +130,64 @@ class TestExpressions
     }
     
     /**
+     * Some operators act only on the expression to their right side. These expressions may be nested behind other
+     * expressions involving prefix operators or other similar.
+     */
+    @Nested
+    inner class PrefixOperator
+    {
+        private fun parse(source: String) = ParserPrefixOperator.parse(source)
+        
+        @Test
+        fun `Given valid operator, when parsing, then correctly parsed`()
+        {
+            assertEquals(Not(1.value).toSuccess(), parse("!1"))
+            assertEquals(UnaryPlus(1.value).toSuccess(), parse("+1"))
+            assertEquals(UnaryMinus(1.value).toSuccess(), parse("-1"))
+            assertEquals(PreIncrement("a".variable).toSuccess(), parse("++a"))
+            assertEquals(PreDecrement("a".variable).toSuccess(), parse("--a"))
+        }
+        
+        @Test
+        fun `Given valid operator, when parsing, then correct precedence`()
+        {
+            assertEquals(Not(PreIncrement("a".variable)).toSuccess(), parse("!++a"))
+        }
+        
+        @Test
+        fun `Given invalid operator, when parsing, then correct error`()
+        {
+            assertEquals(failureOf("expected token, found end of stream"), parse(""))
+            assertEquals(failureOf("'*' is not a legal prefix operator"), parse("*a"))
+        }
+    }
+    
+    /**
+     * Some operators act only on the expression to their right side. These expressions may be nested behind other
+     * expressions involving prefix operators or other similar.
+     */
+    @Nested
+    inner class PostfixOperator
+    {
+        private fun parse(source: String) = ParserPostfixOperator.parse(source)
+        
+        @Test
+        fun `Given valid operator, when parsing, then correctly parsed`()
+        {
+            assertEquals(PostIncrement("a".variable).toSuccess(), parse("a++"))
+            assertEquals(PostDecrement("a".variable).toSuccess(), parse("a--"))
+        }
+        
+        @Test
+        fun `Given invalid operator, when parsing, then correct error`()
+        {
+            assertEquals(failureOf("expected token, found end of stream"), parse(""))
+            assertEquals(failureOf("'*' is not a legal postfix operator"), parse("a*"))
+            assertEquals(failureOf("'++' is not a legal postfix operator here"), parse("1++"))
+        }
+    }
+    
+    /**
      * Various forms of operators operating on two expressions require valid expressions. The expressions may be
      * affected by various precedence rules as well, requiring special attention to ensure expressions are constructed
      * properly when parsing.
@@ -197,7 +255,7 @@ class TestExpressions
             assertEquals(Multiply(Modulo(1.value, 2.value), 3.value).toSuccess(), parse("1 % 2 * 3"))
             
             // Operators with different precedence
-    
+            
             assertEquals(And(1.value, Xor(2.value, 3.value)).toSuccess(), parse("1 && 2 ^^ 3"))
             assertEquals(And(Xor(1.value, 2.value), 3.value).toSuccess(), parse("1 ^^ 2 && 3"))
             
@@ -217,7 +275,7 @@ class TestExpressions
             assertEquals(Add(1.value, Multiply(2.value, 3.value)).toSuccess(), parse("1 + 2 * 3"))
             
             // Super-special cases where precedence *is* different, but we have right-to-left associativity
-    
+            
             assertEquals(Assign("a".variable, And(1.value, 2.value)).toSuccess(), parse("a = 1 && 2"))
             assertEquals(And(1.value, Assign("a".variable, 2.value)).toSuccess(), parse("1 && a = 2"))
         }
