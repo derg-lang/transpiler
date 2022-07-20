@@ -13,21 +13,68 @@ sealed class Result<out Value, out Error>
 fun <Value> Value.toSuccess() = Result.Success(this)
 fun <Error> Error.toFailure() = Result.Failure(this)
 
+fun successOf() = successOf(Unit)
+fun failureOf() = failureOf(Unit)
 fun <Value> successOf(value: Value) = value.toSuccess()
 fun <Error> failureOf(error: Error) = error.toFailure()
 
 val <Value, Error> Result<Value, Error>.isSuccess: Boolean get() = this is Result.Success<Value>
 val <Value, Error> Result<Value, Error>.isFailure: Boolean get() = this is Result.Failure<Error>
 
+/**
+ * Folds the result value such that either the success value is returned, or a value is produced by [function].
+ */
+inline fun <Value, Error> Result<Value, Error>.valueOr(function: (Error) -> Value): Value = when (this)
+{
+    is Result.Success -> value
+    is Result.Failure -> function(error)
+}
+
 fun <Value, Error> Result<Value, Error>.valueOrNull(): Value? = (this as? Result.Success<Value>)?.value
 fun <Value, Error> Result<Value, Error>.errorOrNull(): Error? = (this as? Result.Failure<Error>)?.error
 
 /**
+ * Invokes the provided [function] only if this result represents a success.
+ */
+inline fun <Value, Error> Result<Value, Error>.onSuccess(function: (Value) -> Unit): Result<Value, Error>
+{
+    if (this is Result.Success) function(value)
+    return this
+}
+
+/**
+ * Invokes the provided [function] only if this result represents a failure.
+ */
+inline fun <Value, Error> Result<Value, Error>.onFailure(function: (Error) -> Unit): Result<Value, Error>
+{
+    if (this is Result.Failure) function(error)
+    return this
+}
+
+/**
  * Transforms the success value using the provided [transformation], if the result represents a success.
  */
-fun <Value, Error, T> Result<Value, Error>.map(transformation: (Value) -> T): Result<T, Error> = when (this)
+fun <Value, Error, T> Result<Value, Error>.mapValue(transformation: (Value) -> T): Result<T, Error> = when (this)
 {
     is Result.Success -> transformation(value).toSuccess()
+    is Result.Failure -> this
+}
+
+/**
+ * Transforms the failure error using the provided [transformation], if the result represents a failure.
+ */
+fun <Value, Error, T> Result<Value, Error>.mapError(transformation: (Error) -> T): Result<Value, T> = when (this)
+{
+    is Result.Success -> this
+    is Result.Failure -> transformation(error).toFailure()
+}
+
+/**
+ * Transforms the result into a different result type only when this result represents a success.
+ */
+fun <Value, Error, T> Result<Value, Error>.flatMap(transformation: (Value) -> Result<T, Error>): Result<T, Error> = when (this)
+{
+    is Result.Success -> transformation(value)
     is Result.Failure -> this
 }
 
@@ -39,3 +86,10 @@ fun <Value, Error, T> Result<Value, Error>.fold(success: (Value) -> T, failure: 
     is Result.Success -> success(value)
     is Result.Failure -> failure(error)
 }
+
+/**
+ * Transforms the collection of failable operations into either all successes, or the first failure case. Each element
+ * is transformed using the [transformation] function.
+ */
+fun <Value, Error, T> Iterable<T>.fold(transformation: (T) -> Result<Value, Error>): Result<List<Value>, Error> =
+    map { transformation(it) }.map { it.valueOrNull() ?: return it.mapValue { emptyList() } }.toSuccess()

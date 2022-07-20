@@ -118,6 +118,11 @@ sealed class Operator : Expression()
      */
     data class AssignDivide(val variable: Access.Variable, val expression: Expression) : Operator()
     
+    /**
+     * Assigns the modulo of the [variable] with the given [expression], returning the new value of the [variable].
+     */
+    data class AssignModulo(val variable: Access.Variable, val expression: Expression) : Operator()
+    
     // UNARY OPERATORS
     
     /**
