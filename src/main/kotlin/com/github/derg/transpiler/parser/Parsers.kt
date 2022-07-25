@@ -3,6 +3,7 @@ package com.github.derg.transpiler.parser
 import com.github.derg.transpiler.ast.Access
 import com.github.derg.transpiler.ast.Expression
 import com.github.derg.transpiler.ast.Operator.*
+import com.github.derg.transpiler.ast.Parameter
 import com.github.derg.transpiler.ast.Value
 import com.github.derg.transpiler.lexer.*
 import com.github.derg.transpiler.util.*
@@ -33,8 +34,10 @@ private object ParserSubExpression : Pattern<Expression>
         ParserReal,
         ParserText,
         ParserVariable,
+        ParserFunction,
         ParserParenthesis,
         ParserPrefixOperator,
+        ParserPostfixOperator,
     )
     
     override fun parse(context: Context): Result<Expression, String> = pattern.parse(context)
@@ -87,18 +90,75 @@ object ParserText : Pattern<Expression>
 
 /**
  * Specifies a pattern where exactly one identifier will be extracted from the context. The type of identifier is not
- * known at the extraction time, and may be a variable, function, namespace, etc.
+ * known at the extraction time, and may be a variable, function, namespace, etc. Note that the variable parser may
+ * extract a result which should be a function instead.
  */
 object ParserVariable : Pattern<Expression>
 {
     override fun parse(context: Context): Result<Access.Variable, String>
     {
-        val token = context.next() ?: return failureOf("expected token, found end of stream")
-        val identifier = token as? Identifier ?: return failureOf("'${token.raw}' is not a variable")
+        val identifier = parseIdentifier(context).valueOr { return failureOf(it) }
         return Access.Variable(identifier.name).toSuccess()
     }
 }
 
+/**
+ * Specifies a pattern where exactly one identifier will be extracted from the context, alongside the required
+ * parenthesis and optional parameters.
+ */
+object ParserFunction : Pattern<Expression>
+{
+    private val open = ParseStructure(Structure.Type.OPEN_PARENTHESIS)
+    private val close = ParseStructure(Structure.Type.CLOSE_PARENTHESIS)
+    private val comma = PatternOptional(ParseStructure(Structure.Type.COMMA), Unit)
+    private val equal = ParseOperator(Operator.Type.ASSIGN)
+    
+    override fun parse(context: Context): Result<Expression, String>
+    {
+        val identifier = parseIdentifier(context).valueOr { return failureOf(it) }
+        open.parse(context).valueOr { return failureOf(it) }
+        val parameters = parseParameters(context)
+        close.parse(context).valueOr { return failureOf(it) }
+        return Access.Function(identifier.name, parameters).toSuccess()
+    }
+    
+    private fun parseParameters(context: Context): List<Parameter>
+    {
+        val parameters = mutableListOf<Parameter>()
+        while (true)
+            parameters.add(parseParameter(context).valueOr { return parameters })
+    }
+    
+    private fun parseParameter(context: Context): Result<Parameter, Unit>
+    {
+        val snapshot = context.snapshot()
+        val identifier = parseIdentifier(context)
+            .andThen { equal.parse(context) }
+            .onFailure { context.restore(snapshot) }
+            .valueOr { null }
+        val expression = ParserExpression.parse(context)
+            .andThen { comma.parse(context) }
+            .onFailure { context.restore(snapshot) }
+            .valueOr { return failureOf() }
+        return Parameter(identifier?.name, expression).toSuccess()
+    }
+}
+
+
+/**
+ * Specifies a pattern where the [operator] component is required. The next token in line must be the specific operator.
+ */
+class ParseOperator(private val operator: Operator.Type) : Pattern<Unit>
+{
+    override fun parse(context: Context): Result<Unit, String>
+    {
+        val token = context.next() ?: return failureOf("expected '${operator.word}', found end of stream")
+        return if (token is Operator && token.type == operator)
+            successOf()
+        else
+            failureOf("expected '${operator.word}', found '${token.raw}'")
+    }
+}
 
 /**
  * Specifies a pattern where the [structure] component is required. The next token in line must be the specific
@@ -109,7 +169,7 @@ class ParseStructure(private val structure: Structure.Type) : Pattern<Unit>
     override fun parse(context: Context): Result<Unit, String>
     {
         val token = context.next() ?: return failureOf("expected '${structure.word}', found end of stream")
-        return if (token is Structure)
+        return if (token is Structure && token.type == structure)
             successOf()
         else
             failureOf("expected '${structure.word}', found '${token.raw}'")
@@ -153,9 +213,19 @@ object ParserPrefixOperator : Pattern<Expression>
  */
 object ParserPostfixOperator : Pattern<Expression>
 {
+    private val pattern = PatternAnyOf(
+        ParserBool,
+        ParserReal,
+        ParserText,
+        ParserVariable,
+        ParserFunction,
+        ParserParenthesis,
+        ParserPrefixOperator,
+    )
+    
     override fun parse(context: Context): Result<Expression, String>
     {
-        val lhs = ParserSubExpression.parse(context).valueOr { return failureOf(it) }
+        val lhs = pattern.parse(context).valueOr { return failureOf(it) }
         val op = parseOperator(context).valueOr { return failureOf(it) }
         if (lhs !is Access.Variable)
             return failureOf("'${op.type.word}' is not a legal postfix operator here")
@@ -237,7 +307,7 @@ object ParserInfixOperator : Pattern<Expression>
         Operator.Type.ASSIGN_MODULO   -> 7
         Operator.Type.ASSIGN_MULTIPLY -> 7
         Operator.Type.ASSIGN_PLUS     -> 7
-        Operator.Type.AND             -> 6
+        Operator.Type.AND             -> 4
         Operator.Type.DIVIDE          -> 0
         Operator.Type.EQUAL           -> 3
         Operator.Type.GREATER         -> 3
@@ -248,10 +318,10 @@ object ParserInfixOperator : Pattern<Expression>
         Operator.Type.MODULO          -> 0
         Operator.Type.MULTIPLY        -> 0
         Operator.Type.NOT_EQUAL       -> 3
-        Operator.Type.OR              -> 4
+        Operator.Type.OR              -> 5
         Operator.Type.PLUS            -> 1
         Operator.Type.THREE_WAY       -> 2
-        Operator.Type.XOR             -> 5
+        Operator.Type.XOR             -> 6
         else                          -> TODO("no precedence associated with operator ${op.type.word}")
     }
     
@@ -285,6 +355,16 @@ object ParserParenthesis : Pattern<Expression>
         close.parse(context).valueOr { return failureOf(it) }
         return successOf(expression)
     }
+}
+
+/**
+ * Retrieves the next token from the [context] as an identifier, if possible.
+ */
+private fun parseIdentifier(context: Context): Result<Identifier, String>
+{
+    val token = context.next() ?: return failureOf("expected token, found end of stream")
+    val identifier = token as? Identifier ?: return failureOf("'${token.raw}' is not an identifier")
+    return identifier.toSuccess()
 }
 
 /**

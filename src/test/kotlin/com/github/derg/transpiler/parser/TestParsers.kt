@@ -2,7 +2,9 @@ package com.github.derg.transpiler.parser
 
 import com.github.derg.transpiler.ast.Access
 import com.github.derg.transpiler.ast.Operator.*
+import com.github.derg.transpiler.ast.Parameter
 import com.github.derg.transpiler.ast.Value
+import com.github.derg.transpiler.lexer.Operator.Type.EQUAL
 import com.github.derg.transpiler.lexer.Structure.Type.ARROW
 import com.github.derg.transpiler.util.failureOf
 import com.github.derg.transpiler.util.isFailure
@@ -101,7 +103,75 @@ class TestExpressions
         fun `Given invalid identifiers, when parsing, then correct error`()
         {
             assertEquals(failureOf("expected token, found end of stream"), ParserVariable.parse(""))
-            assertEquals(failureOf("'if' is not a variable"), ParserVariable.parse("if"))
+            assertEquals(failureOf("'if' is not an identifier"), ParserVariable.parse("if"))
+        }
+    }
+    
+    /**
+     * Any identifier followed by parenthesis is considered to be a function call. The outcome of the function is
+     * determined by the analyzer of the source code, rather than the parser.
+     */
+    @Nested
+    inner class Function
+    {
+        private fun parse(source: String) = ParserFunction.parse(source)
+        
+        @Test
+        fun `Given valid syntax, when parsing, then correctly parsed`()
+        {
+            assertEquals(Access.Function("test", emptyList()).toSuccess(), parse("test()"))
+        }
+        
+        @Test
+        fun `Given single parameter, when parsing, then correctly parsed`()
+        {
+            assertEquals(Access.Function("f", listOf(Parameter(null, 1.value))).toSuccess(), parse("f(1)"))
+            assertEquals(Access.Function("f", listOf(Parameter("name", 1.value))).toSuccess(), parse("f(name = 1)"))
+            assertEquals(Access.Function("f", listOf(Parameter(null, "g".function))).toSuccess(), parse("f(g())"))
+        }
+    
+        @Test
+        fun `Given multiple parameters, when parsing, then correctly parsed`()
+        {
+            val parameters = listOf(Parameter(null, 1.value), Parameter(null, 2.value), Parameter(null, 3.value))
+    
+            assertEquals(Access.Function("f", parameters).toSuccess(), parse("f(1, 2, 3)"))
+            assertEquals(Access.Function("f", parameters).toSuccess(), parse("f(1, 2, 3, )")) // Optional comma
+        }
+        
+        @Test
+        fun `Given invalid syntax, when parsing, then correct error`()
+        {
+            assertEquals(failureOf("expected token, found end of stream"), parse(""))
+            assertEquals(failureOf("expected '(', found end of stream"), parse("foo"))
+            assertEquals(failureOf("expected ')', found end of stream"), parse("foo("))
+            assertEquals(failureOf("expected ',', found '1'"), parse("foo(a 1)"))
+            assertEquals(failureOf("'if' is not an identifier"), parse("if"))
+        }
+    }
+    
+    /**
+     * The operator parser ensures that a specific expected structure token is found in the source which is being
+     * parsed. Certain tokens are not required to resolve ambiguity, but aids in improving code readability, thus making
+     * those tokens mandatory.
+     */
+    @Nested
+    inner class Operator
+    {
+        private val pattern = ParseOperator(EQUAL)
+        
+        @Test
+        fun `Given valid values, when parsing, then correctly parsed`()
+        {
+            assertEquals(successOf(), pattern.parse("=="))
+        }
+        
+        @Test
+        fun `Given invalid values, when parsing, then correct error`()
+        {
+            assertEquals(failureOf("expected '==', found end of stream"), pattern.parse(""))
+            assertEquals(failureOf("expected '==', found '*'"), pattern.parse("*"))
+            assertEquals(failureOf("expected '==', found 'if'"), pattern.parse("if"))
         }
     }
     
@@ -125,6 +195,7 @@ class TestExpressions
         fun `Given invalid values, when parsing, then correct error`()
         {
             assertEquals(failureOf("expected '->', found end of stream"), pattern.parse(""))
+            assertEquals(failureOf("expected '->', found ','"), pattern.parse(","))
             assertEquals(failureOf("expected '->', found 'if'"), pattern.parse("if"))
         }
     }
@@ -256,14 +327,14 @@ class TestExpressions
             
             // Operators with different precedence
             
-            assertEquals(And(1.value, Xor(2.value, 3.value)).toSuccess(), parse("1 && 2 ^^ 3"))
-            assertEquals(And(Xor(1.value, 2.value), 3.value).toSuccess(), parse("1 ^^ 2 && 3"))
-            
             assertEquals(Xor(1.value, Or(2.value, 3.value)).toSuccess(), parse("1 ^^ 2 || 3"))
             assertEquals(Xor(Or(1.value, 2.value), 3.value).toSuccess(), parse("1 || 2 ^^ 3"))
             
-            assertEquals(Or(1.value, Equal(2.value, 3.value)).toSuccess(), parse("1 || 2 == 3"))
-            assertEquals(Or(Equal(1.value, 2.value), 3.value).toSuccess(), parse("1 == 2 || 3"))
+            assertEquals(Or(1.value, And(2.value, 3.value)).toSuccess(), parse("1 || 2 && 3"))
+            assertEquals(Or(And(1.value, 2.value), 3.value).toSuccess(), parse("1 && 2 || 3"))
+            
+            assertEquals(And(1.value, Equal(2.value, 3.value)).toSuccess(), parse("1 && 2 == 3"))
+            assertEquals(And(Equal(1.value, 2.value), 3.value).toSuccess(), parse("1 == 2 && 3"))
             
             assertEquals(Equal(1.value, ThreeWay(2.value, 3.value)).toSuccess(), parse("1 == 2 <=> 3"))
             assertEquals(Equal(ThreeWay(1.value, 2.value), 3.value).toSuccess(), parse("1 <=> 2 == 3"))
@@ -315,6 +386,51 @@ class TestExpressions
             assertEquals(failureOf("expected '(', found end of stream"), parse(""))
             assertEquals(failureOf("expected token, found end of stream"), parse("("))
             assertEquals(failureOf("expected ')', found end of stream"), parse("(1"))
+        }
+    }
+    
+    /**
+     * Parsing full expressions correctly is critical for the generation of correct abstract syntax trees. As such,
+     * verifying proper expressions is key.
+     */
+    @Nested
+    inner class ComplexExpressions
+    {
+        private fun parse(source: String) = ParserExpression.parse(source)
+        
+        @Test
+        fun `Given basic expressions, when parsing, then correctly parsed`()
+        {
+            assertEquals(1.value.toSuccess(), parse("1"))
+            assertEquals(1.value.toSuccess(), parse("(1)"))
+            assertEquals(true.value.toSuccess(), parse("true"))
+            assertEquals("foo".value.toSuccess(), parse(""""foo""""))
+            assertEquals("bar".variable.toSuccess(), parse("bar"))
+            assertEquals("baz".function.toSuccess(), parse("baz()"))
+        }
+        
+        @Test
+        fun `Given logic expressions, when parsing, then correctly parsed`()
+        {
+            assertEquals(Not(Not(1.value)).toSuccess(), parse("!!1"))
+            assertEquals(And(Not(1.value), 2.value).toSuccess(), parse("!1 && 2"))
+            assertEquals(And(1.value, Not(2.value)).toSuccess(), parse("1 && !2"))
+            
+            assertEquals(Or(And(1.value, 2.value), And(3.value, 4.value)).toSuccess(), parse("1 && 2 || 3 && 4"))
+            assertEquals(Xor(Or(1.value, 2.value), Or(3.value, 4.value)).toSuccess(), parse("1 || 2 ^^ 3 || 4"))
+            
+            assertEquals(Or(Equal(1.value, 2.value), Equal(3.value, 4.value)).toSuccess(), parse("1 == 2 || 3 == 4"))
+            assertEquals(Xor(Equal(1.value, 2.value), Equal(3.value, 4.value)).toSuccess(), parse("1 == 2 ^^ 3 == 4"))
+            assertEquals(And(Equal(1.value, 2.value), Equal(3.value, 4.value)).toSuccess(), parse("1 == 2 && 3 == 4"))
+        }
+        
+        @Test
+        fun `Given complex expressions, when parsing, then correctly parsed`()
+        {
+            assertEquals(Not(PostIncrement("foo".variable)).toSuccess(), parse("!foo++"))
+            assertEquals(Add(PostIncrement("foo".variable), 1.value).toSuccess(), parse("foo++ + 1"))
+            assertEquals(Add(PreIncrement("foo".variable), 1.value).toSuccess(), parse("++foo + 1"))
+            assertEquals(Add(PostIncrement("foo".variable), UnaryMinus(1.value)).toSuccess(), parse("foo++ + -1"))
         }
     }
 }

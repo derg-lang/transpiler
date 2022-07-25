@@ -52,6 +52,16 @@ inline fun <Value, Error> Result<Value, Error>.onFailure(function: (Error) -> Un
 }
 
 /**
+ * Invokes the [function] only if the result is a success, discarding the success value of that function. If [function]
+ * fails, however, the error case is returned.
+ */
+fun <Value, Error, T> Result<Value, Error>.andThen(function: (Value) -> Result<T, Error>): Result<Value, Error>
+{
+    if (this is Result.Success) function(value).onFailure { return failureOf(it) }
+    return this
+}
+
+/**
  * Transforms the success value using the provided [transformation], if the result represents a success.
  */
 fun <Value, Error, T> Result<Value, Error>.mapValue(transformation: (Value) -> T): Result<T, Error> = when (this)

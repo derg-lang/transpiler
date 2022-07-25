@@ -105,8 +105,8 @@ class PatternOptional<Type>(private val pattern: Pattern<Type>, private val defa
 {
     override fun parse(context: Context): Result<Type, String>
     {
-        // TODO: This context usage is wrong - must support rollback upon failure
-        return pattern.parse(context).fold(success = { it }, failure = { default }).toSuccess()
+        val snapshot = context.snapshot()
+        return pattern.parse(context).onFailure { context.restore(snapshot) }.fold({ it }, { default }).toSuccess()
     }
 }
 

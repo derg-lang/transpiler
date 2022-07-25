@@ -139,6 +139,24 @@ class TestPatterns
         }
         
         @Test
+        fun `Given valid values, when parsing, then correct index`()
+        {
+            val context = contextOf("true")
+            
+            assertEquals(true.value.toSuccess(), pattern.parse(context))
+            assertEquals(1, context.snapshot().index)
+        }
+        
+        @Test
+        fun `Given invalid values, when parsing, then correct index`()
+        {
+            val context = contextOf("0")
+            
+            assertEquals(false.value.toSuccess(), pattern.parse(context))
+            assertEquals(0, context.snapshot().index)
+        }
+        
+        @Test
         fun `Given invalid values, when parsing, then correct error`()
         {
             assertEquals(false.value.toSuccess(), pattern.parse(""))

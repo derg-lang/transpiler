@@ -17,4 +17,6 @@ internal fun <Type> Pattern<Type>.parse(source: String): Result<Type, String> = 
 
 internal val Boolean.value: Value.Bool get() = Value.Bool(this)
 internal val Int.value: Value.Real get() = Value.Real(toBigDecimal(), null)
+internal val String.value: Value.Text get() = Value.Text(this, null)
 internal val String.variable: Access.Variable get() = Access.Variable(this)
+internal val String.function: Access.Function get() = Access.Function(this, emptyList())
