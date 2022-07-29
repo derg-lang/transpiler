@@ -73,6 +73,7 @@ data class Operator(val type: Type) : Token()
         ASSIGN("=", -1),
         ASSIGN_DIVIDE("/=", -1),
         ASSIGN_MINUS("-=", -1),
+        ASSIGN_MODULO("%=", -1),
         ASSIGN_MULTIPLY("*=", -1),
         ASSIGN_PLUS("+=", -1),
         DECREMENT("--", -1),
@@ -83,6 +84,7 @@ data class Operator(val type: Type) : Token()
         MINUS("-", 1),
         MULTIPLY("*", 2),
         PLUS("+", 1),
+        MODULO("%", 2),
         
         // Comparison operators
         EQUAL("==", -1),
@@ -110,3 +112,17 @@ data class Numeric(val value: Number, val type: String?) : Token()
  * The token holds a raw textual literal of a specific [value] and optional [type].
  */
 data class Textual(val value: String, val type: String?) : Token()
+
+/**
+ * Returns the raw string representing the token in source code.
+ */
+val Token.raw: String
+    get() = when (this)
+    {
+        is Identifier -> name
+        is Keyword    -> type.word
+        is Numeric    -> value.toString()
+        is Operator   -> type.word
+        is Structure  -> type.word
+        is Textual    -> value
+    }
