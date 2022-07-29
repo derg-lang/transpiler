@@ -11,7 +11,7 @@ class TestSymbolTable
     fun `When registering name, then registered`()
     {
         val id = table.register("name")
-    
+        
         assertEquals(setOf(id), table.resolve("name"))
     }
     
