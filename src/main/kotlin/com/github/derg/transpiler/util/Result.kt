@@ -21,6 +21,9 @@ fun <Error> failureOf(error: Error) = error.toFailure()
 val <Value, Error> Result<Value, Error>.isSuccess: Boolean get() = this is Result.Success<Value>
 val <Value, Error> Result<Value, Error>.isFailure: Boolean get() = this is Result.Failure<Error>
 
+fun <Value, Error> Result<Value, Error>.valueOrNull(): Value? = (this as? Result.Success<Value>)?.value
+fun <Value, Error> Result<Value, Error>.errorOrNull(): Error? = (this as? Result.Failure<Error>)?.error
+
 /**
  * Folds the result value such that either the success value is returned, or a value is produced by [function].
  */
@@ -29,9 +32,6 @@ inline fun <Value, Error> Result<Value, Error>.valueOr(function: (Error) -> Valu
     is Result.Success -> value
     is Result.Failure -> function(error)
 }
-
-fun <Value, Error> Result<Value, Error>.valueOrNull(): Value? = (this as? Result.Success<Value>)?.value
-fun <Value, Error> Result<Value, Error>.errorOrNull(): Error? = (this as? Result.Failure<Error>)?.error
 
 /**
  * Invokes the provided [function] only if this result represents a success.
@@ -102,4 +102,11 @@ fun <Value, Error, T> Result<Value, Error>.fold(success: (Value) -> T, failure: 
  * is transformed using the [transformation] function.
  */
 fun <Value, Error, T> Iterable<T>.fold(transformation: (T) -> Result<Value, Error>): Result<List<Value>, Error> =
-    map { transformation(it) }.map { it.valueOrNull() ?: return it.mapValue { emptyList() } }.toSuccess()
+    map { result -> transformation(result).valueOr { return failureOf(it) } }.toSuccess()
+
+/**
+ * Transforms the collection of failable operations into two lists, one containing all the success cases and the other
+ * containing all the failure cases.
+ */
+fun <Value, Error> Iterable<Result<Value, Error>>.partition(): Pair<List<Value>, List<Error>> =
+    mapNotNull { it.valueOrNull() } to mapNotNull { it.errorOrNull() }

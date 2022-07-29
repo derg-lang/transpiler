@@ -59,6 +59,68 @@ sealed class Access : Expression()
 }
 
 /**
+ * Expressions may be turned into l-values by being stored in a variable of any kind. In doing so, the r-value
+ * expression may be referenced or otherwise accessed again at any later time. All statements which alters the value of
+ * a variable is considered to be an assignment.
+ */
+sealed class Assignment : Expression()
+{
+    // INCREMENTING AND DECREMENTING ASSIGNMENTS
+    
+    /**
+     * Performs an increment on the variable with the given [name], returning the value *after* incrementing.
+     */
+    data class PreIncrement(val name: Name) : Assignment()
+    
+    /**
+     * Performs a decrement on the variable with the given [name], returning the value *after* decrementing.
+     */
+    data class PreDecrement(val name: Name) : Assignment()
+    
+    /**
+     * Performs an increment on the variable with the given [name], returning the value *before* incrementing.
+     */
+    data class PostIncrement(val name: Name) : Assignment()
+    
+    /**
+     * Performs a decrement on the variable with the given [name], returning the value *before* decrementing.
+     */
+    data class PostDecrement(val name: Name) : Assignment()
+    
+    // ASSIGNMENT ASSIGNMENTS
+    
+    /**
+     * Assigns the given [expression] to [name], returning the new value of [name].
+     */
+    data class Assign(val name: Name, val expression: Expression) : Assignment()
+    
+    /**
+     * Adds the given [expression] to [name], returning the new value of [name].
+     */
+    data class AssignAdd(val name: Name, val expression: Expression) : Assignment()
+    
+    /**
+     * Subtracts the given [expression] from [name], returning the new value of [name].
+     */
+    data class AssignSubtract(val name: Name, val expression: Expression) : Assignment()
+    
+    /**
+     * Multiplies [name] with the given [expression], returning the new value of [name].
+     */
+    data class AssignMultiply(val name: Name, val expression: Expression) : Assignment()
+    
+    /**
+     * Divides [name] by the given [expression], returning the new value of [name].
+     */
+    data class AssignDivide(val name: Name, val expression: Expression) : Assignment()
+    
+    /**
+     * Assigns the modulo of [name] with the given [expression], returning the new value of [name].
+     */
+    data class AssignModulo(val name: Name, val expression: Expression) : Assignment()
+}
+
+/**
  * Any two expressions may be combined with an operator to form a new value. The operator determines which operation
  * will be performed on the expressions participating in the operation. Certain operations require only one expression,
  * some require two.
@@ -69,65 +131,11 @@ sealed class Access : Expression()
  */
 sealed class Operator : Expression()
 {
-    // INCREMENTING AND DECREMENTING OPERATORS
-    
-    /**
-     * Performs an increment on the [variable], returning the value of the [variable] *after* incrementing.
-     */
-    data class PreIncrement(val variable: Access.Variable) : Operator()
-    
-    /**
-     * Performs a decrement on the [variable], returning the value of the [variable] *after* decrementing.
-     */
-    data class PreDecrement(val variable: Access.Variable) : Operator()
-    
-    /**
-     * Performs an increment on the [variable], returning the value of the [variable] *before* incrementing.
-     */
-    data class PostIncrement(val variable: Access.Variable) : Operator()
-    
-    /**
-     * Performs a decrement on the [variable], returning the value of the [variable] *before* decrementing.
-     */
-    data class PostDecrement(val variable: Access.Variable) : Operator()
-    
-    // ASSIGNMENT OPERATORS
-    
-    /**
-     * Assigns the given [expression] to the given [variable], returning the new value of the [variable].
-     */
-    data class Assign(val variable: Access.Variable, val expression: Expression) : Operator()
-    
-    /**
-     * Adds the given [expression] to the given [variable], returning the new value of the [variable].
-     */
-    data class AssignAdd(val variable: Access.Variable, val expression: Expression) : Operator()
-    
-    /**
-     * Subtracts the given [expression] from the given [variable], returning the new value of the [variable].
-     */
-    data class AssignSubtract(val variable: Access.Variable, val expression: Expression) : Operator()
-    
-    /**
-     * Multiplies the [variable] with the given [expression], returning the new value of the [variable].
-     */
-    data class AssignMultiply(val variable: Access.Variable, val expression: Expression) : Operator()
-    
-    /**
-     * Divides the [variable] by the given [expression], returning the new value of the [variable].
-     */
-    data class AssignDivide(val variable: Access.Variable, val expression: Expression) : Operator()
-    
-    /**
-     * Assigns the modulo of the [variable] with the given [expression], returning the new value of the [variable].
-     */
-    data class AssignModulo(val variable: Access.Variable, val expression: Expression) : Operator()
-    
     // UNARY OPERATORS
     
     /**
      * Represents the positive value of [expression]. In almost all cases, this operation is a no-op and should not be
-     * utilized in software. It exists primarily to support the `+1` syntax, for asymmetrical purposes (as `-1` is legal
+     * utilized in software. It exists primarily to support the `+1` syntax, for symmetrical purposes (as `-1` is legal
      * syntax).
      */
     data class UnaryPlus(val expression: Expression) : Operator()
