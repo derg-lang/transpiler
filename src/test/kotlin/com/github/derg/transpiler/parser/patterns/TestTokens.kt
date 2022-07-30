@@ -1,16 +1,18 @@
 package com.github.derg.transpiler.parser.patterns
 
+import com.github.derg.transpiler.lexer.Keyword.Type.IF
+import com.github.derg.transpiler.lexer.Keyword.Type.WHILE
 import com.github.derg.transpiler.lexer.Operator.Type.MINUS
 import com.github.derg.transpiler.lexer.Operator.Type.MULTIPLY
 import com.github.derg.transpiler.lexer.Structure.Type.COMMA
 import com.github.derg.transpiler.lexer.Structure.Type.OPEN_BRACKET
 import com.github.derg.transpiler.parser.ParseError.*
-import com.github.derg.transpiler.parser.PatternTester
+import com.github.derg.transpiler.parser.ParserTester
 import org.junit.jupiter.api.Test
 
 class TestParserIdentifier
 {
-    private val tester = PatternTester { ParserIdentifier }
+    private val tester = ParserTester { ParserIdentifier }
     
     @Test
     fun `Given valid token, when parsing, then correctly parsed`()
@@ -26,12 +28,34 @@ class TestParserIdentifier
     }
 }
 
+class TestParserKeyword
+{
+    @Test
+    fun `Given valid token, when parsing, then correctly parsed`()
+    {
+        val tester = ParserTester { ParserKeyword() }
+        
+        tester.parse("while").isGood(1, WHILE)
+    }
+    
+    @Test
+    fun `Given invalid token, when parsing, then correct error`()
+    {
+        val tester = ParserTester { ParserKeyword(WHILE) }
+        
+        tester.parse("").isBad { End }
+        tester.parse("if").isBad { WrongKeyword(setOf(WHILE), IF) }
+        tester.parse("42").isBad { NotKeyword(it[0]) }
+    }
+}
+
+
 class TestParserOperator
 {
     @Test
     fun `Given valid token, when parsing, then correctly parsed`()
     {
-        val tester = PatternTester { ParserOperator() }
+        val tester = ParserTester { ParserOperator() }
         
         tester.parse("*").isGood(1, MULTIPLY)
     }
@@ -39,7 +63,7 @@ class TestParserOperator
     @Test
     fun `Given invalid token, when parsing, then correct error`()
     {
-        val tester = PatternTester { ParserOperator(MINUS) }
+        val tester = ParserTester { ParserOperator(MINUS) }
         
         tester.parse("").isBad { End }
         tester.parse("*").isBad { WrongOperator(setOf(MINUS), MULTIPLY) }
@@ -52,7 +76,7 @@ class TestParserStructure
     @Test
     fun `Given valid token, when parsing, then correctly parsed`()
     {
-        val tester = PatternTester { ParserStructure() }
+        val tester = ParserTester { ParserStructure() }
         
         tester.parse(",").isGood(1, COMMA)
     }
@@ -60,7 +84,7 @@ class TestParserStructure
     @Test
     fun `Given invalid token, when parsing, then correct error`()
     {
-        val tester = PatternTester { ParserStructure(COMMA) }
+        val tester = ParserTester { ParserStructure(COMMA) }
         
         tester.parse("").isBad { End }
         tester.parse("[").isBad { WrongStructure(setOf(COMMA), OPEN_BRACKET) }
