@@ -31,6 +31,44 @@ class TestParserAnyOf
     }
 }
 
+class TestParserAllOf
+{
+    private val real = ParserRealExpression
+    private val bool = ParserBoolExpression
+    
+    @Test
+    fun `Given valid token, when parsing, then correctly parsed`()
+    {
+        val tester = ParserTester { ParserAllOf("real" to real, "bool" to bool) }
+        val expected = mapOf("real" to 3.toLit(), "bool" to true.toLit())
+        
+        tester.parse("3 true").isGood(2, expected)
+        tester.parse("true 3").isGood(2, expected)
+    }
+    
+    @Test
+    fun `Given valid token, when parsing with optionals, then correctly parsed`()
+    {
+        val tester = ParserTester { ParserAllOf("real" to real, "bool" to ParserOptional(bool)) }
+        
+        tester.parse("3").isGood(1, mapOf("real" to 3.toLit(), "bool" to null))
+        tester.parse("true 3").isGood(2, mapOf("real" to 3.toLit(), "bool" to true.toLit()))
+        tester.parse("3 true").isGood(2, mapOf("real" to 3.toLit(), "bool" to true.toLit()))
+    }
+    
+    @Test
+    fun `Given invalid token, when parsing, then correct error`()
+    {
+        val tester = ParserTester { ParserAllOf("real" to real, "bool" to bool) }
+        
+        tester.parse("").isBad { End }
+        tester.parse("3").isBad { End }
+        tester.parse("false").isBad { End }
+        tester.parse("2 if").isBad { NotExpression(it[1]) }
+        tester.parse("if").isBad { NotExpression(it[0]) }
+    }
+}
+
 class TestParserSequence
 {
     private val tester = ParserTester { ParserSequence(ParserRealExpression, ParserBoolExpression) }

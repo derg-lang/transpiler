@@ -13,21 +13,10 @@ import com.github.derg.transpiler.core.Name
 enum class Visibility
 {
     /**
-     * The object is visible to anything in the source code, no matter in which module or package it resides. Any part
-     * of the source code may include the object and access it without issues.
-     */
-    EXPOSED,
-    
-    /**
      * The object is accessible to everything within the same module as the object was declared in. The object will not
      * be visible to anything outside the current module.
      */
     PUBLIC,
-    
-    /**
-     * TODO: Reserved for future expansion.
-     */
-    PROTECTED,
     
     /**
      * The object is only accessible to the current type in which the object was declared. For example, a private

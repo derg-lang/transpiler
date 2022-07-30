@@ -54,14 +54,14 @@ fun Any.toPar(type: Name? = null) = Parameter(type, toLit())
  */
 fun variableOf(
     name: Name,
+    value: Any,
     type: Name? = null,
-    value: Expression = 0.toLit(),
     visibility: Visibility = Visibility.PRIVATE,
     mutability: Mutability = Mutability.VALUE,
 ) = Variable(
     name = name,
     type = type,
-    value = value,
+    value = value.toLit(),
     visibility = visibility,
     mutability = mutability,
 )

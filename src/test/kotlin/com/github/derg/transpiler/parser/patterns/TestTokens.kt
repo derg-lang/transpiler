@@ -1,5 +1,7 @@
 package com.github.derg.transpiler.parser.patterns
 
+import com.github.derg.transpiler.lexer.Keyword.Type.IF
+import com.github.derg.transpiler.lexer.Keyword.Type.WHILE
 import com.github.derg.transpiler.lexer.Operator.Type.MINUS
 import com.github.derg.transpiler.lexer.Operator.Type.MULTIPLY
 import com.github.derg.transpiler.lexer.Structure.Type.COMMA
@@ -25,6 +27,28 @@ class TestParserIdentifier
         tester.parse("false").isBad { NotIdentifier(it[0]) }
     }
 }
+
+class TestParserKeyword
+{
+    @Test
+    fun `Given valid token, when parsing, then correctly parsed`()
+    {
+        val tester = ParserTester { ParserKeyword() }
+        
+        tester.parse("while").isGood(1, WHILE)
+    }
+    
+    @Test
+    fun `Given invalid token, when parsing, then correct error`()
+    {
+        val tester = ParserTester { ParserKeyword(WHILE) }
+        
+        tester.parse("").isBad { End }
+        tester.parse("if").isBad { WrongKeyword(setOf(WHILE), IF) }
+        tester.parse("42").isBad { NotKeyword(it[0]) }
+    }
+}
+
 
 class TestParserOperator
 {

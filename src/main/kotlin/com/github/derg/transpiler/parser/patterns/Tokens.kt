@@ -38,7 +38,16 @@ class ParserKeyword(private val types: Set<Keyword.Type> = emptySet()) : Parser<
     /** Helper for specifying all keyword [types] which are accepted by this parser. */
     constructor(vararg types: Keyword.Type) : this(types.toSet())
     
-    override fun parse(context: Context): Result<Keyword.Type, ParseError> = TODO()
+    override fun parse(context: Context): Result<Keyword.Type, ParseError>
+    {
+        context.reset()
+        val token = context.next() ?: return failureOf(ParseError.End)
+        val keyword = token as? Keyword ?: return failureOf(ParseError.NotKeyword(token))
+        if (types.isNotEmpty() && keyword.type !in types)
+            return failureOf(ParseError.WrongKeyword(types, keyword.type))
+        context.commit()
+        return successOf(keyword.type)
+    }
 }
 
 /**

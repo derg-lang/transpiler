@@ -31,6 +31,7 @@ data class Keyword(val type: Type) : Token()
         IF("if"),
         IN("in"),
         MUT("mut"),
+        PUB("pub"),
         TRUE("true"),
         TYPE("type"),
         VAL("val"),

@@ -6,6 +6,19 @@ import com.github.derg.transpiler.parser.Parser
 import com.github.derg.transpiler.util.*
 
 /**
+ * Parses a single [parser] at the current cursor location for the context, rolling back to the given [snapshot]
+ * after parsing.
+ */
+private fun <Type> parseAndReset(context: Context, snapshot: Int, key: String, parser: Parser<Type>): Outcome<Type> =
+    Outcome(key, parser.parse(context), context.snapshot()).also { context.revert(snapshot) }
+
+/**
+ * Helper data class to represent the outcome of a parsing operation from a single pattern. This allows easy
+ * rollback to the snapshot representing this particular outcome.
+ */
+private data class Outcome<Type>(val key: String, val outcome: Result<Type, ParseError>, val snapshot: Int)
+
+/**
  * Parses the context in such a way that exactly one of the provided [parsers] parses. If more than a single pattern
  * matches the context, the longest matching pattern is chosen. In the case of ties, the first specified pattern in the
  * list of [parsers] is chosen.
@@ -15,36 +28,52 @@ class ParserAnyOf<Type>(private val parsers: List<Parser<Type>>) : Parser<Type>
     /** Helper for specifying the [parsers] of which exactly one of them must match. */
     constructor(vararg parsers: Parser<Type>) : this(parsers.toList())
     
-    /**
-     * Parses a single [parser] at the current cursor location for the context, rolling back to the given [snapshot]
-     * after parsing.
-     */
-    private fun <T> parseAndReset(context: Context, snapshot: Int, parser: Parser<T>): Outcome<T> =
-        Outcome(parser.parse(context), context.snapshot()).also { context.revert(snapshot) }
-    
-    /**
-     * Helper data class to represent the outcome of a parsing operation from a single pattern. This allows easy
-     * rollback to the snapshot representing this particular outcome.
-     */
-    private data class Outcome<Type>(val outcome: Result<Type, ParseError>, val snapshot: Int)
-    
     override fun parse(context: Context): Result<Type, ParseError>
     {
         if (!context.hasNext())
             return failureOf(ParseError.End)
         
         val snapshot = context.snapshot()
-        val outcomes = parsers.map { parseAndReset(context, snapshot, it) }.sortedByDescending { it.snapshot }
+        val outcomes = parsers.map { parseAndReset(context, snapshot, "", it) }.sortedByDescending { it.snapshot }
         
         val result = outcomes.firstOrNull { it.outcome.isSuccess } ?: outcomes.first { it.outcome.isFailure }
         return result.outcome.onSuccess { context.revert(result.snapshot) }
     }
 }
 
-// TODO: Must match all of the provided patterns in any order
-class ParserAllOf<Type>(vararg parsers: Parser<Type>) : Parser<Type>
+/**
+ * Parses the context in such a way that all the provided [parsers] parses. The order in which the parses do parse is
+ * irrelevant; the requirement is that they all must parse. If any of the provided patterns are optional, the optimal
+ * parse is performed in which the longest matching parser which is not yet matched is selected, whenever one parser has
+ * been properly parsed.
+ */
+class ParserAllOf(private val parsers: Map<String, Parser<*>>) : Parser<Map<String, *>>
 {
-    override fun parse(context: Context): Result<Type, ParseError> = TODO()
+    /** Helper for specifying all [parsers] which are all required. */
+    constructor(vararg parsers: Pair<String, Parser<*>>) : this(parsers.toMap())
+    
+    override fun parse(context: Context): Result<Map<String, *>, ParseError>
+    {
+        val snapshot = context.snapshot()
+        val values = mutableMapOf<String, Any?>()
+        while (values.size < parsers.size)
+        {
+            val result = parse(context, parsers.filter { it.key !in values })
+                .onFailure { context.revert(snapshot) }
+                .valueOr { return failureOf(it) }
+            values[result.first] = result.second
+        }
+        return successOf(values)
+    }
+    
+    private fun parse(context: Context, parsers: Map<String, Parser<*>>): Result<Pair<String, *>, ParseError>
+    {
+        val ss = context.snapshot()
+        val outcomes = parsers.map { parseAndReset(context, ss, it.key, it.value) }.sortedByDescending { it.snapshot }
+        
+        val result = outcomes.firstOrNull { it.outcome.isSuccess } ?: outcomes.first { it.outcome.isFailure }
+        return result.outcome.mapValue { result.key to it }.onSuccess { context.revert(result.snapshot) }
+    }
 }
 
 /**

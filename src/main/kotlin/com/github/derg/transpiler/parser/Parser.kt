@@ -1,5 +1,6 @@
 package com.github.derg.transpiler.parser
 
+import com.github.derg.transpiler.lexer.Keyword
 import com.github.derg.transpiler.lexer.Operator
 import com.github.derg.transpiler.lexer.Structure
 import com.github.derg.transpiler.lexer.Token
@@ -35,12 +36,14 @@ sealed class ParseError
     object End : ParseError()
     
     // The data acquired from the context has the wrong format
+    data class NotKeyword(val token: Token) : ParseError()
     data class NotOperator(val token: Token) : ParseError()
     data class NotStructure(val token: Token) : ParseError()
     data class NotIdentifier(val token: Token) : ParseError()
     data class NotExpression(val token: Token) : ParseError()
     
     // The data acquired from the context has the wrong value
+    data class WrongKeyword(val expected: Set<Keyword.Type>, val actual: Keyword.Type) : ParseError()
     data class WrongOperator(val expected: Set<Operator.Type>, val actual: Operator.Type) : ParseError()
     data class WrongStructure(val expected: Set<Structure.Type>, val actual: Structure.Type) : ParseError()
 }
