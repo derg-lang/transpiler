@@ -26,7 +26,6 @@ private val EXPRESSIONS = arrayOf(
     ParserPrefixOperatorExpression,
     ParserParenthesisExpression,
     ParserAssignExpression,
-    ParserIncrementExpression,
 )
 
 /**
@@ -273,34 +272,6 @@ object ParserAssignExpression : Parser<Expression>
         ASSIGN_DIVIDE   -> Assignment.AssignDivide(name, expression)
         ASSIGN_MODULO   -> Assignment.AssignModulo(name, expression)
         else            -> throw IllegalStateException("Illegal operator $operator when parsing assignment")
-    }
-}
-
-/**
- * Parses an expression where a variable is either incremented or decremented as a pre- or postfix operator from the
- * context, if possible. The grammar assigns a higher priority to the prefix operator, effectively preventing issues
- * where both the pre- and postfix operators are specified.
- */
-object ParserIncrementExpression : Parser<Expression>
-{
-    private val pattern = ParserAnyOf(
-        ParserSequence(ParserOperator(INCREMENT, DECREMENT), ParserIdentifier),
-        ParserSequence(ParserIdentifier, ParserOperator(INCREMENT, DECREMENT)),
-    )
-    
-    override fun parse(context: Context): Result<Expression, ParseError>
-    {
-        val result = pattern.parse(context).valueOr { return failureOf(it) }
-        val name = result[0] as? Name ?: result[1] as Name
-        val operator = result[0] as? OperatorType ?: result[1] as OperatorType
-        return convert(name, operator, result[0] is OperatorType).toSuccess()
-    }
-    
-    private fun convert(name: Name, operator: OperatorType, isPrefix: Boolean): Expression = when (operator)
-    {
-        INCREMENT -> if (isPrefix) Assignment.PreIncrement(name) else Assignment.PostIncrement(name)
-        DECREMENT -> if (isPrefix) Assignment.PreDecrement(name) else Assignment.PostDecrement(name)
-        else      -> throw IllegalStateException("Illegal operator $operator when parsing assignment")
     }
 }
 

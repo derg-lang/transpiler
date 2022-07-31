@@ -65,30 +65,6 @@ sealed class Access : Expression()
  */
 sealed class Assignment : Expression()
 {
-    // INCREMENTING AND DECREMENTING ASSIGNMENTS
-    
-    /**
-     * Performs an increment on the variable with the given [name], returning the value *after* incrementing.
-     */
-    data class PreIncrement(val name: Name) : Assignment()
-    
-    /**
-     * Performs a decrement on the variable with the given [name], returning the value *after* decrementing.
-     */
-    data class PreDecrement(val name: Name) : Assignment()
-    
-    /**
-     * Performs an increment on the variable with the given [name], returning the value *before* incrementing.
-     */
-    data class PostIncrement(val name: Name) : Assignment()
-    
-    /**
-     * Performs a decrement on the variable with the given [name], returning the value *before* decrementing.
-     */
-    data class PostDecrement(val name: Name) : Assignment()
-    
-    // ASSIGNMENT ASSIGNMENTS
-    
     /**
      * Assigns the given [expression] to [name], returning the new value of [name].
      */

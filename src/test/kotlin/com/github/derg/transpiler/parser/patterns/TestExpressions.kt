@@ -27,7 +27,6 @@ class TestParseExpressions
             tester.parse("-1").isGood(2, opUnMinus(1))
             tester.parse("1 + 2").isGood(3, 1 opAdd 2)
             tester.parse("a = 1").isGood(3, Assignment.Assign("a", 1.toLit()))
-            tester.parse("++a").isGood(2, Assignment.PreIncrement("a"))
             tester.parse("1 + 2").isGood(3, 1 opAdd 2)
         }
         
@@ -254,29 +253,6 @@ class TestParseExpressions
             tester.parse("foo").isBad { End }
             tester.parse("foo = ").isBad { End }
             tester.parse("if").isBad { NotIdentifier(it[0]) }
-        }
-    }
-    
-    @Nested
-    inner class TestParserIncrementExpression
-    {
-        private val tester = ParserTester { ParserIncrementExpression }
-        
-        @Test
-        fun `Given valid token, when parsing, then correctly parsed`()
-        {
-            tester.parse("++a").isGood(2, Assignment.PreIncrement("a"))
-            tester.parse("--a").isGood(2, Assignment.PreDecrement("a"))
-            tester.parse("a++").isGood(2, Assignment.PostIncrement("a"))
-            tester.parse("a--").isGood(2, Assignment.PostDecrement("a"))
-        }
-        
-        @Test
-        fun `Given invalid token, when parsing, then correct error`()
-        {
-            tester.parse("").isBad { End }
-            tester.parse("++").isBad { End }
-            tester.parse("if").isBad { NotOperator(it[0]) }
         }
     }
 }
