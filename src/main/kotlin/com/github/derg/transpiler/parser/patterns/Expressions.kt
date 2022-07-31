@@ -23,6 +23,7 @@ private val EXPRESSIONS = arrayOf(
     ParserTextExpression,
     ParserVariableExpression,
     ParserFunctionExpression,
+    ParserSubscriptExpression,
     ParserPrefixOperatorExpression,
     ParserParenthesisExpression,
 )
@@ -102,7 +103,7 @@ object ParserFunctionExpression : Parser<Expression>
     private val pattern = ParserSequence(
         ParserIdentifier,
         ParserStructure(Structure.Type.OPEN_PARENTHESIS),
-        ParserRepeating(ParserFunctionParameter, ParserStructure(Structure.Type.COMMA)),
+        ParserRepeating(ParserParameter, ParserStructure(Structure.Type.COMMA)),
         ParserStructure(Structure.Type.CLOSE_PARENTHESIS),
     )
     
@@ -113,9 +114,27 @@ object ParserFunctionExpression : Parser<Expression>
 }
 
 /**
+ * Parses a subscript access express from the context, if possible.
+ */
+object ParserSubscriptExpression : Parser<Expression>
+{
+    private val pattern = ParserSequence(
+        ParserIdentifier,
+        ParserStructure(Structure.Type.OPEN_BRACKET),
+        ParserRepeating(ParserParameter, ParserStructure(Structure.Type.COMMA)),
+        ParserStructure(Structure.Type.CLOSE_BRACKET),
+    )
+    
+    override fun parse(context: Context): Result<Expression, ParseError>
+    {
+        return pattern.parse(context).mapValue { Access.Subscript(it[0] as Name, it[2] as List<Parameter>) }
+    }
+}
+
+/**
  * Parses a single optionally named parameter used in a function call from the context, if possible.
  */
-private object ParserFunctionParameter : Parser<Parameter>
+private object ParserParameter : Parser<Parameter>
 {
     private val pattern = ParserSequence(
         ParserOptional(ParserSequence(ParserIdentifier, ParserOperator(ASSIGN))),

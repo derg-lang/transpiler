@@ -25,6 +25,7 @@ fun Any.toLit(type: Name? = null): Expression = when (this)
 
 fun Name.toVar() = Access.Variable(this)
 fun Name.toFun(vararg parameters: Parameter) = Access.Function(this, parameters.toList())
+fun Name.toSub(vararg parameters: Parameter) = Access.Subscript(this, parameters.toList())
 
 // Generates expressions from operations
 infix fun Any.opEq(that: Any) = Operator.Equal(toLit(), that.toLit())

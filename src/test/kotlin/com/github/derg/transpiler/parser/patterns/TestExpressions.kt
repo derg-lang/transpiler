@@ -23,8 +23,8 @@ class TestParseExpressions
             tester.parse("foo").isGood(1, "foo".toVar())
             tester.parse("(2)").isGood(3, 2.toLit())
             tester.parse("f()").isGood(3, "f".toFun())
+            tester.parse("f[]").isGood(3, "f".toSub())
             tester.parse("-1").isGood(2, opUnMinus(1))
-            tester.parse("1 + 2").isGood(3, 1 opAdd 2)
             tester.parse("1 + 2").isGood(3, 1 opAdd 2)
         }
         
@@ -127,6 +127,29 @@ class TestParseExpressions
             tester.parse("f(1, 2)").isGood(6, "f".toFun(1.toPar(), 2.toPar()))
             tester.parse("f(1, 2, )").isGood(7, "f".toFun(1.toPar(), 2.toPar()))
             tester.parse("f(foo = 1)").isGood(6, "f".toFun(1.toPar("foo")))
+        }
+        
+        @Test
+        fun `Given invalid token, when parsing, then correct error`()
+        {
+            tester.parse("").isBad { End }
+            tester.parse("false").isBad { NotIdentifier(it[0]) }
+        }
+    }
+    
+    @Nested
+    inner class TestParserSubscriptExpression
+    {
+        private val tester = ParserTester { ParserSubscriptExpression }
+        
+        @Test
+        fun `Given valid token, when parsing, then correctly parsed`()
+        {
+            tester.parse("f[]").isGood(3, "f".toSub())
+            tester.parse("f[1]").isGood(4, "f".toSub(1.toPar()))
+            tester.parse("f[1, 2]").isGood(6, "f".toSub(1.toPar(), 2.toPar()))
+            tester.parse("f[1, 2, ]").isGood(7, "f".toSub(1.toPar(), 2.toPar()))
+            tester.parse("f[foo = 1]").isGood(6, "f".toSub(1.toPar("foo")))
         }
         
         @Test
