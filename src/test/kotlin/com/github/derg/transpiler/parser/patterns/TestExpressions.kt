@@ -1,6 +1,5 @@
 package com.github.derg.transpiler.parser.patterns
 
-import com.github.derg.transpiler.ast.Assignment
 import com.github.derg.transpiler.lexer.Structure.Type.CLOSE_PARENTHESIS
 import com.github.derg.transpiler.lexer.Structure.Type.OPEN_PARENTHESIS
 import com.github.derg.transpiler.parser.*
@@ -26,7 +25,6 @@ class TestParseExpressions
             tester.parse("f()").isGood(3, "f".toFun())
             tester.parse("-1").isGood(2, opUnMinus(1))
             tester.parse("1 + 2").isGood(3, 1 opAdd 2)
-            tester.parse("a = 1").isGood(3, Assignment.Assign("a", 1.toLit()))
             tester.parse("1 + 2").isGood(3, 1 opAdd 2)
         }
         
@@ -227,32 +225,6 @@ class TestParseExpressions
             tester.parse("2").isBad { End }
             tester.parse("3 +").isBad { End }
             tester.parse("if").isBad { NotExpression(it[0]) }
-        }
-    }
-    
-    @Nested
-    inner class TestParserAssignExpression
-    {
-        private val tester = ParserTester { ParserAssignExpression }
-        
-        @Test
-        fun `Given valid token, when parsing, then correctly parsed`()
-        {
-            tester.parse("a = 1").isGood(3, Assignment.Assign("a", 1.toLit()))
-            tester.parse("a += 1").isGood(3, Assignment.AssignAdd("a", 1.toLit()))
-            tester.parse("a -= 1").isGood(3, Assignment.AssignSubtract("a", 1.toLit()))
-            tester.parse("a *= 1").isGood(3, Assignment.AssignMultiply("a", 1.toLit()))
-            tester.parse("a /= 1").isGood(3, Assignment.AssignDivide("a", 1.toLit()))
-            tester.parse("a %= 1").isGood(3, Assignment.AssignModulo("a", 1.toLit()))
-        }
-        
-        @Test
-        fun `Given invalid token, when parsing, then correct error`()
-        {
-            tester.parse("").isBad { End }
-            tester.parse("foo").isBad { End }
-            tester.parse("foo = ").isBad { End }
-            tester.parse("if").isBad { NotIdentifier(it[0]) }
         }
     }
 }

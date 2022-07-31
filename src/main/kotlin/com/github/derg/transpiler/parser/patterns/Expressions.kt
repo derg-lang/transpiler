@@ -25,7 +25,6 @@ private val EXPRESSIONS = arrayOf(
     ParserFunctionExpression,
     ParserPrefixOperatorExpression,
     ParserParenthesisExpression,
-    ParserAssignExpression,
 )
 
 /**
@@ -243,35 +242,6 @@ object ParserInfixOperatorExpression : Parser<Expression>
         THREE_WAY     -> Operator.ThreeWay(lhs, rhs)
         XOR           -> Operator.Xor(lhs, rhs)
         else          -> throw IllegalStateException("Illegal operator $operator when parsing prefix operator")
-    }
-}
-
-/**
- * Parses an expression where a variable is assigned any arbitrary expression from the context, if possible. The grammar
- * does not forbid the assignment expression for occurring any location an ordinary expression can appear.
- */
-object ParserAssignExpression : Parser<Expression>
-{
-    private val pattern = ParserSequence(
-        ParserIdentifier,
-        ParserOperator(ASSIGN, ASSIGN_PLUS, ASSIGN_MINUS, ASSIGN_MULTIPLY, ASSIGN_DIVIDE, ASSIGN_MODULO),
-        ParserExpression,
-    )
-    
-    override fun parse(context: Context): Result<Expression, ParseError>
-    {
-        return pattern.parse(context).mapValue { convert(it[0] as Name, it[1] as OperatorType, it[2] as Expression) }
-    }
-    
-    private fun convert(name: Name, operator: OperatorType, expression: Expression): Expression = when (operator)
-    {
-        ASSIGN          -> Assignment.Assign(name, expression)
-        ASSIGN_PLUS     -> Assignment.AssignAdd(name, expression)
-        ASSIGN_MINUS    -> Assignment.AssignSubtract(name, expression)
-        ASSIGN_MULTIPLY -> Assignment.AssignMultiply(name, expression)
-        ASSIGN_DIVIDE   -> Assignment.AssignDivide(name, expression)
-        ASSIGN_MODULO   -> Assignment.AssignModulo(name, expression)
-        else            -> throw IllegalStateException("Illegal operator $operator when parsing assignment")
     }
 }
 
