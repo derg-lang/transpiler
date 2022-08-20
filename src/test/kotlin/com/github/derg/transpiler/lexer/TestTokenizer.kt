@@ -2,10 +2,7 @@ package com.github.derg.transpiler.lexer
 
 import com.github.derg.transpiler.core.Localized
 import com.github.derg.transpiler.core.Location
-import com.github.derg.transpiler.lexer.Keyword.Type.*
-import com.github.derg.transpiler.lexer.Operator.Type.ASSIGN
-import com.github.derg.transpiler.lexer.Operator.Type.MINUS
-import com.github.derg.transpiler.lexer.Structure.Type.*
+import com.github.derg.transpiler.lexer.SymbolType.*
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
@@ -41,24 +38,10 @@ class TestTokenizer
         }
         
         @Test
-        fun `Given keyword, when tokenizing, then correct keyword`()
+        fun `Given symbol, when tokenizing, then correct keyword`()
         {
-            for (type in Keyword.Type.values())
-                assertEquals(localisedOfAsList(0, type.word.length, Keyword(type)), tokenize(type.word))
-        }
-        
-        @Test
-        fun `Given operator, when tokenizing, then correct operator`()
-        {
-            for (type in Operator.Type.values())
-                assertEquals(localisedOfAsList(0, type.word.length, Operator(type)), tokenize(type.word))
-        }
-        
-        @Test
-        fun `Given structure, when tokenizing, then correct structure`()
-        {
-            for (type in Structure.Type.values())
-                assertEquals(localisedOfAsList(0, type.word.length, Structure(type)), tokenize(type.word))
+            for (type in SymbolType.values())
+                assertEquals(localisedOfAsList(0, type.symbol.length, Symbol(type)), tokenize(type.symbol))
         }
         
         @Test
@@ -114,7 +97,7 @@ class TestTokenizer
         {
             val expected = listOf(
                 localizedOf(0, 1, Numeric(0.toBigDecimal(), null)),
-                localizedOf(1, 1, Structure(SEMICOLON)),
+                localizedOf(1, 1, Symbol(SEMICOLON)),
             )
             
             assertEquals(expected, tokenize("0;"))
@@ -124,9 +107,9 @@ class TestTokenizer
         fun `Given simple unary expression, when tokenizing, then correct sequence`()
         {
             val expected = listOf(
-                localizedOf(0, 1, Operator(MINUS)),
+                localizedOf(0, 1, Symbol(MINUS)),
                 localizedOf(1, 1, Numeric(5.toBigDecimal(), null)),
-                localizedOf(2, 1, Structure(SEMICOLON)),
+                localizedOf(2, 1, Symbol(SEMICOLON)),
             )
             
             assertEquals(expected, tokenize("-5;"))
@@ -151,9 +134,9 @@ class TestTokenizer
             fun `Given function declaration, when tokenizing, then correct sequence`()
             {
                 val expected = listOf(
-                    localizedOf(0, 3, Keyword(FUN)),
+                    localizedOf(0, 3, Symbol(FUN)),
                     localizedOf(4, 8, Identifier("function")),
-                    localizedOf(12, 1, Structure(SEMICOLON)),
+                    localizedOf(12, 1, Symbol(SEMICOLON)),
                 )
                 
                 assertEquals(expected, tokenize("fun function;"))
@@ -163,11 +146,11 @@ class TestTokenizer
             fun `Given function declaration with return type, when tokenizing, then correct sequence`()
             {
                 val expected = listOf(
-                    localizedOf(0, 3, Keyword(FUN)),
+                    localizedOf(0, 3, Symbol(FUN)),
                     localizedOf(4, 8, Identifier("function")),
-                    localizedOf(13, 2, Structure(ARROW)),
+                    localizedOf(13, 2, Symbol(ARROW)),
                     localizedOf(16, 5, Identifier("thing")),
-                    localizedOf(21, 1, Structure(SEMICOLON)),
+                    localizedOf(21, 1, Symbol(SEMICOLON)),
                 )
                 
                 assertEquals(expected, tokenize("fun function -> thing;"))
@@ -177,15 +160,15 @@ class TestTokenizer
             fun `Given function declaration with parameter list, when tokenizing, then correct sequence`()
             {
                 val expected = listOf(
-                    localizedOf(0, 3, Keyword(FUN)),
+                    localizedOf(0, 3, Symbol(FUN)),
                     localizedOf(4, 8, Identifier("function")),
-                    localizedOf(12, 1, Structure(COLON)),
+                    localizedOf(12, 1, Symbol(COLON)),
                     localizedOf(14, 3, Identifier("foo")),
                     localizedOf(18, 6, Identifier("param1")),
-                    localizedOf(24, 1, Structure(COMMA)),
+                    localizedOf(24, 1, Symbol(COMMA)),
                     localizedOf(26, 3, Identifier("bar")),
                     localizedOf(30, 6, Identifier("param2")),
-                    localizedOf(36, 1, Structure(SEMICOLON)),
+                    localizedOf(36, 1, Symbol(SEMICOLON)),
                 )
                 
                 assertEquals(expected, tokenize("fun function: foo param1, bar param2;"))
@@ -195,10 +178,10 @@ class TestTokenizer
             fun `Given function definition, when tokenizing, then correct sequence`()
             {
                 val expected = listOf(
-                    localizedOf(0, 3, Keyword(FUN)),
+                    localizedOf(0, 3, Symbol(FUN)),
                     localizedOf(4, 8, Identifier("function")),
-                    localizedOf(13, 1, Structure(OPEN_BRACE)),
-                    localizedOf(14, 1, Structure(CLOSE_BRACE)),
+                    localizedOf(13, 1, Symbol(OPEN_BRACE)),
+                    localizedOf(14, 1, Symbol(CLOSE_BRACE)),
                 )
                 
                 assertEquals(expected, tokenize("fun function {}"))
@@ -216,11 +199,11 @@ class TestTokenizer
             fun `Given variable definition, when tokenizing, then correct sequence`()
             {
                 val expected = listOf(
-                    localizedOf(0, 3, Keyword(VAL)),
+                    localizedOf(0, 3, Symbol(VAL)),
                     localizedOf(4, 8, Identifier("variable")),
-                    localizedOf(13, 1, Operator(ASSIGN)),
+                    localizedOf(13, 1, Symbol(ASSIGN)),
                     localizedOf(15, 2, Numeric(42.toBigDecimal(), null)),
-                    localizedOf(17, 1, Structure(SEMICOLON)),
+                    localizedOf(17, 1, Symbol(SEMICOLON)),
                 )
                 
                 assertEquals(expected, tokenize("val variable = 42;"))
@@ -238,9 +221,9 @@ class TestTokenizer
             fun `Given type definition, when tokenizing, then correct sequence`()
             {
                 val expected = listOf(
-                    localizedOf(0, 4, Keyword(TYPE)),
+                    localizedOf(0, 4, Symbol(TYPE)),
                     localizedOf(5, 1, Identifier("t")),
-                    localizedOf(6, 1, Structure(SEMICOLON)),
+                    localizedOf(6, 1, Symbol(SEMICOLON)),
                 )
                 
                 assertEquals(expected, tokenize("type t;"))

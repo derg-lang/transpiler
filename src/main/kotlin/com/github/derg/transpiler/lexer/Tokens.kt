@@ -1,11 +1,15 @@
 package com.github.derg.transpiler.lexer
 
-interface Foo
-{
-    val word: String
-}
-
+/**
+ * A single token represents a single lexeme in the source code. Tokens may be extracted from the source code in various
+ * manners depending on each type of lexeme, although the overall result may be summarized as a single token type.
+ */
 sealed class Token
+
+/**
+ * The very last token in the sequence of tokens; it marks the end of the token stream.
+ */
+object EndOfFile : Token()
 
 /**
  * All symbols such as variables, functions, type, namespaces, packages, etc. must be given a unique name. The
@@ -13,96 +17,6 @@ sealed class Token
  * object type it is applicable to.
  */
 data class Identifier(val name: String) : Token()
-
-/**
- * Source code requires the use of keywords to specify what various objects are, and how the logic of the program flows.
- * The token represents the [type] of keyword.
- */
-data class Keyword(val type: Type) : Token()
-{
-    enum class Type(override val word: String) : Foo
-    {
-        AUTO("auto"),
-        DEFAULT("default"),
-        ELSE("else"),
-        FALSE("false"),
-        FOR("for"),
-        FUN("fun"),
-        IF("if"),
-        IN("in"),
-        MUT("mut"),
-        PUB("pub"),
-        TRUE("true"),
-        TYPE("type"),
-        VAL("val"),
-        VAR("var"),
-        WHILE("while"),
-    }
-}
-
-/**
- * Relation between code components determines the program form and how various components interact with each other. The
- * structure defines the lifetimes and scopes of various objects, as well as the boundaries between one object to
- * another. The token represents the [type] of the structural component.
- */
-data class Structure(val type: Type) : Token()
-{
-    enum class Type(override val word: String) : Foo
-    {
-        ARROW("->"),
-        CLOSE_BRACE("}"),
-        CLOSE_BRACKET("]"),
-        CLOSE_PARENTHESIS(")"),
-        COLON(":"),
-        COMMA(","),
-        OPEN_BRACE("{"),
-        OPEN_BRACKET("["),
-        OPEN_PARENTHESIS("("),
-        PERIOD("."),
-        SEMICOLON(";"),
-    }
-}
-
-/**
- *
- */
-data class Operator(val type: Type) : Token()
-{
-    enum class Type(override val word: String, val priority: Int) : Foo
-    {
-        // Assignment operators
-        ASSIGN("=", -1),
-        ASSIGN_DIVIDE("/=", -1),
-        ASSIGN_MINUS("-=", -1),
-        ASSIGN_MODULO("%=", -1),
-        ASSIGN_MULTIPLY("*=", -1),
-        ASSIGN_PLUS("+=", -1),
-        DECREMENT("--", -1),
-        INCREMENT("++", -1),
-        
-        // Arithmetic operators
-        DIVIDE("/", 2),
-        MINUS("-", 1),
-        MULTIPLY("*", 2),
-        PLUS("+", 1),
-        MODULO("%", 2),
-        
-        // Comparison operators
-        EQUAL("==", -1),
-        GREATER(">", -1),
-        GREATER_EQUAL(">=", -1),
-        LESS("<", -1),
-        LESS_EQUAL("<=", -1),
-        NOT_EQUAL("!=", -1),
-        THREE_WAY("<=>", -1),
-        
-        // Logical operators
-        AND("&&", -1),
-        NOT("!", -1),
-        OR("||", -1),
-        XOR("^^", -1),
-    }
-}
 
 /**
  * The token holds a raw numerical literal of a specific [value] and optional [type].
@@ -115,15 +29,74 @@ data class Numeric(val value: Number, val type: String?) : Token()
 data class Textual(val value: String, val type: String?) : Token()
 
 /**
- * Returns the raw string representing the token in source code.
+ * Source code requires the use of keywords, structural symbols, as well as operators to specify what various objects
+ * are, how the logic of the program flows, and which operations are to be performed. The token represents the [type] of
+ * symbol.
  */
-val Token.raw: String
-    get() = when (this)
-    {
-        is Identifier -> name
-        is Keyword    -> type.word
-        is Numeric    -> value.toString()
-        is Operator   -> type.word
-        is Structure  -> type.word
-        is Textual    -> value
-    }
+data class Symbol(val type: SymbolType) : Token()
+
+/**
+ * The various types of symbols which are valid tokens.
+ */
+enum class SymbolType(val symbol: String)
+{
+    // Keywords
+    AUTO("auto"),
+    DEFAULT("default"),
+    ELSE("else"),
+    FALSE("false"),
+    FOR("for"),
+    FUN("fun"),
+    IF("if"),
+    IN("in"),
+    MUT("mut"),
+    PUB("pub"),
+    TRUE("true"),
+    TYPE("type"),
+    VAL("val"),
+    VAR("var"),
+    WHILE("while"),
+    
+    // Structural components
+    ARROW("->"),
+    CLOSE_BRACE("}"),
+    CLOSE_BRACKET("]"),
+    CLOSE_PARENTHESIS(")"),
+    COLON(":"),
+    COMMA(","),
+    OPEN_BRACE("{"),
+    OPEN_BRACKET("["),
+    OPEN_PARENTHESIS("("),
+    PERIOD("."),
+    SEMICOLON(";"),
+    
+    // Assignment operators
+    ASSIGN("="),
+    ASSIGN_DIVIDE("/="),
+    ASSIGN_MINUS("-="),
+    ASSIGN_MODULO("%="),
+    ASSIGN_MULTIPLY("*="),
+    ASSIGN_PLUS("+="),
+    
+    // Arithmetic operators
+    DIVIDE("/"),
+    MINUS("-"),
+    MULTIPLY("*"),
+    PLUS("+"),
+    MODULO("%"),
+    
+    // Comparison operators
+    EQUAL("=="),
+    GREATER(">"),
+    GREATER_EQUAL(">="),
+    LESS("<"),
+    LESS_EQUAL("<="),
+    NOT_EQUAL("!="),
+    THREE_WAY("<=>"),
+    
+    // Logical operators
+    AND("&&"),
+    NOT("!"),
+    OR("||"),
+    XOR("^^"),
+}

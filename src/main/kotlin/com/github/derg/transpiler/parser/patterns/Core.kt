@@ -1,137 +1,251 @@
 package com.github.derg.transpiler.parser.patterns
 
-import com.github.derg.transpiler.parser.Context
+import com.github.derg.transpiler.lexer.Token
 import com.github.derg.transpiler.parser.ParseError
+import com.github.derg.transpiler.parser.ParseOk
 import com.github.derg.transpiler.parser.Parser
 import com.github.derg.transpiler.util.*
 
 /**
- * Parses a single [parser] at the current cursor location for the context, rolling back to the given [snapshot]
- * after parsing.
+ * Certain parsers cannot output a single item to represent the products of all parsers involved. Deeply nested parsers
+ * results in a bundle of parsers, each which contain their own inner results. To make sense of the final output, all
+ * such parsers are grouped together in this parser bundle, providing easy access to each individual parser by their
+ * respective keys.
  */
-private fun <Type> parseAndReset(context: Context, snapshot: Int, key: String, parser: Parser<Type>): Outcome<Type> =
-    Outcome(key, parser.parse(context), context.snapshot()).also { context.revert(snapshot) }
-
-/**
- * Helper data class to represent the outcome of a parsing operation from a single pattern. This allows easy
- * rollback to the snapshot representing this particular outcome.
- */
-private data class Outcome<Type>(val key: String, val outcome: Result<Type, ParseError>, val snapshot: Int)
-
-/**
- * Parses the context in such a way that exactly one of the provided [parsers] parses. If more than a single pattern
- * matches the context, the longest matching pattern is chosen. In the case of ties, the first specified pattern in the
- * list of [parsers] is chosen.
- */
-class ParserAnyOf<Type>(private val parsers: List<Parser<Type>>) : Parser<Type>
+class Parsers(parsers: Map<String, Parser<*>>)
 {
-    /** Helper for specifying the [parsers] of which exactly one of them must match. */
-    constructor(vararg parsers: Parser<Type>) : this(parsers.toList())
+    private val items = parsers.mapValues { it.value.produce() }
     
-    override fun parse(context: Context): Result<Type, ParseError>
+    /**
+     * Retrieves the produced item for the parser stored under the given [key].
+     */
+    @Suppress("UNCHECKED_CAST")
+    fun <Type> produce(key: String): Type? = items[key] as? Type
+}
+
+/**
+ * Retrieves all values of all parsers in [this] list under the given [key].
+ */
+fun <Type> List<Parsers>.produce(key: String): List<Type> = mapNotNull { it.produce(key) }
+
+/**
+ * Parses the token stream in such a way that the underlying parser is only instantiated once required. The [factory]
+ * must generate a fresh instance of the parser, and it will be fully removed once the recursive parser resets.
+ */
+internal class ParserRecursive<Type>(private val factory: () -> Parser<Type>) : Parser<Type>
+{
+    private var parser: Parser<Type>? = null
+    
+    /**
+     * Actually instantiates the parser - if the parser has already been instantiated, the same instance is used for
+     * further token processing.
+     */
+    private fun parser(): Parser<Type> = parser ?: factory().also { parser = it }
+    
+    override fun skipable(): Boolean = parser().skipable()
+    override fun produce(): Type? = parser?.produce()
+    override fun parse(token: Token): Result<ParseOk, ParseError> = parser().parse(token)
+    override fun reset()
     {
-        if (!context.hasNext())
-            return failureOf(ParseError.End)
-        
-        val snapshot = context.snapshot()
-        val outcomes = parsers.map { parseAndReset(context, snapshot, "", it) }.sortedByDescending { it.snapshot }
-        
-        val result = outcomes.firstOrNull { it.outcome.isSuccess } ?: outcomes.first { it.outcome.isFailure }
-        return result.outcome.onSuccess { context.revert(result.snapshot) }
+        parser = null
     }
 }
 
 /**
- * Parses the context in such a way that all the provided [parsers] parses. The order in which the parses do parse is
- * irrelevant; the requirement is that they all must parse. If any of the provided patterns are optional, the optimal
- * parse is performed in which the longest matching parser which is not yet matched is selected, whenever one parser has
- * been properly parsed.
+ * Parses the token stream in such a way that exactly one of the provided parsers parses. If more than a single pattern
+ * matches the context, the parser consuming the most tokens is chosen. Ties are not permitted - exactly one parser must
+ * be selected as the longest chain.
  */
-class ParserAllOf(private val parsers: Map<String, Parser<*>>) : Parser<Map<String, *>>
+class ParserAnyOf<Type>(vararg parsers: Parser<Type>) : Parser<Type>
 {
-    /** Helper for specifying all [parsers] which are all required. */
-    constructor(vararg parsers: Pair<String, Parser<*>>) : this(parsers.toMap())
+    private val parsers = parsers.mapIndexed { index, parser -> index to parser }
+    private val outcomes = mutableMapOf<Int, ParseOk>()
+    private val disqualified = mutableSetOf<Int>()
     
-    override fun parse(context: Context): Result<Map<String, *>, ParseError>
+    override fun skipable(): Boolean = parsers.any { it.second.skipable() }
+    override fun produce(): Type? = parsers.singleOrNull { it.first !in disqualified }?.second?.produce()
+    
+    override fun parse(token: Token): Result<ParseOk, ParseError>
     {
-        val snapshot = context.snapshot()
-        val values = mutableMapOf<String, Any?>()
-        while (values.size < parsers.size)
+        outcomes.clear()
+        parsers.ifEmpty { return successOf(ParseOk.Finished) }
+        parsers.filter { it.first !in disqualified }.map { parse(token, it.first, it.second) }
+        
+        val candidates = parsers.filter { it.first !in disqualified }
+        val (finished, unfinished) = candidates.partition { outcomes[it.first] == ParseOk.Finished }
+        
+        candidates.ifEmpty { return failureOf(ParseError.UnexpectedToken(token)) }
+        unfinished.ifEmpty { return successOf(ParseOk.Finished) } // TODO: Ties must be considered errors here
+        finished.forEach { disqualified.add(it.first) }
+        
+        return if (unfinished.any { outcomes[it.first] == ParseOk.Complete })
+            successOf(ParseOk.Complete)
+        else
+            successOf(ParseOk.Incomplete)
+    }
+    
+    private fun parse(token: Token, index: Int, parser: Parser<Type>): Result<ParseOk, ParseError> =
+        parser.parse(token).onSuccess { outcomes[index] = it }.onFailure { disqualified.add(index) }
+    
+    override fun reset()
+    {
+        parsers.forEach { it.second.reset() }
+        disqualified.clear()
+    }
+}
+
+/**
+ * Parses the token stream in such a way that all the provided parsers parses. The parses are parsed in order, where the
+ * parser which consumes the most tokens is selected first.
+ */
+class ParserAllOf(vararg parsers: Pair<String, Parser<*>>) : Parser<Parsers>
+{
+    private val parsers = parsers.toList()
+    private val finished = mutableSetOf<String>()
+    private val disqualified = mutableSetOf<String>()
+    
+    override fun skipable(): Boolean = parsers.all { it.second.skipable() }
+    override fun produce(): Parsers = Parsers(parsers.toMap())
+    
+    override fun parse(token: Token): Result<ParseOk, ParseError>
+    {
+        val remaining = parsers.filter { it.first !in finished }.ifEmpty { return successOf(ParseOk.Finished) }
+        val outcomes = remaining.filter { it.first !in disqualified }.associate { it.first to it.second.parse(token) }
+        
+        val (successes, failures) = outcomes.partition { it.value.isSuccess }
+        val (finished, unfinished) = successes.partition { it.value.valueOrNull() == ParseOk.Finished }
+        
+        successes.ifEmpty { return failureOf(ParseError.UnexpectedToken(token)) }
+        failures.forEach { disqualified.add(it.key) }
+        
+        if (unfinished.isNotEmpty())
         {
-            val result = parse(context, parsers.filter { it.key !in values })
-                .onFailure { context.revert(snapshot) }
-                .valueOr { return failureOf(it) }
-            values[result.first] = result.second
+            finished.forEach { disqualified.add(it.key) }
+            
+            val skipable = remaining.filter { it.first !in unfinished }.all { it.second.skipable() }
+            val isIncomplete = !skipable || unfinished.any { it.value.valueOrNull() == ParseOk.Incomplete }
+            return if (isIncomplete) successOf(ParseOk.Incomplete) else successOf(ParseOk.Complete)
         }
-        return successOf(values)
-    }
-    
-    private fun parse(context: Context, parsers: Map<String, Parser<*>>): Result<Pair<String, *>, ParseError>
-    {
-        val ss = context.snapshot()
-        val outcomes = parsers.map { parseAndReset(context, ss, it.key, it.value) }.sortedByDescending { it.snapshot }
         
-        val result = outcomes.firstOrNull { it.outcome.isSuccess } ?: outcomes.first { it.outcome.isFailure }
-        return result.outcome.mapValue { result.key to it }.onSuccess { context.revert(result.snapshot) }
-    }
-}
-
-/**
- * Parses the context where all the provided [parsers] are required to match, in the exact same order they are
- * specified. The overall result of the parsing is determined by the whole chain; if either pattern fails to parse, the
- * whole sequence is discarded.
- */
-class ParserSequence(private val parsers: List<Parser<*>>) : Parser<List<*>>
-{
-    /** Helper for specifying a sequence of [parsers] which are all required. */
-    constructor(vararg parsers: Parser<*>) : this(parsers.toList())
-    
-    override fun parse(context: Context): Result<List<*>, ParseError>
-    {
-        val snapshot = context.snapshot()
-        return parsers.fold { it.parse(context) }.onFailure { context.revert(snapshot) }
-    }
-}
-
-/**
- * Parses the context where the [parser] is repeated as many times as it possibly can be. Every value which was
- * extracted will be present in the final output list. Every value is required to be separated by the [separator]. The
- * separator may also optionally appear at the very end of the sequence (i.e. a trailing comma).
- */
-class ParserRepeating<Type>(private val parser: Parser<Type>, private val separator: Parser<*>) : Parser<List<Type>>
-{
-    override fun parse(context: Context): Result<List<Type>, ParseError>
-    {
-        if (!context.hasNext())
-            return successOf(emptyList())
+        val survivor = remaining.singleOrNull { it.first in finished }
+            ?: return failureOf(ParseError.UnexpectedToken(token))
         
-        val values = mutableListOf<Type>()
-        while (true)
-        {
-            val value = parse(context, values.isEmpty()) ?: break
-            values.add(value)
-        }
-        return successOf(values)
+        parsers.filter { it.first in disqualified }.forEach { it.second.reset() }
+        disqualified.clear()
+        this.finished.add(survivor.first)
+        return parse(token)
     }
     
-    private fun parse(context: Context, first: Boolean): Type?
+    override fun reset()
     {
-        if (!first)
-            separator.parse(context).onFailure { context.reset(); return null }
-        return parser.parse(context).onFailure { context.reset() }.valueOrNull()
+        parsers.forEach { it.second.reset() }
+        finished.clear()
+        disqualified.clear()
     }
 }
 
 /**
- * Parses the context where the [parser] is considered an optional bit of data. If the pattern matches the context, then
- * all data is written as if the pattern was mandatory. Otherwise, the context is rolled back to how it was before the
- * parsing was attempted, and the operation is considered a success.
+ * Parses the token stream in such a way that all the provided parsers parses, in the exact same order they are
+ * specified. Once the first parser is finished, the next parser in the sequence will parse the next tokens.
+ */
+class ParserSequence(vararg parsers: Pair<String, Parser<*>>) : Parser<Parsers>
+{
+    private val parsers = parsers.toList()
+    private var index = 0
+    
+    override fun skipable(): Boolean = parsers.all { it.second.skipable() }
+    override fun produce(): Parsers = Parsers(parsers.toMap())
+    
+    override fun parse(token: Token): Result<ParseOk, ParseError>
+    {
+        val current = parsers.getOrNull(index)?.second ?: return successOf(ParseOk.Finished)
+        val outcome = current.parse(token).valueOr { return failureOf(it) }
+        if (outcome == ParseOk.Finished)
+            return if (++index >= parsers.size) successOf(ParseOk.Finished) else parse(token)
+        
+        val skipable = (index + 1 until parsers.size).all { parsers[it].second.skipable() }
+        val isIncomplete = !skipable || outcome == ParseOk.Incomplete
+        return if (isIncomplete) successOf(ParseOk.Incomplete) else successOf(ParseOk.Complete)
+    }
+    
+    override fun reset()
+    {
+        parsers.forEach { it.second.reset() }
+        index = 0
+    }
+}
+
+/**
+ * Parses the token stream where the [parser] is parsed as many times as it possibly can be. Every value which was
+ * extracted from the [parser] will be present in the final output list. Every value is required to be separated by the
+ * [separator]. The [separator] may also optionally appear at the very end of the sequence (i.e. a trailing comma).
+ */
+class ParserRepeating<Type>(private val parser: Parser<Type>, private val separator: Parser<*>? = null) :
+    Parser<List<Type>>
+{
+    private val values = mutableListOf<Type>()
+    private var isSeparator = false
+    private var isIncomplete = false
+    
+    override fun skipable(): Boolean = true
+    override fun produce(): List<Type> = values
+    
+    override fun parse(token: Token): Result<ParseOk, ParseError>
+    {
+        val current = if (isSeparator && separator != null) separator else parser
+        val outcome = current.parse(token)
+            .valueOr { return if (isIncomplete) failureOf(it) else successOf(ParseOk.Finished) }
+        if (outcome == ParseOk.Finished)
+            return swapAndParse(token, current)
+        
+        isIncomplete = outcome == ParseOk.Incomplete
+        return if (isIncomplete) successOf(ParseOk.Incomplete) else successOf(ParseOk.Complete)
+    }
+    
+    private fun swapAndParse(token: Token, current: Parser<*>): Result<ParseOk, ParseError>
+    {
+        if (!isSeparator)
+            parser.produce()?.let { values.add(it) }
+        
+        current.reset()
+        isIncomplete = false
+        isSeparator = !isSeparator && separator != null
+        return parse(token)
+    }
+    
+    override fun reset()
+    {
+        parser.reset()
+        separator?.reset()
+        values.clear()
+        isSeparator = false
+        isIncomplete = false
+    }
+}
+
+/**
+ * Parses the token stream in such a way that the parser is considered optional. If the parser does not accept the first
+ * token, the parser is considered satisfied and will not require additional tokens. However, if the parser has accepted
+ * any tokens, the parser must be provided enough tokens to satisfy the wrapped parser.
  */
 class ParserOptional<Type>(private val parser: Parser<Type>) : Parser<Type?>
 {
-    override fun parse(context: Context): Result<Type?, ParseError>
+    private var isOngoing = false
+    
+    override fun skipable(): Boolean = true
+    override fun produce(): Type? = parser.produce()
+    
+    override fun parse(token: Token): Result<ParseOk, ParseError>
     {
-        val snapshot = context.snapshot()
-        return parser.parse(context).onFailure { context.revert(snapshot) }.valueOr { null }.toSuccess()
+        val outcome = parser.parse(token)
+            .valueOr { return if (isOngoing) failureOf(it) else successOf(ParseOk.Finished) }
+        isOngoing = true
+        return successOf(outcome)
+    }
+    
+    override fun reset()
+    {
+        parser.reset()
+        isOngoing = false
     }
 }

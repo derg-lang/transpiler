@@ -1,253 +1,106 @@
 package com.github.derg.transpiler.parser.patterns
 
-import com.github.derg.transpiler.lexer.Structure.Type.CLOSE_PARENTHESIS
-import com.github.derg.transpiler.lexer.Structure.Type.OPEN_PARENTHESIS
+import com.github.derg.transpiler.lexer.EndOfFile
 import com.github.derg.transpiler.parser.*
-import com.github.derg.transpiler.parser.ParseError.*
-import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 
-class TestParseExpressions
+/**
+ * Determines whether the current token stream is parsed correctly. The expectation is that there will be [preOkCount]
+ * number of tokens resulting in [ParseOk.Complete], followed by [wipCount] [ParseOk.Incomplete], then followed by
+ * [postOkCount] [ParseOk.Complete] again, before finally resulting in [ParseOk.Finished].
+ */
+private fun <Type> Tester<Type>.isChain(preOkCount: Int = 0, wipCount: Int = 0, postOkCount: Int = 0): Tester<Type> =
+    isOk(preOkCount).isWip(wipCount).isOk(postOkCount).isDone()
+
+class TestParserExpression
 {
-    @Nested
-    inner class TestParserExpression
+    private val tester = Tester { ParserExpression() }
+    
+    @Test
+    fun `Given valid token, when parsing, then correct expression`()
     {
-        private val tester = ParserTester { ParserExpression }
+        // Literal values
+        tester.parse("true").isChain(1).isValue(true.toExp()).resets()
+        tester.parse("false").isChain(1).isValue(false.toExp()).resets()
+        tester.parse("42").isChain(1).isValue(42.toExp()).resets()
+        tester.parse("42f").isChain(1).isValue(42.toExp("f")).resets()
+        tester.parse("\"foo\"").isChain(1).isValue("foo".toExp()).resets()
+        tester.parse("\"bar\"f").isChain(1).isValue("bar".toExp("f")).resets()
         
-        @Test
-        fun `Given valid token, when parsing, then correctly parsed`()
-        {
-            tester.parse("true").isGood(1, true.toLit())
-            tester.parse("1").isGood(1, 1.toLit())
-            tester.parse("\"\"").isGood(1, "".toLit())
-            tester.parse("foo").isGood(1, "foo".toVar())
-            tester.parse("(2)").isGood(3, 2.toLit())
-            tester.parse("f()").isGood(3, "f".toFun())
-            tester.parse("f[]").isGood(3, "f".toSub())
-            tester.parse("-1").isGood(2, opUnMinus(1))
-            tester.parse("1 + 2").isGood(3, 1 opAdd 2)
-        }
+        // Accesses
+        tester.parse("whatever").isChain(1).isValue("whatever".toVar()).resets()
+        tester.parse("f()").isChain(1, 1, 1).isValue("f".toFun()).resets()
+        tester.parse("f(1)").isChain(1, 2, 1).isValue("f".toFun(1.toPar())).resets()
+        tester.parse("f(1,)").isChain(1, 3, 1).isValue("f".toFun(1.toPar())).resets()
+        tester.parse("f(1,2)").isChain(1, 4, 1).isValue("f".toFun(1.toPar(), 2.toPar())).resets()
+        tester.parse("f(bar = 1)").isChain(1, 4, 1).isValue("f".toFun(1.toPar("bar"))).resets()
+        tester.parse("f[]").isChain(1, 1, 1).isValue("f".toSub()).resets()
+        tester.parse("f[1]").isChain(1, 2, 1).isValue("f".toSub(1.toPar())).resets()
+        tester.parse("f[1,]").isChain(1, 3, 1).isValue("f".toSub(1.toPar())).resets()
+        tester.parse("f[1,2]").isChain(1, 4, 1).isValue("f".toSub(1.toPar(), 2.toPar())).resets()
+        tester.parse("f[bar = 1]").isChain(1, 4, 1).isValue("f".toSub(1.toPar("bar"))).resets()
         
-        @Test
-        fun `Given invalid token, when parsing, then correct error`()
-        {
-            tester.parse("").isBad { End }
-            tester.parse("if").isBad { NotExpression(it[0]) }
-        }
+        // Structural
+        tester.parse("(1)").isChain(0, 2, 1).isValue(1.toExp()).resets()
+        tester.parse("(((1)))").isChain(0, 6, 1).isValue(1.toExp()).resets()
+        
+        // Operators
+        tester.parse("1 + 2").isChain(1, 1, 1).isValue(1 opAdd 2).resets()
+        tester.parse("1 - 2").isChain(1, 1, 1).isValue(1 opSub 2).resets()
+        tester.parse("1 * 2").isChain(1, 1, 1).isValue(1 opMul 2).resets()
+        tester.parse("1 / 2").isChain(1, 1, 1).isValue(1 opDiv 2).resets()
+        tester.parse("1 % 2").isChain(1, 1, 1).isValue(1 opMod 2).resets()
+        tester.parse("1 && 2").isChain(1, 1, 1).isValue(1 opAnd 2).resets()
+        tester.parse("1 || 2").isChain(1, 1, 1).isValue(1 opOr 2).resets()
+        tester.parse("1 ^^ 2").isChain(1, 1, 1).isValue(1 opXor 2).resets()
+        tester.parse("1 == 2").isChain(1, 1, 1).isValue(1 opEq 2).resets()
+        tester.parse("1 != 2").isChain(1, 1, 1).isValue(1 opNe 2).resets()
+        tester.parse("1 < 2").isChain(1, 1, 1).isValue(1 opLt 2).resets()
+        tester.parse("1 <= 2").isChain(1, 1, 1).isValue(1 opLe 2).resets()
+        tester.parse("1 > 2").isChain(1, 1, 1).isValue(1 opGt 2).resets()
+        tester.parse("1 >= 2").isChain(1, 1, 1).isValue(1 opGe 2).resets()
+        tester.parse("1 <=> 2").isChain(1, 1, 1).isValue(1 opTw 2).resets()
+        
+        // Unary
+        tester.parse("!1").isChain(0, 1, 1).isValue(opNot(1))
+        tester.parse("+1").isChain(0, 1, 1).isValue(opPlus(1))
+        tester.parse("-1").isChain(0, 1, 1).isValue(opMinus(1))
     }
     
-    @Nested
-    inner class TestParserBoolExpression
+    @Test
+    fun `Given valid token, when parsing, then correct precedence`()
     {
-        private val tester = ParserTester { ParserBoolExpression }
+        // Operators
+        tester.parse("1 + 2 - 3").step(5).isDone().isValue((1 opAdd 2) opSub 3)
+        tester.parse("1 + 2 * 3").step(5).isDone().isValue(1 opAdd (2 opMul 3))
+        tester.parse("1 - 2 < 6 / 3").step(7).isDone().isValue((1 opSub 2) opLt (6 opDiv 3))
+        tester.parse("1 && 2 || 3 && 4").step(7).isDone().isValue((1 opAnd 2) opOr (3 opAnd 4))
+        tester.parse("1 == 2 && 3").step(5).isDone().isValue((1 opEq 2) opAnd 3)
+        tester.parse("1 == (2 && 3)").step(7).isDone().isValue(1 opEq (2 opAnd 3))
         
-        @Test
-        fun `Given valid token, when parsing, then correctly parsed`()
-        {
-            tester.parse("true").isGood(1, true.toLit())
-            tester.parse("false").isGood(1, false.toLit())
-        }
+        // Unary
+        tester.parse("!!1").step(3).isDone().isValue(opNot(opNot(1)))
+        tester.parse("+-1").step(3).isDone().isValue(opPlus(opMinus(1)))
         
-        @Test
-        fun `Given invalid token, when parsing, then correct error`()
-        {
-            tester.parse("").isBad { End }
-            tester.parse("42").isBad { NotExpression(it[0]) }
-            tester.parse("if").isBad { NotExpression(it[0]) }
-        }
+        // Mixed
+        tester.parse("1 ++ 2").step(4).isDone().isValue(1 opAdd opPlus(2))
+        tester.parse("!1 * -2").step(5).isDone().isValue(opNot(1) opMul opMinus(2))
+        tester.parse("-(1 * 2)").step(6).isDone().isValue(opMinus(1 opMul 2))
     }
     
-    @Nested
-    inner class TestParserRealExpression
+    @Test
+    fun `Given invalid token, when parsing, then correct error`()
     {
-        private val tester = ParserTester { ParserRealExpression }
+        tester.parse("").isBad { ParseError.UnexpectedToken(EndOfFile) }
+        tester.parse("*").isBad { ParseError.UnexpectedToken(it[0]) }
         
-        @Test
-        fun `Given valid token, when parsing, then correctly parsed`()
-        {
-            tester.parse("42").isGood(1, 42.toLit())
-        }
+        // Structural errors
+        tester.parse("(").isWip(1).isBad { ParseError.UnexpectedToken(EndOfFile) }
+        tester.parse("()").isWip(1).isBad { ParseError.UnexpectedToken(it[1]) }
+        tester.parse("(1").isWip(2).isBad { ParseError.UnexpectedToken(EndOfFile) }
         
-        @Test
-        fun `Given invalid token, when parsing, then correct error`()
-        {
-            tester.parse("").isBad { End }
-            tester.parse("if").isBad { NotExpression(it[0]) }
-        }
-    }
-    
-    @Nested
-    inner class TestParserTextExpression
-    {
-        private val tester = ParserTester { ParserTextExpression }
-        
-        @Test
-        fun `Given valid token, when parsing, then correctly parsed`()
-        {
-            tester.parse("\"whatever\"").isGood(1, "whatever".toLit())
-        }
-        
-        @Test
-        fun `Given invalid token, when parsing, then correct error`()
-        {
-            tester.parse("").isBad { End }
-            tester.parse("if").isBad { NotExpression(it[0]) }
-        }
-    }
-    
-    @Nested
-    inner class TestParserVariableExpression
-    {
-        private val tester = ParserTester { ParserVariableExpression }
-        
-        @Test
-        fun `Given valid token, when parsing, then correctly parsed`()
-        {
-            tester.parse("foo").isGood(1, "foo".toVar())
-        }
-        
-        @Test
-        fun `Given invalid token, when parsing, then correct error`()
-        {
-            tester.parse("").isBad { End }
-            tester.parse("false").isBad { NotIdentifier(it[0]) }
-        }
-    }
-    
-    @Nested
-    inner class TestParserFunctionExpression
-    {
-        private val tester = ParserTester { ParserFunctionExpression }
-        
-        @Test
-        fun `Given valid token, when parsing, then correctly parsed`()
-        {
-            tester.parse("f()").isGood(3, "f".toFun())
-            tester.parse("f(1)").isGood(4, "f".toFun(1.toPar()))
-            tester.parse("f(1, 2)").isGood(6, "f".toFun(1.toPar(), 2.toPar()))
-            tester.parse("f(1, 2, )").isGood(7, "f".toFun(1.toPar(), 2.toPar()))
-            tester.parse("f(foo = 1)").isGood(6, "f".toFun(1.toPar("foo")))
-        }
-        
-        @Test
-        fun `Given invalid token, when parsing, then correct error`()
-        {
-            tester.parse("").isBad { End }
-            tester.parse("false").isBad { NotIdentifier(it[0]) }
-        }
-    }
-    
-    @Nested
-    inner class TestParserSubscriptExpression
-    {
-        private val tester = ParserTester { ParserSubscriptExpression }
-        
-        @Test
-        fun `Given valid token, when parsing, then correctly parsed`()
-        {
-            tester.parse("f[]").isGood(3, "f".toSub())
-            tester.parse("f[1]").isGood(4, "f".toSub(1.toPar()))
-            tester.parse("f[1, 2]").isGood(6, "f".toSub(1.toPar(), 2.toPar()))
-            tester.parse("f[1, 2, ]").isGood(7, "f".toSub(1.toPar(), 2.toPar()))
-            tester.parse("f[foo = 1]").isGood(6, "f".toSub(1.toPar("foo")))
-        }
-        
-        @Test
-        fun `Given invalid token, when parsing, then correct error`()
-        {
-            tester.parse("").isBad { End }
-            tester.parse("false").isBad { NotIdentifier(it[0]) }
-        }
-    }
-    
-    @Nested
-    inner class TestParserParenthesisExpression
-    {
-        private val tester = ParserTester { ParserParenthesisExpression }
-        
-        @Test
-        fun `Given valid token, when parsing, then correctly parsed`()
-        {
-            tester.parse("(1)").isGood(3, 1.toLit())
-        }
-        
-        @Test
-        fun `Given invalid token, when parsing, then correct error`()
-        {
-            tester.parse("").isBad { End }
-            tester.parse("(").isBad { End }
-            tester.parse("(1").isBad { End }
-            tester.parse("if").isBad { NotStructure(it[0]) }
-            tester.parse("(1(").isBad { WrongStructure(setOf(CLOSE_PARENTHESIS), OPEN_PARENTHESIS) }
-        }
-    }
-    
-    @Nested
-    inner class TestParserPrefixOperatorExpression
-    {
-        private val tester = ParserTester { ParserPrefixOperatorExpression }
-        
-        @Test
-        fun `Given valid token, when parsing, then correctly parsed`()
-        {
-            tester.parse("!1").isGood(2, opNot(1))
-            tester.parse("+1").isGood(2, opUnPlus(1))
-            tester.parse("-1").isGood(2, opUnMinus(1))
-        }
-        
-        @Test
-        fun `Given invalid token, when parsing, then correct error`()
-        {
-            tester.parse("").isBad { End }
-            tester.parse("!").isBad { End }
-            tester.parse("if").isBad { NotOperator(it[0]) }
-        }
-    }
-    
-    @Nested
-    inner class TestParserInfixOperatorExpression
-    {
-        private val tester = ParserTester { ParserInfixOperatorExpression }
-        
-        @Test
-        fun `Given valid token, when parsing, then correctly parsed`()
-        {
-            // Comparison
-            tester.parse("1 == 2").isGood(3, 1 opEq 2)
-            tester.parse("1 != 2").isGood(3, 1 opNe 2)
-            tester.parse("1 < 2").isGood(3, 1 opLt 2)
-            tester.parse("1 <= 2").isGood(3, 1 opLe 2)
-            tester.parse("1 > 2").isGood(3, 1 opGt 2)
-            tester.parse("1 >= 2").isGood(3, 1 opGe 2)
-            tester.parse("1 <=> 2").isGood(3, 1 opTw 2)
-            
-            // Logical
-            tester.parse("1 && 2").isGood(3, 1 opAnd 2)
-            tester.parse("1 || 2").isGood(3, 1 opOr 2)
-            tester.parse("1 ^^ 2").isGood(3, 1 opXor 2)
-            
-            // Arithmetic
-            tester.parse("1 + 2").isGood(3, 1 opAdd 2)
-            tester.parse("1 - 2").isGood(3, 1 opSub 2)
-            tester.parse("1 * 2").isGood(3, 1 opMul 2)
-            tester.parse("1 / 2").isGood(3, 1 opDiv 2)
-            tester.parse("1 % 2").isGood(3, 1 opMod 2)
-        }
-        
-        @Test
-        fun `Given token precedence, when parsing, then correct precedence`()
-        {
-            tester.parse("1 + 2 * 3").isGood(5, 1 opAdd (2 opMul 3))
-            tester.parse("1 * 2 + 3").isGood(5, (1 opMul 2) opAdd 3)
-        }
-        
-        @Test
-        fun `Given invalid token, when parsing, then correct error`()
-        {
-            tester.parse("").isBad { End }
-            tester.parse("2").isBad { End }
-            tester.parse("3 +").isBad { End }
-            tester.parse("if").isBad { NotExpression(it[0]) }
-        }
+        // Operator errors
+        tester.parse("+").isWip(1).isBad { ParseError.UnexpectedToken(EndOfFile) }
+        tester.parse("1 *").isOk(1).isWip(1).isBad { ParseError.UnexpectedToken(EndOfFile) }
     }
 }

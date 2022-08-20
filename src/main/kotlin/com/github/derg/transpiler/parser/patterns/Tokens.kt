@@ -2,95 +2,64 @@ package com.github.derg.transpiler.parser.patterns
 
 import com.github.derg.transpiler.core.Name
 import com.github.derg.transpiler.lexer.Identifier
-import com.github.derg.transpiler.lexer.Keyword
-import com.github.derg.transpiler.lexer.Operator
-import com.github.derg.transpiler.lexer.Structure
-import com.github.derg.transpiler.parser.Context
+import com.github.derg.transpiler.lexer.Symbol
+import com.github.derg.transpiler.lexer.SymbolType
+import com.github.derg.transpiler.lexer.Token
 import com.github.derg.transpiler.parser.ParseError
+import com.github.derg.transpiler.parser.ParseOk
 import com.github.derg.transpiler.parser.Parser
 import com.github.derg.transpiler.util.Result
 import com.github.derg.transpiler.util.failureOf
 import com.github.derg.transpiler.util.successOf
 
 /**
- * Parses a single identifier from the context, if possible. If an identifier could be extracted from the context, the
- * current context cursor position is moved forwards to the next position.
+ * Parses a single identifier from the provided token.
  */
-object ParserIdentifier : Parser<Name>
+class ParserName : Parser<Name>
 {
-    override fun parse(context: Context): Result<Name, ParseError>
+    private var name: Name? = null
+    
+    override fun skipable(): Boolean = false
+    override fun produce(): Name? = name
+    override fun parse(token: Token): Result<ParseOk, ParseError>
     {
-        context.reset()
-        val token = context.next() ?: return failureOf(ParseError.End)
-        val identifier = token as? Identifier ?: return failureOf(ParseError.NotIdentifier(token))
-        context.commit()
-        return successOf(identifier.name)
+        if (name != null)
+            return successOf(ParseOk.Finished)
+        
+        val identifier = token as? Identifier ?: return failureOf(ParseError.UnexpectedToken(token))
+        name = identifier.name
+        return successOf(ParseOk.Complete)
+    }
+    
+    override fun reset()
+    {
+        name = null
     }
 }
 
 /**
- * Parses a single keyword from the context, if possible. Optionally, any number of keyword [types] may be specified,
- * requiring the keyword found to match one of the given types. If a keyword could be extracted from the context (and
- * matches any of the optional [types]), the current context cursor position is moved forwards to the next position.
+ * Parses a single symbol from the provided token. The parser will only accept one of the symbols present in the
+ * [whitelist] when parsing. Any symbol not found in the whitelist is treated as an unexpected token.
  */
-class ParserKeyword(private val types: Set<Keyword.Type> = emptySet()) : Parser<Keyword.Type>
+class ParserSymbol(vararg symbols: SymbolType) : Parser<SymbolType>
 {
-    /** Helper for specifying all keyword [types] which are accepted by this parser. */
-    constructor(vararg types: Keyword.Type) : this(types.toSet())
+    private val whitelist = symbols.toSet()
+    private var type: SymbolType? = null
     
-    override fun parse(context: Context): Result<Keyword.Type, ParseError>
+    override fun skipable(): Boolean = false
+    override fun produce(): SymbolType? = type
+    override fun parse(token: Token): Result<ParseOk, ParseError>
     {
-        context.reset()
-        val token = context.next() ?: return failureOf(ParseError.End)
-        val keyword = token as? Keyword ?: return failureOf(ParseError.NotKeyword(token))
-        if (types.isNotEmpty() && keyword.type !in types)
-            return failureOf(ParseError.WrongKeyword(types, keyword.type))
-        context.commit()
-        return successOf(keyword.type)
+        if (type != null)
+            return successOf(ParseOk.Finished)
+        
+        val symbol = token as? Symbol ?: return failureOf(ParseError.UnexpectedToken(token))
+        type = if (symbol.type in whitelist) symbol.type else return failureOf(ParseError.UnexpectedToken(token))
+        return successOf(ParseOk.Complete)
     }
-}
-
-/**
- * Parses a single operator from the context, if possible. Optionally, any number of operator [types] may be specified,
- * requiring the operator found to match one of the given types. If an operator could be extracted from the context (and
- * matches any of the optional [types]), the current context cursor position is moved forwards to the next position.
- */
-class ParserOperator(private val types: Set<Operator.Type> = emptySet()) : Parser<Operator.Type>
-{
-    /** Helper for specifying all operator [types] which are accepted by this parser. */
-    constructor(vararg types: Operator.Type) : this(types.toSet())
     
-    override fun parse(context: Context): Result<Operator.Type, ParseError>
+    override fun reset()
     {
-        context.reset()
-        val token = context.next() ?: return failureOf(ParseError.End)
-        val operator = token as? Operator ?: return failureOf(ParseError.NotOperator(token))
-        if (types.isNotEmpty() && operator.type !in types)
-            return failureOf(ParseError.WrongOperator(types, operator.type))
-        context.commit()
-        return successOf(operator.type)
-    }
-}
-
-/**
- * Parses a single structural token from the context, if possible. Optionally, any number of structure [types] may be
- * specified, requiring the structure found to match one of the given types. If a structural token could be extracted
- * from the context (and matches any of the optional [types]), the current context cursor position is moved forwards to
- * the next position.
- */
-class ParserStructure(private val types: Set<Structure.Type> = emptySet()) : Parser<Structure.Type>
-{
-    /** Helper for specifying all structure [types] which are accepted by this parser. */
-    constructor(vararg types: Structure.Type) : this(types.toSet())
-    
-    override fun parse(context: Context): Result<Structure.Type, ParseError>
-    {
-        context.reset()
-        val token = context.next() ?: return failureOf(ParseError.End)
-        val structure = token as? Structure ?: return failureOf(ParseError.NotStructure(token))
-        if (types.isNotEmpty() && structure.type !in types)
-            return failureOf(ParseError.WrongStructure(types, structure.type))
-        context.commit()
-        return successOf(structure.type)
+        type = null
     }
 }
