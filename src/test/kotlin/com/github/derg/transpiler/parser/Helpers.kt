@@ -2,17 +2,22 @@ package com.github.derg.transpiler.parser
 
 import com.github.derg.transpiler.ast.*
 import com.github.derg.transpiler.core.Name
+import com.github.derg.transpiler.lexer.EndOfFile
 import com.github.derg.transpiler.lexer.Token
 import com.github.derg.transpiler.lexer.tokenize
+import com.github.derg.transpiler.parser.patterns.Parsers
+import com.github.derg.transpiler.parser.patterns.produce
+import com.github.derg.transpiler.util.failureOf
+import com.github.derg.transpiler.util.isSuccess
 import com.github.derg.transpiler.util.successOf
-import com.github.derg.transpiler.util.toFailure
-import kotlin.test.assertEquals
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertTrue
 
 /**
  * Converts [this] value into a literal expression if possible. The expression can only be generated from numeric,
  * boolean, and string values.
  */
-fun Any.toLit(type: Name? = null): Expression = when (this)
+fun Any.toExp(type: Name? = null): Expression = when (this)
 {
     is Boolean    -> Value.Bool(this)
     is Double     -> Value.Real(toBigDecimal(), type)
@@ -23,48 +28,55 @@ fun Any.toLit(type: Name? = null): Expression = when (this)
     else          -> throw IllegalStateException("Cannot convert '$this' to an expression")
 }
 
+// Various primitive conversion functions
 fun Name.toVar() = Access.Variable(this)
 fun Name.toFun(vararg parameters: Parameter) = Access.Function(this, parameters.toList())
 fun Name.toSub(vararg parameters: Parameter) = Access.Subscript(this, parameters.toList())
+fun Any.toPar(name: Name? = null) = Parameter(name, toExp())
 
 // Generates expressions from operations
-infix fun Any.opEq(that: Any) = Operator.Equal(toLit(), that.toLit())
-infix fun Any.opNe(that: Any) = Operator.NotEqual(toLit(), that.toLit())
-infix fun Any.opLe(that: Any) = Operator.LessEqual(toLit(), that.toLit())
-infix fun Any.opLt(that: Any) = Operator.Less(toLit(), that.toLit())
-infix fun Any.opGe(that: Any) = Operator.GreaterEqual(toLit(), that.toLit())
-infix fun Any.opGt(that: Any) = Operator.Greater(toLit(), that.toLit())
-infix fun Any.opTw(that: Any) = Operator.ThreeWay(toLit(), that.toLit())
-infix fun Any.opAnd(that: Any) = Operator.And(toLit(), that.toLit())
-infix fun Any.opOr(that: Any) = Operator.Or(toLit(), that.toLit())
-infix fun Any.opXor(that: Any) = Operator.Xor(toLit(), that.toLit())
-infix fun Any.opAdd(that: Any) = Operator.Add(toLit(), that.toLit())
-infix fun Any.opSub(that: Any) = Operator.Subtract(toLit(), that.toLit())
-infix fun Any.opMul(that: Any) = Operator.Multiply(toLit(), that.toLit())
-infix fun Any.opDiv(that: Any) = Operator.Divide(toLit(), that.toLit())
-infix fun Any.opMod(that: Any) = Operator.Modulo(toLit(), that.toLit())
-fun opNot(that: Any) = Operator.Not(that.toLit())
-fun opUnPlus(that: Any) = Operator.UnaryPlus(that.toLit())
-fun opUnMinus(that: Any) = Operator.UnaryMinus(that.toLit())
+fun opNot(that: Any) = Operator.Not(that.toExp())
+fun opPlus(that: Any) = Operator.UnaryPlus(that.toExp())
+fun opMinus(that: Any) = Operator.UnaryMinus(that.toExp())
+infix fun Any.opEq(that: Any) = Operator.Equal(toExp(), that.toExp())
+infix fun Any.opNe(that: Any) = Operator.NotEqual(toExp(), that.toExp())
+infix fun Any.opLe(that: Any) = Operator.LessEqual(toExp(), that.toExp())
+infix fun Any.opLt(that: Any) = Operator.Less(toExp(), that.toExp())
+infix fun Any.opGe(that: Any) = Operator.GreaterEqual(toExp(), that.toExp())
+infix fun Any.opGt(that: Any) = Operator.Greater(toExp(), that.toExp())
+infix fun Any.opTw(that: Any) = Operator.ThreeWay(toExp(), that.toExp())
+infix fun Any.opAnd(that: Any) = Operator.And(toExp(), that.toExp())
+infix fun Any.opOr(that: Any) = Operator.Or(toExp(), that.toExp())
+infix fun Any.opXor(that: Any) = Operator.Xor(toExp(), that.toExp())
+infix fun Any.opAdd(that: Any) = Operator.Add(toExp(), that.toExp())
+infix fun Any.opSub(that: Any) = Operator.Subtract(toExp(), that.toExp())
+infix fun Any.opMul(that: Any) = Operator.Multiply(toExp(), that.toExp())
+infix fun Any.opDiv(that: Any) = Operator.Divide(toExp(), that.toExp())
+infix fun Any.opMod(that: Any) = Operator.Modulo(toExp(), that.toExp())
 
-// Generate other useful constructs
-fun Any.toPar(type: Name? = null) = Parameter(type, toLit())
+// Generates assignment from operations
+infix fun Name.assign(that: Any) = Assignment.Assign(this, that.toExp())
+infix fun Name.assignAdd(that: Any) = Assignment.AssignAdd(this, that.toExp())
+infix fun Name.assignSub(that: Any) = Assignment.AssignSubtract(this, that.toExp())
+infix fun Name.assignMul(that: Any) = Assignment.AssignMultiply(this, that.toExp())
+infix fun Name.assignMod(that: Any) = Assignment.AssignModulo(this, that.toExp())
+infix fun Name.assignDiv(that: Any) = Assignment.AssignDivide(this, that.toExp())
 
 /**
  * Generates variable definition from the provided input parameters.
  */
-fun variableOf(
+fun varOf(
     name: Name,
     value: Any,
     type: Name? = null,
-    visibility: Visibility = Visibility.PRIVATE,
-    mutability: Mutability = Mutability.VALUE,
+    vis: Visibility = Visibility.PRIVATE,
+    mut: Mutability = Mutability.VALUE,
 ) = Variable(
     name = name,
     type = type,
-    value = value.toLit(),
-    visibility = visibility,
-    mutability = mutability,
+    value = value.toExp(),
+    visibility = vis,
+    mutability = mut,
 )
 
 /**
@@ -72,42 +84,119 @@ fun variableOf(
  * This tester class allows the developer to write clearer and more concise test cases when parsing specific source
  * code. Each source code snippet can be tailor-made to suit certain edge-cases.
  */
-class ParserTester<Type>(private val factory: () -> Parser<Type>)
+class Tester<Type>(private val factory: () -> Parser<Type>)
 {
-    private lateinit var parser: Parser<Type>
-    private lateinit var context: Context
+    internal lateinit var parser: Parser<Type>
     private lateinit var tokens: List<Token>
+    private var cursor: Int = 0
     
     /**
      * Parses the input [source] code and stores the tokens and the context for further analysis.
      */
-    fun parse(source: String): ParserTester<Type>
+    fun parse(source: String): Tester<Type>
     {
         parser = factory()
         tokens = tokenize(source).map { it.data }
-        context = Context(tokens)
+        cursor = 0
         return this
     }
     
     /**
-     * Expects the parsing to succeed. Whenever parsing succeeds, the context cursor is moved forwards any number of
-     * steps, although when a specific pattern succeeds, the cursor is expected to land on a known [index].
+     * Retrieves the next token in the token stream, if there are any remaining.
      */
-    fun isGood(index: Int, value: Type): ParserTester<Type>
+    private fun next(): Token = tokens.getOrNull(cursor++) ?: EndOfFile
+    
+    /**
+     * Proceeds with parsing the [count] next tokens. All outcomes are expected to be successes.
+     */
+    fun step(count: Int): Tester<Type>
     {
-        assertEquals(successOf(value), parser.parse(context))
-        assertEquals(index, context.snapshot())
+        repeat(count) { assertTrue(parser.parse(next()).isSuccess, "iteration ${it + 1}") }
         return this
     }
     
     /**
-     * Expects the parsing to fail due to the given [error]. Whenever parsing fails, the context is not permitted to
-     * move forwards; its cursor must remain fixed.
+     * The next [count] of tokens are all expected to succeed parsing, and must parse with an incomplete state.
      */
-    fun isBad(function: (List<Token>) -> ParseError): ParserTester<Type>
+    fun isWip(count: Int): Tester<Type>
     {
-        assertEquals(function(tokens).toFailure(), parser.parse(context).also { context.reset() })
-        assertEquals(0, context.snapshot())
+        repeat(count) { assertEquals(successOf(ParseOk.Incomplete), parser.parse(next()), "iteration ${it + 1}") }
         return this
     }
+    
+    /**
+     * The next [count] of tokens are all expected to succeed parsing, and must parse with a complete state.
+     */
+    fun isOk(count: Int): Tester<Type>
+    {
+        repeat(count) { assertEquals(successOf(ParseOk.Complete), parser.parse(next()), "iteration ${it + 1}") }
+        return this
+    }
+    
+    /**
+     * The parser is expected to have produced the given [value] already.
+     */
+    fun isValue(value: Type): Tester<Type>
+    {
+        assertEquals(value, parser.produce())
+        return this
+    }
+    
+    /**
+     * The parser is expected to have finished producing its item, and any subsequent parsing operations will not make
+     * any difference anymore.
+     */
+    fun isDone(): Tester<Type>
+    {
+        assertEquals(successOf(ParseOk.Finished), parser.parse(EndOfFile))
+        return this
+    }
+    
+    /**
+     * Expects the parsing to fail due to the given [error] when parsing the next token.
+     */
+    fun isBad(function: (List<Token>) -> ParseError): Tester<Type>
+    {
+        assertEquals(failureOf(function(tokens)), parser.parse(next()))
+        return this
+    }
+    
+    /**
+     * The parser must be reverted to its original state once reset - it must produce the [value] upon resetting.
+     */
+    fun resets(value: Type? = null): Tester<Type>
+    {
+        parser.reset()
+        assertEquals(value, parser.produce())
+        return this
+    }
+}
+
+/**
+ * The parser is expected to have produced the given [value] already and stored it under the given [key].
+ */
+fun <Type, Bundle : Parsers?> Tester<Bundle>.hasValue(key: String, value: Type): Tester<Bundle>
+{
+    assertEquals(value, parser.produce()?.produce(key))
+    return this
+}
+
+/**
+ * The parser is expected to have produced the given [values] already and stored it under the given [key]. The parser
+ * must be a deeply nested object - that is, a [Parsers] bundle containing other [Parsers].
+ */
+fun <Type, Bundle : Parsers?> Tester<Bundle>.hasValue(key: String, vararg values: Pair<String, Type>): Tester<Bundle>
+{
+    val parsers = parser.produce()?.produce<Parsers>(key)
+    assertEquals(values.map { it.second }, values.mapNotNull { parsers?.produce(it.first) })
+    return this
+}
+
+/**
+ * The parser is expected to have produced the given [values] already and stored them under the given [key].
+ */
+fun <Type> Tester<List<Parsers>>.hasValue(key: String, vararg values: Type): Tester<List<Parsers>>
+{
+    assertEquals(values.toList(), parser.produce()?.produce<Type>(key))
+    return this
 }

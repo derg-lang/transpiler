@@ -2,279 +2,356 @@ package com.github.derg.transpiler.parser.patterns
 
 import com.github.derg.transpiler.ast.*
 import com.github.derg.transpiler.core.Name
-import com.github.derg.transpiler.lexer.Keyword
-import com.github.derg.transpiler.lexer.Numeric
-import com.github.derg.transpiler.lexer.Operator.Type.*
-import com.github.derg.transpiler.lexer.Structure
-import com.github.derg.transpiler.lexer.Textual
-import com.github.derg.transpiler.parser.Context
+import com.github.derg.transpiler.lexer.*
 import com.github.derg.transpiler.parser.ParseError
+import com.github.derg.transpiler.parser.ParseOk
 import com.github.derg.transpiler.parser.Parser
-import com.github.derg.transpiler.util.*
-import com.github.derg.transpiler.lexer.Operator.Type as OperatorType
+import com.github.derg.transpiler.util.Result
+import com.github.derg.transpiler.util.failureOf
+import com.github.derg.transpiler.util.successOf
 
 /**
- * All expressions which do not require a highly specialized setup (such as infix operators), may be simply treated as
- * a regular pattern.
+ * Operators have a specific precedence associated with them. The higher the precedence, the later they are evaluated in
+ * the expression. In other words, operators with the lowest precedence are evaluated first.
+ *
+ * Note that this table is not a complete set of all possible operators. Certain structural operators, such as
+ * parenthesis, may be used to alter the precedence. The positioning of the operator also makes a difference - all
+ * prefix operators (such as unary plus and minus) target only the expression to their immediate right, whereas postfix
+ * operators target the entire expression so far to the left.
  */
-private val EXPRESSIONS = arrayOf(
-    ParserBoolExpression,
-    ParserRealExpression,
-    ParserTextExpression,
-    ParserVariableExpression,
-    ParserFunctionExpression,
-    ParserSubscriptExpression,
-    ParserPrefixOperatorExpression,
-    ParserParenthesisExpression,
+private val PRECEDENCE = mapOf(
+    SymbolType.AND to 4,
+    SymbolType.DIVIDE to 0,
+    SymbolType.EQUAL to 3,
+    SymbolType.GREATER to 3,
+    SymbolType.GREATER_EQUAL to 3,
+    SymbolType.LESS to 3,
+    SymbolType.LESS_EQUAL to 3,
+    SymbolType.MINUS to 1,
+    SymbolType.MODULO to 0,
+    SymbolType.MULTIPLY to 0,
+    SymbolType.NOT_EQUAL to 3,
+    SymbolType.OR to 5,
+    SymbolType.PLUS to 1,
+    SymbolType.THREE_WAY to 2,
+    SymbolType.XOR to 6,
 )
 
 /**
- * Parses a single boolean value from the context, if possible. If a boolean could be extracted from the context, the
- * current context cursor position is moved forwards to the next position.
+ * Joins together the [lhs] and [rhs] expression using the specified [operator].
  */
-object ParserBoolExpression : Parser<Expression>
+private fun mergeInfix(lhs: Expression, operator: SymbolType, rhs: Expression): Expression = when (operator)
 {
-    override fun parse(context: Context): Result<Expression, ParseError>
-    {
-        context.reset()
-        val token = context.next() ?: return failureOf(ParseError.End)
-        val keyword = token as? Keyword ?: return failureOf(ParseError.NotExpression(token))
-        val value = when (keyword.type)
-        {
-            Keyword.Type.TRUE  -> true
-            Keyword.Type.FALSE -> false
-            else               -> return failureOf(ParseError.NotExpression(token))
-        }
-        context.commit()
-        return successOf(Value.Bool(value))
-    }
+    SymbolType.AND           -> Operator.And(lhs, rhs)
+    SymbolType.DIVIDE        -> Operator.Divide(lhs, rhs)
+    SymbolType.EQUAL         -> Operator.Equal(lhs, rhs)
+    SymbolType.GREATER       -> Operator.Greater(lhs, rhs)
+    SymbolType.GREATER_EQUAL -> Operator.GreaterEqual(lhs, rhs)
+    SymbolType.LESS          -> Operator.Less(lhs, rhs)
+    SymbolType.LESS_EQUAL    -> Operator.LessEqual(lhs, rhs)
+    SymbolType.MINUS         -> Operator.Subtract(lhs, rhs)
+    SymbolType.MODULO        -> Operator.Modulo(lhs, rhs)
+    SymbolType.MULTIPLY      -> Operator.Multiply(lhs, rhs)
+    SymbolType.NOT_EQUAL     -> Operator.NotEqual(lhs, rhs)
+    SymbolType.OR            -> Operator.Or(lhs, rhs)
+    SymbolType.PLUS          -> Operator.Add(lhs, rhs)
+    SymbolType.THREE_WAY     -> Operator.ThreeWay(lhs, rhs)
+    SymbolType.XOR           -> Operator.Xor(lhs, rhs)
+    else                     -> throw IllegalStateException("Illegal operator $operator when parsing operator")
 }
 
 /**
- * Parses a single numeric value from the context, if possible. If a number could be extracted from the context, the
- * current context cursor position is moved forwards to the next position.
+ * Joins together the prefix [operator] and the [rhs] expression.
  */
-object ParserRealExpression : Parser<Expression>
+private fun mergePrefix(operator: SymbolType, rhs: Expression): Expression = when (operator)
 {
-    override fun parse(context: Context): Result<Expression, ParseError>
-    {
-        context.reset()
-        val token = context.next() ?: return failureOf(ParseError.End)
-        val number = token as? Numeric ?: return failureOf(ParseError.NotExpression(token))
-        context.commit()
-        return successOf(Value.Real(number.value, number.type))
-    }
+    SymbolType.NOT   -> Operator.Not(rhs)
+    SymbolType.PLUS  -> Operator.UnaryPlus(rhs)
+    SymbolType.MINUS -> Operator.UnaryMinus(rhs)
+    else             -> throw IllegalStateException("Illegal operator $operator when parsing prefix operator")
 }
 
 /**
- * Parses a single text value from the context, if possible. If a string could be extracted from the context, the
- * current context cursor position is moved forwards to the next position.
+ * Generates a new fresh set of the base expression parsers. The expressions do not contain the infix operator
+ * expression parser, which requires special care to properly parse. It parses itself recursively in a non-trivial
+ * manner.
  */
-object ParserTextExpression : Parser<Expression>
+private fun generateStandardParser(): Parser<Expression> = ParserAnyOf(
+    ParserBoolExpression(),
+    ParserRealExpression(),
+    ParserTextExpression(),
+    ParserVariableExpression(),
+    ParserFunctionExpression(),
+    ParserSubscriptExpression(),
+    ParserParenthesisExpression(),
+    ParserPrefixOperatorExpression(),
+)
+
+/**
+ * Generates a new fresh infix operator parser. The parser will only accept one of the symbols which defines one of the
+ * legal infix operators.
+ */
+private fun generateOperatorParser(): Parser<SymbolType> = ParserSymbol(*PRECEDENCE.keys.toTypedArray())
+
+/**
+ * Parses a single expression from the provided token.
+ */
+class ParserExpression : Parser<Expression>
 {
-    override fun parse(context: Context): Result<Expression, ParseError>
-    {
-        context.reset()
-        val token = context.next() ?: return failureOf(ParseError.End)
-        val string = token as? Textual ?: return failureOf(ParseError.NotExpression(token))
-        context.commit()
-        return successOf(Value.Text(string.value, string.type))
-    }
+    private val parser = ParserRecursive { ParserOperatorExpression() }
+    
+    override fun skipable(): Boolean = false
+    override fun produce(): Expression? = parser.produce()
+    override fun parse(token: Token): Result<ParseOk, ParseError> = parser.parse(token)
+    override fun reset() = parser.reset()
 }
 
 /**
- * Parses a variable read expression from the context, if possible. The pattern does not take into consideration any
- * additional operations which may be performed on the identifier, such as function calls or assignment.
+ * Parses a single boolean value from the provided token.
  */
-object ParserVariableExpression : Parser<Expression>
+internal class ParserBoolExpression : Parser<Expression>
 {
-    override fun parse(context: Context): Result<Expression, ParseError>
-    {
-        return ParserIdentifier.parse(context).mapValue { Access.Variable(it) }
-    }
-}
-
-/**
- * Parses a function call expression from the context, if possible. The pattern takes into consideration all parameters
- * which are required to invoke the function. Any function call may be nested as a parameter.
- */
-object ParserFunctionExpression : Parser<Expression>
-{
-    private val pattern = ParserSequence(
-        ParserIdentifier,
-        ParserStructure(Structure.Type.OPEN_PARENTHESIS),
-        ParserRepeating(ParserParameter, ParserStructure(Structure.Type.COMMA)),
-        ParserStructure(Structure.Type.CLOSE_PARENTHESIS),
-    )
+    private var expression: Expression? = null
     
-    override fun parse(context: Context): Result<Expression, ParseError>
+    override fun parse(token: Token): Result<ParseOk, ParseError>
     {
-        return pattern.parse(context).mapValue { Access.Function(it[0] as Name, it[2] as List<Parameter>) }
-    }
-}
-
-/**
- * Parses a subscript access express from the context, if possible.
- */
-object ParserSubscriptExpression : Parser<Expression>
-{
-    private val pattern = ParserSequence(
-        ParserIdentifier,
-        ParserStructure(Structure.Type.OPEN_BRACKET),
-        ParserRepeating(ParserParameter, ParserStructure(Structure.Type.COMMA)),
-        ParserStructure(Structure.Type.CLOSE_BRACKET),
-    )
-    
-    override fun parse(context: Context): Result<Expression, ParseError>
-    {
-        return pattern.parse(context).mapValue { Access.Subscript(it[0] as Name, it[2] as List<Parameter>) }
-    }
-}
-
-/**
- * Parses a single optionally named parameter used in a function call from the context, if possible.
- */
-private object ParserParameter : Parser<Parameter>
-{
-    private val pattern = ParserSequence(
-        ParserOptional(ParserSequence(ParserIdentifier, ParserOperator(ASSIGN))),
-        ParserExpression,
-    )
-    
-    override fun parse(context: Context): Result<Parameter, ParseError>
-    {
-        return pattern.parse(context).mapValue { Parameter((it[0] as? List<*>)?.get(0) as? Name, it[1] as Expression) }
-    }
-}
-
-/**
- * Parses an expressions which is surrounded by parenthesis from the context, if possible. The pattern requires that the
- * expression is fully surrounded by parenthesis, and that the expression itself is fully valid.
- */
-object ParserParenthesisExpression : Parser<Expression>
-{
-    private val pattern = ParserSequence(
-        ParserStructure(Structure.Type.OPEN_PARENTHESIS),
-        ParserExpression,
-        ParserStructure(Structure.Type.CLOSE_PARENTHESIS),
-    )
-    
-    override fun parse(context: Context): Result<Expression, ParseError>
-    {
-        return pattern.parse(context).mapValue { it[1] as Expression }
-    }
-}
-
-/**
- * Parses an expression which starts with a valid prefix operator from the context, if possible. The pattern requires
- * that the prefix operator is permitted to operate on the expression to the right side.
- */
-object ParserPrefixOperatorExpression : Parser<Expression>
-{
-    private val pattern = ParserSequence(
-        ParserOperator(PLUS, MINUS, NOT),
-        ParserExpression,
-    )
-    
-    override fun parse(context: Context): Result<Expression, ParseError>
-    {
-        return pattern.parse(context).mapValue { convert(it[0] as OperatorType, it[1] as Expression) }
-    }
-    
-    private fun convert(operator: OperatorType, expression: Expression): Expression = when (operator)
-    {
-        PLUS  -> Operator.UnaryPlus(expression)
-        MINUS -> Operator.UnaryMinus(expression)
-        NOT   -> Operator.Not(expression)
-        else  -> throw IllegalStateException("Illegal operator $operator when parsing prefix operator")
-    }
-}
-
-/**
- * Parses an expression which contains one or more infix operators from the context, if possible. The pattern respects
- * operator precedence, enabling expressions such as `1 * 2 + 3 * 4` to correctly evaluate to `14`.
- */
-object ParserInfixOperatorExpression : Parser<Expression>
-{
-    /**
-     * The precedence of operators determine the execution order. The operators are executed in order from the lowest
-     * value to the highest value, i.e. operators with a precedence of 0 are executed first. If two operators have the
-     * same precedence, the evaluation order is left-to-right, where `expr op expr op expr` is evaluated as
-     * `(expr op expr) op expr`.
-     */
-    private val precedences = mapOf(
-        AND to 4,
-        DIVIDE to 0,
-        EQUAL to 3,
-        GREATER to 3,
-        GREATER_EQUAL to 3,
-        LESS to 3,
-        LESS_EQUAL to 3,
-        MINUS to 1,
-        MODULO to 0,
-        MULTIPLY to 0,
-        NOT_EQUAL to 3,
-        OR to 5,
-        PLUS to 1,
-        THREE_WAY to 2,
-        XOR to 6,
-    )
-    
-    private val expressions = ParserAnyOf(*EXPRESSIONS)
-    private val operators = ParserOperator(precedences.keys)
-    
-    override fun parse(context: Context): Result<Expression, ParseError>
-    {
-        val snapshot = context.snapshot()
-        val lhs = expressions.parse(context).valueOr { return failureOf(it) }
-        val op1 = operators.parse(context).onFailure { context.revert(snapshot) }.valueOr { return failureOf(it) }
-        return parse(context, lhs, op1).onFailure { context.revert(snapshot) }
-    }
-    
-    private fun parse(context: Context, lhs: Expression, op1: OperatorType): Result<Expression, ParseError>
-    {
-        val mhs = expressions.parse(context).valueOr { return failureOf(it) }
-        val op2 =
-            operators.parse(context).onFailure { context.reset() }.valueOr { return successOf(join(lhs, mhs, op1)) }
+        if (expression != null)
+            return successOf(ParseOk.Finished)
         
-        if (precedences.getValue(op1) <= precedences.getValue(op2))
-            return parse(context, join(lhs, mhs, op1), op2)
-        val rhs = ParserExpression.parse(context).valueOr { return failureOf(it) }
-        return join(lhs, join(mhs, rhs, op2), op1).toSuccess()
+        val symbol = token as? Symbol ?: return failureOf(ParseError.UnexpectedToken(token))
+        expression = when (symbol.type)
+        {
+            SymbolType.TRUE  -> Value.Bool(true)
+            SymbolType.FALSE -> Value.Bool(false)
+            else             -> return failureOf(ParseError.UnexpectedToken(token))
+        }
+        return successOf(ParseOk.Complete)
     }
     
-    private fun join(lhs: Expression, rhs: Expression, operator: OperatorType): Expression = when (operator)
+    override fun skipable(): Boolean = false
+    override fun produce(): Expression? = expression
+    override fun reset()
     {
-        AND           -> Operator.And(lhs, rhs)
-        DIVIDE        -> Operator.Divide(lhs, rhs)
-        EQUAL         -> Operator.Equal(lhs, rhs)
-        GREATER       -> Operator.Greater(lhs, rhs)
-        GREATER_EQUAL -> Operator.GreaterEqual(lhs, rhs)
-        LESS          -> Operator.Less(lhs, rhs)
-        LESS_EQUAL    -> Operator.LessEqual(lhs, rhs)
-        MINUS         -> Operator.Subtract(lhs, rhs)
-        MODULO        -> Operator.Modulo(lhs, rhs)
-        MULTIPLY      -> Operator.Multiply(lhs, rhs)
-        NOT_EQUAL     -> Operator.NotEqual(lhs, rhs)
-        OR            -> Operator.Or(lhs, rhs)
-        PLUS          -> Operator.Add(lhs, rhs)
-        THREE_WAY     -> Operator.ThreeWay(lhs, rhs)
-        XOR           -> Operator.Xor(lhs, rhs)
-        else          -> throw IllegalStateException("Illegal operator $operator when parsing prefix operator")
+        expression = null
     }
 }
 
 /**
- * Parses an expression from the context, if possible. The expression which is extracted may be of any type, length, or
- * any arbitrary complexity. The extracted expression will be the largest node in the abstract syntax tree possible to
- * extract from the current context's cursor location.
+ * Parses a single numeric value from the provided token.
  */
-object ParserExpression : Parser<Expression>
+internal class ParserRealExpression : Parser<Expression>
 {
-    private val pattern = ParserAnyOf(ParserInfixOperatorExpression, *EXPRESSIONS)
+    private var expression: Expression? = null
     
-    override fun parse(context: Context): Result<Expression, ParseError>
+    override fun parse(token: Token): Result<ParseOk, ParseError>
     {
-        return pattern.parse(context)
+        if (expression != null)
+            return successOf(ParseOk.Finished)
+        
+        val number = token as? Numeric ?: return failureOf(ParseError.UnexpectedToken(token))
+        expression = Value.Real(number.value, number.type)
+        return successOf(ParseOk.Complete)
     }
+    
+    override fun skipable(): Boolean = false
+    override fun produce(): Expression? = expression
+    override fun reset()
+    {
+        expression = null
+    }
+}
+
+/**
+ * Parses a single string value from the provided token.
+ */
+internal class ParserTextExpression : Parser<Expression>
+{
+    private var expression: Expression? = null
+    
+    override fun parse(token: Token): Result<ParseOk, ParseError>
+    {
+        if (expression != null)
+            return successOf(ParseOk.Finished)
+        
+        val string = token as? Textual ?: return failureOf(ParseError.UnexpectedToken(token))
+        expression = Value.Text(string.value, string.type)
+        return successOf(ParseOk.Complete)
+    }
+    
+    override fun skipable(): Boolean = false
+    override fun produce(): Expression? = expression
+    override fun reset()
+    {
+        expression = null
+    }
+}
+
+/**
+ * Parses a variable access expression from the provided token.
+ */
+internal class ParserVariableExpression : Parser<Expression>
+{
+    private val parser = ParserName()
+    
+    override fun skipable(): Boolean = false
+    override fun produce(): Expression? = parser.produce()?.let { Access.Variable(it) }
+    override fun parse(token: Token): Result<ParseOk, ParseError> = parser.parse(token)
+    override fun reset() = parser.reset()
+}
+
+/**
+ * Parses a function call expression from the provided token.
+ */
+internal class ParserFunctionExpression : Parser<Expression>
+{
+    private val parser = ParserSequence(
+        "name" to ParserName(),
+        "open" to ParserSymbol(SymbolType.OPEN_PARENTHESIS),
+        "params" to ParserOptional(ParserRepeating(ParserParameter(), ParserSymbol(SymbolType.COMMA))),
+        "close" to ParserSymbol(SymbolType.CLOSE_PARENTHESIS),
+    )
+    
+    override fun produce(): Expression?
+    {
+        val values = parser.produce()
+        val name = values.produce<Name>("name") ?: return null
+        val params = values.produce<List<Parameter>>("params") ?: emptyList()
+        return Access.Function(name, params)
+    }
+    
+    override fun skipable(): Boolean = false
+    override fun parse(token: Token): Result<ParseOk, ParseError> = parser.parse(token)
+    override fun reset() = parser.reset()
+}
+
+/**
+ * Parses a subscript call expression from the provided token.
+ */
+internal class ParserSubscriptExpression : Parser<Expression>
+{
+    private val parser = ParserSequence(
+        "name" to ParserName(),
+        "open" to ParserSymbol(SymbolType.OPEN_BRACKET),
+        "params" to ParserOptional(ParserRepeating(ParserParameter(), ParserSymbol(SymbolType.COMMA))),
+        "close" to ParserSymbol(SymbolType.CLOSE_BRACKET),
+    )
+    
+    override fun produce(): Expression?
+    {
+        val values = parser.produce()
+        val name = values.produce<Name>("name") ?: return null
+        val params = values.produce<List<Parameter>>("params") ?: emptyList()
+        return Access.Subscript(name, params)
+    }
+    
+    override fun skipable(): Boolean = false
+    override fun parse(token: Token): Result<ParseOk, ParseError> = parser.parse(token)
+    override fun reset() = parser.reset()
+}
+
+/**
+ * Parses a function call parameter from the provided token.
+ */
+private class ParserParameter : Parser<Parameter>
+{
+    // Note: cannot use optional parser to extract the name, as an identifier is also a legal name. This can cause the
+    //       optional parser to fail on missing equals symbol, when the developer intended to pass a regular variable as
+    //       a parameter to a function.
+    private val parser = ParserAnyOf(
+        ParserSequence("name" to ParserName(), "sym" to ParserSymbol(SymbolType.ASSIGN), "expr" to ParserExpression()),
+        ParserSequence("expr" to ParserExpression()),
+    )
+    
+    override fun produce(): Parameter?
+    {
+        val values = parser.produce() ?: return null
+        val name = values.produce<Name>("name")
+        val expression = values.produce<Expression>("expr") ?: return null
+        return Parameter(name, expression)
+    }
+    
+    override fun skipable(): Boolean = false
+    override fun parse(token: Token): Result<ParseOk, ParseError> = parser.parse(token)
+    override fun reset() = parser.reset()
+}
+
+/**
+ * Parses an expression from in-between parenthesis from the provided token.
+ */
+private class ParserParenthesisExpression : Parser<Expression>
+{
+    private val parser = ParserSequence(
+        "open" to ParserSymbol(SymbolType.OPEN_PARENTHESIS),
+        "expr" to ParserExpression(),
+        "close" to ParserSymbol(SymbolType.CLOSE_PARENTHESIS),
+    )
+    
+    override fun skipable(): Boolean = false
+    override fun produce(): Expression? = parser.produce().produce("expr")
+    override fun parse(token: Token): Result<ParseOk, ParseError> = parser.parse(token)
+    override fun reset() = parser.reset()
+}
+
+/**
+ * Parses an operator from the provided token. Operators are non-trivial to construct, and parsing of them depends on
+ * the type of operator, as well as the precedence.
+ */
+private class ParserOperatorExpression : Parser<Expression>
+{
+    private val parser = ParserSequence(
+        "lhs" to generateStandardParser(),
+        "terms" to ParserRepeating(ParserSequence("op" to generateOperatorParser(), "rhs" to generateStandardParser())),
+    )
+    
+    private fun combineRecursively(lhs: Expression, terms: List<Pair<SymbolType, Expression>>, index: Int): Expression
+    {
+        val (op1, mhs) = terms.getOrNull(index) ?: return lhs
+        val (op2, rhs) = terms.getOrNull(index + 1) ?: return mergeInfix(lhs, op1, mhs)
+        
+        // If next operator has higher precedence, parse left-hand of tree first
+        if (PRECEDENCE[op1]!! <= PRECEDENCE[op2]!!)
+            return combineRecursively(mergeInfix(lhs, op1, mhs), terms, index + 1)
+        
+        // Otherwise, the remainder right-hand side must be parsed recursively
+        val rest = combineRecursively(rhs, terms, index + 2)
+        return mergeInfix(lhs, op1, mergeInfix(mhs, op2, rest))
+    }
+    
+    override fun produce(): Expression?
+    {
+        val values = parser.produce()
+        val lhs = values.produce<Expression>("lhs") ?: return null
+        val terms = values.produce<List<Parsers>>("terms") ?: emptyList()
+        val ops = terms.produce<SymbolType>("op")
+        val rhs = terms.produce<Expression>("rhs")
+        return combineRecursively(lhs, ops.zip(rhs), 0)
+    }
+    
+    override fun skipable(): Boolean = false
+    override fun parse(token: Token): Result<ParseOk, ParseError> = parser.parse(token)
+    override fun reset() = parser.reset()
+}
+
+/**
+ * Parses an operator from the provided token. Prefix operators are non-trivial to construct, and involves recursively
+ * parsing the stream of tokens.
+ */
+private class ParserPrefixOperatorExpression : Parser<Expression>
+{
+    private val parser = ParserSequence(
+        "op" to ParserSymbol(SymbolType.PLUS, SymbolType.MINUS, SymbolType.NOT),
+        "rhs" to ParserRecursive { generateStandardParser() },
+    )
+    
+    override fun produce(): Expression?
+    {
+        val values = parser.produce()
+        val op = values.produce<SymbolType>("op") ?: return null
+        val rhs = values.produce<Expression>("rhs") ?: return null
+        return mergePrefix(op, rhs)
+    }
+    
+    override fun skipable(): Boolean = parser.skipable()
+    override fun parse(token: Token): Result<ParseOk, ParseError> = parser.parse(token)
+    override fun reset() = parser.reset()
 }

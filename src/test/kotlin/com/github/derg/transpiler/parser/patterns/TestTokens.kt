@@ -1,93 +1,42 @@
 package com.github.derg.transpiler.parser.patterns
 
-import com.github.derg.transpiler.lexer.Keyword.Type.IF
-import com.github.derg.transpiler.lexer.Keyword.Type.WHILE
-import com.github.derg.transpiler.lexer.Operator.Type.MINUS
-import com.github.derg.transpiler.lexer.Operator.Type.MULTIPLY
-import com.github.derg.transpiler.lexer.Structure.Type.COMMA
-import com.github.derg.transpiler.lexer.Structure.Type.OPEN_BRACKET
-import com.github.derg.transpiler.parser.ParseError.*
-import com.github.derg.transpiler.parser.ParserTester
+import com.github.derg.transpiler.lexer.SymbolType
+import com.github.derg.transpiler.parser.ParseError
+import com.github.derg.transpiler.parser.Tester
 import org.junit.jupiter.api.Test
 
-class TestParserIdentifier
+class TestParserName
 {
-    private val tester = ParserTester { ParserIdentifier }
+    private val tester = Tester { ParserName() }
     
     @Test
-    fun `Given valid token, when parsing, then correctly parsed`()
+    fun `Given valid token, when parsing, then correct product`()
     {
-        tester.parse("test").isGood(1, "test")
+        tester.parse("foo").isOk(1).isDone().isValue("foo").resets()
     }
     
     @Test
     fun `Given invalid token, when parsing, then correct error`()
     {
-        tester.parse("").isBad { End }
-        tester.parse("false").isBad { NotIdentifier(it[0]) }
+        tester.parse(",").isBad { ParseError.UnexpectedToken(it[0]) }
     }
 }
 
-class TestParserKeyword
+class TestParserSymbol
 {
+    private val tester = Tester { ParserSymbol(SymbolType.AND, SymbolType.OR) }
+    
     @Test
-    fun `Given valid token, when parsing, then correctly parsed`()
+    fun `Given valid token, when parsing, then correct product`()
     {
-        val tester = ParserTester { ParserKeyword() }
-        
-        tester.parse("while").isGood(1, WHILE)
+        tester.parse("&&").isOk(1).isDone().isValue(SymbolType.AND).resets()
+        tester.parse("||").isOk(1).isDone().isValue(SymbolType.OR).resets()
     }
     
     @Test
     fun `Given invalid token, when parsing, then correct error`()
     {
-        val tester = ParserTester { ParserKeyword(WHILE) }
-        
-        tester.parse("").isBad { End }
-        tester.parse("if").isBad { WrongKeyword(setOf(WHILE), IF) }
-        tester.parse("42").isBad { NotKeyword(it[0]) }
-    }
-}
-
-
-class TestParserOperator
-{
-    @Test
-    fun `Given valid token, when parsing, then correctly parsed`()
-    {
-        val tester = ParserTester { ParserOperator() }
-        
-        tester.parse("*").isGood(1, MULTIPLY)
-    }
-    
-    @Test
-    fun `Given invalid token, when parsing, then correct error`()
-    {
-        val tester = ParserTester { ParserOperator(MINUS) }
-        
-        tester.parse("").isBad { End }
-        tester.parse("*").isBad { WrongOperator(setOf(MINUS), MULTIPLY) }
-        tester.parse("false").isBad { NotOperator(it[0]) }
-    }
-}
-
-class TestParserStructure
-{
-    @Test
-    fun `Given valid token, when parsing, then correctly parsed`()
-    {
-        val tester = ParserTester { ParserStructure() }
-        
-        tester.parse(",").isGood(1, COMMA)
-    }
-    
-    @Test
-    fun `Given invalid token, when parsing, then correct error`()
-    {
-        val tester = ParserTester { ParserStructure(COMMA) }
-        
-        tester.parse("").isBad { End }
-        tester.parse("[").isBad { WrongStructure(setOf(COMMA), OPEN_BRACKET) }
-        tester.parse("false").isBad { NotStructure(it[0]) }
+        tester.parse("^^").isBad { ParseError.UnexpectedToken(it[0]) }
+        tester.parse("bah").isBad { ParseError.UnexpectedToken(it[0]) }
     }
 }

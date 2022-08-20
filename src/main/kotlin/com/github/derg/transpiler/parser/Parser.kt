@@ -1,8 +1,5 @@
 package com.github.derg.transpiler.parser
 
-import com.github.derg.transpiler.lexer.Keyword
-import com.github.derg.transpiler.lexer.Operator
-import com.github.derg.transpiler.lexer.Structure
 import com.github.derg.transpiler.lexer.Token
 import com.github.derg.transpiler.util.Result
 
@@ -14,15 +11,55 @@ import com.github.derg.transpiler.util.Result
 interface Parser<Type>
 {
     /**
-     * Extracts a single value from the [context] if possible. Any reads from the context which are successful will
-     * force the context's current cursor location to move forwards. Since the context may be in a dirty state before
-     * reading the next token, any reads of tokens *must* invoke [Context.reset] first.
-     *
-     * Once a result has been successfully extracted from the context after invoking [Context.next], the context state
-     * must be persisted by invoking [Context.commit]. This ensures the data read from the context will not be lost
-     * when the context is reset before later reads.
+     * Determines whether the parser requires at least one token in order to produce any meaningful content or not. Any
+     * parser which is marked as skipable may not be provided any tokens at all.
      */
-    fun parse(context: Context): Result<Type, ParseError>
+    fun skipable(): Boolean
+    
+    /**
+     * Pulls out the produced value from the parser, if it contains any finished items. A parser can only contain any
+     * finished items by being provided with enough tokens to construct the item.
+     */
+    fun produce(): Type?
+    
+    /**
+     * Provides a single new [token] to the parser. If the parser accepts the token, a success is returned. If the
+     * parser does not accept it, a failure is returned, containing the details for why the token was rejected. Parsers
+     * should be provided new tokens until it explicitly states that it will accept no more tokens.
+     */
+    fun parse(token: Token): Result<ParseOk, ParseError>
+    
+    /**
+     * Reverts all state in the parser back to the default settings. In essence, this wipes all data related to the
+     * parser completely clean, meaning it holds no information about previous parses.
+     */
+    fun reset()
+}
+
+/**
+ * Parsers require tokens to perform their workload. While they are able to accept tokens, their internal state is
+ * revealed by the parse outcome. Some parsers will require an infinite stream of additional tokens, whereas some tokens
+ * are satisfied by a finite number of tokens.
+ */
+sealed class ParseOk
+{
+    /**
+     * The parser is currently in process of assembling additional data, and thus will require more tokens.
+     */
+    object Incomplete : ParseOk()
+    
+    /**
+     * The parser has received enough tokens to complete assembling its data. It may potentially require more tokens to
+     * further assemble additional data, but is currently in an indeterminate state - another token must be provided to
+     * determine the final state.
+     */
+    object Complete : ParseOk()
+    
+    /**
+     * The parser has received enough tokens to finish its data, and will not need additional tokens. The parser has
+     * rejected the provided token. The token should be provided to the next candidate parser instead.
+     */
+    object Finished : ParseOk()
 }
 
 /**
@@ -32,18 +69,8 @@ interface Parser<Type>
  */
 sealed class ParseError
 {
-    // Structural issues related to the parsing
-    object End : ParseError()
-    
-    // The data acquired from the context has the wrong format
-    data class NotKeyword(val token: Token) : ParseError()
-    data class NotOperator(val token: Token) : ParseError()
-    data class NotStructure(val token: Token) : ParseError()
-    data class NotIdentifier(val token: Token) : ParseError()
-    data class NotExpression(val token: Token) : ParseError()
-    
-    // The data acquired from the context has the wrong value
-    data class WrongKeyword(val expected: Set<Keyword.Type>, val actual: Keyword.Type) : ParseError()
-    data class WrongOperator(val expected: Set<Operator.Type>, val actual: Operator.Type) : ParseError()
-    data class WrongStructure(val expected: Set<Structure.Type>, val actual: Structure.Type) : ParseError()
+    /**
+     * The parser expected a specific token, but instead received an unexpected [token].
+     */
+    data class UnexpectedToken(val token: Token) : ParseError()
 }

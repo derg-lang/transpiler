@@ -3,43 +3,55 @@ package com.github.derg.transpiler.parser.patterns
 import com.github.derg.transpiler.ast.Assignment
 import com.github.derg.transpiler.ast.Expression
 import com.github.derg.transpiler.core.Name
-import com.github.derg.transpiler.lexer.Operator
-import com.github.derg.transpiler.parser.Context
+import com.github.derg.transpiler.lexer.SymbolType
+import com.github.derg.transpiler.lexer.Token
 import com.github.derg.transpiler.parser.ParseError
+import com.github.derg.transpiler.parser.ParseOk
 import com.github.derg.transpiler.parser.Parser
 import com.github.derg.transpiler.util.Result
-import com.github.derg.transpiler.util.mapValue
 
 /**
- * Parses an expression where a variable is assigned any arbitrary expression from the context, if possible. The grammar
- * does not forbid the assignment expression for occurring any location an ordinary expression can appear.
+ * Joins together the [name] with the [operator] and the [rhs] expression.
  */
-object ParserAssignment : Parser<Expression>
+private fun merge(name: Name, operator: SymbolType, rhs: Expression): Assignment = when (operator)
 {
-    private val pattern = ParserSequence(
-        ParserIdentifier,
-        ParserOperator(Operator.Type.ASSIGN,
-            Operator.Type.ASSIGN_PLUS,
-            Operator.Type.ASSIGN_MINUS,
-            Operator.Type.ASSIGN_MULTIPLY,
-            Operator.Type.ASSIGN_DIVIDE,
-            Operator.Type.ASSIGN_MODULO),
-        ParserExpression,
+    SymbolType.ASSIGN          -> Assignment.Assign(name, rhs)
+    SymbolType.ASSIGN_PLUS     -> Assignment.AssignAdd(name, rhs)
+    SymbolType.ASSIGN_MINUS    -> Assignment.AssignSubtract(name, rhs)
+    SymbolType.ASSIGN_MULTIPLY -> Assignment.AssignMultiply(name, rhs)
+    SymbolType.ASSIGN_MODULO   -> Assignment.AssignModulo(name, rhs)
+    SymbolType.ASSIGN_DIVIDE   -> Assignment.AssignDivide(name, rhs)
+    else                       -> throw IllegalStateException("Illegal operator $operator when parsing assignment")
+}
+
+/**
+ * Parses a single assignment from the provided token.
+ */
+class ParserAssignment : Parser<Assignment>
+{
+    private val parser = ParserSequence(
+        "name" to ParserName(),
+        "op" to ParserSymbol(
+            SymbolType.ASSIGN,
+            SymbolType.ASSIGN_PLUS,
+            SymbolType.ASSIGN_MINUS,
+            SymbolType.ASSIGN_MULTIPLY,
+            SymbolType.ASSIGN_DIVIDE,
+            SymbolType.ASSIGN_MODULO,
+        ),
+        "rhs" to ParserExpression(),
     )
     
-    override fun parse(context: Context): Result<Expression, ParseError>
+    override fun produce(): Assignment?
     {
-        return pattern.parse(context).mapValue { convert(it[0] as Name, it[1] as Operator.Type, it[2] as Expression) }
+        val values = parser.produce()
+        val name = values.produce<Name>("name") ?: return null
+        val op = values.produce<SymbolType>("op") ?: return null
+        val rhs = values.produce<Expression>("rhs") ?: return null
+        return merge(name, op, rhs)
     }
     
-    private fun convert(name: Name, operator: Operator.Type, expression: Expression): Expression = when (operator)
-    {
-        Operator.Type.ASSIGN          -> Assignment.Assign(name, expression)
-        Operator.Type.ASSIGN_PLUS     -> Assignment.AssignAdd(name, expression)
-        Operator.Type.ASSIGN_MINUS    -> Assignment.AssignSubtract(name, expression)
-        Operator.Type.ASSIGN_MULTIPLY -> Assignment.AssignMultiply(name, expression)
-        Operator.Type.ASSIGN_DIVIDE   -> Assignment.AssignDivide(name, expression)
-        Operator.Type.ASSIGN_MODULO   -> Assignment.AssignModulo(name, expression)
-        else                          -> throw IllegalStateException("Illegal operator $operator when parsing assignment")
-    }
+    override fun skipable(): Boolean = false
+    override fun parse(token: Token): Result<ParseOk, ParseError> = parser.parse(token)
+    override fun reset() = parser.reset()
 }

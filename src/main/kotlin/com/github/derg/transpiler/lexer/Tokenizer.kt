@@ -42,9 +42,7 @@ private typealias Tokenizer = (String, Int) -> Pair<Token, IntRange>?
  * be used to retrieve the next token from the source code.
  */
 private val TOKENIZERS: List<Tokenizer> = listOf(
-    ::extractKeyword,
-    ::extractOperator,
-    ::extractStructure,
+    ::extractSymbol,
     ::extractNumber,
     ::extractString,
     ::extractIdentifier,
@@ -65,29 +63,15 @@ private fun extractToken(input: String, cursor: Int): Pair<Token, IntRange>?
 }
 
 /**
- * Extracts the longest sequence of the provided [values] which matches the [input] at the [cursor] location.
+ * Extracts the symbol which matches the [input] at the [cursor] location.
  */
-private fun <Type : Foo> extractEnum(
-    input: String,
-    cursor: Int,
-    values: Iterable<Type>,
-    transformation: (Type) -> Token,
-): Pair<Token, IntRange>?
+private fun extractSymbol(input: String, cursor: Int): Pair<Token, IntRange>?
 {
-    val value = values
-        .filter { it.word == input.substringFrom(cursor, cursor + it.word.length) }
-        .maxByOrNull { it.word.length } ?: return null
-    return transformation(value) to IntRange(cursor, cursor + value.word.length)
+    val value = SymbolType.values()
+        .filter { it.symbol == input.substringFrom(cursor, cursor + it.symbol.length) }
+        .maxByOrNull { it.symbol.length } ?: return null
+    return Symbol(value) to IntRange(cursor, cursor + value.symbol.length)
 }
-
-private fun extractKeyword(input: String, cursor: Int): Pair<Token, IntRange>? =
-    extractEnum(input, cursor, Keyword.Type.values().toList()) { Keyword(it) }
-
-private fun extractOperator(input: String, cursor: Int): Pair<Token, IntRange>? =
-    extractEnum(input, cursor, Operator.Type.values().toList()) { Operator(it) }
-
-private fun extractStructure(input: String, cursor: Int): Pair<Token, IntRange>? =
-    extractEnum(input, cursor, Structure.Type.values().toList()) { Structure(it) }
 
 /**
  * Extracts the identifier in [input] starting at [cursor].
