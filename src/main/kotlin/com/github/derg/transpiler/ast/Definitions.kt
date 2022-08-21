@@ -67,3 +67,29 @@ data class Variable(
     val visibility: Visibility,
     val mutability: Mutability,
 ) : Definition()
+
+/**
+ * Functions are smaller subroutines of a program which can perform a specialized workload. Every function may return a
+ * [valueType], or raise an [errorType]. Functions accept any number of [parameters]. The value and error types are not
+ * required to be specified.
+ *
+ * @param visibility The visibility of the variable, to whom it is possible to access.
+ */
+data class Function(
+    val name: Name,
+    val valueType: Name?,
+    val errorType: Name?,
+    val parameters: List<FunctionParameter>,
+    val visibility: Visibility,
+)
+
+/**
+ * Every function may have any number of parameters, each with their own [name], optional [type] information and
+ * optional default [value]. Parameters must contain some degree of [mutability] specifier.
+ */
+data class FunctionParameter(
+    val name: Name,
+    val type: Name?,
+    val value: Expression?,
+    val mutability: Mutability,
+)

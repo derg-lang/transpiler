@@ -1,6 +1,7 @@
 package com.github.derg.transpiler.parser
 
 import com.github.derg.transpiler.ast.*
+import com.github.derg.transpiler.ast.Function
 import com.github.derg.transpiler.core.Name
 import com.github.derg.transpiler.lexer.EndOfFile
 import com.github.derg.transpiler.lexer.Token
@@ -76,6 +77,38 @@ fun varOf(
     type = type,
     value = value.toExp(),
     visibility = vis,
+    mutability = mut,
+)
+
+/**
+ * Generates function definition from the provided input parameters.
+ */
+fun funOf(
+    name: Name,
+    valType: Name? = null,
+    errType: Name? = null,
+    vis: Visibility = Visibility.PRIVATE,
+    params: List<FunctionParameter> = emptyList(),
+) = Function(
+    name = name,
+    valueType = valType,
+    errorType = errType,
+    parameters = params,
+    visibility = vis,
+)
+
+/**
+ * Generates function parameter definition from the provided input parameters.
+ */
+fun parOf(
+    name: Name,
+    type: Name? = null,
+    value: Any? = null,
+    mut: Mutability = Mutability.VALUE,
+) = FunctionParameter(
+    name = name,
+    type = type,
+    value = value?.toExp(),
     mutability = mut,
 )
 
