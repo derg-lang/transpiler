@@ -37,8 +37,8 @@ fun Any.toPar(name: Name? = null) = Parameter(name, toExp())
 
 // Generates expressions from operations
 fun opNot(that: Any) = Operator.Not(that.toExp())
-fun opPlus(that: Any) = Operator.UnaryPlus(that.toExp())
-fun opMinus(that: Any) = Operator.UnaryMinus(that.toExp())
+fun opPlus(that: Any) = Operator.Plus(that.toExp())
+fun opMinus(that: Any) = Operator.Minus(that.toExp())
 infix fun Any.opEq(that: Any) = Operator.Equal(toExp(), that.toExp())
 infix fun Any.opNe(that: Any) = Operator.NotEqual(toExp(), that.toExp())
 infix fun Any.opLe(that: Any) = Operator.LessEqual(toExp(), that.toExp())

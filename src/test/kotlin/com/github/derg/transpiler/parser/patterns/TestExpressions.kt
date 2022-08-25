@@ -62,7 +62,7 @@ class TestParserExpression
         tester.parse("1 <=> 2").isChain(1, 1, 1).isValue(1 opTw 2).resets()
         
         // Unary
-        tester.parse("!1").isChain(0, 1, 1).isValue(opNot(1))
+        tester.parse("~1").isChain(0, 1, 1).isValue(opNot(1))
         tester.parse("+1").isChain(0, 1, 1).isValue(opPlus(1))
         tester.parse("-1").isChain(0, 1, 1).isValue(opMinus(1))
     }
@@ -79,12 +79,12 @@ class TestParserExpression
         tester.parse("1 == (2 && 3)").step(7).isDone().isValue(1 opEq (2 opAnd 3))
         
         // Unary
-        tester.parse("!!1").step(3).isDone().isValue(opNot(opNot(1)))
+        tester.parse("~~1").step(3).isDone().isValue(opNot(opNot(1)))
         tester.parse("+-1").step(3).isDone().isValue(opPlus(opMinus(1)))
         
         // Mixed
         tester.parse("1 ++ 2").step(4).isDone().isValue(1 opAdd opPlus(2))
-        tester.parse("!1 * -2").step(5).isDone().isValue(opNot(1) opMul opMinus(2))
+        tester.parse("~1 * -2").step(5).isDone().isValue(opNot(1) opMul opMinus(2))
         tester.parse("-(1 * 2)").step(6).isDone().isValue(opMinus(1 opMul 2))
     }
     

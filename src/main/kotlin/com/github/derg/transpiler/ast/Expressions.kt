@@ -72,16 +72,21 @@ sealed class Operator : Expression()
     // UNARY OPERATORS
     
     /**
-     * Represents the positive value of [expression]. In almost all cases, this operation is a no-op and should not be
-     * utilized in software. It exists primarily to support the `+1` syntax, for symmetrical purposes (as `-1` is legal
-     * syntax).
+     * Represents the positive value of [expression]. In all cases, this operation is a no-op. It exists to support the
+     * `+1` syntax, for symmetrical purposes (as `-1` is legal syntax).
      */
-    data class UnaryPlus(val expression: Expression) : Operator()
+    data class Plus(val expression: Expression) : Operator()
     
     /**
      * Represents the negative value of [expression].
      */
-    data class UnaryMinus(val expression: Expression) : Operator()
+    data class Minus(val expression: Expression) : Operator()
+    
+    /**
+     * Represents the inverse value of [expression]. Typically, this operator is used to flip the expression's boolean
+     * value.
+     */
+    data class Not(val expression: Expression) : Operator()
     
     // COMPARISON OPERATORS
     
@@ -147,12 +152,6 @@ sealed class Operator : Expression()
      * determine whether one *or* the other expression evaluate to `true`.
      */
     data class Xor(val lhs: Expression, val rhs: Expression) : Operator()
-    
-    /**
-     * Performs a logical `not` operation on the given [expression]. Typically, this operator is used to flip the
-     * expression's boolean value.
-     */
-    data class Not(val expression: Expression) : Operator()
     
     // ARITHMETIC OPERATORS
     

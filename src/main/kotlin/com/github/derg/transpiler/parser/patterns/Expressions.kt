@@ -66,8 +66,8 @@ private fun mergeInfix(lhs: Expression, operator: SymbolType, rhs: Expression): 
 private fun mergePrefix(operator: SymbolType, rhs: Expression): Expression = when (operator)
 {
     SymbolType.NOT   -> Operator.Not(rhs)
-    SymbolType.PLUS  -> Operator.UnaryPlus(rhs)
-    SymbolType.MINUS -> Operator.UnaryMinus(rhs)
+    SymbolType.PLUS  -> Operator.Plus(rhs)
+    SymbolType.MINUS -> Operator.Minus(rhs)
     else             -> throw IllegalStateException("Illegal operator $operator when parsing prefix operator")
 }
 
