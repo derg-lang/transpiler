@@ -21,6 +21,7 @@ import com.github.derg.transpiler.util.successOf
  */
 private val PRECEDENCE = mapOf(
     SymbolType.AND to 4,
+    SymbolType.CATCH to 7,
     SymbolType.DIVIDE to 0,
     SymbolType.EQUAL to 3,
     SymbolType.GREATER to 3,
@@ -33,6 +34,7 @@ private val PRECEDENCE = mapOf(
     SymbolType.NOT_EQUAL to 3,
     SymbolType.OR to 5,
     SymbolType.PLUS to 1,
+    SymbolType.RAISE to 7,
     SymbolType.THREE_WAY to 2,
     SymbolType.XOR to 6,
 )
@@ -43,6 +45,7 @@ private val PRECEDENCE = mapOf(
 private fun mergeInfix(lhs: Expression, operator: SymbolType, rhs: Expression): Expression = when (operator)
 {
     SymbolType.AND           -> Operator.And(lhs, rhs)
+    SymbolType.CATCH         -> Operator.Catch(lhs, rhs)
     SymbolType.DIVIDE        -> Operator.Divide(lhs, rhs)
     SymbolType.EQUAL         -> Operator.Equal(lhs, rhs)
     SymbolType.GREATER       -> Operator.Greater(lhs, rhs)
@@ -55,6 +58,7 @@ private fun mergeInfix(lhs: Expression, operator: SymbolType, rhs: Expression): 
     SymbolType.NOT_EQUAL     -> Operator.NotEqual(lhs, rhs)
     SymbolType.OR            -> Operator.Or(lhs, rhs)
     SymbolType.PLUS          -> Operator.Add(lhs, rhs)
+    SymbolType.RAISE         -> Operator.Raise(lhs, rhs)
     SymbolType.THREE_WAY     -> Operator.ThreeWay(lhs, rhs)
     SymbolType.XOR           -> Operator.Xor(lhs, rhs)
     else                     -> throw IllegalStateException("Illegal operator $operator when parsing operator")
@@ -100,8 +104,8 @@ class ParserExpression : Parser<Expression>
 {
     private val parser = ParserRecursive { ParserOperatorExpression() }
     
-    override fun skipable(): Boolean = false
     override fun produce(): Expression? = parser.produce()
+    override fun skipable(): Boolean = false
     override fun parse(token: Token): Result<ParseOk, ParseError> = parser.parse(token)
     override fun reset() = parser.reset()
 }
@@ -282,12 +286,36 @@ private class ParserParenthesisExpression : Parser<Expression>
 {
     private val parser = ParserSequence(
         "open" to ParserSymbol(SymbolType.OPEN_PARENTHESIS),
-        "expr" to ParserExpression(),
+        "expr" to ParserRecursive { ParserOperatorExpression() },
         "close" to ParserSymbol(SymbolType.CLOSE_PARENTHESIS),
     )
     
     override fun skipable(): Boolean = false
     override fun produce(): Expression? = parser.produce().produce("expr")
+    override fun parse(token: Token): Result<ParseOk, ParseError> = parser.parse(token)
+    override fun reset() = parser.reset()
+}
+
+/**
+ * Parses an operator from the provided token. Prefix operators are non-trivial to construct, and involves recursively
+ * parsing the stream of tokens.
+ */
+private class ParserPrefixOperatorExpression : Parser<Expression>
+{
+    private val parser = ParserSequence(
+        "op" to ParserSymbol(SymbolType.PLUS, SymbolType.MINUS, SymbolType.NOT),
+        "rhs" to ParserRecursive { generateStandardParser() },
+    )
+    
+    override fun produce(): Expression?
+    {
+        val values = parser.produce()
+        val op = values.produce<SymbolType>("op") ?: return null
+        val rhs = values.produce<Expression>("rhs") ?: return null
+        return mergePrefix(op, rhs)
+    }
+    
+    override fun skipable(): Boolean = parser.skipable()
     override fun parse(token: Token): Result<ParseOk, ParseError> = parser.parse(token)
     override fun reset() = parser.reset()
 }
@@ -328,30 +356,6 @@ private class ParserOperatorExpression : Parser<Expression>
     }
     
     override fun skipable(): Boolean = false
-    override fun parse(token: Token): Result<ParseOk, ParseError> = parser.parse(token)
-    override fun reset() = parser.reset()
-}
-
-/**
- * Parses an operator from the provided token. Prefix operators are non-trivial to construct, and involves recursively
- * parsing the stream of tokens.
- */
-private class ParserPrefixOperatorExpression : Parser<Expression>
-{
-    private val parser = ParserSequence(
-        "op" to ParserSymbol(SymbolType.PLUS, SymbolType.MINUS, SymbolType.NOT),
-        "rhs" to ParserRecursive { generateStandardParser() },
-    )
-    
-    override fun produce(): Expression?
-    {
-        val values = parser.produce()
-        val op = values.produce<SymbolType>("op") ?: return null
-        val rhs = values.produce<Expression>("rhs") ?: return null
-        return mergePrefix(op, rhs)
-    }
-    
-    override fun skipable(): Boolean = parser.skipable()
     override fun parse(token: Token): Result<ParseOk, ParseError> = parser.parse(token)
     override fun reset() = parser.reset()
 }

@@ -179,4 +179,18 @@ sealed class Operator : Expression()
      * Performs a modulo operation between the [lhs] and [rhs] expressions.
      */
     data class Modulo(val lhs: Expression, val rhs: Expression) : Operator()
+    
+    // ERROR OPERATORS
+    
+    /**
+     * Catches any errors which are raised in the [lhs] expression, replacing errors with the [rhs] expression. In
+     * essence, this operator allows errors to be caught and replaced with a default value in their place.
+     */
+    data class Catch(val lhs: Expression, val rhs: Expression) : Operator()
+    
+    /**
+     * Catches any errors which are raised in the [lhs] expression. This operator transforms the error into another
+     * error, determined by the error type of the function.
+     */
+    data class Raise(val lhs: Expression, val rhs: Expression) : Operator()
 }

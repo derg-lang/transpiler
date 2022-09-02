@@ -93,7 +93,7 @@ enum class SymbolType(val symbol: String)
     GREATER_EQUAL(">="),
     LESS("<"),
     LESS_EQUAL("<="),
-    NOT_EQUAL("!="),
+    NOT_EQUAL("~="),
     THREE_WAY("<=>"),
     
     // Logical operators

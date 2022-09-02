@@ -54,7 +54,7 @@ class TestParserExpression
         tester.parse("1 || 2").isChain(1, 1, 1).isValue(1 opOr 2).resets()
         tester.parse("1 ^^ 2").isChain(1, 1, 1).isValue(1 opXor 2).resets()
         tester.parse("1 == 2").isChain(1, 1, 1).isValue(1 opEq 2).resets()
-        tester.parse("1 != 2").isChain(1, 1, 1).isValue(1 opNe 2).resets()
+        tester.parse("1 ~= 2").isChain(1, 1, 1).isValue(1 opNe 2).resets()
         tester.parse("1 < 2").isChain(1, 1, 1).isValue(1 opLt 2).resets()
         tester.parse("1 <= 2").isChain(1, 1, 1).isValue(1 opLe 2).resets()
         tester.parse("1 > 2").isChain(1, 1, 1).isValue(1 opGt 2).resets()
@@ -65,6 +65,10 @@ class TestParserExpression
         tester.parse("~1").isChain(0, 1, 1).isValue(opNot(1))
         tester.parse("+1").isChain(0, 1, 1).isValue(opPlus(1))
         tester.parse("-1").isChain(0, 1, 1).isValue(opMinus(1))
+        
+        // Error
+        tester.parse("1 ! 2").isChain(1, 1, 1).isValue(1 opRaise 2)
+        tester.parse("1 ? 2").isChain(1, 1, 1).isValue(1 opCatch 2)
     }
     
     @Test
@@ -86,6 +90,8 @@ class TestParserExpression
         tester.parse("1 ++ 2").step(4).isDone().isValue(1 opAdd opPlus(2))
         tester.parse("~1 * -2").step(5).isDone().isValue(opNot(1) opMul opMinus(2))
         tester.parse("-(1 * 2)").step(6).isDone().isValue(opMinus(1 opMul 2))
+        tester.parse("1 ! 2 + 3").step(5).isDone().isValue(1 opRaise (2 opAdd 3))
+        tester.parse("1 ? 2 + 3").step(5).isDone().isValue(1 opCatch (2 opAdd 3))
     }
     
     @Test

@@ -54,6 +54,8 @@ infix fun Any.opSub(that: Any) = Operator.Subtract(toExp(), that.toExp())
 infix fun Any.opMul(that: Any) = Operator.Multiply(toExp(), that.toExp())
 infix fun Any.opDiv(that: Any) = Operator.Divide(toExp(), that.toExp())
 infix fun Any.opMod(that: Any) = Operator.Modulo(toExp(), that.toExp())
+infix fun Any.opCatch(that: Any) = Operator.Catch(toExp(), that.toExp())
+infix fun Any.opRaise(that: Any) = Operator.Raise(toExp(), that.toExp())
 
 // Generates assignment from operations
 infix fun Name.assign(that: Any) = Assignment.Assign(this, that.toExp())
