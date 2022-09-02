@@ -59,6 +59,7 @@ enum class SymbolType(val symbol: String)
     
     // Structural components
     ARROW("->"),
+    CATCH("?"),
     CLOSE_BRACE("}"),
     CLOSE_BRACKET("]"),
     CLOSE_PARENTHESIS(")"),
@@ -68,6 +69,7 @@ enum class SymbolType(val symbol: String)
     OPEN_BRACKET("["),
     OPEN_PARENTHESIS("("),
     PERIOD("."),
+    RAISE("!"),
     SEMICOLON(";"),
     
     // Assignment operators
@@ -91,12 +93,12 @@ enum class SymbolType(val symbol: String)
     GREATER_EQUAL(">="),
     LESS("<"),
     LESS_EQUAL("<="),
-    NOT_EQUAL("!="),
+    NOT_EQUAL("~="),
     THREE_WAY("<=>"),
     
     // Logical operators
     AND("&&"),
-    NOT("!"),
+    NOT("~"),
     OR("||"),
     XOR("^^"),
 }

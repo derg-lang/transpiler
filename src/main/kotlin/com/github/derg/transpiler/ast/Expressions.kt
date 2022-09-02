@@ -72,16 +72,21 @@ sealed class Operator : Expression()
     // UNARY OPERATORS
     
     /**
-     * Represents the positive value of [expression]. In almost all cases, this operation is a no-op and should not be
-     * utilized in software. It exists primarily to support the `+1` syntax, for symmetrical purposes (as `-1` is legal
-     * syntax).
+     * Represents the positive value of [expression]. In all cases, this operation is a no-op. It exists to support the
+     * `+1` syntax, for symmetrical purposes (as `-1` is legal syntax).
      */
-    data class UnaryPlus(val expression: Expression) : Operator()
+    data class Plus(val expression: Expression) : Operator()
     
     /**
      * Represents the negative value of [expression].
      */
-    data class UnaryMinus(val expression: Expression) : Operator()
+    data class Minus(val expression: Expression) : Operator()
+    
+    /**
+     * Represents the inverse value of [expression]. Typically, this operator is used to flip the expression's boolean
+     * value.
+     */
+    data class Not(val expression: Expression) : Operator()
     
     // COMPARISON OPERATORS
     
@@ -148,12 +153,6 @@ sealed class Operator : Expression()
      */
     data class Xor(val lhs: Expression, val rhs: Expression) : Operator()
     
-    /**
-     * Performs a logical `not` operation on the given [expression]. Typically, this operator is used to flip the
-     * expression's boolean value.
-     */
-    data class Not(val expression: Expression) : Operator()
-    
     // ARITHMETIC OPERATORS
     
     /**
@@ -180,4 +179,18 @@ sealed class Operator : Expression()
      * Performs a modulo operation between the [lhs] and [rhs] expressions.
      */
     data class Modulo(val lhs: Expression, val rhs: Expression) : Operator()
+    
+    // ERROR OPERATORS
+    
+    /**
+     * Catches any errors which are raised in the [lhs] expression, replacing errors with the [rhs] expression. In
+     * essence, this operator allows errors to be caught and replaced with a default value in their place.
+     */
+    data class Catch(val lhs: Expression, val rhs: Expression) : Operator()
+    
+    /**
+     * Catches any errors which are raised in the [lhs] expression. This operator transforms the error into another
+     * error, determined by the error type of the function.
+     */
+    data class Raise(val lhs: Expression, val rhs: Expression) : Operator()
 }
