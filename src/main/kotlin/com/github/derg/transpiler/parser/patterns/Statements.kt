@@ -31,6 +31,7 @@ class ParserStatement : Parser<Statement>
     private val parser = ParserAnyOf(
         ParserAssignment(),
         ParserBranch(),
+        ParserRaise(),
     )
     
     override fun produce(): Statement? = parser.produce()
@@ -121,6 +122,27 @@ private class ParserBranch : Parser<Statement>
         val success = values.produce<Scope>("success") ?: return null
         val failure = values.produce<Parsers>("other")?.produce<Scope>("failure")
         return Control.Branch(predicate, success, failure)
+    }
+    
+    override fun skipable(): Boolean = false
+    override fun parse(token: Token): Result<ParseOk, ParseError> = parser.parse(token)
+    override fun reset() = parser.reset()
+}
+
+/**
+ * Parses a single raise control flow from the provided token.
+ */
+private class ParserRaise : Parser<Statement>
+{
+    private val parser = ParserSequence(
+        "raise" to ParserSymbol(SymbolType.RETURN_ERROR),
+        "expression" to ParserExpression(),
+    )
+    
+    override fun produce(): Statement?
+    {
+        val expression = parser.produce().produce<Expression>("expression") ?: return null
+        return Control.Raise(expression)
     }
     
     override fun skipable(): Boolean = false
