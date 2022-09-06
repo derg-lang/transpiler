@@ -115,6 +115,11 @@ fun parOf(
 )
 
 /**
+ * Generates a scope definition from the provided input parameters.
+ */
+fun scopeOf(isBraced: Boolean, vararg statements: Statement) = Scope(isBraced, statements.toList())
+
+/**
  * To simplify testing of the parsing of source code for any particular pattern [factory], a helper class is provided.
  * This tester class allows the developer to write clearer and more concise test cases when parsing specific source
  * code. Each source code snippet can be tailor-made to suit certain edge-cases.
