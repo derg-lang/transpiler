@@ -1,9 +1,6 @@
 package com.github.derg.transpiler.parser.patterns
 
-import com.github.derg.transpiler.ast.Assignment
-import com.github.derg.transpiler.ast.Expression
-import com.github.derg.transpiler.ast.Scope
-import com.github.derg.transpiler.ast.Statement
+import com.github.derg.transpiler.ast.*
 import com.github.derg.transpiler.core.Name
 import com.github.derg.transpiler.lexer.SymbolType
 import com.github.derg.transpiler.lexer.Token
@@ -33,6 +30,7 @@ class ParserStatement : Parser<Statement>
 {
     private val parser = ParserAnyOf(
         ParserAssignment(),
+        ParserBranch(),
     )
     
     override fun produce(): Statement? = parser.produce()
@@ -46,14 +44,17 @@ class ParserStatement : Parser<Statement>
  */
 class ParserScope : Parser<Scope>
 {
-    private val parser = ParserAnyOf(
-        ParserSequence("single" to ParserStatement()),
-        ParserSequence(
-            "open" to ParserSymbol(SymbolType.OPEN_BRACE),
-            "multiple" to ParserRepeating(ParserStatement()),
-            "close" to ParserSymbol(SymbolType.CLOSE_BRACE),
+    private val parser = ParserRecursive()
+    {
+        ParserAnyOf(
+            ParserSequence("single" to ParserStatement()),
+            ParserSequence(
+                "open" to ParserSymbol(SymbolType.OPEN_BRACE),
+                "multiple" to ParserRepeating(ParserStatement()),
+                "close" to ParserSymbol(SymbolType.CLOSE_BRACE),
+            )
         )
-    )
+    }
     
     override fun produce(): Scope?
     {
@@ -72,7 +73,7 @@ class ParserScope : Parser<Scope>
 /**
  * Parses a single assignment from the provided token.
  */
-private class ParserAssignment : Parser<Assignment>
+private class ParserAssignment : Parser<Statement>
 {
     private val parser = ParserSequence(
         "name" to ParserName(),
@@ -87,13 +88,39 @@ private class ParserAssignment : Parser<Assignment>
         "rhs" to ParserExpression(),
     )
     
-    override fun produce(): Assignment?
+    override fun produce(): Statement?
     {
         val values = parser.produce()
         val name = values.produce<Name>("name") ?: return null
         val op = values.produce<SymbolType>("op") ?: return null
         val rhs = values.produce<Expression>("rhs") ?: return null
         return merge(name, op, rhs)
+    }
+    
+    override fun skipable(): Boolean = false
+    override fun parse(token: Token): Result<ParseOk, ParseError> = parser.parse(token)
+    override fun reset() = parser.reset()
+}
+
+/**
+ * Parses a single branch control from the provided token.
+ */
+private class ParserBranch : Parser<Statement>
+{
+    private val parser = ParserSequence(
+        "if" to ParserSymbol(SymbolType.IF),
+        "predicate" to ParserExpression(),
+        "success" to ParserScope(),
+        "other" to ParserOptional(ParserSequence("else" to ParserSymbol(SymbolType.ELSE), "failure" to ParserScope())),
+    )
+    
+    override fun produce(): Statement?
+    {
+        val values = parser.produce()
+        val predicate = values.produce<Expression>("predicate") ?: return null
+        val success = values.produce<Scope>("success") ?: return null
+        val failure = values.produce<Parsers>("other")?.produce<Scope>("failure")
+        return Control.Branch(predicate, success, failure)
     }
     
     override fun skipable(): Boolean = false

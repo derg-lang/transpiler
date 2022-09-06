@@ -115,9 +115,16 @@ fun parOf(
 )
 
 /**
+ * Generates a branch structure from the provided input parameters.
+ */
+fun branchOf(predicate: Any, success: Scope, failure: Scope? = null) =
+    Control.Branch(predicate.toExp(), success, failure)
+
+/**
  * Generates a scope definition from the provided input parameters.
  */
-fun scopeOf(isBraced: Boolean, vararg statements: Statement) = Scope(isBraced, statements.toList())
+fun scopeOf(isBraced: Boolean, vararg statements: Statement) =
+    Scope(isBraced, statements.toList())
 
 /**
  * To simplify testing of the parsing of source code for any particular pattern [factory], a helper class is provided.

@@ -18,6 +18,12 @@ class TestParserStatement
         tester.parse("a *= 1").isWip(2).isOk(1).isDone().isValue("a" assignMul 1)
         tester.parse("a %= 1").isWip(2).isOk(1).isDone().isValue("a" assignMod 1)
         tester.parse("a /= 1").isWip(2).isOk(1).isDone().isValue("a" assignDiv 1)
+        
+        // Control flow
+        tester.parse("if 1 a = 2").isWip(4).isOk(1).isDone()
+            .isValue(branchOf(1, scopeOf(isBraced = false, "a" assign 2)))
+        tester.parse("if 1 {} else a = 2").isWip(3).isOk(1).isWip(3).isOk(1).isDone()
+            .isValue(branchOf(1, scopeOf(isBraced = true), scopeOf(isBraced = false, "a" assign 2)))
     }
     
     @Test
