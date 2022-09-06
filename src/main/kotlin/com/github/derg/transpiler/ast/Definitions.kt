@@ -81,7 +81,7 @@ data class Function(
     val errorType: Name?,
     val parameters: List<FunctionParameter>,
     val visibility: Visibility,
-)
+) : Definition()
 
 /**
  * Every function may have any number of parameters, each with their own [name], optional [type] information and
