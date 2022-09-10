@@ -31,6 +31,7 @@ class ParserStatement : Parser<Statement>
     private val parser = ParserAnyOf(
         ParserAssignment(),
         ParserBranch(),
+        ParserCall(),
         ParserRaise(),
         ParserReturn(),
     )
@@ -169,6 +170,21 @@ private class ParserReturn : Parser<Statement>
     }
     
     override fun skipable(): Boolean = false
+    override fun parse(token: Token): Result<ParseOk, ParseError> = parser.parse(token)
+    override fun reset() = parser.reset()
+}
+
+/**
+ * Parses a single expression statement from the provided token. Note that the parser does not implement analysis to
+ * determine whether the expression has any value or error types.
+ */
+private class ParserCall : Parser<Statement>
+{
+    // TODO: Not a correct implementation of the parser - must also function with error handling
+    private val parser = ParserFunctionExpression()
+    
+    override fun produce(): Statement? = parser.produce()?.let { Control.Call(it) }
+    override fun skipable(): Boolean = parser.skipable()
     override fun parse(token: Token): Result<ParseOk, ParseError> = parser.parse(token)
     override fun reset() = parser.reset()
 }
