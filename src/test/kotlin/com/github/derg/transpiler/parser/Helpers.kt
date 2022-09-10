@@ -67,6 +67,7 @@ infix fun Name.assignDiv(that: Any) = Assignment.AssignDivide(this, that.toExp()
 
 // Generates control flow
 fun raiseOf(expression: Any) = Control.Raise(expression.toExp())
+fun returnOf(expression: Any? = null) = Control.Return(expression?.toExp())
 
 /**
  * Generates variable definition from the provided input parameters.
@@ -94,12 +95,14 @@ fun funOf(
     errType: Name? = null,
     vis: Visibility = Visibility.PRIVATE,
     params: List<FunctionParameter> = emptyList(),
+    scope: Scope = scopeOf(true),
 ) = Function(
     name = name,
     valueType = valType,
     errorType = errType,
     parameters = params,
     visibility = vis,
+    scope = scope,
 )
 
 /**
