@@ -75,6 +75,7 @@ class ParserFunctionDefinition : Parser<Function>
         "error" to ParserOptional(ParserSequence("sym" to ParserSymbol(SymbolType.COLON), "type" to ParserName())),
         "value" to ParserOptional(ParserSequence("sym" to ParserSymbol(SymbolType.ARROW), "type" to ParserName())),
         "open_brace" to ParserSymbol(SymbolType.OPEN_BRACE),
+        "statements" to ParserRepeating(ParserStatement()),
         "close_brace" to ParserSymbol(SymbolType.CLOSE_BRACE),
     )
     
@@ -85,8 +86,9 @@ class ParserFunctionDefinition : Parser<Function>
             name = values.produce("name") ?: return null,
             valueType = values.produce<Parsers>("value")?.produce("type"),
             errorType = values.produce<Parsers>("error")?.produce("type"),
-            parameters = values.produce("parameters") ?: emptyList(),
+            parameters = values.produce("parameters") ?: return null,
             visibility = visibilityOf(values.produce("visibility")),
+            scope = Scope(true, values.produce("statements") ?: return null),
         )
     }
     

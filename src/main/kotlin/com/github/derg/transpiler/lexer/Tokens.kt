@@ -51,6 +51,7 @@ enum class SymbolType(val symbol: String)
     IN("in"),
     MUT("mut"),
     PUB("pub"),
+    RETURN_VALUE("return"),
     RETURN_ERROR("raise"),
     TRUE("true"),
     TYPE("type"),

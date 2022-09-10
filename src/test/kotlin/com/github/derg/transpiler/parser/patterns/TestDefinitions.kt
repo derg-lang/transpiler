@@ -75,6 +75,15 @@ class TestParserFunctionDefinition
     }
     
     @Test
+    fun `Given return statement, when parsing, then correctly parsed`()
+    {
+        tester.parse("fun f() { return _ }").isChain(7, 1)
+            .isValue(funOf("f", valType = null, scope = scopeOf(true, returnOf())))
+        tester.parse("fun f() -> Int { return 0 }").isChain(9, 1)
+            .isValue(funOf("f", valType = "Int", scope = scopeOf(true, returnOf(0))))
+    }
+    
+    @Test
     fun `Given invalid token, when parsing, then correct error`()
     {
         tester.parse("").isBad { ParseError.UnexpectedToken(EndOfFile) }
