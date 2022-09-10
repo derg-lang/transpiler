@@ -28,13 +28,15 @@ class TestParserStatement
         tester.parse("raise 1").isWip(1).isOk(1).isDone().isValue(raiseOf(1))
         tester.parse("return 1").isWip(1).isOk(1).isDone().isValue(returnOf(1))
         tester.parse("return _").isWip(1).isOk(1).isDone().isValue(returnOf())
+        
+        // Function call
+        tester.parse("a()").isWip(2).isOk(1).isDone().isValue(callOf("a".toFun()))
     }
     
     @Test
     fun `Given invalid token, when parsing, then correct error`()
     {
         tester.parse("").isBad { ParseError.UnexpectedToken(EndOfFile) }
-        tester.parse("a").isWip(1).isBad { ParseError.UnexpectedToken(EndOfFile) }
         tester.parse("a =").isWip(2).isBad { ParseError.UnexpectedToken(EndOfFile) }
     }
 }

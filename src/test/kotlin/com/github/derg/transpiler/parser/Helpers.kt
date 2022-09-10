@@ -65,7 +65,8 @@ infix fun Name.assignMul(that: Any) = Assignment.AssignMultiply(this, that.toExp
 infix fun Name.assignMod(that: Any) = Assignment.AssignModulo(this, that.toExp())
 infix fun Name.assignDiv(that: Any) = Assignment.AssignDivide(this, that.toExp())
 
-// Generates control flow
+// Generates statements
+fun callOf(expression: Any) = Control.Call(expression.toExp())
 fun raiseOf(expression: Any) = Control.Raise(expression.toExp())
 fun returnOf(expression: Any? = null) = Control.Return(expression?.toExp())
 
