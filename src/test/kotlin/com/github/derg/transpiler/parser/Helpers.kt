@@ -65,7 +65,7 @@ infix fun Name.assignMul(that: Any) = Assignment.AssignMultiply(this, that.toExp
 infix fun Name.assignMod(that: Any) = Assignment.AssignModulo(this, that.toExp())
 infix fun Name.assignDiv(that: Any) = Assignment.AssignDivide(this, that.toExp())
 
-// Generates statements
+// Generates statements from expressions
 fun callOf(expression: Any) = Control.Call(expression.toExp())
 fun raiseOf(expression: Any) = Control.Raise(expression.toExp())
 fun returnOf(expression: Any? = null) = Control.Return(expression?.toExp())
@@ -122,10 +122,16 @@ fun parOf(
 )
 
 /**
- * Generates a branch structure from the provided input parameters.
+ * Generates a branch statement from the provided input parameters.
  */
-fun branchOf(predicate: Any, success: Scope, failure: Scope? = null) =
+fun ifOf(predicate: Any, success: Scope, failure: Scope? = null) =
     Control.Branch(predicate.toExp(), success, failure)
+
+/**
+ * Generates a branch expression from the provided input parameters.
+ */
+fun whenOf(expression: Any, vararg branches: Pair<Any, Any>, default: Any? = null) =
+    When(expression.toExp(), branches.map { it.first.toExp() to it.second.toExp() }, default?.toExp())
 
 /**
  * Generates a scope definition from the provided input parameters.

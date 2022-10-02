@@ -21,9 +21,9 @@ class TestParserStatement
         
         // Control flow
         tester.parse("if 1 a = 2").isWip(4).isOk(1).isDone()
-            .isValue(branchOf(1, scopeOf(isBraced = false, "a" assign 2)))
+            .isValue(ifOf(1, scopeOf(isBraced = false, "a" assign 2)))
         tester.parse("if 1 {} else a = 2").isWip(3).isOk(1).isWip(3).isOk(1).isDone()
-            .isValue(branchOf(1, scopeOf(isBraced = true), scopeOf(isBraced = false, "a" assign 2)))
+            .isValue(ifOf(1, scopeOf(isBraced = true), scopeOf(isBraced = false, "a" assign 2)))
     
         tester.parse("raise 1").isWip(1).isOk(1).isDone().isValue(raiseOf(1))
         tester.parse("return 1").isWip(1).isOk(1).isDone().isValue(returnOf(1))

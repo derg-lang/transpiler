@@ -89,6 +89,7 @@ private fun generateStandardParser(): Parser<Expression> = ParserAnyOf(
     ParserSubscriptExpression(),
     ParserParenthesisExpression(),
     ParserPrefixOperatorExpression(),
+    ParserWhenExpression(),
 )
 
 /**
@@ -356,6 +357,52 @@ private class ParserOperatorExpression : Parser<Expression>
     }
     
     override fun skipable(): Boolean = false
+    override fun parse(token: Token): Result<ParseOk, ParseError> = parser.parse(token)
+    override fun reset() = parser.reset()
+}
+
+private class ParserWhenExpression : Parser<Expression>
+{
+    private val parser = ParserSequence(
+        "when" to ParserSymbol(SymbolType.WHEN),
+        "expression" to ParserExpression(),
+        "first" to ParserWhenBranch(),
+        "remainder" to ParserRepeating(ParserWhenBranch()),
+        "else" to ParserOptional(ParserSequence("else" to ParserSymbol(SymbolType.ELSE), "expr" to ParserExpression())),
+    )
+    
+    override fun produce(): Expression?
+    {
+        val values = parser.produce()
+        val expression = values.produce<Expression>("expression") ?: return null
+        val default = values.produce<Parsers>("else")?.produce<Expression>("expr")
+        val first = listOf(values.produce<Pair<Expression, Expression>>("first") ?: return null)
+        val branches = values.produce<List<Pair<Expression, Expression>>>("remainder") ?: return null
+        return When(expression, first + branches, default)
+    }
+    
+    override fun skipable(): Boolean = parser.skipable()
+    override fun parse(token: Token): Result<ParseOk, ParseError> = parser.parse(token)
+    override fun reset() = parser.reset()
+}
+
+private class ParserWhenBranch : Parser<Pair<Expression, Expression>>
+{
+    private val parser = ParserSequence(
+        "condition" to ParserExpression(),
+        "separator" to ParserSymbol(SymbolType.ARROW),
+        "expression" to ParserExpression(),
+    )
+    
+    override fun produce(): Pair<Expression, Expression>?
+    {
+        val values = parser.produce()
+        val cond = values.produce<Expression>("condition") ?: return null
+        val expr = values.produce<Expression>("expression") ?: return null
+        return cond to expr
+    }
+    
+    override fun skipable(): Boolean = parser.skipable()
     override fun parse(token: Token): Result<ParseOk, ParseError> = parser.parse(token)
     override fun reset() = parser.reset()
 }

@@ -194,3 +194,14 @@ sealed class Operator : Expression()
      */
     data class Raise(val lhs: Expression, val rhs: Expression) : Operator()
 }
+
+/**
+ * Specifies a conditional branching on the given [expression], where exactly one of the [branches] are chosen. If none
+ * of the conditions among all branches evaluate to true, the [default] expression is selected instead. The default
+ * expression may only be omitted when all possible conditions are provably covered by the compiler.
+ */
+data class When(
+    val expression: Expression,
+    val branches: List<Pair<Expression, Expression>>,
+    val default: Expression?,
+) : Expression()
