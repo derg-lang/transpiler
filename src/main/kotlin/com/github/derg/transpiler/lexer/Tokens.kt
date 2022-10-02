@@ -57,6 +57,7 @@ enum class SymbolType(val symbol: String)
     TYPE("type"),
     VAL("val"),
     VAR("var"),
+    WHEN("when"),
     WHILE("while"),
     
     // Structural components

@@ -69,6 +69,11 @@ class TestParserExpression
         // Error
         tester.parse("1 ! 2").isChain(1, 1, 1).isValue(1 opRaise 2)
         tester.parse("1 ? 2").isChain(1, 1, 1).isValue(1 opCatch 2)
+        
+        // When
+        tester.parse("when 1 2 -> 3").isChain(0, 4, 1).isValue(whenOf(1, 2 to 3))
+        tester.parse("when 1 2 -> 3 4 -> 5").isWip(4).isChain(1, 2, 1).isValue(whenOf(1, 2 to 3, 4 to 5))
+        tester.parse("when 1 2 -> 3 else 4").isWip(4).isChain(1, 1, 1).isValue(whenOf(1, 2 to 3, default = 4))
     }
     
     @Test
@@ -99,6 +104,7 @@ class TestParserExpression
     {
         tester.parse("").isBad { ParseError.UnexpectedToken(EndOfFile) }
         tester.parse("*").isBad { ParseError.UnexpectedToken(it[0]) }
+        tester.parse("when").isWip(1).isBad { ParseError.UnexpectedToken(EndOfFile) }
         
         // Structural errors
         tester.parse("(").isWip(1).isBad { ParseError.UnexpectedToken(EndOfFile) }
