@@ -71,6 +71,19 @@ fun raiseOf(expression: Any) = Control.Raise(expression.toExp())
 fun returnOf(expression: Any? = null) = Control.Return(expression?.toExp())
 
 /**
+ * Generates segment definition from the provided input parameters.
+ */
+fun segmentOf(
+    module: Name? = null,
+    imports: Set<Name> = emptySet(),
+    definitions: List<Definition> = emptyList(),
+) = Segment(
+    module = module,
+    imports = imports,
+    definitions = definitions,
+)
+
+/**
  * Generates variable definition from the provided input parameters.
  */
 fun varOf(
@@ -95,7 +108,7 @@ fun funOf(
     valType: Name? = null,
     errType: Name? = null,
     vis: Visibility = Visibility.PRIVATE,
-    params: List<FunctionParameter> = emptyList(),
+    params: List<Function.Parameter> = emptyList(),
     scope: Scope = scopeOf(true),
 ) = Function(
     name = name,
@@ -114,7 +127,7 @@ fun parOf(
     type: Name? = null,
     value: Any? = null,
     mut: Mutability = Mutability.VALUE,
-) = FunctionParameter(
+) = Function.Parameter(
     name = name,
     type = type,
     value = value?.toExp(),

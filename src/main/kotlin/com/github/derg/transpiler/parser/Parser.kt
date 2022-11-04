@@ -1,7 +1,25 @@
 package com.github.derg.transpiler.parser
 
+import com.github.derg.transpiler.ast.Segment
+import com.github.derg.transpiler.lexer.EndOfFile
 import com.github.derg.transpiler.lexer.Token
+import com.github.derg.transpiler.lexer.tokenize
+import com.github.derg.transpiler.parser.patterns.ParserSegment
 import com.github.derg.transpiler.util.Result
+import com.github.derg.transpiler.util.fold
+import com.github.derg.transpiler.util.valueOr
+
+/**
+ * Parses the [input] string into a single segment, forming a part of the overall program. The total collection of all
+ * segments makes up the program.
+ */
+fun parse(input: String): Segment
+{
+    val parser = ParserSegment()
+    val tokens = tokenize(input).map { it.data } + EndOfFile
+    tokens.fold { parser.parse(it) }.valueOr { throw IllegalStateException("Failed parsing token: $it") }
+    return parser.produce()
+}
 
 /**
  * All data which is read from the source code which is parsed must be converted into individual nodes. All nodes

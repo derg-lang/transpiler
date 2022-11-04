@@ -2,6 +2,7 @@ package com.github.derg.transpiler.parser.patterns
 
 import com.github.derg.transpiler.ast.*
 import com.github.derg.transpiler.ast.Function
+import com.github.derg.transpiler.core.Name
 import com.github.derg.transpiler.lexer.SymbolType
 import com.github.derg.transpiler.lexer.Token
 import com.github.derg.transpiler.parser.ParseError
@@ -31,9 +32,17 @@ private fun mutabilityOf(symbol: SymbolType): Mutability = when (symbol)
 }
 
 /**
+ * Generates a new fresh set of the base definition parsers.
+ */
+private fun generateStandardParser(): Parser<Definition> = ParserAnyOf(
+    ParserVariableDefinition(),
+    ParserFunctionDefinition(),
+)
+
+/**
  * Parses a variable definition from the provided token.
  */
-class ParserVariableDefinition : Parser<Variable>
+class ParserVariableDefinition : Parser<Definition>
 {
     private val parser = ParserSequence(
         "visibility" to ParserOptional(ParserSymbol(SymbolType.PUB)),
@@ -43,7 +52,7 @@ class ParserVariableDefinition : Parser<Variable>
         "value" to ParserExpression(),
     )
     
-    override fun produce(): Variable?
+    override fun produce(): Definition?
     {
         val values = parser.produce()
         return Variable(
@@ -63,7 +72,7 @@ class ParserVariableDefinition : Parser<Variable>
 /**
  * Parses a function definition from the provided token.
  */
-class ParserFunctionDefinition : Parser<Function>
+class ParserFunctionDefinition : Parser<Definition>
 {
     private val parser = ParserSequence(
         "visibility" to ParserOptional(ParserSymbol(SymbolType.PUB)),
@@ -79,7 +88,7 @@ class ParserFunctionDefinition : Parser<Function>
         "close_brace" to ParserSymbol(SymbolType.CLOSE_BRACE),
     )
     
-    override fun produce(): Function?
+    override fun produce(): Definition?
     {
         val values = parser.produce()
         return Function(
@@ -100,7 +109,7 @@ class ParserFunctionDefinition : Parser<Function>
 /**
  * Parses a function parameter definition from the provided token.
  */
-private class ParserFunctionParameterDefinition : Parser<FunctionParameter>
+private class ParserFunctionParameterDefinition : Parser<Function.Parameter>
 {
     private val parser = ParserSequence(
         "mutability" to ParserSymbol(SymbolType.VAL, SymbolType.VAR, SymbolType.MUT),
@@ -109,14 +118,38 @@ private class ParserFunctionParameterDefinition : Parser<FunctionParameter>
         "val" to ParserOptional(ParserSequence("sym" to ParserSymbol(SymbolType.ASSIGN), "val" to ParserExpression())),
     )
     
-    override fun produce(): FunctionParameter?
+    override fun produce(): Function.Parameter?
     {
         val values = parser.produce()
-        return FunctionParameter(
+        return Function.Parameter(
             name = values.produce("name") ?: return null,
             type = values.produce<Parsers>("type")?.produce("type"),
             value = values.produce<Parsers>("bal")?.produce("val"),
             mutability = mutabilityOf(values.produce("mutability") ?: return null),
+        )
+    }
+    
+    override fun skipable(): Boolean = false
+    override fun parse(token: Token): Result<ParseOk, ParseError> = parser.parse(token)
+    override fun reset() = parser.reset()
+}
+
+class ParserSegment : Parser<Segment>
+{
+    // TODO: Use statements should allow modules to be imported into namespaces
+    private val parser = ParserSequence(
+        "module" to ParserOptional(ParserSequence("sym" to ParserSymbol(SymbolType.MODULE), "name" to ParserName())),
+        "imports" to ParserRepeating(ParserSequence("sym" to ParserSymbol(SymbolType.USE), "name" to ParserName())),
+        "definitions" to ParserRepeating(generateStandardParser()),
+    )
+    
+    override fun produce(): Segment
+    {
+        val values = parser.produce()
+        return Segment(
+            module = values.produce<Parsers>("module")?.produce<Name>("name"),
+            imports = values.produce<List<Parsers>>("imports")?.mapNotNull { it.produce<Name>("name") }?.toSet() ?: emptySet(),
+            definitions = values.produce("definitions") ?: emptyList(),
         )
     }
     
