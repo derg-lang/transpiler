@@ -94,7 +94,8 @@ fun <T, R : Any> MutableList<T>.removeLastNotNullOrNull(transform: (T) -> R?): R
 }
 
 /**
- * Splits the original collection into pair of lists, where first list contains elements for which predicate yielded true, while second list contains elements for which predicate yielded false.
+ * Splits the original collection into a pair of lists, where first list contains elements for which predicate yielded
+ * true, while second list contains elements for which predicate yielded false.
  */
 inline fun <K, T> Map<K, T>.partition(predicate: (Map.Entry<K, T>) -> Boolean): Pair<Map<K, T>, Map<K, T>>
 {
