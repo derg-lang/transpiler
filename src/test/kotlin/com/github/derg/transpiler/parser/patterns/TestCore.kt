@@ -1,11 +1,13 @@
 package com.github.derg.transpiler.parser.patterns
 
 import com.github.derg.transpiler.lexer.EndOfFile
+import com.github.derg.transpiler.lexer.Numeric
 import com.github.derg.transpiler.lexer.SymbolType
 import com.github.derg.transpiler.parser.ParseError
 import com.github.derg.transpiler.parser.Tester
 import com.github.derg.transpiler.parser.hasValue
 import com.github.derg.transpiler.parser.toExp
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
 private const val REAL = "real"
@@ -226,6 +228,19 @@ class TestParserRepeating
         
         tester.parse("1").isWip(1).isBad { ParseError.UnexpectedToken(EndOfFile) }
         tester.parse("1 true, 2").isWip(1).isOk(2).isWip(1).isBad { ParseError.UnexpectedToken(EndOfFile) }
+    }
+    
+    @Test
+    fun `Given produced values, when resetting, then values are retained`()
+    {
+        val parser = ParserRepeating(ParserRealExpression())
+            .also { it.parse(Numeric(1, null)) }
+            .also { it.parse(EndOfFile) }
+        val items = parser.produce()
+        
+        assertTrue(items.isNotEmpty())
+        parser.reset()
+        assertTrue(items.isNotEmpty())
     }
 }
 

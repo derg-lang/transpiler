@@ -188,7 +188,7 @@ class ParserRepeating<Type>(private val parser: Parser<Type>, private val separa
     private var isIncomplete = false
     
     override fun skipable(): Boolean = true
-    override fun produce(): List<Type> = values
+    override fun produce(): List<Type> = values.toList() // Returns *copy* of list
     
     override fun parse(token: Token): Result<ParseOk, ParseError>
     {
