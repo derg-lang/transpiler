@@ -50,14 +50,14 @@ sealed interface Control : Statement
      * Splits the execution based on the [predicate]. If the predicate returns a `true` value, the [success] path is
      * chosen, otherwise the [failure] path is chosen (if specified).
      */
-    data class Branch(val predicate: Expression, val success: Scope, val failure: Scope?) : Statement
+    data class Branch(val predicate: Expression, val success: Scope, val failure: Scope?) : Control
     
     /**
      * While ordinarily expressions are not permitted to be statements, functions may be invoked directly as statements
      * under certain circumstances. The [expression] is not permitted to resolve down to any value, it must resolve to
      * something which does not have a type, and does not raise any error.
      */
-    data class Call(val expression: Expression) : Statement
+    data class Call(val expression: Expression) : Control
     
     /**
      * Specifies that a function should raise a specific [expression]. The raise statement functions similarly to the
@@ -65,12 +65,12 @@ sealed interface Control : Statement
      * function, this usually indicates that the function has failed to uphold its contract and produced a value which
      * does not conform to the expectations of the caller.
      */
-    data class Raise(val expression: Expression) : Statement
+    data class Raise(val expression: Expression) : Control
     
     /**
      * Specifies that a function should return a specific [expression]. The return statement marks the point where the
      * execution is resumed to the caller of the function, executing nothing else in the body of the function. Returning
      * a value from a function indicates usually that the function has succeeded in producing a usable value.
      */
-    data class Return(val expression: Expression?) : Statement
+    data class Return(val expression: Expression?) : Control
 }
