@@ -1,8 +1,9 @@
-package com.github.derg.transpiler.lexer
+package com.github.derg.transpiler.phases.lexer
 
 import com.github.derg.transpiler.core.Localized
 import com.github.derg.transpiler.core.Location
-import com.github.derg.transpiler.lexer.SymbolType.*
+import com.github.derg.transpiler.source.lexeme.*
+import com.github.derg.transpiler.source.lexeme.SymbolType.*
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test

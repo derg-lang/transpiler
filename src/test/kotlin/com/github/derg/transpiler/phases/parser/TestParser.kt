@@ -1,6 +1,6 @@
-package com.github.derg.transpiler.parser
+package com.github.derg.transpiler.phases.parser
 
-import com.github.derg.transpiler.ast.*
+import com.github.derg.transpiler.source.ast.*
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 

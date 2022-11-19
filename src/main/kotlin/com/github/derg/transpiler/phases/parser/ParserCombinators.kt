@@ -1,9 +1,6 @@
-package com.github.derg.transpiler.parser.patterns
+package com.github.derg.transpiler.phases.parser
 
-import com.github.derg.transpiler.lexer.Token
-import com.github.derg.transpiler.parser.ParseError
-import com.github.derg.transpiler.parser.ParseOk
-import com.github.derg.transpiler.parser.Parser
+import com.github.derg.transpiler.source.lexeme.Token
 import com.github.derg.transpiler.util.*
 
 /**

@@ -1,4 +1,4 @@
-package com.github.derg.transpiler.ast
+package com.github.derg.transpiler.source.ast
 
 /**
  * Every single element in the source code may be represented as a node in the abstract syntax tree. The nodes do not

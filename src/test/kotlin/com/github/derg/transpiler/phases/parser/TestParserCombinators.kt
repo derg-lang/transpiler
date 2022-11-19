@@ -1,12 +1,8 @@
-package com.github.derg.transpiler.parser.patterns
+package com.github.derg.transpiler.phases.parser
 
-import com.github.derg.transpiler.lexer.EndOfFile
-import com.github.derg.transpiler.lexer.Numeric
-import com.github.derg.transpiler.lexer.SymbolType
-import com.github.derg.transpiler.parser.ParseError
-import com.github.derg.transpiler.parser.Tester
-import com.github.derg.transpiler.parser.hasValue
-import com.github.derg.transpiler.parser.toExp
+import com.github.derg.transpiler.source.lexeme.EndOfFile
+import com.github.derg.transpiler.source.lexeme.Numeric
+import com.github.derg.transpiler.source.lexeme.SymbolType
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 

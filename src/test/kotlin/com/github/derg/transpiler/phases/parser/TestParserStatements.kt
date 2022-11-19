@@ -1,7 +1,6 @@
-package com.github.derg.transpiler.parser.patterns
+package com.github.derg.transpiler.phases.parser
 
-import com.github.derg.transpiler.lexer.EndOfFile
-import com.github.derg.transpiler.parser.*
+import com.github.derg.transpiler.source.lexeme.EndOfFile
 import org.junit.jupiter.api.Test
 
 class TestParserStatement

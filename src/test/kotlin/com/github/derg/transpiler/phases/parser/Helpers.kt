@@ -1,13 +1,11 @@
-package com.github.derg.transpiler.parser
+package com.github.derg.transpiler.phases.parser
 
-import com.github.derg.transpiler.ast.*
-import com.github.derg.transpiler.ast.Function
 import com.github.derg.transpiler.core.Name
-import com.github.derg.transpiler.lexer.EndOfFile
-import com.github.derg.transpiler.lexer.Token
-import com.github.derg.transpiler.lexer.tokenize
-import com.github.derg.transpiler.parser.patterns.Parsers
-import com.github.derg.transpiler.parser.patterns.produce
+import com.github.derg.transpiler.phases.lexer.tokenize
+import com.github.derg.transpiler.source.ast.*
+import com.github.derg.transpiler.source.ast.Function
+import com.github.derg.transpiler.source.lexeme.EndOfFile
+import com.github.derg.transpiler.source.lexeme.Token
 import com.github.derg.transpiler.util.failureOf
 import com.github.derg.transpiler.util.isSuccess
 import com.github.derg.transpiler.util.successOf

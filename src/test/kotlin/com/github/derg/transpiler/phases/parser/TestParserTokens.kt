@@ -1,8 +1,6 @@
-package com.github.derg.transpiler.parser.patterns
+package com.github.derg.transpiler.phases.parser
 
-import com.github.derg.transpiler.lexer.SymbolType
-import com.github.derg.transpiler.parser.ParseError
-import com.github.derg.transpiler.parser.Tester
+import com.github.derg.transpiler.source.lexeme.SymbolType
 import org.junit.jupiter.api.Test
 
 class TestParserName

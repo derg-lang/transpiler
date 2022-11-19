@@ -1,11 +1,8 @@
-package com.github.derg.transpiler.parser.patterns
+package com.github.derg.transpiler.phases.parser
 
-import com.github.derg.transpiler.ast.*
 import com.github.derg.transpiler.core.Name
-import com.github.derg.transpiler.lexer.*
-import com.github.derg.transpiler.parser.ParseError
-import com.github.derg.transpiler.parser.ParseOk
-import com.github.derg.transpiler.parser.Parser
+import com.github.derg.transpiler.source.ast.*
+import com.github.derg.transpiler.source.lexeme.*
 import com.github.derg.transpiler.util.Result
 import com.github.derg.transpiler.util.failureOf
 import com.github.derg.transpiler.util.successOf

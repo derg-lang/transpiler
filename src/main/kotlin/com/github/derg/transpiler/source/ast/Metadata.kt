@@ -1,4 +1,4 @@
-package com.github.derg.transpiler.ast
+package com.github.derg.transpiler.source.ast
 
 import com.github.derg.transpiler.core.Name
 

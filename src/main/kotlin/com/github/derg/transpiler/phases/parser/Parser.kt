@@ -1,10 +1,9 @@
-package com.github.derg.transpiler.parser
+package com.github.derg.transpiler.phases.parser
 
-import com.github.derg.transpiler.ast.Segment
-import com.github.derg.transpiler.lexer.EndOfFile
-import com.github.derg.transpiler.lexer.Token
-import com.github.derg.transpiler.lexer.tokenize
-import com.github.derg.transpiler.parser.patterns.ParserSegment
+import com.github.derg.transpiler.phases.lexer.tokenize
+import com.github.derg.transpiler.source.ast.Segment
+import com.github.derg.transpiler.source.lexeme.EndOfFile
+import com.github.derg.transpiler.source.lexeme.Token
 import com.github.derg.transpiler.util.Result
 import com.github.derg.transpiler.util.fold
 import com.github.derg.transpiler.util.valueOr

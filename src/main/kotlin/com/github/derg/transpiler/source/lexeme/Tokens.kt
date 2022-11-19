@@ -1,4 +1,4 @@
-package com.github.derg.transpiler.lexer
+package com.github.derg.transpiler.source.lexeme
 
 /**
  * A single token represents a single lexeme in the source code. Tokens may be extracted from the source code in various
