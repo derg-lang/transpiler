@@ -24,17 +24,25 @@ private fun merge(name: Name, operator: SymbolType, rhs: Expression): Assignment
 }
 
 /**
+ * Generates a new fresh set of the base statements parsers. This generator parses recursively, where sub-parsers may
+ * require parsing additional statements.
+ */
+private fun generateStandardParser(): Parser<Statement> = ParserAnyOf(
+    ParserVariableDefinition(),
+    ParserFunctionDefinition(),
+    ParserAssignment(),
+    ParserBranch(),
+    ParserCall(),
+    ParserRaise(),
+    ParserReturn(),
+)
+
+/**
  * Parses a single statement from the provided token.
  */
 class ParserStatement : Parser<Statement>
 {
-    private val parser = ParserAnyOf(
-        ParserAssignment(),
-        ParserBranch(),
-        ParserCall(),
-        ParserRaise(),
-        ParserReturn(),
-    )
+    private val parser = ParserRecursive { generateStandardParser() }
     
     override fun produce(): Statement? = parser.produce()
     override fun skipable(): Boolean = parser.skipable()

@@ -74,6 +74,6 @@ data class Scope(val isBraced: Boolean, val statements: List<Statement>)
  * component which allows code fragmentation to take place.
  *
  * @param imports The modules which are to be imported into this segment.
- * @param definitions All components which are injected into the module by this segment.
+ * @param statements All components which are injected into the module by this segment.
  */
-data class Segment(val module: Name?, val imports: Set<Name>, val definitions: List<Definition>)
+data class Segment(val module: Name?, val imports: Set<Name>, val statements: List<Definition>)

@@ -90,6 +90,14 @@ class TestParserFunctionDefinition
         tester.parse("fun").isWip(1).isBad { ParseError.UnexpectedToken(EndOfFile) }
         tester.parse("fun foo(").isWip(3).isBad { ParseError.UnexpectedToken(EndOfFile) }
     }
+    
+    @Test
+    fun `Given function with variable, when parsing, then correctly parsed`()
+    {
+        val expected = funOf("foo", scope = scopeOf(true, varOf("bar", 0)))
+        
+        tester.parse("fun foo() { val bar = 0 }").isChain(9, 1).isValue(expected)
+    }
 }
 
 class TestParserSegment
@@ -102,8 +110,8 @@ class TestParserSegment
         tester.parse("").isChain().isValue(segmentOf())
         tester.parse("module foo").isChain(1, 1).isValue(segmentOf(module = "foo"))
         tester.parse("use foo").isChain(1, 1).isValue(segmentOf(imports = setOf("foo")))
-        tester.parse("val foo = 0").isChain(3, 1).isValue(segmentOf(definitions = listOf(varOf("foo", 0))))
-        tester.parse("fun foo() {}").isChain(5, 1).isValue(segmentOf(definitions = listOf(funOf("foo"))))
+        tester.parse("val foo = 0").isChain(3, 1).isValue(segmentOf(statements = listOf(varOf("foo", 0))))
+        tester.parse("fun foo() {}").isChain(5, 1).isValue(segmentOf(statements = listOf(funOf("foo"))))
     }
     
     @Test
