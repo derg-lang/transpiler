@@ -76,11 +76,11 @@ fun returnOf(expression: Any? = null) = Control.Return(expression?.toExp())
 fun segmentOf(
     module: Name? = null,
     imports: Set<Name> = emptySet(),
-    definitions: List<Definition> = emptyList(),
+    statements: List<Definition> = emptyList(),
 ) = Segment(
     module = module,
     imports = imports,
-    definitions = definitions,
+    statements = statements,
 )
 
 /**

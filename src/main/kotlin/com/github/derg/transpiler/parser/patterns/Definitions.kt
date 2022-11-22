@@ -32,17 +32,9 @@ private fun mutabilityOf(symbol: SymbolType): Mutability = when (symbol)
 }
 
 /**
- * Generates a new fresh set of the base definition parsers.
- */
-private fun generateStandardParser(): Parser<Definition> = ParserAnyOf(
-    ParserVariableDefinition(),
-    ParserFunctionDefinition(),
-)
-
-/**
  * Parses a variable definition from the provided token.
  */
-class ParserVariableDefinition : Parser<Definition>
+class ParserVariableDefinition : Parser<Statement>
 {
     private val parser = ParserSequence(
         "visibility" to ParserOptional(ParserSymbol(SymbolType.PUB)),
@@ -72,7 +64,7 @@ class ParserVariableDefinition : Parser<Definition>
 /**
  * Parses a function definition from the provided token.
  */
-class ParserFunctionDefinition : Parser<Definition>
+class ParserFunctionDefinition : Parser<Statement>
 {
     private val parser = ParserSequence(
         "visibility" to ParserOptional(ParserSymbol(SymbolType.PUB)),
@@ -140,7 +132,7 @@ class ParserSegment : Parser<Segment>
     private val parser = ParserSequence(
         "module" to ParserOptional(ParserSequence("sym" to ParserSymbol(SymbolType.MODULE), "name" to ParserName())),
         "imports" to ParserRepeating(ParserSequence("sym" to ParserSymbol(SymbolType.USE), "name" to ParserName())),
-        "definitions" to ParserRepeating(generateStandardParser()),
+        "statements" to ParserRepeating(ParserStatement()),
     )
     
     override fun produce(): Segment
@@ -149,7 +141,7 @@ class ParserSegment : Parser<Segment>
         return Segment(
             module = values.produce<Parsers>("module")?.produce<Name>("name"),
             imports = values.produce<List<Parsers>>("imports")?.mapNotNull { it.produce<Name>("name") }?.toSet() ?: emptySet(),
-            definitions = values.produce("definitions") ?: emptyList(),
+            statements = values.produce("statements") ?: emptyList(),
         )
     }
     
