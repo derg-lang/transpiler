@@ -246,3 +246,15 @@ class ParserOptional<Type>(private val parser: Parser<Type>) : Parser<Type?>
         isOngoing = false
     }
 }
+
+/**
+ * Parses the token stream according to the provided [pattern]. When the pattern is considered satisfied, this parser is
+ * also satisfied and may use the [converter] to produce the final output.
+ */
+class ParserPattern<Type, Out>(private val pattern: Parser<Out>, private val converter: (Out) -> Type?) : Parser<Type>
+{
+    override fun skipable(): Boolean = pattern.skipable()
+    override fun produce(): Type? = pattern.produce()?.let(converter)
+    override fun parse(token: Token): Result<ParseOk, ParseError> = pattern.parse(token)
+    override fun reset() = pattern.reset()
+}

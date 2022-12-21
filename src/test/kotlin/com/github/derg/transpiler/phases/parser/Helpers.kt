@@ -153,14 +153,14 @@ fun scopeOf(isBraced: Boolean, vararg statements: Statement) =
     Scope(isBraced, statements.toList())
 
 /**
- * To simplify testing of the parsing of source code for any particular pattern [factory], a helper class is provided.
+ * To simplify testing of the parsing of source code for any particular pattern factory, a helper class is provided.
  * This tester class allows the developer to write clearer and more concise test cases when parsing specific source
  * code. Each source code snippet can be tailor-made to suit certain edge-cases.
  */
-class Tester<Type>(private val factory: () -> Parser<Type>)
+class Tester<Type>(factory: () -> Parser<Type>)
 {
-    internal lateinit var parser: Parser<Type>
-    private lateinit var tokens: List<Token>
+    internal val parser: Parser<Type> = factory()
+    private var tokens: List<Token> = emptyList()
     private var cursor: Int = 0
     
     /**
@@ -168,7 +168,7 @@ class Tester<Type>(private val factory: () -> Parser<Type>)
      */
     fun parse(source: String): Tester<Type>
     {
-        parser = factory()
+        parser.reset()
         tokens = tokenize(source).map { it.data }
         cursor = 0
         return this

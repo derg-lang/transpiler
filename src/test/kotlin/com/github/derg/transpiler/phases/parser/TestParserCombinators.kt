@@ -1,5 +1,8 @@
 package com.github.derg.transpiler.phases.parser
 
+import com.github.derg.transpiler.source.ast.Expression
+import com.github.derg.transpiler.source.ast.Operator
+import com.github.derg.transpiler.source.ast.Value
 import com.github.derg.transpiler.source.lexeme.EndOfFile
 import com.github.derg.transpiler.source.lexeme.Numeric
 import com.github.derg.transpiler.source.lexeme.SymbolType
@@ -270,5 +273,38 @@ class TestParserOptional
             Tester { ParserOptional(ParserSequence(REAL to ParserRealExpression(), BOOL to ParserBoolExpression())) }
         
         tester.parse("1 bah").isWip(1).isBad { ParseError.UnexpectedToken(it[1]) }
+    }
+}
+
+class TestParserPattern
+{
+    private val pattern = ParserSequence(
+        "lhs" to ParserRealExpression(),
+        "rhs" to ParserRealExpression(),
+    )
+    
+    private fun converter(outcome: Parsers): Expression?
+    {
+        val lhs = outcome.produce<Value.Real>("lhs") ?: return null
+        val rhs = outcome.produce<Value.Real>("rhs") ?: return null
+        return Operator.Add(lhs, rhs)
+    }
+    
+    @Test
+    fun `Given valid token, when parsing simple, then value produced`()
+    {
+        val tester = Tester { ParserPattern(pattern, ::converter) }
+        
+        tester.parse("1 2").isWip(1).isOk(1).isDone().isValue(1 opAdd 2).resets()
+    }
+    
+    @Test
+    fun `Given invalid token, when parsing simple, then correct error`()
+    {
+        val tester = Tester { ParserPattern(pattern, ::converter) }
+        
+        tester.parse("").isBad { ParseError.UnexpectedToken(EndOfFile) }
+        tester.parse("1").isWip(1).isBad { ParseError.UnexpectedToken(EndOfFile) }
+        tester.parse("1 true").isWip(1).isBad { ParseError.UnexpectedToken(it[1]) }
     }
 }
