@@ -69,6 +69,10 @@ class TestParserFunction
         tester.parse("fun foo(val a: Foo, val b: Bar) {}").isChain(14, 1)
             .isValue(funOf("foo", params = params))
         
+        // Default values for parameters must be supported
+        tester.parse("fun foo(val a = 1) {}").isChain(9, 1)
+            .isValue(funOf("foo", params = listOf(parOf("a", value = 1))))
+        
         // Visibility must be correctly parsed
         tester.parse("pub fun foo() {}").isChain(6, 1).isValue(funOf("foo", vis = Visibility.PUBLIC))
         tester.parse("    fun foo() {}").isChain(5, 1).isValue(funOf("foo", vis = Visibility.PRIVATE))

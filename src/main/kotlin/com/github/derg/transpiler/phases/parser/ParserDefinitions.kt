@@ -103,7 +103,7 @@ private fun functionParameterOutcomeOf(values: Parsers): Function.Parameter?
     return Function.Parameter(
         name = values.produce("name") ?: return null,
         type = values.produce<Parsers>("type")?.produce("type"),
-        value = values.produce<Parsers>("bal")?.produce("val"),
+        value = values.produce<Parsers>("val")?.produce("val"),
         mutability = mutabilityOf(values.produce("mutability") ?: return null),
     )
 }
