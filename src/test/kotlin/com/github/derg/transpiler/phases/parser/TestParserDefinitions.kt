@@ -102,7 +102,7 @@ class TestParserFunction
 
 class TestParserSegment
 {
-    private val tester = Tester { segmentParser() }
+    private val tester = Tester { segmentParserOf() }
     
     @Test
     fun `Given valid segment, when parsing, then correctly parsed`()

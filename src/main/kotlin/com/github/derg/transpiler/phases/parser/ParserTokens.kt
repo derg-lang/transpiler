@@ -9,7 +9,7 @@ import com.github.derg.transpiler.util.failureOf
 import com.github.derg.transpiler.util.successOf
 
 /**
- * Parses a single identifier from the provided token.
+ * Parses a single identifier from the token stream.
  */
 class ParserName : Parser<Name>
 {
@@ -34,7 +34,7 @@ class ParserName : Parser<Name>
 }
 
 /**
- * Parses a single symbol from the provided token. The parser will only accept one of the symbols present in the
+ * Parses a single symbol from the token stream. The parser will only accept one of the symbols present in the
  * [whitelist] when parsing. Any symbol not found in the whitelist is treated as an unexpected token.
  */
 class ParserSymbol(vararg symbols: SymbolType) : Parser<SymbolType>
@@ -61,7 +61,7 @@ class ParserSymbol(vararg symbols: SymbolType) : Parser<SymbolType>
 }
 
 /**
- * Parses a single boolean value from the provided token.
+ * Parses a single boolean value from the token stream.
  */
 class ParserBool : Parser<Expression>
 {
@@ -91,7 +91,7 @@ class ParserBool : Parser<Expression>
 }
 
 /**
- * Parses a single numeric value from the provided token.
+ * Parses a single numeric value from the token stream.
  */
 class ParserReal : Parser<Expression>
 {
@@ -116,7 +116,7 @@ class ParserReal : Parser<Expression>
 }
 
 /**
- * Parses a single string value from the provided token.
+ * Parses a single string value from the token stream.
  */
 class ParserText : Parser<Expression>
 {

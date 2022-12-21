@@ -19,10 +19,12 @@ private fun merge(name: Name, operator: SymbolType, rhs: Expression): Assignment
 }
 
 /**
- * Generates a new fresh set of the base statements parsers. This generator parses recursively, where sub-parsers may
- * require parsing additional statements.
+ * Parses a single statement from the token stream.
  */
-private fun generateStandardParser(): Parser<Statement> = ParserAnyOf(
+fun statementParserOf(): Parser<Statement> =
+    ParserPattern(::statementPatternOf) { it }
+
+private fun statementPatternOf(): Parser<Statement> = ParserAnyOf(
     variableParserOf(),
     functionParserOf(),
     assignmentParserOf(),
@@ -33,13 +35,7 @@ private fun generateStandardParser(): Parser<Statement> = ParserAnyOf(
 )
 
 /**
- * Parses a single statement from the provided token.
- */
-fun statementParserOf(): Parser<Statement> =
-    ParserPattern(::generateStandardParser) { it }
-
-/**
- * Parses a single scope from the provided token.
+ * Parses a single scope from the token stream.
  */
 fun scopeParserOf(): Parser<Scope> =
     ParserPattern(::scopePatternOf, ::scopeOutcomeOf)
@@ -62,7 +58,7 @@ private fun scopeOutcomeOf(values: Parsers): Scope?
 }
 
 /**
- * Parses a single assignment from the provided token.
+ * Parses a single assignment from the token stream.
  */
 private fun assignmentParserOf(): Parser<Statement> =
     ParserPattern(::assignmentPatternOf, ::assignmentOutcomeOf)
@@ -89,7 +85,7 @@ private fun assignmentOutcomeOf(values: Parsers): Assignment?
 }
 
 /**
- * Parses a single branch control from the provided token.
+ * Parses a single branch control from the token stream.
  */
 private fun branchParserOf(): Parser<Statement> =
     ParserPattern(::branchPatternOf, ::branchOutcomeOf)
@@ -110,7 +106,7 @@ private fun branchOutcomeOf(values: Parsers): Control.Branch?
 }
 
 /**
- * Parses a single raise control flow from the provided token.
+ * Parses a single raise control flow from the token stream.
  */
 private fun raiseParserOf(): Parser<Statement> =
     ParserPattern(::raisePatternOf, ::raiseOutcomeOf)
@@ -127,7 +123,7 @@ private fun raiseOutcomeOf(values: Parsers): Control.Raise?
 }
 
 /**
- * Parses a single return control flow from the provided token.
+ * Parses a single return control flow from the token stream.
  */
 private fun returnParserOf(): Parser<Statement> =
     ParserPattern(::returnPatternOf, ::returnOutcomeOf)
@@ -145,7 +141,7 @@ private fun returnOutcomeOf(values: Parsers): Control.Return?
 }
 
 /**
- * Parses a single expression statement from the provided token. Note that the parser does not implement analysis to
+ * Parses a single expression statement from the token stream. Note that the parser does not implement analysis to
  * determine whether the expression has any value or error types.
  */
 // TODO: Not a correct implementation of the parser - must also function with error handling

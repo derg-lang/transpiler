@@ -72,7 +72,7 @@ private fun mergePrefix(operator: SymbolType, rhs: Expression): Expression = whe
 /**
  * Joins together the [lhs] expression together with the remainder of the [terms], in a recursive manner.
  */
-private fun mergeRecursively(lhs: Expression, terms: List<Pair<SymbolType, Expression>>, index: Int): Expression
+private fun mergeRecursively(lhs: Expression, terms: List<Pair<SymbolType, Expression>>, index: Int = 0): Expression
 {
     val (op1, mhs) = terms.getOrNull(index) ?: return lhs
     val (op2, rhs) = terms.getOrNull(index + 1) ?: return mergeInfix(lhs, op1, mhs)
@@ -87,11 +87,12 @@ private fun mergeRecursively(lhs: Expression, terms: List<Pair<SymbolType, Expre
 }
 
 /**
- * Generates a new fresh set of the base expression parsers. The expressions do not contain the infix operator
- * expression parser, which requires special care to properly parse. It parses itself recursively in a non-trivial
- * manner.
+ * Parses a single expression from the token stream.
  */
-private fun generateStandardParser(): Parser<Expression> = ParserAnyOf(
+fun expressionParserOf(): Parser<Expression> =
+    ParserPattern(::expressionPatternOf, ::expressionOutcomeOf)
+
+private fun basePatternOf() = ParserAnyOf(
     ParserBool(),
     ParserReal(),
     ParserText(),
@@ -99,31 +100,37 @@ private fun generateStandardParser(): Parser<Expression> = ParserAnyOf(
     functionCallParserOf(),
     subscriptCallParserOf(),
     parenthesisParserOf(),
-    prefixOperatorParserOf(),
+    unaryOperatorParserOf(),
     whenParserOf(),
 )
 
-/**
- * Generates a new fresh infix operator parser. The parser will only accept one of the symbols which defines one of the
- * legal infix operators.
- */
-private fun generateOperatorParser(): Parser<SymbolType> =
-    ParserSymbol(*PRECEDENCE.keys.toTypedArray())
+private fun termPatternOf() = ParserSequence(
+    "operator" to ParserSymbol(*PRECEDENCE.keys.toTypedArray()), // Note: This handles all infix operators
+    "term" to basePatternOf(),
+)
+
+private fun expressionPatternOf() = ParserSequence(
+    "base" to basePatternOf(),
+    "terms" to ParserRepeating(termPatternOf()),
+)
+
+private fun expressionOutcomeOf(values: Parsers): Expression?
+{
+    val base = values.produce<Expression>("base") ?: return null
+    val terms = values.produce<List<Parsers>>("terms") ?: emptyList()
+    val ops = terms.produce<SymbolType>("operator")
+    val rest = terms.produce<Expression>("term")
+    return mergeRecursively(base, ops.zip(rest))
+}
 
 /**
- * Parses a single expression from the provided token.
- */
-fun expressionParserOf(): Parser<Expression> =
-    ParserPattern(::operatorParserOf) { it }
-
-/**
- * Parses a variable access expression from the provided token.
+ * Parses a variable access expression from the token stream.
  */
 private fun variableCallParserOf(): Parser<Expression> =
     ParserPattern(::ParserName) { Access.Variable(it) }
 
 /**
- * Parses a function call expression from the provided token.
+ * Parses a function call expression from the token stream.
  */
 internal fun functionCallParserOf(): Parser<Expression> =
     ParserPattern(::functionCallPatternOf, ::functionCallOutcomeOf)
@@ -143,7 +150,7 @@ private fun functionCallOutcomeOf(outcome: Parsers): Expression?
 }
 
 /**
- * Parses a subscript call expression from the provided token.
+ * Parses a subscript call expression from the token stream.
  */
 private fun subscriptCallParserOf(): Parser<Expression> =
     ParserPattern(::subscriptCallPatternOf, ::subscriptCallOutcomeOf)
@@ -163,7 +170,7 @@ private fun subscriptCallOutcomeOf(values: Parsers): Expression?
 }
 
 /**
- * Parses a function call parameter from the provided token.
+ * Parses a function call parameter from the token stream.
  */
 private fun parameterParserOf(): Parser<Parameter> =
     ParserPattern(::parameterPatternOf, ::parameterOutcomeOf)
@@ -181,14 +188,14 @@ private fun parameterOutcomeOf(values: Parsers): Parameter?
 }
 
 /**
- * Parses an expression from in-between parenthesis from the provided token.
+ * Parses an expression from in-between parenthesis from the token stream.
  */
 private fun parenthesisParserOf(): Parser<Expression> =
     ParserPattern(::parenthesisPatternOf, ::parenthesisOutcomeOf)
 
 private fun parenthesisPatternOf() = ParserSequence(
     "open" to ParserSymbol(SymbolType.OPEN_PARENTHESIS),
-    "expr" to operatorParserOf(),
+    "expr" to expressionParserOf(),
     "close" to ParserSymbol(SymbolType.CLOSE_PARENTHESIS),
 )
 
@@ -196,18 +203,17 @@ private fun parenthesisOutcomeOf(values: Parsers): Expression? =
     values.produce("expr")
 
 /**
- * Parses an operator from the provided token. Prefix operators are non-trivial to construct, and involves recursively
- * parsing the stream of tokens.
+ * Parses a unary operator from the token stream.
  */
-private fun prefixOperatorParserOf(): Parser<Expression> =
-    ParserPattern(::prefixOperatorPatternOf, ::prefixOperatorOutcomeOf)
+private fun unaryOperatorParserOf(): Parser<Expression> =
+    ParserPattern(::unaryOperatorPatternOf, ::unaryOperatorOutcomeOf)
 
-private fun prefixOperatorPatternOf() = ParserSequence(
+private fun unaryOperatorPatternOf() = ParserSequence(
     "op" to ParserSymbol(SymbolType.PLUS, SymbolType.MINUS, SymbolType.NOT),
-    "rhs" to generateStandardParser(),
+    "rhs" to basePatternOf(),
 )
 
-private fun prefixOperatorOutcomeOf(values: Parsers): Expression?
+private fun unaryOperatorOutcomeOf(values: Parsers): Expression?
 {
     val op = values.produce<SymbolType>("op") ?: return null
     val rhs = values.produce<Expression>("rhs") ?: return null
@@ -215,28 +221,7 @@ private fun prefixOperatorOutcomeOf(values: Parsers): Expression?
 }
 
 /**
- * Parses an operator from the provided token. Operators are non-trivial to construct, and parsing of them depends on
- * the type of operator, as well as the precedence.
- */
-private fun operatorParserOf(): Parser<Expression> =
-    ParserPattern(::operatorPatternOf, ::operatorOutcomeOf)
-
-private fun operatorPatternOf() = ParserSequence(
-    "lhs" to generateStandardParser(),
-    "terms" to ParserRepeating(ParserSequence("op" to generateOperatorParser(), "rhs" to generateStandardParser())),
-)
-
-private fun operatorOutcomeOf(values: Parsers): Expression?
-{
-    val lhs = values.produce<Expression>("lhs") ?: return null
-    val terms = values.produce<List<Parsers>>("terms") ?: emptyList()
-    val ops = terms.produce<SymbolType>("op")
-    val rhs = terms.produce<Expression>("rhs")
-    return mergeRecursively(lhs, ops.zip(rhs), 0)
-}
-
-/**
- *
+ * Parses a when expression from the token stream.
  */
 private fun whenParserOf(): Parser<Expression> =
     ParserPattern(::whenPatternOf, ::whenOutcomeOf)
@@ -259,7 +244,7 @@ private fun whenOutcomeOf(values: Parsers): Expression?
 }
 
 /**
- *
+ * Parses a when expression branch from the token stream.
  */
 private fun whenBranchParserOf(): Parser<Pair<Expression, Expression>> =
     ParserPattern(::whenBranchPatternOf, ::whenBranchOutcomeOf)
