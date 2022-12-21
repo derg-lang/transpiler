@@ -29,6 +29,17 @@ private fun mutabilityOf(symbol: SymbolType): Mutability = when (symbol)
 }
 
 /**
+ * Parses a symbol followed by an identifier. This operation is commonly used to specify optional type information or
+ * to provide an optional name after a specific [symbol]. The output of the parser will always be the name of the found
+ * identifier.
+ */
+private fun nameParserOf(symbol: SymbolType): Parser<Name> =
+    ParserPattern({ namePatternOf(symbol) }, { it.produce("name") })
+
+private fun namePatternOf(symbol: SymbolType) =
+    ParserSequence("symbol" to ParserSymbol(symbol), "name" to ParserName())
+
+/**
  * Parses a variable definition from the token stream.
  */
 fun variableParserOf(): Parser<Statement> =
@@ -66,8 +77,8 @@ private fun functionPatternOf() = ParserSequence(
     "open_parenthesis" to ParserSymbol(SymbolType.OPEN_PARENTHESIS),
     "parameters" to ParserRepeating(functionParameterParserOf(), ParserSymbol(SymbolType.COMMA)),
     "close_parenthesis" to ParserSymbol(SymbolType.CLOSE_PARENTHESIS),
-    "error" to ParserOptional(ParserSequence("sym" to ParserSymbol(SymbolType.COLON), "type" to ParserName())),
-    "value" to ParserOptional(ParserSequence("sym" to ParserSymbol(SymbolType.ARROW), "type" to ParserName())),
+    "error" to ParserOptional(nameParserOf(SymbolType.COLON)),
+    "value" to ParserOptional(nameParserOf(SymbolType.ARROW)),
     "open_brace" to ParserSymbol(SymbolType.OPEN_BRACE),
     "statements" to ParserRepeating(statementParserOf()),
     "close_brace" to ParserSymbol(SymbolType.CLOSE_BRACE),
@@ -77,8 +88,8 @@ private fun functionOutcomeOf(values: Parsers): Function?
 {
     return Function(
         name = values.produce("name") ?: return null,
-        valueType = values.produce<Parsers>("value")?.produce("type"),
-        errorType = values.produce<Parsers>("error")?.produce("type"),
+        valueType = values.produce("value"),
+        errorType = values.produce("error"),
         parameters = values.produce("parameters") ?: return null,
         visibility = visibilityOf(values.produce("visibility")),
         scope = Scope(true, values.produce("statements") ?: return null),
@@ -94,7 +105,7 @@ private fun functionParameterParserOf(): Parser<Function.Parameter> =
 private fun functionParameterPatternOf() = ParserSequence(
     "mutability" to ParserSymbol(SymbolType.VAL, SymbolType.VAR, SymbolType.MUT),
     "name" to ParserName(),
-    "type" to ParserOptional(ParserSequence("sym" to ParserSymbol(SymbolType.COLON), "type" to ParserName())),
+    "type" to ParserOptional(nameParserOf(SymbolType.COLON)),
     "val" to ParserOptional(ParserSequence("sym" to ParserSymbol(SymbolType.ASSIGN), "val" to expressionParserOf())),
 )
 
@@ -102,7 +113,7 @@ private fun functionParameterOutcomeOf(values: Parsers): Function.Parameter?
 {
     return Function.Parameter(
         name = values.produce("name") ?: return null,
-        type = values.produce<Parsers>("type")?.produce("type"),
+        type = values.produce("type"),
         value = values.produce<Parsers>("val")?.produce("val"),
         mutability = mutabilityOf(values.produce("mutability") ?: return null),
     )
@@ -116,8 +127,8 @@ fun segmentParserOf(): Parser<Segment> =
 
 // TODO: Use statements should allow modules to be imported into namespaces
 private fun segmentPatternOf() = ParserSequence(
-    "module" to ParserOptional(moduleParserOf()),
-    "imports" to ParserRepeating(importParserOf()),
+    "module" to ParserOptional(nameParserOf(SymbolType.MODULE)),
+    "imports" to ParserRepeating(nameParserOf(SymbolType.USE)),
     "statements" to ParserRepeating(statementParserOf()),
 )
 
@@ -129,9 +140,3 @@ private fun segmentOutcomeOf(values: Parsers): Segment
         statements = values.produce("statements") ?: emptyList(),
     )
 }
-
-private fun moduleParserOf(): Parser<Name> = ParserPattern(::modulePatternOf) { it.produce("name") }
-private fun modulePatternOf() = ParserSequence("sym" to ParserSymbol(SymbolType.MODULE), "name" to ParserName())
-
-private fun importParserOf(): Parser<Name> = ParserPattern(::importPatternOf) { it.produce("name") }
-private fun importPatternOf() = ParserSequence("sym" to ParserSymbol(SymbolType.USE), "name" to ParserName())
