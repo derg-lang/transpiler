@@ -3,8 +3,6 @@ package com.github.derg.transpiler.phases.parser
 import com.github.derg.transpiler.core.Name
 import com.github.derg.transpiler.source.ast.*
 import com.github.derg.transpiler.source.lexeme.SymbolType
-import com.github.derg.transpiler.source.lexeme.Token
-import com.github.derg.transpiler.util.Result
 
 /**
  * Joins together the [name] with the [operator] and the [rhs] expression.
@@ -21,175 +19,131 @@ private fun merge(name: Name, operator: SymbolType, rhs: Expression): Assignment
 }
 
 /**
- * Generates a new fresh set of the base statements parsers. This generator parses recursively, where sub-parsers may
- * require parsing additional statements.
+ * Parses a single statement from the token stream.
  */
-private fun generateStandardParser(): Parser<Statement> = ParserAnyOf(
-    ParserVariableDefinition(),
-    ParserFunctionDefinition(),
-    ParserAssignment(),
-    ParserBranch(),
-    ParserCall(),
-    ParserRaise(),
-    ParserReturn(),
+fun statementParserOf(): Parser<Statement> =
+    ParserPattern(::statementPatternOf) { it }
+
+private fun statementPatternOf(): Parser<Statement> = ParserAnyOf(
+    variableParserOf(),
+    functionParserOf(),
+    assignmentParserOf(),
+    branchParserOf(),
+    callParserOf(),
+    raiseParserOf(),
+    returnParserOf(),
 )
 
 /**
- * Parses a single statement from the provided token.
+ * Parses a single scope from the token stream.
  */
-class ParserStatement : Parser<Statement>
-{
-    private val parser = ParserRecursive { generateStandardParser() }
-    
-    override fun produce(): Statement? = parser.produce()
-    override fun skipable(): Boolean = parser.skipable()
-    override fun parse(token: Token): Result<ParseOk, ParseError> = parser.parse(token)
-    override fun reset() = parser.reset()
-}
+fun scopeParserOf(): Parser<Scope> =
+    ParserPattern(::scopePatternOf, ::scopeOutcomeOf)
 
-/**
- * Parses a single scope from the provided token.
- */
-class ParserScope : Parser<Scope>
-{
-    private val parser = ParserRecursive()
-    {
-        ParserAnyOf(
-            ParserSequence("single" to ParserStatement()),
-            ParserSequence(
-                "open" to ParserSymbol(SymbolType.OPEN_BRACE),
-                "multiple" to ParserRepeating(ParserStatement()),
-                "close" to ParserSymbol(SymbolType.CLOSE_BRACE),
-            )
-        )
-    }
-    
-    override fun produce(): Scope?
-    {
-        val values = parser.produce() ?: return null
-        val statement = values.produce<Statement>("single")
-        val statements = values.produce<List<Statement>>("multiple")
-        val isBraced = statement == null
-        return Scope(isBraced, statements ?: statement?.let { listOf(it) } ?: return null)
-    }
-    
-    override fun skipable(): Boolean = parser.skipable()
-    override fun parse(token: Token): Result<ParseOk, ParseError> = parser.parse(token)
-    override fun reset() = parser.reset()
-}
-
-/**
- * Parses a single assignment from the provided token.
- */
-private class ParserAssignment : Parser<Statement>
-{
-    private val parser = ParserSequence(
-        "name" to ParserName(),
-        "op" to ParserSymbol(
-            SymbolType.ASSIGN,
-            SymbolType.ASSIGN_PLUS,
-            SymbolType.ASSIGN_MINUS,
-            SymbolType.ASSIGN_MULTIPLY,
-            SymbolType.ASSIGN_DIVIDE,
-            SymbolType.ASSIGN_MODULO,
-        ),
-        "rhs" to ParserExpression(),
+private fun scopePatternOf() = ParserAnyOf(
+    ParserSequence("single" to statementParserOf()),
+    ParserSequence(
+        "open" to ParserSymbol(SymbolType.OPEN_BRACE),
+        "multiple" to ParserRepeating(statementParserOf()),
+        "close" to ParserSymbol(SymbolType.CLOSE_BRACE),
     )
-    
-    override fun produce(): Statement?
-    {
-        val values = parser.produce()
-        val name = values.produce<Name>("name") ?: return null
-        val op = values.produce<SymbolType>("op") ?: return null
-        val rhs = values.produce<Expression>("rhs") ?: return null
-        return merge(name, op, rhs)
-    }
-    
-    override fun skipable(): Boolean = false
-    override fun parse(token: Token): Result<ParseOk, ParseError> = parser.parse(token)
-    override fun reset() = parser.reset()
-}
+)
 
-/**
- * Parses a single branch control from the provided token.
- */
-private class ParserBranch : Parser<Statement>
+private fun scopeOutcomeOf(values: Parsers): Scope?
 {
-    private val parser = ParserSequence(
-        "if" to ParserSymbol(SymbolType.IF),
-        "predicate" to ParserExpression(),
-        "success" to ParserScope(),
-        "other" to ParserOptional(ParserSequence("else" to ParserSymbol(SymbolType.ELSE), "failure" to ParserScope())),
-    )
-    
-    override fun produce(): Statement?
-    {
-        val values = parser.produce()
-        val predicate = values.produce<Expression>("predicate") ?: return null
-        val success = values.produce<Scope>("success") ?: return null
-        val failure = values.produce<Parsers>("other")?.produce<Scope>("failure")
-        return Control.Branch(predicate, success, failure)
-    }
-    
-    override fun skipable(): Boolean = false
-    override fun parse(token: Token): Result<ParseOk, ParseError> = parser.parse(token)
-    override fun reset() = parser.reset()
+    val statement = values.produce<Statement>("single")
+    val statements = values.produce<List<Statement>>("multiple")
+    val isBraced = statement == null
+    return Scope(isBraced, statements ?: statement?.let { listOf(it) } ?: return null)
 }
 
 /**
- * Parses a single raise control flow from the provided token.
+ * Parses a single assignment from the token stream.
  */
-private class ParserRaise : Parser<Statement>
+private fun assignmentParserOf(): Parser<Statement> =
+    ParserPattern(::assignmentPatternOf, ::assignmentOutcomeOf)
+
+private fun assignmentPatternOf() = ParserSequence(
+    "name" to ParserName(),
+    "op" to ParserSymbol(
+        SymbolType.ASSIGN,
+        SymbolType.ASSIGN_PLUS,
+        SymbolType.ASSIGN_MINUS,
+        SymbolType.ASSIGN_MULTIPLY,
+        SymbolType.ASSIGN_DIVIDE,
+        SymbolType.ASSIGN_MODULO,
+    ),
+    "rhs" to expressionParserOf(),
+)
+
+private fun assignmentOutcomeOf(values: Parsers): Assignment?
 {
-    private val parser = ParserSequence(
-        "raise" to ParserSymbol(SymbolType.RETURN_ERROR),
-        "expression" to ParserExpression(),
-    )
-    
-    override fun produce(): Statement?
-    {
-        val expression = parser.produce().produce<Expression>("expression") ?: return null
-        return Control.Raise(expression)
-    }
-    
-    override fun skipable(): Boolean = false
-    override fun parse(token: Token): Result<ParseOk, ParseError> = parser.parse(token)
-    override fun reset() = parser.reset()
+    val name = values.produce<Name>("name") ?: return null
+    val op = values.produce<SymbolType>("op") ?: return null
+    val rhs = values.produce<Expression>("rhs") ?: return null
+    return merge(name, op, rhs)
 }
 
 /**
- * Parses a single return control flow from the provided token.
+ * Parses a single branch control from the token stream.
  */
-private class ParserReturn : Parser<Statement>
+private fun branchParserOf(): Parser<Statement> =
+    ParserPattern(::branchPatternOf, ::branchOutcomeOf)
+
+private fun branchPatternOf() = ParserSequence(
+    "if" to ParserSymbol(SymbolType.IF),
+    "predicate" to expressionParserOf(),
+    "success" to scopeParserOf(),
+    "other" to ParserOptional(ParserSequence("else" to ParserSymbol(SymbolType.ELSE), "failure" to scopeParserOf())),
+)
+
+private fun branchOutcomeOf(values: Parsers): Control.Branch?
 {
-    private val parser = ParserSequence(
-        "raise" to ParserSymbol(SymbolType.RETURN_VALUE),
-        "expression" to ParserExpression(),
-    )
-    
-    override fun produce(): Statement
-    {
-        val expression = parser.produce().produce<Expression>("expression")
-        // TODO: The magic string `_` should not be used. Use the type-information of the function to remove it
-        return if (expression == Access.Variable("_")) Control.Return(null) else Control.Return(expression)
-    }
-    
-    override fun skipable(): Boolean = false
-    override fun parse(token: Token): Result<ParseOk, ParseError> = parser.parse(token)
-    override fun reset() = parser.reset()
+    val predicate = values.produce<Expression>("predicate") ?: return null
+    val success = values.produce<Scope>("success") ?: return null
+    val failure = values.produce<Parsers>("other")?.produce<Scope>("failure")
+    return Control.Branch(predicate, success, failure)
 }
 
 /**
- * Parses a single expression statement from the provided token. Note that the parser does not implement analysis to
+ * Parses a single raise control flow from the token stream.
+ */
+private fun raiseParserOf(): Parser<Statement> =
+    ParserPattern(::raisePatternOf, ::raiseOutcomeOf)
+
+private fun raisePatternOf() = ParserSequence(
+    "symbol" to ParserSymbol(SymbolType.RETURN_ERROR),
+    "expression" to expressionParserOf(),
+)
+
+private fun raiseOutcomeOf(values: Parsers): Control.Raise?
+{
+    val expression = values.produce<Expression>("expression") ?: return null
+    return Control.Raise(expression)
+}
+
+/**
+ * Parses a single return control flow from the token stream.
+ */
+private fun returnParserOf(): Parser<Statement> =
+    ParserPattern(::returnPatternOf, ::returnOutcomeOf)
+
+private fun returnPatternOf() = ParserSequence(
+    "symbol" to ParserSymbol(SymbolType.RETURN_VALUE),
+    "expression" to expressionParserOf(),
+)
+
+private fun returnOutcomeOf(values: Parsers): Control.Return?
+{
+    val expression = values.produce<Expression>("expression") ?: return null
+    // TODO: The magic string `_` should not be used. Use the type-information of the function to remove it
+    return if (expression == Access.Variable("_")) Control.Return(null) else Control.Return(expression)
+}
+
+/**
+ * Parses a single expression statement from the token stream. Note that the parser does not implement analysis to
  * determine whether the expression has any value or error types.
  */
-private class ParserCall : Parser<Statement>
-{
-    // TODO: Not a correct implementation of the parser - must also function with error handling
-    private val parser = ParserFunctionExpression()
-    
-    override fun produce(): Statement? = parser.produce()?.let { Control.Call(it) }
-    override fun skipable(): Boolean = parser.skipable()
-    override fun parse(token: Token): Result<ParseOk, ParseError> = parser.parse(token)
-    override fun reset() = parser.reset()
-}
+// TODO: Not a correct implementation of the parser - must also function with error handling
+private fun callParserOf(): Parser<Statement> =
+    ParserPattern(::functionCallParserOf) { Control.Call(it) }

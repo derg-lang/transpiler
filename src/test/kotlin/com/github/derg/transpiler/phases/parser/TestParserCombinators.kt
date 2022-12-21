@@ -1,5 +1,8 @@
 package com.github.derg.transpiler.phases.parser
 
+import com.github.derg.transpiler.source.ast.Expression
+import com.github.derg.transpiler.source.ast.Operator
+import com.github.derg.transpiler.source.ast.Value
 import com.github.derg.transpiler.source.lexeme.EndOfFile
 import com.github.derg.transpiler.source.lexeme.Numeric
 import com.github.derg.transpiler.source.lexeme.SymbolType
@@ -23,7 +26,7 @@ class TestParserAnyOf
     @Test
     fun `Given valid token, when parsing simple, then value produced`()
     {
-        val tester = Tester { ParserAnyOf(ParserRealExpression(), ParserBoolExpression()) }
+        val tester = Tester { ParserAnyOf(ParserReal(), ParserBool()) }
         
         tester.parse("42").isOk(1).isDone().isValue(42.toExp()).resets()
         tester.parse("true").isOk(1).isDone().isValue(true.toExp()).resets()
@@ -35,9 +38,9 @@ class TestParserAnyOf
         val tester = Tester()
         {
             ParserAnyOf(
-                ParserSequence(REAL to ParserRealExpression(), BOOL to ParserBoolExpression()),
-                ParserSequence(TEXT to ParserTextExpression(), BOOL to ParserBoolExpression()),
-                ParserSequence(TEXT to ParserTextExpression()),
+                ParserSequence(REAL to ParserReal(), BOOL to ParserBool()),
+                ParserSequence(TEXT to ParserText(), BOOL to ParserBool()),
+                ParserSequence(TEXT to ParserText()),
             )
         }
         
@@ -52,7 +55,7 @@ class TestParserAnyOf
     @Test
     fun `Given invalid token, when parsing, then correct error`()
     {
-        val tester = Tester { ParserAnyOf(ParserRealExpression(), ParserBoolExpression()) }
+        val tester = Tester { ParserAnyOf(ParserReal(), ParserBool()) }
         
         tester.parse("bah").isBad { ParseError.UnexpectedToken(it[0]) }
     }
@@ -71,7 +74,7 @@ class TestParserAllOf
     @Test
     fun `Given valid token, when parsing simple, then value produced`()
     {
-        val tester = Tester { ParserAllOf(REAL to ParserRealExpression(), BOOL to ParserBoolExpression()) }
+        val tester = Tester { ParserAllOf(REAL to ParserReal(), BOOL to ParserBool()) }
         
         tester.parse("42 true").isWip(1).isOk(1).isDone()
             .hasValue(REAL, 42.toExp()).hasValue(BOOL, true.toExp())
@@ -85,9 +88,9 @@ class TestParserAllOf
         val tester = Tester()
         {
             ParserAllOf(
-                REAL to ParserSequence("a" to ParserRealExpression(), "b" to ParserRealExpression()),
-                BOOL to ParserBoolExpression(),
-                TEXT to ParserOptional(ParserTextExpression()),
+                REAL to ParserSequence("a" to ParserReal(), "b" to ParserReal()),
+                BOOL to ParserBool(),
+                TEXT to ParserOptional(ParserText()),
             )
         }
         
@@ -103,7 +106,7 @@ class TestParserAllOf
     @Test
     fun `Given invalid token, when parsing, then correct error`()
     {
-        val tester = Tester { ParserAllOf(REAL to ParserRealExpression(), BOOL to ParserBoolExpression()) }
+        val tester = Tester { ParserAllOf(REAL to ParserReal(), BOOL to ParserBool()) }
         
         tester.parse("bah").isBad { ParseError.UnexpectedToken(it[0]) }
         tester.parse("42").isWip(1).isBad { ParseError.UnexpectedToken(EndOfFile) }
@@ -127,9 +130,9 @@ class TestParserSequence
         val tester = Tester()
         {
             ParserSequence(
-                REAL to ParserRealExpression(),
-                BOOL to ParserBoolExpression(),
-                TEXT to ParserTextExpression(),
+                REAL to ParserReal(),
+                BOOL to ParserBool(),
+                TEXT to ParserText(),
             )
         }
         
@@ -143,9 +146,9 @@ class TestParserSequence
         val tester = Tester()
         {
             ParserSequence(
-                REAL to ParserSequence("a" to ParserRealExpression(), "b" to ParserRealExpression()),
-                BOOL to ParserSequence("a" to ParserBoolExpression(), "b" to ParserBoolExpression()),
-                TEXT to ParserOptional(ParserTextExpression()),
+                REAL to ParserSequence("a" to ParserReal(), "b" to ParserReal()),
+                BOOL to ParserSequence("a" to ParserBool(), "b" to ParserBool()),
+                TEXT to ParserOptional(ParserText()),
             )
         }
         
@@ -157,7 +160,7 @@ class TestParserSequence
     @Test
     fun `Given invalid token, when parsing, then correct error`()
     {
-        val tester = Tester { ParserSequence(REAL to ParserRealExpression(), BOOL to ParserBoolExpression()) }
+        val tester = Tester { ParserSequence(REAL to ParserReal(), BOOL to ParserBool()) }
         
         tester.parse("bah").isBad { ParseError.UnexpectedToken(it[0]) }
         tester.parse("1").isWip(1).isBad { ParseError.UnexpectedToken(EndOfFile) }
@@ -169,7 +172,7 @@ class TestParserRepeating
     @Test
     fun `Given valid token, when parsing simple, then value produced`()
     {
-        val tester = Tester { ParserRepeating(ParserRealExpression(), ParserSymbol(SymbolType.COMMA)) }
+        val tester = Tester { ParserRepeating(ParserReal(), ParserSymbol(SymbolType.COMMA)) }
         
         tester.parse("").isDone().isValue(emptyList())
         tester.parse("1").isOk(1).isDone().isValue(listOf(1.toExp())).resets(emptyList())
@@ -184,7 +187,7 @@ class TestParserRepeating
         val tester = Tester()
         {
             ParserRepeating(
-                ParserSequence(REAL to ParserRealExpression(), BOOL to ParserBoolExpression()),
+                ParserSequence(REAL to ParserReal(), BOOL to ParserBool()),
                 ParserSymbol(SymbolType.COMMA),
             )
         }
@@ -203,7 +206,7 @@ class TestParserRepeating
     fun `Given valid token, when parsing empty separator, then value produced`()
     {
         val tester =
-            Tester { ParserRepeating(ParserSequence(REAL to ParserRealExpression(), BOOL to ParserBoolExpression())) }
+            Tester { ParserRepeating(ParserSequence(REAL to ParserReal(), BOOL to ParserBool())) }
         
         tester.parse("1 true").isWip(1).isOk(1).isDone()
             .hasValue(REAL, 1.toExp())
@@ -217,7 +220,7 @@ class TestParserRepeating
         val tester = Tester()
         {
             ParserRepeating(
-                ParserSequence(REAL to ParserRealExpression(), BOOL to ParserBoolExpression()),
+                ParserSequence(REAL to ParserReal(), BOOL to ParserBool()),
                 ParserSymbol(SymbolType.COMMA),
             )
         }
@@ -229,7 +232,7 @@ class TestParserRepeating
     @Test
     fun `Given produced values, when resetting, then values are retained`()
     {
-        val parser = ParserRepeating(ParserRealExpression())
+        val parser = ParserRepeating(ParserReal())
             .also { it.parse(Numeric(1, null)) }
             .also { it.parse(EndOfFile) }
         val items = parser.produce()
@@ -245,7 +248,7 @@ class TestParserOptional
     @Test
     fun `Given valid token, when parsing simple, then value produced`()
     {
-        val tester = Tester { ParserOptional(ParserRealExpression()) }
+        val tester = Tester { ParserOptional(ParserReal()) }
         
         tester.parse("").isDone().isValue(null).resets()
         tester.parse("42").isOk(1).isDone().isValue(42.toExp()).resets()
@@ -255,7 +258,7 @@ class TestParserOptional
     fun `Given valid token, when parsing complex, then value produced`()
     {
         val tester =
-            Tester { ParserOptional(ParserSequence(REAL to ParserRealExpression(), BOOL to ParserBoolExpression())) }
+            Tester { ParserOptional(ParserSequence(REAL to ParserReal(), BOOL to ParserBool())) }
         
         tester.parse("").isDone()
             .hasValue(REAL, null).hasValue(BOOL, null)
@@ -267,8 +270,41 @@ class TestParserOptional
     fun `Given invalid token, when parsing, then correct error`()
     {
         val tester =
-            Tester { ParserOptional(ParserSequence(REAL to ParserRealExpression(), BOOL to ParserBoolExpression())) }
+            Tester { ParserOptional(ParserSequence(REAL to ParserReal(), BOOL to ParserBool())) }
         
         tester.parse("1 bah").isWip(1).isBad { ParseError.UnexpectedToken(it[1]) }
+    }
+}
+
+class TestParserPattern
+{
+    private fun pattern() = ParserSequence(
+        "lhs" to ParserReal(),
+        "rhs" to ParserReal(),
+    )
+    
+    private fun converter(outcome: Parsers): Expression?
+    {
+        val lhs = outcome.produce<Value.Real>("lhs") ?: return null
+        val rhs = outcome.produce<Value.Real>("rhs") ?: return null
+        return Operator.Add(lhs, rhs)
+    }
+    
+    @Test
+    fun `Given valid token, when parsing simple, then value produced`()
+    {
+        val tester = Tester { ParserPattern(::pattern, ::converter) }
+        
+        tester.parse("1 2").isWip(1).isOk(1).isDone().isValue(1 opAdd 2).resets()
+    }
+    
+    @Test
+    fun `Given invalid token, when parsing simple, then correct error`()
+    {
+        val tester = Tester { ParserPattern(::pattern, ::converter) }
+        
+        tester.parse("").isBad { ParseError.UnexpectedToken(EndOfFile) }
+        tester.parse("1").isWip(1).isBad { ParseError.UnexpectedToken(EndOfFile) }
+        tester.parse("1 true").isWip(1).isBad { ParseError.UnexpectedToken(it[1]) }
     }
 }

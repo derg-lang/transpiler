@@ -26,29 +26,6 @@ class Parsers(parsers: Map<String, Parser<*>>)
 fun <Type> List<Parsers>.produce(key: String): List<Type> = mapNotNull { it.produce(key) }
 
 /**
- * Parses the token stream in such a way that the underlying parser is only instantiated once required. The [factory]
- * must generate a fresh instance of the parser, and it will be fully removed once the recursive parser resets.
- */
-internal class ParserRecursive<Type>(private val factory: () -> Parser<Type>) : Parser<Type>
-{
-    private var parser: Parser<Type>? = null
-    
-    /**
-     * Actually instantiates the parser - if the parser has already been instantiated, the same instance is used for
-     * further token processing.
-     */
-    private fun parser(): Parser<Type> = parser ?: factory().also { parser = it }
-    
-    override fun skipable(): Boolean = parser().skipable()
-    override fun produce(): Type? = parser?.produce()
-    override fun parse(token: Token): Result<ParseOk, ParseError> = parser().parse(token)
-    override fun reset()
-    {
-        parser = null
-    }
-}
-
-/**
  * Parses the token stream in such a way that exactly one of the provided parsers parses. If more than a single pattern
  * matches the context, the parser consuming the most tokens is chosen. Ties are not permitted - exactly one parser must
  * be selected as the longest chain.
@@ -244,5 +221,30 @@ class ParserOptional<Type>(private val parser: Parser<Type>) : Parser<Type?>
     {
         parser.reset()
         isOngoing = false
+    }
+}
+
+/**
+ * Parses the token stream according to the provided pattern [factory]. When the pattern is considered satisfied, this
+ * parser is also satisfied and may use the [mapper] to produce the final output. This parser may be used recursively as
+ * well, i.e. allowing an expression parser to parse another expression while in the middle of parsing.
+ */
+class ParserPattern<Type, Out>(private val factory: () -> Parser<Out>, private val mapper: (Out) -> Type?) :
+    Parser<Type>
+{
+    private var parser: Parser<Out>? = null
+    
+    /**
+     * Actually instantiates the parser - if the parser has already been instantiated, the same instance is used for
+     * further token processing.
+     */
+    private fun parser(): Parser<Out> = parser ?: factory().also { parser = it }
+    
+    override fun skipable(): Boolean = parser().skipable()
+    override fun produce(): Type? = parser?.produce()?.let(mapper)
+    override fun parse(token: Token): Result<ParseOk, ParseError> = parser().parse(token)
+    override fun reset()
+    {
+        parser = null
     }
 }

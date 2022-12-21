@@ -1,5 +1,6 @@
 package com.github.derg.transpiler.phases.parser
 
+import com.github.derg.transpiler.source.lexeme.EndOfFile
 import com.github.derg.transpiler.source.lexeme.SymbolType
 import org.junit.jupiter.api.Test
 
@@ -35,6 +36,63 @@ class TestParserSymbol
     fun `Given invalid token, when parsing, then correct error`()
     {
         tester.parse("^^").isBad { ParseError.UnexpectedToken(it[0]) }
+        tester.parse("bah").isBad { ParseError.UnexpectedToken(it[0]) }
+    }
+}
+
+class TestParserBool
+{
+    private val tester = Tester { ParserBool() }
+    
+    @Test
+    fun `Given valid token, when parsing, then correct product`()
+    {
+        tester.parse("true").isOk(1).isDone().isValue(true.toExp()).resets()
+        tester.parse("false").isOk(1).isDone().isValue(false.toExp()).resets()
+    }
+    
+    @Test
+    fun `Given invalid token, when parsing, then correct error`()
+    {
+        tester.parse("").isBad { ParseError.UnexpectedToken(EndOfFile) }
+        tester.parse("if").isBad { ParseError.UnexpectedToken(it[0]) }
+        tester.parse("bah").isBad { ParseError.UnexpectedToken(it[0]) }
+    }
+}
+
+class TestParserReal
+{
+    private val tester = Tester { ParserReal() }
+    
+    @Test
+    fun `Given valid token, when parsing, then correct product`()
+    {
+        tester.parse("4").isOk(1).isDone().isValue(4.toExp()).resets()
+    }
+    
+    @Test
+    fun `Given invalid token, when parsing, then correct error`()
+    {
+        tester.parse("").isBad { ParseError.UnexpectedToken(EndOfFile) }
+        tester.parse("bah").isBad { ParseError.UnexpectedToken(it[0]) }
+    }
+}
+
+class TestParserText
+{
+    private val tester = Tester { ParserText() }
+    
+    @Test
+    fun `Given valid token, when parsing, then correct product`()
+    {
+        tester.parse("\"\"").isOk(1).isDone().isValue("".toExp()).resets()
+        tester.parse("\"foo\"").isOk(1).isDone().isValue("foo".toExp()).resets()
+    }
+    
+    @Test
+    fun `Given invalid token, when parsing, then correct error`()
+    {
+        tester.parse("").isBad { ParseError.UnexpectedToken(EndOfFile) }
         tester.parse("bah").isBad { ParseError.UnexpectedToken(it[0]) }
     }
 }

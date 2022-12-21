@@ -14,10 +14,10 @@ import com.github.derg.transpiler.util.valueOr
  */
 fun parse(input: String): Segment
 {
-    val parser = ParserSegment()
+    val parser = segmentParserOf()
     val tokens = tokenize(input).map { it.data } + EndOfFile
     tokens.fold { parser.parse(it) }.valueOr { throw IllegalStateException("Failed parsing token: $it") }
-    return parser.produce()
+    return parser.produce() ?: throw IllegalStateException("Failed to produce segment")
 }
 
 /**

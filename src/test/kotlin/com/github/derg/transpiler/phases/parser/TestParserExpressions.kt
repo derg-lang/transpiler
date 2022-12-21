@@ -13,7 +13,7 @@ private fun <Type> Tester<Type>.isChain(preOkCount: Int = 0, wipCount: Int = 0, 
 
 class TestParserExpression
 {
-    private val tester = Tester { ParserExpression() }
+    private val tester = Tester { expressionParserOf() }
     
     @Test
     fun `Given valid token, when parsing, then correct expression`()
