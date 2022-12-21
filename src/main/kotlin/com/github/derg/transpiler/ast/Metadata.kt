@@ -67,13 +67,3 @@ data class Parameter(val name: Name?, val expression: Expression)
  * @property isBraced Whether the scope is surrounded with braces or not.
  */
 data class Scope(val isBraced: Boolean, val statements: List<Statement>)
-
-/**
- * Every source code file is parsed into a single segment, in which the total collection of segments with the same
- * [module] name form a single module. The segment forms the most basic building block when structuring code, and is the
- * component which allows code fragmentation to take place.
- *
- * @param imports The modules which are to be imported into this segment.
- * @param statements All components which are injected into the module by this segment.
- */
-data class Segment(val module: Name?, val imports: Set<Name>, val statements: List<Definition>)
