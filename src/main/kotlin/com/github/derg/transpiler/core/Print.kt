@@ -1,7 +1,7 @@
 package com.github.derg.transpiler.core
 
-import com.github.derg.transpiler.ast.*
-import com.github.derg.transpiler.ast.Function
+import com.github.derg.transpiler.source.ast.*
+import com.github.derg.transpiler.source.ast.Function
 
 /**
  * Pretty-prints the entire abstract syntax tree defined from [this] node.

@@ -1,5 +1,7 @@
 package com.github.derg.transpiler.phases.parser
 
+import com.github.derg.transpiler.source.Mutability
+import com.github.derg.transpiler.source.Visibility
 import com.github.derg.transpiler.source.ast.*
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test

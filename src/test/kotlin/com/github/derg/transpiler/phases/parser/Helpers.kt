@@ -2,6 +2,8 @@ package com.github.derg.transpiler.phases.parser
 
 import com.github.derg.transpiler.core.Name
 import com.github.derg.transpiler.phases.lexer.tokenize
+import com.github.derg.transpiler.source.Mutability
+import com.github.derg.transpiler.source.Visibility
 import com.github.derg.transpiler.source.ast.*
 import com.github.derg.transpiler.source.ast.Function
 import com.github.derg.transpiler.source.lexeme.EndOfFile

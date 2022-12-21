@@ -1,6 +1,8 @@
 package com.github.derg.transpiler.source.ast
 
 import com.github.derg.transpiler.core.Name
+import com.github.derg.transpiler.source.Mutability
+import com.github.derg.transpiler.source.Visibility
 
 /**
  * Variables are units which hold a specific [value] and associates the value with a specific [name]. Variables may

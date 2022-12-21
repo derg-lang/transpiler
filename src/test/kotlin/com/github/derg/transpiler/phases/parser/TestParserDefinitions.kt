@@ -1,8 +1,8 @@
 package com.github.derg.transpiler.phases.parser
 
 import com.github.derg.transpiler.phases.parser.*
-import com.github.derg.transpiler.source.ast.Mutability
-import com.github.derg.transpiler.source.ast.Visibility
+import com.github.derg.transpiler.source.Mutability
+import com.github.derg.transpiler.source.Visibility
 import com.github.derg.transpiler.source.lexeme.EndOfFile
 import org.junit.jupiter.api.Test
 

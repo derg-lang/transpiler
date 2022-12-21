@@ -1,5 +1,6 @@
-package com.github.derg.transpiler.core
+package com.github.derg.transpiler.source.lir
 
+import com.github.derg.transpiler.core.Id
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 
