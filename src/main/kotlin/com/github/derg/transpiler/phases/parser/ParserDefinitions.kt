@@ -32,7 +32,7 @@ private fun mutabilityOf(symbol: SymbolType): Mutability = when (symbol)
  * Parses a variable definition from the provided token.
  */
 fun variableParserOf(): Parser<Statement> =
-    ParserPattern(variablePatternOf(), ::variableOutcomeOf)
+    ParserPattern(::variablePatternOf, ::variableOutcomeOf)
 
 private fun variablePatternOf() = ParserSequence(
     "visibility" to ParserOptional(ParserSymbol(SymbolType.PUB)),
@@ -57,7 +57,7 @@ private fun variableOutcomeOf(values: Parsers): Variable?
  * Parses a function definition from the provided token.
  */
 fun functionParserOf(): Parser<Statement> =
-    ParserPattern(functionPatternOf(), ::functionOutcomeOf)
+    ParserPattern(::functionPatternOf, ::functionOutcomeOf)
 
 private fun functionPatternOf() = ParserSequence(
     "visibility" to ParserOptional(ParserSymbol(SymbolType.PUB)),
@@ -89,7 +89,7 @@ private fun functionOutcomeOf(values: Parsers): Function?
  * Parses a function parameter definition from the provided token.
  */
 private fun functionParameterParser(): Parser<Function.Parameter> =
-    ParserPattern(functionParameterPattern(), ::functionParameterOutcome)
+    ParserPattern(::functionParameterPattern, ::functionParameterOutcome)
 
 private fun functionParameterPattern() = ParserSequence(
     "mutability" to ParserSymbol(SymbolType.VAL, SymbolType.VAR, SymbolType.MUT),
@@ -112,7 +112,7 @@ private fun functionParameterOutcome(values: Parsers): Function.Parameter?
  *
  */
 fun segmentParser(): Parser<Segment> =
-    ParserPattern(segmentPattern(), ::segmentOutcome)
+    ParserPattern(::segmentPattern, ::segmentOutcome)
 
 // TODO: Use statements should allow modules to be imported into namespaces
 private fun segmentPattern() = ParserSequence(

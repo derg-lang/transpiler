@@ -36,13 +36,13 @@ private fun generateStandardParser(): Parser<Statement> = ParserAnyOf(
  * Parses a single statement from the provided token.
  */
 fun statementParserOf(): Parser<Statement> =
-    ParserPattern(ParserRecursive(::generateStandardParser)) { it }
+    ParserPattern(::generateStandardParser) { it }
 
 /**
  * Parses a single scope from the provided token.
  */
 fun scopeParserOf(): Parser<Scope> =
-    ParserPattern(ParserRecursive(::scopePatternOf), ::scopeOutcomeOf)
+    ParserPattern(::scopePatternOf, ::scopeOutcomeOf)
 
 private fun scopePatternOf() = ParserAnyOf(
     ParserSequence("single" to statementParserOf()),
@@ -65,7 +65,7 @@ private fun scopeOutcomeOf(values: Parsers): Scope?
  * Parses a single assignment from the provided token.
  */
 private fun assignmentParserOf(): Parser<Statement> =
-    ParserPattern(assignmentPatternOf(), ::assignmentOutcomeOf)
+    ParserPattern(::assignmentPatternOf, ::assignmentOutcomeOf)
 
 private fun assignmentPatternOf() = ParserSequence(
     "name" to ParserName(),
@@ -92,7 +92,7 @@ private fun assignmentOutcomeOf(values: Parsers): Assignment?
  * Parses a single branch control from the provided token.
  */
 private fun branchParserOf(): Parser<Statement> =
-    ParserPattern(branchPatternOf(), ::branchOutcomeOf)
+    ParserPattern(::branchPatternOf, ::branchOutcomeOf)
 
 private fun branchPatternOf() = ParserSequence(
     "if" to ParserSymbol(SymbolType.IF),
@@ -113,7 +113,7 @@ private fun branchOutcomeOf(values: Parsers): Control.Branch?
  * Parses a single raise control flow from the provided token.
  */
 private fun raiseParserOf(): Parser<Statement> =
-    ParserPattern(raisePatternOf(), ::raiseOutcomeOf)
+    ParserPattern(::raisePatternOf, ::raiseOutcomeOf)
 
 private fun raisePatternOf() = ParserSequence(
     "symbol" to ParserSymbol(SymbolType.RETURN_ERROR),
@@ -130,7 +130,7 @@ private fun raiseOutcomeOf(values: Parsers): Control.Raise?
  * Parses a single return control flow from the provided token.
  */
 private fun returnParserOf(): Parser<Statement> =
-    ParserPattern(returnPatternOf(), ::returnOutcomeOf)
+    ParserPattern(::returnPatternOf, ::returnOutcomeOf)
 
 private fun returnPatternOf() = ParserSequence(
     "symbol" to ParserSymbol(SymbolType.RETURN_VALUE),
@@ -150,4 +150,4 @@ private fun returnOutcomeOf(values: Parsers): Control.Return?
  */
 // TODO: Not a correct implementation of the parser - must also function with error handling
 private fun callParserOf(): Parser<Statement> =
-    ParserPattern(functionCallParserOf()) { Control.Call(it) }
+    ParserPattern(::functionCallParserOf) { Control.Call(it) }

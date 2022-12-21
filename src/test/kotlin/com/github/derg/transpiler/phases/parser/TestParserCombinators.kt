@@ -278,7 +278,7 @@ class TestParserOptional
 
 class TestParserPattern
 {
-    private val pattern = ParserSequence(
+    private fun pattern() = ParserSequence(
         "lhs" to ParserReal(),
         "rhs" to ParserReal(),
     )
@@ -293,7 +293,7 @@ class TestParserPattern
     @Test
     fun `Given valid token, when parsing simple, then value produced`()
     {
-        val tester = Tester { ParserPattern(pattern, ::converter) }
+        val tester = Tester { ParserPattern(::pattern, ::converter) }
         
         tester.parse("1 2").isWip(1).isOk(1).isDone().isValue(1 opAdd 2).resets()
     }
@@ -301,7 +301,7 @@ class TestParserPattern
     @Test
     fun `Given invalid token, when parsing simple, then correct error`()
     {
-        val tester = Tester { ParserPattern(pattern, ::converter) }
+        val tester = Tester { ParserPattern(::pattern, ::converter) }
         
         tester.parse("").isBad { ParseError.UnexpectedToken(EndOfFile) }
         tester.parse("1").isWip(1).isBad { ParseError.UnexpectedToken(EndOfFile) }

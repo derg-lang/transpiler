@@ -114,19 +114,19 @@ private fun generateOperatorParser(): Parser<SymbolType> =
  * Parses a single expression from the provided token.
  */
 fun expressionParserOf(): Parser<Expression> =
-    ParserPattern(ParserRecursive { operatorParserOf() }) { it }
+    ParserPattern(::operatorParserOf) { it }
 
 /**
  * Parses a variable access expression from the provided token.
  */
 private fun variableCallParserOf(): Parser<Expression> =
-    ParserPattern(ParserName()) { Access.Variable(it) }
+    ParserPattern(::ParserName) { Access.Variable(it) }
 
 /**
  * Parses a function call expression from the provided token.
  */
 internal fun functionCallParserOf(): Parser<Expression> =
-    ParserPattern(functionCallPatternOf(), ::functionCallOutcomeOf)
+    ParserPattern(::functionCallPatternOf, ::functionCallOutcomeOf)
 
 private fun functionCallPatternOf() = ParserSequence(
     "name" to ParserName(),
@@ -146,7 +146,7 @@ private fun functionCallOutcomeOf(outcome: Parsers): Expression?
  * Parses a subscript call expression from the provided token.
  */
 private fun subscriptCallParserOf(): Parser<Expression> =
-    ParserPattern(subscriptCallPatternOf(), ::subscriptCallOutcomeOf)
+    ParserPattern(::subscriptCallPatternOf, ::subscriptCallOutcomeOf)
 
 private fun subscriptCallPatternOf() = ParserSequence(
     "name" to ParserName(),
@@ -166,7 +166,7 @@ private fun subscriptCallOutcomeOf(values: Parsers): Expression?
  * Parses a function call parameter from the provided token.
  */
 private fun parameterParserOf(): Parser<Parameter> =
-    ParserPattern(parameterPatternOf(), ::parameterOutcomeOf)
+    ParserPattern(::parameterPatternOf, ::parameterOutcomeOf)
 
 private fun parameterPatternOf() = ParserAnyOf(
     ParserSequence("expr" to expressionParserOf()),
@@ -184,11 +184,11 @@ private fun parameterOutcomeOf(values: Parsers): Parameter?
  * Parses an expression from in-between parenthesis from the provided token.
  */
 private fun parenthesisParserOf(): Parser<Expression> =
-    ParserPattern(parenthesisPatternOf(), ::parenthesisOutcomeOf)
+    ParserPattern(::parenthesisPatternOf, ::parenthesisOutcomeOf)
 
 private fun parenthesisPatternOf() = ParserSequence(
     "open" to ParserSymbol(SymbolType.OPEN_PARENTHESIS),
-    "expr" to ParserRecursive { operatorParserOf() },
+    "expr" to operatorParserOf(),
     "close" to ParserSymbol(SymbolType.CLOSE_PARENTHESIS),
 )
 
@@ -200,11 +200,11 @@ private fun parenthesisOutcomeOf(values: Parsers): Expression? =
  * parsing the stream of tokens.
  */
 private fun prefixOperatorParserOf(): Parser<Expression> =
-    ParserPattern(prefixOperatorPatternOf(), ::prefixOperatorOutcomeOf)
+    ParserPattern(::prefixOperatorPatternOf, ::prefixOperatorOutcomeOf)
 
 private fun prefixOperatorPatternOf() = ParserSequence(
     "op" to ParserSymbol(SymbolType.PLUS, SymbolType.MINUS, SymbolType.NOT),
-    "rhs" to ParserRecursive { generateStandardParser() },
+    "rhs" to generateStandardParser(),
 )
 
 private fun prefixOperatorOutcomeOf(values: Parsers): Expression?
@@ -219,7 +219,7 @@ private fun prefixOperatorOutcomeOf(values: Parsers): Expression?
  * the type of operator, as well as the precedence.
  */
 private fun operatorParserOf(): Parser<Expression> =
-    ParserPattern(operatorPatternOf(), ::operatorOutcomeOf)
+    ParserPattern(::operatorPatternOf, ::operatorOutcomeOf)
 
 private fun operatorPatternOf() = ParserSequence(
     "lhs" to generateStandardParser(),
@@ -239,7 +239,7 @@ private fun operatorOutcomeOf(values: Parsers): Expression?
  *
  */
 private fun whenParserOf(): Parser<Expression> =
-    ParserPattern(whenPatternOf(), ::whenOutcomeOf)
+    ParserPattern(::whenPatternOf, ::whenOutcomeOf)
 
 private fun whenPatternOf() = ParserSequence(
     "when" to ParserSymbol(SymbolType.WHEN),
@@ -262,7 +262,7 @@ private fun whenOutcomeOf(values: Parsers): Expression?
  *
  */
 private fun whenBranchParserOf(): Parser<Pair<Expression, Expression>> =
-    ParserPattern(whenBranchPatternOf(), ::whenBranchOutcomeOf)
+    ParserPattern(::whenBranchPatternOf, ::whenBranchOutcomeOf)
 
 private fun whenBranchPatternOf() = ParserSequence(
     "condition" to expressionParserOf(),
