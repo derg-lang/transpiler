@@ -5,7 +5,7 @@ import org.junit.jupiter.api.Test
 
 class TestParserStatement
 {
-    private val tester = Tester { ParserStatement() }
+    private val tester = Tester { statementParserOf() }
     
     @Test
     fun `Given valid token, when parsing, then correct statement`()
@@ -42,7 +42,7 @@ class TestParserStatement
 
 class TestParserScope
 {
-    private val tester = Tester { ParserScope() }
+    private val tester = Tester { scopeParserOf() }
     
     @Test
     fun `Given valid token, when parsing, then correct scope`()

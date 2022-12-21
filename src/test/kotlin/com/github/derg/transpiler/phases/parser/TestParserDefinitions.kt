@@ -14,9 +14,9 @@ import org.junit.jupiter.api.Test
 private fun <Type> Tester<Type>.isChain(wipCount: Int = 0, postOkCount: Int = 0): Tester<Type> =
     isWip(wipCount).isOk(postOkCount).isDone()
 
-class TestParserVariableDefinition
+class TestParserVariable
 {
-    private val tester = Tester { ParserVariableDefinition() }
+    private val tester = Tester { variableParserOf() }
     
     @Test
     fun `Given valid token, when parsing, then correctly parsed`()
@@ -40,9 +40,9 @@ class TestParserVariableDefinition
     }
 }
 
-class TestParserFunctionDefinition
+class TestParserFunction
 {
-    private val tester = Tester { ParserFunctionDefinition() }
+    private val tester = Tester { functionParserOf() }
     
     @Test
     fun `Given valid token, when parsing, then correctly parsed`()
@@ -102,7 +102,7 @@ class TestParserFunctionDefinition
 
 class TestParserSegment
 {
-    private val tester = Tester { ParserSegment() }
+    private val tester = Tester { segmentParser() }
     
     @Test
     fun `Given valid segment, when parsing, then correctly parsed`()

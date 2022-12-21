@@ -1,10 +1,9 @@
 package com.github.derg.transpiler.phases.parser
 
 import com.github.derg.transpiler.core.Name
-import com.github.derg.transpiler.source.lexeme.Identifier
-import com.github.derg.transpiler.source.lexeme.Symbol
-import com.github.derg.transpiler.source.lexeme.SymbolType
-import com.github.derg.transpiler.source.lexeme.Token
+import com.github.derg.transpiler.source.ast.Expression
+import com.github.derg.transpiler.source.ast.Value
+import com.github.derg.transpiler.source.lexeme.*
 import com.github.derg.transpiler.util.Result
 import com.github.derg.transpiler.util.failureOf
 import com.github.derg.transpiler.util.successOf
@@ -58,5 +57,85 @@ class ParserSymbol(vararg symbols: SymbolType) : Parser<SymbolType>
     override fun reset()
     {
         type = null
+    }
+}
+
+/**
+ * Parses a single boolean value from the provided token.
+ */
+class ParserBool : Parser<Expression>
+{
+    private var expression: Expression? = null
+    
+    override fun parse(token: Token): Result<ParseOk, ParseError>
+    {
+        if (expression != null)
+            return successOf(ParseOk.Finished)
+        
+        val symbol = token as? Symbol ?: return failureOf(ParseError.UnexpectedToken(token))
+        expression = when (symbol.type)
+        {
+            SymbolType.TRUE  -> Value.Bool(true)
+            SymbolType.FALSE -> Value.Bool(false)
+            else             -> return failureOf(ParseError.UnexpectedToken(token))
+        }
+        return successOf(ParseOk.Complete)
+    }
+    
+    override fun skipable(): Boolean = false
+    override fun produce(): Expression? = expression
+    override fun reset()
+    {
+        expression = null
+    }
+}
+
+/**
+ * Parses a single numeric value from the provided token.
+ */
+class ParserReal : Parser<Expression>
+{
+    private var expression: Expression? = null
+    
+    override fun parse(token: Token): Result<ParseOk, ParseError>
+    {
+        if (expression != null)
+            return successOf(ParseOk.Finished)
+        
+        val number = token as? Numeric ?: return failureOf(ParseError.UnexpectedToken(token))
+        expression = Value.Real(number.value, number.type)
+        return successOf(ParseOk.Complete)
+    }
+    
+    override fun skipable(): Boolean = false
+    override fun produce(): Expression? = expression
+    override fun reset()
+    {
+        expression = null
+    }
+}
+
+/**
+ * Parses a single string value from the provided token.
+ */
+class ParserText : Parser<Expression>
+{
+    private var expression: Expression? = null
+    
+    override fun parse(token: Token): Result<ParseOk, ParseError>
+    {
+        if (expression != null)
+            return successOf(ParseOk.Finished)
+        
+        val string = token as? Textual ?: return failureOf(ParseError.UnexpectedToken(token))
+        expression = Value.Text(string.value, string.type)
+        return successOf(ParseOk.Complete)
+    }
+    
+    override fun skipable(): Boolean = false
+    override fun produce(): Expression? = expression
+    override fun reset()
+    {
+        expression = null
     }
 }
