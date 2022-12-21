@@ -2,7 +2,6 @@ package com.github.derg.transpiler.phases.parser
 
 import com.github.derg.transpiler.source.ast.Expression
 import com.github.derg.transpiler.source.ast.Operator
-import com.github.derg.transpiler.source.ast.Value
 import com.github.derg.transpiler.source.lexeme.EndOfFile
 import com.github.derg.transpiler.source.lexeme.Numeric
 import com.github.derg.transpiler.source.lexeme.SymbolType
@@ -285,8 +284,8 @@ class TestParserPattern
     
     private fun converter(outcome: Parsers): Expression?
     {
-        val lhs = outcome.produce<Value.Real>("lhs") ?: return null
-        val rhs = outcome.produce<Value.Real>("rhs") ?: return null
+        val lhs = outcome.produce<Expression>("lhs") ?: return null
+        val rhs = outcome.produce<Expression>("rhs") ?: return null
         return Operator.Add(lhs, rhs)
     }
     
