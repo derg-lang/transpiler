@@ -26,7 +26,7 @@ data class Variable(
  * specified. Functions accept any number of [parameters], which allows different outcomes of invoking the function to
  * take place.
  *
- * @param visibility The visibility of the variable, to whom it is possible to access.
+ * @param visibility The visibility of the function, to whom it is possible to access.
  * @param scope The executable code which defines the function body.
  */
 data class Function(
@@ -39,7 +39,7 @@ data class Function(
 ) : Definition
 {
     /**
-     * Every function may have any number of parameters, each with their own [name], optional [type] information and
+     * Every function may have any number of parameters, each with their own [name], optional [type] information, and
      * optional default [value]. Parameters must contain some degree of [mutability] specifier.
      */
     data class Parameter(
@@ -59,3 +59,32 @@ data class Function(
  * @param statements All components which are injected into the module by this segment.
  */
 data class Segment(val module: Name?, val imports: Set<Name>, val statements: List<Definition>) : Definition
+
+/**
+ * All data structures are represented as types, which determines the shape of all data within a program. Types are not
+ * values within the program, but represents the shapes of values. This shape is given a [name], and may hold any number
+ * of additional [properties].
+ *
+ * @param visibility The visibility of the type, to whom it is possible to access.
+ */
+data class Type(
+    val name: Name,
+    val visibility: Visibility,
+    val properties: List<Property>,
+) : Definition
+{
+    /**
+     * Types may contain an arbitrary number of properties, each with their own [name], optional [type] information, and
+     * optional default [value]. Either a value must be provided, and/or type information.
+     *
+     * @param visibility The visibility of the variable, to whom it is possible to access.
+     * @param mutability The kind of the variable, to which degree it is mutable.
+     */
+    data class Property(
+        val name: Name,
+        val type: Name?,
+        val value: Expression?,
+        val visibility: Visibility,
+        val mutability: Mutability,
+    )
+}

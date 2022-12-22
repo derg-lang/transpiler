@@ -27,6 +27,7 @@ fun statementParserOf(): Parser<Statement> =
 private fun statementPatternOf(): Parser<Statement> = ParserAnyOf(
     variableParserOf(),
     functionParserOf(),
+    typeParserOf(),
     assignmentParserOf(),
     branchParserOf(),
     callParserOf(),

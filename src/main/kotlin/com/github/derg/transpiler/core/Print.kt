@@ -49,6 +49,7 @@ private fun Node.prettify(): String = when (this)
     is Operator.ThreeWay         -> stringifyBinary("<=>", lhs, rhs)
     is Operator.Xor              -> stringifyBinary("^^", lhs, rhs)
     is Segment                   -> prettify()
+    is Type                      -> prettify()
     is Value.Bool                -> stringifyLiteral(value, null)
     is Value.Real                -> stringifyLiteral(value, type)
     is Value.Text                -> stringifyLiteral(value, type)
@@ -109,19 +110,25 @@ private fun stringifyStatement(statement: String, expression: Expression?): Stri
  * Joins [this] collection of nodes into a single string. If [newlines] are assigned, all elements in [this] collection
  * are placed on a new line. If [indented] is also assigned, all entries are indented one additional level.
  */
-private fun Iterable<Node>.prettify(newlines: Boolean, indented: Boolean): String =
-    joinToString(if (newlines) "\n" else ", ") { it.prettify() }.let { if (indented) it.indent() else it }
+private fun <T> Iterable<T>.prettify(newlines: Boolean, indented: Boolean, transformation: (T) -> String): String =
+    joinToString(if (newlines) "\n" else ", ") { transformation(it) }.let { if (indented) it.indent() else it }
 
 private fun Segment.prettify(): String = """
     MODULE ${module ?: "<none>"}
     IMPORT ${imports.joinToString().ifBlank { "<none>" }}
-""".trimIndent() + "\n" + statements.prettify(newlines = true, indented = false)
+""".trimIndent() + "\n" + statements.prettify(newlines = true, indented = false) { it.prettify() }
 
 private fun Parameter.prettify(): String =
     "${name.format { "$it = " }}${expression.prettify()}"
 
 private fun Scope.prettify(): String =
-    "{\n${statements.prettify(newlines = true, indented = true)}\n}"
+    "{\n" + statements.prettify(newlines = true, indented = true) { it.prettify() } + "\n}"
+
+private fun Type.prettify(): String =
+    "$visibility TYPE $name\n{" + properties.prettify(newlines = true, indented = true) { it.prettify() } + "\n}"
+
+private fun Type.Property.prettify(): String =
+    "$visibility $mutability $name${type.format { ": $it" }}${value.format { " = ${it.prettify()}" }}"
 
 private fun Variable.prettify(): String =
     "$visibility $mutability $name = ${value.prettify()}"
