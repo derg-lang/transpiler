@@ -84,6 +84,36 @@ fun segmentOf(
 )
 
 /**
+ * Generates type definition from the provided input parameters.
+ */
+fun typeOf(
+    name: Name,
+    vis: Visibility = Visibility.PRIVATE,
+    props: List<Type.Property> = emptyList(),
+) = Type(
+    name = name,
+    visibility = vis,
+    properties = props,
+)
+
+/**
+ * Generates type property definition from the provided input parameters.
+ */
+fun propOf(
+    name: Name,
+    type: Name? = null,
+    value: Any? = null,
+    vis: Visibility = Visibility.PRIVATE,
+    mut: Mutability = Mutability.VALUE,
+) = Type.Property(
+    name = name,
+    type = type,
+    value = value?.toExp(),
+    visibility = vis,
+    mutability = mut,
+)
+
+/**
  * Generates variable definition from the provided input parameters.
  */
 fun varOf(

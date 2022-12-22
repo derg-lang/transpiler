@@ -1,15 +1,14 @@
 package com.github.derg.transpiler.phases.parser
 
-import com.github.derg.transpiler.phases.parser.*
 import com.github.derg.transpiler.source.Mutability
 import com.github.derg.transpiler.source.Visibility
 import com.github.derg.transpiler.source.lexeme.EndOfFile
 import org.junit.jupiter.api.Test
 
 /**
- * Determines whether the current token stream is parsed correctly. The expectation is that there will be [preOkCount]
- * number of tokens resulting in [ParseOk.Complete], followed by [wipCount] [ParseOk.Incomplete], then followed by
- * [postOkCount] [ParseOk.Complete] again, before finally resulting in [ParseOk.Finished].
+ * Determines whether the current token stream is parsed correctly. The expectation is that there will be [wipCount]
+ * number of tokens resulting in [ParseOk.Incomplete], followed by [postOkCount] [ParseOk.Complete], before finally
+ * resulting in [ParseOk.Finished].
  */
 private fun <Type> Tester<Type>.isChain(wipCount: Int = 0, postOkCount: Int = 0): Tester<Type> =
     isWip(wipCount).isOk(postOkCount).isDone()
@@ -61,17 +60,14 @@ class TestParserFunction
         tester.parse("fun foo(mut a: Foo) {}").isChain(9, 1)
             .isValue(funOf("foo", params = listOf(parOf("a", type = "Foo", mut = Mutability.MUTABLE))))
         
-        val params = listOf(
-            parOf("a", type = "Foo", mut = Mutability.VALUE),
-            parOf("b", type = "Bar", mut = Mutability.VALUE),
-        )
-        
         tester.parse("fun foo(val a: Foo, val b: Bar) {}").isChain(14, 1)
-            .isValue(funOf("foo", params = params))
+            .isValue(funOf("foo", params = listOf(parOf("a", type = "Foo"), parOf("b", type = "Bar"))))
         
         // Default values for parameters must be supported
         tester.parse("fun foo(val a = 1) {}").isChain(9, 1)
             .isValue(funOf("foo", params = listOf(parOf("a", value = 1))))
+        tester.parse("fun foo(val a: Foo = 1) {}").isChain(11, 1)
+            .isValue(funOf("foo", params = listOf(parOf("a", type = "Foo", value = 1))))
         
         // Visibility must be correctly parsed
         tester.parse("pub fun foo() {}").isChain(6, 1).isValue(funOf("foo", vis = Visibility.PUBLIC))
@@ -123,5 +119,49 @@ class TestParserSegment
     {
         tester.parse("module").isWip(1).isBad { ParseError.UnexpectedToken(EndOfFile) }
         tester.parse("use").isWip(1).isBad { ParseError.UnexpectedToken(EndOfFile) }
+    }
+}
+
+class TestParserType
+{
+    private val tester = Tester { typeParserOf() }
+    
+    @Test
+    fun `Given valid segment, when parsing, then correctly parsed`()
+    {
+        // Basic structure must be correctly parsed
+        tester.parse("type Foo {}").isChain(3, 1).isValue(typeOf("Foo"))
+        
+        // Properties must be correctly parsed
+        tester.parse("type Foo { val a: Bar }").isChain(7, 1)
+            .isValue(typeOf("Foo", props = listOf(propOf("a", type = "Bar", mut = Mutability.VALUE))))
+        tester.parse("type Foo { var a: Bar }").isChain(7, 1)
+            .isValue(typeOf("Foo", props = listOf(propOf("a", type = "Bar", mut = Mutability.VARYING))))
+        tester.parse("type Foo { mut a: Bar }").isChain(7, 1)
+            .isValue(typeOf("Foo", props = listOf(propOf("a", type = "Bar", mut = Mutability.MUTABLE))))
+        
+        tester.parse("type Foo { pub val a: Bar }").isChain(8, 1)
+            .isValue(typeOf("Foo", props = listOf(propOf("a", type = "Bar", vis = Visibility.PUBLIC))))
+        tester.parse("type Foo {     val a: Bar }").isChain(7, 1)
+            .isValue(typeOf("Foo", props = listOf(propOf("a", type = "Bar", vis = Visibility.PRIVATE))))
+        
+        tester.parse("type Foo { val a: Foo val b: Bar }").isChain(11, 1)
+            .isValue(typeOf("Foo", props = listOf(propOf("a", type = "Foo"), propOf("b", type = "Bar"))))
+        
+        // Default values for properties must be supported
+        tester.parse("type Foo { val a = 1 }").isChain(7, 1)
+            .isValue(typeOf("Foo", props = listOf(propOf("a", value = 1))))
+        
+        // Visibility must be correctly parsed
+        tester.parse("pub type Foo {}").isChain(4, 1).isValue(typeOf("Foo", vis = Visibility.PUBLIC))
+        tester.parse("    type Foo {}").isChain(3, 1).isValue(typeOf("Foo", vis = Visibility.PRIVATE))
+    }
+    
+    @Test
+    fun `Given invalid token, when parsing, then correct error`()
+    {
+        tester.parse("").isBad { ParseError.UnexpectedToken(EndOfFile) }
+        tester.parse("type").isWip(1).isBad { ParseError.UnexpectedToken(EndOfFile) }
+        tester.parse("type Foo {").isWip(3).isBad { ParseError.UnexpectedToken(EndOfFile) }
     }
 }

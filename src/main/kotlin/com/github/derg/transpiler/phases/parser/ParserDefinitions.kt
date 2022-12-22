@@ -40,6 +40,15 @@ private fun namePatternOf(symbol: SymbolType) =
     ParserSequence("symbol" to ParserSymbol(symbol), "name" to ParserName())
 
 /**
+ * Parses a symbol followed by an expression.
+ */
+private fun valueParserOf(symbol: SymbolType): Parser<Expression> =
+    ParserPattern({ valuePatternOf(symbol) }, { it.produce("expression") })
+
+private fun valuePatternOf(symbol: SymbolType) =
+    ParserSequence("symbol" to ParserSymbol(symbol), "expression" to expressionParserOf())
+
+/**
  * Parses a variable definition from the token stream.
  */
 fun variableParserOf(): Parser<Statement> =
@@ -106,7 +115,7 @@ private fun functionParameterPatternOf() = ParserSequence(
     "mutability" to ParserSymbol(SymbolType.VAL, SymbolType.VAR, SymbolType.MUT),
     "name" to ParserName(),
     "type" to ParserOptional(nameParserOf(SymbolType.COLON)),
-    "val" to ParserOptional(ParserSequence("sym" to ParserSymbol(SymbolType.ASSIGN), "val" to expressionParserOf())),
+    "value" to ParserOptional(valueParserOf(SymbolType.ASSIGN)),
 )
 
 private fun functionParameterOutcomeOf(values: Parsers): Function.Parameter?
@@ -114,7 +123,7 @@ private fun functionParameterOutcomeOf(values: Parsers): Function.Parameter?
     return Function.Parameter(
         name = values.produce("name") ?: return null,
         type = values.produce("type"),
-        value = values.produce<Parsers>("val")?.produce("val"),
+        value = values.produce("value"),
         mutability = mutabilityOf(values.produce("mutability") ?: return null),
     )
 }
@@ -138,5 +147,55 @@ private fun segmentOutcomeOf(values: Parsers): Segment
         module = values.produce("module"),
         imports = values.produce<List<Name>>("imports")?.toSet() ?: emptySet(),
         statements = values.produce("statements") ?: emptyList(),
+    )
+}
+
+/**
+ * Parses a type definition from the token stream.
+ */
+
+fun typeParserOf(): Parser<Statement> =
+    ParserPattern(::typePatternOf, ::typeOutcomeOf)
+
+private fun typePatternOf() = ParserSequence(
+    "visibility" to ParserOptional(ParserSymbol(SymbolType.PUB)),
+    "type" to ParserSymbol(SymbolType.TYPE),
+    "name" to ParserName(),
+    "open_brace" to ParserSymbol(SymbolType.OPEN_BRACE),
+    "properties" to ParserRepeating(typePropertyParserOf()),
+    "close_brace" to ParserSymbol(SymbolType.CLOSE_BRACE),
+)
+
+private fun typeOutcomeOf(values: Parsers): Type?
+{
+    return Type(
+        name = values.produce("name") ?: return null,
+        visibility = visibilityOf(values.produce("visibility")),
+        properties = values.produce("properties") ?: emptyList(),
+    )
+}
+
+/**
+ * Parses a type property definition from the token stream.
+ */
+private fun typePropertyParserOf(): Parser<Type.Property> =
+    ParserPattern(::typePropertyPatternOf, ::typePropertyOutcomeOf)
+
+private fun typePropertyPatternOf() = ParserSequence(
+    "visibility" to ParserOptional(ParserSymbol(SymbolType.PUB)),
+    "mutability" to ParserSymbol(SymbolType.VAL, SymbolType.VAR, SymbolType.MUT),
+    "name" to ParserName(),
+    "type" to ParserOptional(nameParserOf(SymbolType.COLON)),
+    "value" to ParserOptional(valueParserOf(SymbolType.ASSIGN)),
+)
+
+private fun typePropertyOutcomeOf(values: Parsers): Type.Property?
+{
+    return Type.Property(
+        name = values.produce("name") ?: return null,
+        type = values.produce("type"),
+        value = values.produce("value"),
+        visibility = visibilityOf(values.produce("visibility")),
+        mutability = mutabilityOf(values.produce("mutability") ?: return null)
     )
 }
