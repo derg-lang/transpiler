@@ -125,7 +125,7 @@ private fun Scope.prettify(): String =
     "{\n" + statements.prettify(newlines = true, indented = true) { it.prettify() } + "\n}"
 
 private fun Type.prettify(): String =
-    "$visibility TYPE $name\n{" + properties.prettify(newlines = true, indented = true) { it.prettify() } + "\n}"
+    "$visibility TYPE $name\n{\n" + properties.prettify(newlines = true, indented = true) { it.prettify() } + "\n}"
 
 private fun Type.Property.prettify(): String =
     "$visibility $mutability $name${type.format { ": $it" }}${value.format { " = ${it.prettify()}" }}"
