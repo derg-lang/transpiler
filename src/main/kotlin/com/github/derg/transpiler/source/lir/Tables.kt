@@ -41,8 +41,10 @@ class SymbolTable
  * Scopes may be nested in other parent scopes, which impacts resolution of an identifier. If an identifier is not
  * found in the current scope, all parent scopes are checked recursively to the root scope. In effect, a new scope
  * allows a previously defined identifier to be shadowed.
+ *
+ * @param parent The parent scope translation table, containing all inherited names from the outer scope.
  */
-class TranslationTable
+class TranslationTable(private val parent: TranslationTable? = null)
 {
     private val ids = mutableMapOf<Name, MutableList<Id>>()
     
@@ -59,18 +61,15 @@ class TranslationTable
     
     /**
      * Resolves the ids of all symbols with the given [name]. Note that the order of ids are provided in the same order
-     * in which the symbols were registered *by name*.
+     * in which the symbols were registered *by scope*, then *by name*. The outermost scope is resolved first, followed
+     * by all ids resolved from the innermost scope.
+     *
+     * In effect, the last registered name is found at the last index in the resolved list of ids.
      */
     fun resolve(name: Name): List<Id>
     {
-        return ids[name] ?: emptyList()
-    }
-    
-    override fun toString(): String = ids.toString()
-    override fun hashCode(): Int = ids.hashCode()
-    override fun equals(other: Any?): Boolean = when (other)
-    {
-        is TranslationTable -> ids == other.ids
-        else                -> false
+        val outermost = parent?.resolve(name) ?: emptyList()
+        val innermost = ids[name] ?: emptyList()
+        return outermost + innermost
     }
 }

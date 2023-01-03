@@ -63,4 +63,29 @@ class TestTranslationTable
         
         assertEquals(ids, table.resolve("name"))
     }
+    
+    @Test
+    fun `Given nested scope, when resolving non-shadowed name, then correctly resolved`()
+    {
+        val child = TranslationTable(table)
+        val ids = listOf(
+            table.register("foo", ::IdType),
+            child.register("bar", ::IdType),
+        )
+        
+        assertEquals(listOf(ids[0]), child.resolve("foo"))
+        assertEquals(listOf(ids[1]), child.resolve("bar"))
+    }
+    
+    @Test
+    fun `Given nested scope, when resolving shadowed name, then correctly resolved`()
+    {
+        val child = TranslationTable(table)
+        val ids = listOf(
+            table.register("foo", ::IdType),
+            child.register("foo", ::IdType),
+        )
+        
+        assertEquals(ids, child.resolve("foo"))
+    }
 }
