@@ -9,42 +9,68 @@ import com.github.derg.transpiler.source.Name
 private var RUNNING_ID_NUMBER = 0
 
 /**
+ * All symbols are uniquely identified by their id, and are instantiated at various times during the analysis phase of
+ * the source code. Typically, the root symbols are registered in the module translation table before being registered
+ * to the symbol table.
+ */
+class SymbolTable
+{
+    private val symbols = mutableMapOf<Id, Symbol>()
+    
+    /**
+     * Registers the given [symbol] under its own id. Note that symbols can only be instantiated once they have been
+     * assigned an id. Multiple symbols cannot be registered under the same id.
+     */
+    fun register(symbol: Symbol)
+    {
+        require(symbol.id !in symbols) { "Cannot register two symbols with the same id" }
+        
+        symbols[symbol.id] = symbol
+    }
+    
+    /**
+     * Retrieves the symbol with the given [id], if it exists.
+     */
+    fun resolve(id: Id): Symbol? = symbols[id]
+}
+
+/**
  * All scopes may contain their own declarations of variables, functions, types, and so on. Each scope must track which
- * object id is associated with each name, allowing each scope to hold.
+ * object id is associated with each name, allowing each scope to hold arbitrary symbols.
  *
  * Scopes may be nested in other parent scopes, which impacts resolution of an identifier. If an identifier is not
  * found in the current scope, all parent scopes are checked recursively to the root scope. In effect, a new scope
  * allows a previously defined identifier to be shadowed.
  */
-class SymbolTable
+class TranslationTable
 {
-    private val idToName = mutableMapOf<Id, Name>()
-    private val nameToId = mutableMapOf<Name, MutableSet<Id>>()
+    private val ids = mutableMapOf<Name, MutableList<Id>>()
     
     /**
-     * Registers the [name] of a new symbol within this scope, returning the id of the symbol.
+     * Registers the [name] of a new symbol within this scope, returning the id of the symbol. The name of the symbol
+     * must be registered in order to produce the id of the symbol, which will be used to generate the symbol itself.
      */
-    fun register(name: Name, factory: (Int) -> Id): Id
+    fun <T : Id> register(name: Name, factory: (Int) -> T): T
     {
         val id = factory(RUNNING_ID_NUMBER++)
-        idToName[id] = name
-        nameToId.getOrPut(name) { mutableSetOf() }.add(id)
+        ids.getOrPut(name) { mutableListOf() }.add(id)
         return id
     }
     
     /**
-     * Resolves the id of the symbol with the given [name].
+     * Resolves the ids of all symbols with the given [name]. Note that the order of ids are provided in the same order
+     * in which the symbols were registered *by name*.
      */
-    fun resolve(name: Name): Set<Id>
+    fun resolve(name: Name): List<Id>
     {
-        return nameToId[name] ?: emptySet()
+        return ids[name] ?: emptyList()
     }
     
-    override fun toString(): String = idToName.toString()
-    override fun hashCode(): Int = idToName.hashCode()
+    override fun toString(): String = ids.toString()
+    override fun hashCode(): Int = ids.hashCode()
     override fun equals(other: Any?): Boolean = when (other)
     {
-        is SymbolTable -> idToName == other.idToName
-        else           -> false
+        is TranslationTable -> ids == other.ids
+        else                -> false
     }
 }
