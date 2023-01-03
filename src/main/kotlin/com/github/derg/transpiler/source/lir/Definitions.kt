@@ -1,35 +1,28 @@
 package com.github.derg.transpiler.source.lir
 
-import com.github.derg.transpiler.core.Id
-import com.github.derg.transpiler.core.Name
-import com.github.derg.transpiler.source.Mutability
-import com.github.derg.transpiler.source.Visibility
+import com.github.derg.transpiler.source.*
 
 data class Module(
-    val name: Name,
-    val id: Id,
+    val id: IdModule,
 ) : Symbol
 
 data class Variable(
-    val name: Name,
-    val id: Id,
-    val type: Id,
+    val id: IdVariable,
+    val type: IdType,
     val visibility: Visibility,
     val mutability: Mutability,
 ) : Symbol
 
 data class Function(
-    val name: Name,
-    val id: Id,
-    val valueType: Id,
-    val errorType: Id,
+    val id: IdFunction,
+    val valueType: IdType,
+    val errorType: IdType,
     val parameters: List<Parameter>,
     val visibility: Visibility,
 ) : Symbol
 
 data class Parameter(
-    val name: Name,
-    val id: Id,
-    val type: Id,
+    val id: IdParameter,
+    val type: IdType,
     val mutability: Mutability,
 ) : Symbol

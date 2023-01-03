@@ -1,7 +1,7 @@
 package com.github.derg.transpiler.source.lir
 
-import com.github.derg.transpiler.core.Id
 import com.github.derg.transpiler.core.Name
+import com.github.derg.transpiler.source.Id
 
 /**
  * Unique identifier for each and every identifiable object. No two objects will ever be granted the same id.
@@ -24,9 +24,9 @@ class SymbolTable
     /**
      * Registers the [name] of a new symbol within this scope, returning the id of the symbol.
      */
-    fun register(name: Name): Id
+    fun register(name: Name, factory: (Int) -> Id): Id
     {
-        val id = RUNNING_ID_NUMBER++
+        val id = factory(RUNNING_ID_NUMBER++)
         idToName[id] = name
         nameToId.getOrPut(name) { mutableSetOf() }.add(id)
         return id

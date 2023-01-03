@@ -1,6 +1,7 @@
 package com.github.derg.transpiler.source.lir
 
-import com.github.derg.transpiler.core.Id
+import com.github.derg.transpiler.source.Id
+import com.github.derg.transpiler.source.IdType
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 
@@ -11,7 +12,7 @@ class TestSymbolTable
     @Test
     fun `When registering name, then registered`()
     {
-        val id = table.register("name")
+        val id = table.register("name", ::IdType)
         
         assertEquals(setOf(id), table.resolve("name"))
     }
@@ -26,8 +27,8 @@ class TestSymbolTable
     fun `Given multiple same names, when resolving name, then all resolved`()
     {
         val ids = setOf(
-            table.register("name"),
-            table.register("name"),
+            table.register("name", ::IdType),
+            table.register("name", ::IdType),
         )
         
         assertEquals(ids, table.resolve("name"))
