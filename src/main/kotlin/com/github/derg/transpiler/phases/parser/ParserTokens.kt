@@ -1,6 +1,6 @@
 package com.github.derg.transpiler.phases.parser
 
-import com.github.derg.transpiler.core.Name
+import com.github.derg.transpiler.source.Name
 import com.github.derg.transpiler.source.ast.Expression
 import com.github.derg.transpiler.source.ast.Value
 import com.github.derg.transpiler.source.lexeme.*

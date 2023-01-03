@@ -1,5 +1,6 @@
 package com.github.derg.transpiler.core
 
+import com.github.derg.transpiler.source.Name
 import com.github.derg.transpiler.source.ast.*
 import com.github.derg.transpiler.source.ast.Function
 

@@ -1,6 +1,6 @@
 package com.github.derg.transpiler.source.ast
 
-import com.github.derg.transpiler.core.Name
+import com.github.derg.transpiler.source.Name
 
 /**
  * Any constant in source code, either a number, a string, or a boolean value, are treated specially. Any constant value
