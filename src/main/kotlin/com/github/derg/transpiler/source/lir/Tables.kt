@@ -1,7 +1,7 @@
 package com.github.derg.transpiler.source.lir
 
-import com.github.derg.transpiler.core.Name
 import com.github.derg.transpiler.source.Id
+import com.github.derg.transpiler.source.Name
 
 /**
  * Unique identifier for each and every identifiable object. No two objects will ever be granted the same id.

@@ -1,6 +1,6 @@
 package com.github.derg.transpiler.source.ast
 
-import com.github.derg.transpiler.core.Name
+import com.github.derg.transpiler.source.Name
 
 /**
  * Expressions may be turned into l-values by being stored in a variable of any kind. In doing so, the r-value

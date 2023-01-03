@@ -1,6 +1,6 @@
 package com.github.derg.transpiler.source.ast
 
-import com.github.derg.transpiler.core.Name
+import com.github.derg.transpiler.source.Name
 
 /**
  * Function parameters consists of a single [expression] which specifies which value they have, and optionally the
