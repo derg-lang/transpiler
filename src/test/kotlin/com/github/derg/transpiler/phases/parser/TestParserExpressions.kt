@@ -29,15 +29,15 @@ class TestParserExpression
         // Accesses
         tester.parse("whatever").isChain(1).isValue("whatever".toVar()).resets()
         tester.parse("f()").isChain(1, 1, 1).isValue("f".toFun()).resets()
-        tester.parse("f(1)").isChain(1, 2, 1).isValue("f".toFun(1.toPar())).resets()
-        tester.parse("f(1,)").isChain(1, 3, 1).isValue("f".toFun(1.toPar())).resets()
-        tester.parse("f(1,2)").isChain(1, 4, 1).isValue("f".toFun(1.toPar(), 2.toPar())).resets()
-        tester.parse("f(bar = 1)").isChain(1, 4, 1).isValue("f".toFun(1.toPar("bar"))).resets()
+        tester.parse("f(1)").isChain(1, 2, 1).isValue("f".toFun(1.toArg())).resets()
+        tester.parse("f(1,)").isChain(1, 3, 1).isValue("f".toFun(1.toArg())).resets()
+        tester.parse("f(1,2)").isChain(1, 4, 1).isValue("f".toFun(1.toArg(), 2.toArg())).resets()
+        tester.parse("f(bar = 1)").isChain(1, 4, 1).isValue("f".toFun(1.toArg("bar"))).resets()
         tester.parse("f[]").isChain(1, 1, 1).isValue("f".toSub()).resets()
-        tester.parse("f[1]").isChain(1, 2, 1).isValue("f".toSub(1.toPar())).resets()
-        tester.parse("f[1,]").isChain(1, 3, 1).isValue("f".toSub(1.toPar())).resets()
-        tester.parse("f[1,2]").isChain(1, 4, 1).isValue("f".toSub(1.toPar(), 2.toPar())).resets()
-        tester.parse("f[bar = 1]").isChain(1, 4, 1).isValue("f".toSub(1.toPar("bar"))).resets()
+        tester.parse("f[1]").isChain(1, 2, 1).isValue("f".toSub(1.toArg())).resets()
+        tester.parse("f[1,]").isChain(1, 3, 1).isValue("f".toSub(1.toArg())).resets()
+        tester.parse("f[1,2]").isChain(1, 4, 1).isValue("f".toSub(1.toArg(), 2.toArg())).resets()
+        tester.parse("f[bar = 1]").isChain(1, 4, 1).isValue("f".toSub(1.toArg("bar"))).resets()
         
         // Structural
         tester.parse("(1)").isChain(0, 2, 1).isValue(1.toExp()).resets()

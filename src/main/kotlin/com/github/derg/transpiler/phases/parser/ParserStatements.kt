@@ -30,33 +30,10 @@ private fun statementPatternOf(): Parser<Statement> = ParserAnyOf(
     typeParserOf(),
     assignmentParserOf(),
     branchParserOf(),
-    callParserOf(),
+    invokeParserOf(),
     raiseParserOf(),
     returnParserOf(),
 )
-
-/**
- * Parses a single scope from the token stream.
- */
-fun scopeParserOf(): Parser<Scope> =
-    ParserPattern(::scopePatternOf, ::scopeOutcomeOf)
-
-private fun scopePatternOf() = ParserAnyOf(
-    ParserSequence("single" to statementParserOf()),
-    ParserSequence(
-        "open" to ParserSymbol(SymbolType.OPEN_BRACE),
-        "multiple" to ParserRepeating(statementParserOf()),
-        "close" to ParserSymbol(SymbolType.CLOSE_BRACE),
-    )
-)
-
-private fun scopeOutcomeOf(values: Parsers): Scope?
-{
-    val statement = values.produce<Statement>("single")
-    val statements = values.produce<List<Statement>>("multiple")
-    val isBraced = statement == null
-    return Scope(isBraced, statements ?: statement?.let { listOf(it) } ?: return null)
-}
 
 /**
  * Parses a single assignment from the token stream.
@@ -113,7 +90,7 @@ private fun raiseParserOf(): Parser<Statement> =
     ParserPattern(::raisePatternOf, ::raiseOutcomeOf)
 
 private fun raisePatternOf() = ParserSequence(
-    "symbol" to ParserSymbol(SymbolType.RETURN_ERROR),
+    "symbol" to ParserSymbol(SymbolType.RAISE),
     "expression" to expressionParserOf(),
 )
 
@@ -130,7 +107,7 @@ private fun returnParserOf(): Parser<Statement> =
     ParserPattern(::returnPatternOf, ::returnOutcomeOf)
 
 private fun returnPatternOf() = ParserSequence(
-    "symbol" to ParserSymbol(SymbolType.RETURN_VALUE),
+    "symbol" to ParserSymbol(SymbolType.RETURN),
     "expression" to expressionParserOf(),
 )
 
@@ -146,5 +123,86 @@ private fun returnOutcomeOf(values: Parsers): Control.Return?
  * determine whether the expression has any value or error types.
  */
 // TODO: Not a correct implementation of the parser - must also function with error handling
-private fun callParserOf(): Parser<Statement> =
-    ParserPattern(::functionCallParserOf) { Control.Call(it) }
+private fun invokeParserOf(): Parser<Statement> =
+    ParserPattern(::functionCallParserOf) { Control.Invoke(it) }
+
+/**
+ * Parses a variable definition from the token stream.
+ */
+fun variableParserOf(): Parser<Statement> =
+    ParserPattern(::variablePatternOf, ::variableOutcomeOf)
+
+private fun variablePatternOf() = ParserSequence(
+    "visibility" to ParserOptional(ParserSymbol(SymbolType.PUB)),
+    "mutability" to ParserSymbol(SymbolType.VAL, SymbolType.VAR, SymbolType.MUT),
+    "name" to ParserName(),
+    "op" to ParserSymbol(SymbolType.ASSIGN),
+    "value" to expressionParserOf(),
+)
+
+private fun variableOutcomeOf(values: Parsers): Definition?
+{
+    return Definition.Variable(
+        name = values.produce("name") ?: return null,
+        type = null,
+        value = values.produce("value") ?: return null,
+        visibility = visibilityOf(values.produce("visibility")),
+        mutability = mutabilityOf(values.produce("mutability") ?: return null),
+    )
+}
+
+/**
+ * Parses a function definition from the token stream.
+ */
+fun functionParserOf(): Parser<Statement> =
+    ParserPattern(::functionPatternOf, ::functionOutcomeOf)
+
+private fun functionPatternOf() = ParserSequence(
+    "visibility" to ParserOptional(ParserSymbol(SymbolType.PUB)),
+    "fun" to ParserSymbol(SymbolType.FUN),
+    "name" to ParserName(),
+    "open_parenthesis" to ParserSymbol(SymbolType.OPEN_PARENTHESIS),
+    "parameters" to ParserRepeating(parameterParserOf(), ParserSymbol(SymbolType.COMMA)),
+    "close_parenthesis" to ParserSymbol(SymbolType.CLOSE_PARENTHESIS),
+    "error" to ParserOptional(nameParserOf(SymbolType.COLON)),
+    "value" to ParserOptional(nameParserOf(SymbolType.ARROW)),
+    "open_brace" to ParserSymbol(SymbolType.OPEN_BRACE),
+    "statements" to ParserRepeating(statementParserOf()),
+    "close_brace" to ParserSymbol(SymbolType.CLOSE_BRACE),
+)
+
+private fun functionOutcomeOf(values: Parsers): Definition?
+{
+    return Definition.Function(
+        name = values.produce("name") ?: return null,
+        valueType = values.produce("value"),
+        errorType = values.produce("error"),
+        parameters = values.produce("parameters") ?: return null,
+        visibility = visibilityOf(values.produce("visibility")),
+        statements = values.produce("statements") ?: return null,
+    )
+}
+
+/**
+ * Parses a type definition from the token stream.
+ */
+fun typeParserOf(): Parser<Statement> =
+    ParserPattern(::typePatternOf, ::typeOutcomeOf)
+
+private fun typePatternOf() = ParserSequence(
+    "visibility" to ParserOptional(ParserSymbol(SymbolType.PUB)),
+    "type" to ParserSymbol(SymbolType.TYPE),
+    "name" to ParserName(),
+    "open_brace" to ParserSymbol(SymbolType.OPEN_BRACE),
+    "properties" to ParserRepeating(propertyParserOf()),
+    "close_brace" to ParserSymbol(SymbolType.CLOSE_BRACE),
+)
+
+private fun typeOutcomeOf(values: Parsers): Definition?
+{
+    return Definition.Type(
+        name = values.produce("name") ?: return null,
+        visibility = visibilityOf(values.produce("visibility")),
+        properties = values.produce("properties") ?: emptyList(),
+    )
+}

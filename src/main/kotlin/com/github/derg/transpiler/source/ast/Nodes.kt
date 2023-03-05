@@ -24,10 +24,3 @@ sealed interface Expression : Node
  * that expressions are not statements.
  */
 sealed interface Statement : Node
-
-/**
- * Structural components within the source code must be defined to describe their behavior fully. While certain objects
- * such as functions may be declared before being defined, all such objects must be defined before being used. The
- * definition of the object varies from object to object.
- */
-sealed interface Definition : Statement

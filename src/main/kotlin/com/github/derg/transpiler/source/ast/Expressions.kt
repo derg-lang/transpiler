@@ -47,15 +47,15 @@ sealed interface Access : Expression
     /**
      * All procedure calls may either refer to a function with the specified [name] being invoked, or the function
      * operator being invoked on an instance with the given [name]. Every procedure call is permitted an arbitrary
-     * number of [parameters].
+     * number of [arguments].
      */
-    data class Function(val name: Name, val parameters: List<Parameter>) : Access
+    data class Function(val name: Name, val arguments: List<Argument>) : Access
     
     /**
      * All subscript calls refers to the subscript operator being invoked on an instance with the given [name]. Every
-     * subscript call is permitted an arbitrary number of [parameters].
+     * subscript call is permitted an arbitrary number of [arguments].
      */
-    data class Subscript(val name: Name, val parameters: List<Parameter>) : Access
+    data class Subscript(val name: Name, val arguments: List<Argument>) : Access
 }
 
 /**
@@ -184,15 +184,26 @@ sealed interface Operator : Expression
     
     /**
      * Catches any errors which are raised in the [lhs] expression, replacing errors with the [rhs] expression. In
-     * essence, this operator allows errors to be caught and replaced with a default value in their place.
+     * essence, this operator allows errors to be caught and replaced with a default value in their place. That is, if
+     * an error occurs in the base expression, the error is replaced with the value produced by the second expression.
+     * When no error occurs, the outcome of the expression is [lhs], otherwise it is [rhs].
      */
     data class Catch(val lhs: Expression, val rhs: Expression) : Operator
     
     /**
-     * Catches any errors which are raised in the [lhs] expression. This operator transforms the error into another
-     * error, determined by the error type of the function.
+     * Catches any errors which are raised in the [lhs] expression, and raises a new error based on the value calculated
+     * in the [rhs] expression. The original error may be referenced by the second expression, allowing the original
+     * error to be transformed into a different error.
      */
     data class Raise(val lhs: Expression, val rhs: Expression) : Operator
+    
+    /**
+     * Catches any errors which are raised in the [lhs] expression, and returns a new value based on the value
+     * calculated in the [rhs] expression. The original error may be referenced by the second expression, allowing the
+     * original error to be transformed into a different value.
+     */
+    // TODO: Add return expression
+    // data class Return(val lhs: Expression, val rhs: Expression) : Operator
 }
 
 /**
