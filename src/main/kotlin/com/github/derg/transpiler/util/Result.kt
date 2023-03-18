@@ -4,10 +4,10 @@ package com.github.derg.transpiler.util
  * A result represents the outcome of an operation which may fail. The operation may succeed, in which case the result
  * contains the success [Value], otherwise the failure [Error] value is stored.
  */
-sealed class Result<out Value, out Error>
+sealed interface Result<out Value, out Error>
 {
-    data class Success<Value>(val value: Value) : Result<Value, Nothing>()
-    data class Failure<Error>(val error: Error) : Result<Nothing, Error>()
+    data class Success<Value>(val value: Value) : Result<Value, Nothing>
+    data class Failure<Error>(val error: Error) : Result<Nothing, Error>
 }
 
 fun <Value> Value.toSuccess() = Result.Success(this)
