@@ -52,8 +52,8 @@ enum class SymbolType(val symbol: String)
     MODULE("module"),
     MUT("mut"),
     PUB("pub"),
-    RETURN_VALUE("return"),
-    RETURN_ERROR("raise"),
+    RETURN("return"),
+    RAISE("raise"),
     TRUE("true"),
     TYPE("type"),
     USE("use"),
@@ -64,17 +64,17 @@ enum class SymbolType(val symbol: String)
     
     // Structural components
     ARROW("->"),
-    CATCH("?"),
     CLOSE_BRACE("}"),
     CLOSE_BRACKET("]"),
     CLOSE_PARENTHESIS(")"),
     COLON(":"),
     COMMA(","),
+    EXCLAMATION("!"),
     OPEN_BRACE("{"),
     OPEN_BRACKET("["),
     OPEN_PARENTHESIS("("),
     PERIOD("."),
-    RAISE("!"),
+    QUESTION("?"),
     SEMICOLON(";"),
     
     // Assignment operators

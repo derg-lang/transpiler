@@ -5,7 +5,6 @@ import com.github.derg.transpiler.source.Mutability
 import com.github.derg.transpiler.source.Name
 import com.github.derg.transpiler.source.Visibility
 import com.github.derg.transpiler.source.ast.*
-import com.github.derg.transpiler.source.ast.Function
 import com.github.derg.transpiler.source.lexeme.EndOfFile
 import com.github.derg.transpiler.source.lexeme.Token
 import com.github.derg.transpiler.util.failureOf
@@ -31,9 +30,9 @@ fun Any.toExp(type: Name? = null): Expression = when (this)
 
 // Various primitive conversion functions
 fun Name.toVar() = Access.Variable(this)
-fun Name.toFun(vararg parameters: Parameter) = Access.Function(this, parameters.toList())
-fun Name.toSub(vararg parameters: Parameter) = Access.Subscript(this, parameters.toList())
-fun Any.toPar(name: Name? = null) = Parameter(name, toExp())
+fun Name.toFun(vararg arguments: Argument) = Access.Function(this, arguments.toList())
+fun Name.toSub(vararg arguments: Argument) = Access.Subscript(this, arguments.toList())
+fun Any.toArg(name: Name? = null) = Argument(name, toExp())
 
 // Generates expressions from operations
 fun opNot(that: Any) = Operator.Not(that.toExp())
@@ -66,7 +65,7 @@ infix fun Name.assignMod(that: Any) = Assignment.AssignModulo(this, that.toExp()
 infix fun Name.assignDiv(that: Any) = Assignment.AssignDivide(this, that.toExp())
 
 // Generates statements from expressions
-fun callOf(expression: Any) = Control.Call(expression.toExp())
+fun invokeOf(expression: Any) = Control.Invoke(expression.toExp())
 fun raiseOf(expression: Any) = Control.Raise(expression.toExp())
 fun returnOf(expression: Any? = null) = Control.Return(expression?.toExp())
 
@@ -80,7 +79,7 @@ fun segmentOf(
 ) = Segment(
     module = module,
     imports = imports,
-    statements = statements,
+    definitions = statements,
 )
 
 /**
@@ -89,8 +88,8 @@ fun segmentOf(
 fun typeOf(
     name: Name,
     vis: Visibility = Visibility.PRIVATE,
-    props: List<Type.Property> = emptyList(),
-) = Type(
+    props: List<Property> = emptyList(),
+) = Definition.Type(
     name = name,
     visibility = vis,
     properties = props,
@@ -105,7 +104,7 @@ fun propOf(
     value: Any? = null,
     vis: Visibility = Visibility.PRIVATE,
     mut: Mutability = Mutability.VALUE,
-) = Type.Property(
+) = Property(
     name = name,
     type = type,
     value = value?.toExp(),
@@ -122,7 +121,7 @@ fun varOf(
     type: Name? = null,
     vis: Visibility = Visibility.PRIVATE,
     mut: Mutability = Mutability.VALUE,
-) = Variable(
+) = Definition.Variable(
     name = name,
     type = type,
     value = value.toExp(),
@@ -138,15 +137,15 @@ fun funOf(
     valType: Name? = null,
     errType: Name? = null,
     vis: Visibility = Visibility.PRIVATE,
-    params: List<Function.Parameter> = emptyList(),
-    scope: Scope = scopeOf(true),
-) = Function(
+    params: List<Parameter> = emptyList(),
+    statements: List<Statement> = emptyList(),
+) = Definition.Function(
     name = name,
     valueType = valType,
     errorType = errType,
     parameters = params,
     visibility = vis,
-    scope = scope,
+    statements = statements,
 )
 
 /**
@@ -157,7 +156,7 @@ fun parOf(
     type: Name? = null,
     value: Any? = null,
     mut: Mutability = Mutability.VALUE,
-) = Function.Parameter(
+) = Parameter(
     name = name,
     type = type,
     value = value?.toExp(),

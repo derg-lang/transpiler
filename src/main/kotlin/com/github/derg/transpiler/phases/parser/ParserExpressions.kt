@@ -15,9 +15,9 @@ import com.github.derg.transpiler.source.lexeme.SymbolType
  */
 private val PRECEDENCE = mapOf(
     SymbolType.AND to 4,
-    SymbolType.CATCH to 7,
     SymbolType.DIVIDE to 0,
     SymbolType.EQUAL to 3,
+    SymbolType.EXCLAMATION to 7,
     SymbolType.GREATER to 3,
     SymbolType.GREATER_EQUAL to 3,
     SymbolType.LESS to 3,
@@ -28,7 +28,7 @@ private val PRECEDENCE = mapOf(
     SymbolType.NOT_EQUAL to 3,
     SymbolType.OR to 5,
     SymbolType.PLUS to 1,
-    SymbolType.RAISE to 7,
+    SymbolType.QUESTION to 7,
     SymbolType.THREE_WAY to 2,
     SymbolType.XOR to 6,
 )
@@ -39,9 +39,9 @@ private val PRECEDENCE = mapOf(
 private fun mergeInfix(lhs: Expression, operator: SymbolType, rhs: Expression): Expression = when (operator)
 {
     SymbolType.AND           -> Operator.And(lhs, rhs)
-    SymbolType.CATCH         -> Operator.Catch(lhs, rhs)
     SymbolType.DIVIDE        -> Operator.Divide(lhs, rhs)
     SymbolType.EQUAL         -> Operator.Equal(lhs, rhs)
+    SymbolType.EXCLAMATION   -> Operator.Raise(lhs, rhs)
     SymbolType.GREATER       -> Operator.Greater(lhs, rhs)
     SymbolType.GREATER_EQUAL -> Operator.GreaterEqual(lhs, rhs)
     SymbolType.LESS          -> Operator.Less(lhs, rhs)
@@ -52,7 +52,7 @@ private fun mergeInfix(lhs: Expression, operator: SymbolType, rhs: Expression): 
     SymbolType.NOT_EQUAL     -> Operator.NotEqual(lhs, rhs)
     SymbolType.OR            -> Operator.Or(lhs, rhs)
     SymbolType.PLUS          -> Operator.Add(lhs, rhs)
-    SymbolType.RAISE         -> Operator.Raise(lhs, rhs)
+    SymbolType.QUESTION      -> Operator.Catch(lhs, rhs)
     SymbolType.THREE_WAY     -> Operator.ThreeWay(lhs, rhs)
     SymbolType.XOR           -> Operator.Xor(lhs, rhs)
     else                     -> throw IllegalStateException("Illegal operator $operator when parsing operator")
@@ -138,14 +138,14 @@ internal fun functionCallParserOf(): Parser<Expression> =
 private fun functionCallPatternOf() = ParserSequence(
     "name" to ParserName(),
     "open" to ParserSymbol(SymbolType.OPEN_PARENTHESIS),
-    "params" to ParserOptional(ParserRepeating(parameterParserOf(), ParserSymbol(SymbolType.COMMA))),
+    "params" to ParserOptional(ParserRepeating(argumentParserOf(), ParserSymbol(SymbolType.COMMA))),
     "close" to ParserSymbol(SymbolType.CLOSE_PARENTHESIS),
 )
 
 private fun functionCallOutcomeOf(outcome: Parsers): Expression?
 {
     val name = outcome.produce<Name>("name") ?: return null
-    val params = outcome.produce<List<Parameter>>("params") ?: emptyList()
+    val params = outcome.produce<List<Argument>>("params") ?: emptyList()
     return Access.Function(name, params)
 }
 
@@ -158,33 +158,15 @@ private fun subscriptCallParserOf(): Parser<Expression> =
 private fun subscriptCallPatternOf() = ParserSequence(
     "name" to ParserName(),
     "open" to ParserSymbol(SymbolType.OPEN_BRACKET),
-    "params" to ParserOptional(ParserRepeating(parameterParserOf(), ParserSymbol(SymbolType.COMMA))),
+    "params" to ParserOptional(ParserRepeating(argumentParserOf(), ParserSymbol(SymbolType.COMMA))),
     "close" to ParserSymbol(SymbolType.CLOSE_BRACKET),
 )
 
 private fun subscriptCallOutcomeOf(values: Parsers): Expression?
 {
     val name = values.produce<Name>("name") ?: return null
-    val params = values.produce<List<Parameter>>("params") ?: emptyList()
+    val params = values.produce<List<Argument>>("params") ?: emptyList()
     return Access.Subscript(name, params)
-}
-
-/**
- * Parses a function call parameter from the token stream.
- */
-private fun parameterParserOf(): Parser<Parameter> =
-    ParserPattern(::parameterPatternOf, ::parameterOutcomeOf)
-
-private fun parameterPatternOf() = ParserAnyOf(
-    ParserSequence("expr" to expressionParserOf()),
-    ParserSequence("name" to ParserName(), "sym" to ParserSymbol(SymbolType.ASSIGN), "expr" to expressionParserOf()),
-)
-
-private fun parameterOutcomeOf(values: Parsers): Parameter?
-{
-    val name = values.produce<Name>("name")
-    val expression = values.produce<Expression>("expr") ?: return null
-    return Parameter(name, expression)
 }
 
 /**
