@@ -64,6 +64,6 @@ data class Scope(
  */
 data class Segment(
     val module: Name?,
-    val imports: Set<Name>,
+    val imports: List<Name>,
     val definitions: List<Definition>,
 )

@@ -12,6 +12,7 @@ import com.github.derg.transpiler.util.isSuccess
 import com.github.derg.transpiler.util.successOf
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
+import kotlin.test.assertNull
 
 /**
  * Converts [this] value into a literal expression if possible. The expression can only be generated from numeric,
@@ -74,7 +75,7 @@ fun returnOf(expression: Any? = null) = Control.Return(expression?.toExp())
  */
 fun segmentOf(
     module: Name? = null,
-    imports: Set<Name> = emptySet(),
+    imports: List<Name> = emptyList(),
     statements: List<Definition> = emptyList(),
 ) = Segment(
     module = module,
@@ -264,12 +265,26 @@ class Tester<Type>(factory: () -> Parser<Type>)
     }
     
     /**
-     * The parser must be reverted to its original state once reset - it must produce the [value] upon resetting.
+     * The parser must be reverted to its original state once reset.
      */
-    fun resets(value: Type? = null): Tester<Type>
+    fun resets(): Tester<Type>
     {
         parser.reset()
-        assertEquals(value, parser.produce())
+        
+        val produced = try
+        {
+            parser.produce()
+        }
+        catch (e: IllegalStateException)
+        {
+            null
+        }
+        catch (e: IllegalArgumentException)
+        {
+            null
+        }
+        
+        assertTrue(produced == null || produced == emptyList<Any>())
         return this
     }
 }
@@ -279,7 +294,7 @@ class Tester<Type>(factory: () -> Parser<Type>)
  */
 fun <Type, Bundle : Parsers?> Tester<Bundle>.hasValue(key: String, value: Type): Tester<Bundle>
 {
-    assertEquals(value, parser.produce()?.produce(key))
+    assertEquals(value, parser.produce()?.get(key))
     return this
 }
 
@@ -289,8 +304,8 @@ fun <Type, Bundle : Parsers?> Tester<Bundle>.hasValue(key: String, value: Type):
  */
 fun <Type, Bundle : Parsers?> Tester<Bundle>.hasValue(key: String, vararg values: Pair<String, Type>): Tester<Bundle>
 {
-    val parsers = parser.produce()?.produce<Parsers>(key)
-    assertEquals(values.map { it.second }, values.mapNotNull { parsers?.produce(it.first) })
+    val parsers = parser.produce()?.get<Parsers>(key)
+    assertEquals(values.map { it.second }, values.mapNotNull { parsers?.get(it.first) })
     return this
 }
 
@@ -299,6 +314,6 @@ fun <Type, Bundle : Parsers?> Tester<Bundle>.hasValue(key: String, vararg values
  */
 fun <Type> Tester<List<Parsers>>.hasValue(key: String, vararg values: Type): Tester<List<Parsers>>
 {
-    assertEquals(values.toList(), parser.produce()?.produce<Type>(key))
+    assertEquals(values.toList(), parser.produce().produce<Type>(key))
     return this
 }

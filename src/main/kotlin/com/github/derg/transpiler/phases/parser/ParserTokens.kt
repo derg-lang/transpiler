@@ -7,6 +7,7 @@ import com.github.derg.transpiler.source.lexeme.*
 import com.github.derg.transpiler.util.Result
 import com.github.derg.transpiler.util.failureOf
 import com.github.derg.transpiler.util.successOf
+import com.github.derg.transpiler.util.toSuccess
 
 /**
  * Parses a single identifier from the token stream.
@@ -16,7 +17,7 @@ class ParserName : Parser<Name>
     private var name: Name? = null
     
     override fun skipable(): Boolean = false
-    override fun produce(): Name? = name
+    override fun produce(): Name = name ?: throw IllegalStateException("No name has been parsed")
     override fun parse(token: Token): Result<ParseOk, ParseError>
     {
         if (name != null)
@@ -43,7 +44,7 @@ class ParserSymbol(vararg symbols: SymbolType) : Parser<SymbolType>
     private var type: SymbolType? = null
     
     override fun skipable(): Boolean = false
-    override fun produce(): SymbolType? = type
+    override fun produce(): SymbolType = type ?: throw IllegalStateException("No symbol has been parsed")
     override fun parse(token: Token): Result<ParseOk, ParseError>
     {
         if (type != null)
@@ -83,7 +84,7 @@ class ParserBool : Parser<Expression>
     }
     
     override fun skipable(): Boolean = false
-    override fun produce(): Expression? = expression
+    override fun produce(): Expression = expression ?: throw IllegalStateException("No expression has been parsed")
     override fun reset()
     {
         expression = null
@@ -108,7 +109,7 @@ class ParserReal : Parser<Expression>
     }
     
     override fun skipable(): Boolean = false
-    override fun produce(): Expression? = expression
+    override fun produce(): Expression = expression ?: throw IllegalStateException("No expression has been parsed")
     override fun reset()
     {
         expression = null
@@ -133,7 +134,7 @@ class ParserText : Parser<Expression>
     }
     
     override fun skipable(): Boolean = false
-    override fun produce(): Expression? = expression
+    override fun produce(): Expression = expression ?: throw IllegalStateException("No expression has been parsed")
     override fun reset()
     {
         expression = null

@@ -174,10 +174,10 @@ class TestParserRepeating
         val tester = Tester { ParserRepeating(ParserReal(), ParserSymbol(SymbolType.COMMA)) }
         
         tester.parse("").isDone().isValue(emptyList())
-        tester.parse("1").isOk(1).isDone().isValue(listOf(1.toExp())).resets(emptyList())
-        tester.parse("1,").isOk(2).isDone().isValue(listOf(1.toExp())).resets(emptyList())
-        tester.parse("1,2").isOk(3).isDone().isValue(listOf(1.toExp(), 2.toExp())).resets(emptyList())
-        tester.parse("1,2,").isOk(4).isDone().isValue(listOf(1.toExp(), 2.toExp())).resets(emptyList())
+        tester.parse("1").isOk(1).isDone().isValue(listOf(1.toExp())).resets()
+        tester.parse("1,").isOk(2).isDone().isValue(listOf(1.toExp())).resets()
+        tester.parse("1,2").isOk(3).isDone().isValue(listOf(1.toExp(), 2.toExp())).resets()
+        tester.parse("1,2,").isOk(4).isDone().isValue(listOf(1.toExp(), 2.toExp())).resets()
     }
     
     @Test
@@ -277,17 +277,8 @@ class TestParserOptional
 
 class TestParserPattern
 {
-    private fun pattern() = ParserSequence(
-        "lhs" to ParserReal(),
-        "rhs" to ParserReal(),
-    )
-    
-    private fun converter(outcome: Parsers): Expression?
-    {
-        val lhs = outcome.produce<Expression>("lhs") ?: return null
-        val rhs = outcome.produce<Expression>("rhs") ?: return null
-        return Operator.Add(lhs, rhs)
-    }
+    private fun pattern() = ParserSequence("lhs" to ParserReal(), "rhs" to ParserReal())
+    private fun converter(outcome: Parsers) = Operator.Add(outcome["lhs"], outcome["rhs"])
     
     @Test
     fun `Given valid token, when parsing simple, then value produced`()

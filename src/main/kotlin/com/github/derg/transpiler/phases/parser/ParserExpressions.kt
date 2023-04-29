@@ -114,10 +114,10 @@ private fun expressionPatternOf() = ParserSequence(
     "terms" to ParserRepeating(termPatternOf()),
 )
 
-private fun expressionOutcomeOf(values: Parsers): Expression?
+private fun expressionOutcomeOf(values: Parsers): Expression
 {
-    val base = values.produce<Expression>("base") ?: return null
-    val terms = values.produce<List<Parsers>>("terms") ?: emptyList()
+    val base = values.get<Expression>("base")
+    val terms = values.get<List<Parsers>>("terms")
     val ops = terms.produce<SymbolType>("operator")
     val rest = terms.produce<Expression>("term")
     return mergeRecursively(base, ops.zip(rest))
@@ -142,12 +142,8 @@ private fun functionCallPatternOf() = ParserSequence(
     "close" to ParserSymbol(SymbolType.CLOSE_PARENTHESIS),
 )
 
-private fun functionCallOutcomeOf(outcome: Parsers): Expression?
-{
-    val name = outcome.produce<Name>("name") ?: return null
-    val params = outcome.produce<List<Argument>>("params") ?: emptyList()
-    return Access.Function(name, params)
-}
+private fun functionCallOutcomeOf(outcome: Parsers): Expression =
+    Access.Function(outcome["name"], outcome["params"])
 
 /**
  * Parses a subscript call expression from the token stream.
@@ -162,12 +158,8 @@ private fun subscriptCallPatternOf() = ParserSequence(
     "close" to ParserSymbol(SymbolType.CLOSE_BRACKET),
 )
 
-private fun subscriptCallOutcomeOf(values: Parsers): Expression?
-{
-    val name = values.produce<Name>("name") ?: return null
-    val params = values.produce<List<Argument>>("params") ?: emptyList()
-    return Access.Subscript(name, params)
-}
+private fun subscriptCallOutcomeOf(values: Parsers): Expression =
+    Access.Subscript(values["name"], values["params"])
 
 /**
  * Parses an expression from in-between parenthesis from the token stream.
@@ -181,8 +173,8 @@ private fun parenthesisPatternOf() = ParserSequence(
     "close" to ParserSymbol(SymbolType.CLOSE_PARENTHESIS),
 )
 
-private fun parenthesisOutcomeOf(values: Parsers): Expression? =
-    values.produce("expr")
+private fun parenthesisOutcomeOf(values: Parsers): Expression =
+    values["expr"]
 
 /**
  * Parses a unary operator from the token stream.
@@ -195,12 +187,8 @@ private fun unaryOperatorPatternOf() = ParserSequence(
     "rhs" to basePatternOf(),
 )
 
-private fun unaryOperatorOutcomeOf(values: Parsers): Expression?
-{
-    val op = values.produce<SymbolType>("op") ?: return null
-    val rhs = values.produce<Expression>("rhs") ?: return null
-    return mergePrefix(op, rhs)
-}
+private fun unaryOperatorOutcomeOf(values: Parsers): Expression =
+    mergePrefix(values["op"], values["rhs"])
 
 /**
  * Parses a when expression from the token stream.
@@ -216,12 +204,12 @@ private fun whenPatternOf() = ParserSequence(
     "else" to ParserOptional(ParserSequence("else" to ParserSymbol(SymbolType.ELSE), "expr" to expressionParserOf())),
 )
 
-private fun whenOutcomeOf(values: Parsers): Expression?
+private fun whenOutcomeOf(values: Parsers): Expression
 {
-    val expression = values.produce<Expression>("expression") ?: return null
-    val default = values.produce<Parsers>("else")?.produce<Expression>("expr")
-    val first = listOf(values.produce<Pair<Expression, Expression>>("first") ?: return null)
-    val branches = values.produce<List<Pair<Expression, Expression>>>("remainder") ?: return null
+    val expression = values.get<Expression>("expression")
+    val default = values.get<Parsers?>("else")?.get<Expression>("expr")
+    val first = listOf(values.get<Pair<Expression, Expression>>("first"))
+    val branches = values.get<List<Pair<Expression, Expression>>>("remainder")
     return When(expression, first + branches, default)
 }
 
@@ -237,9 +225,9 @@ private fun whenBranchPatternOf() = ParserSequence(
     "expression" to expressionParserOf(),
 )
 
-private fun whenBranchOutcomeOf(values: Parsers): Pair<Expression, Expression>?
+private fun whenBranchOutcomeOf(values: Parsers): Pair<Expression, Expression>
 {
-    val cond = values.produce<Expression>("condition") ?: return null
-    val expr = values.produce<Expression>("expression") ?: return null
+    val cond = values.get<Expression>("condition")
+    val expr = values.get<Expression>("expression")
     return cond to expr
 }

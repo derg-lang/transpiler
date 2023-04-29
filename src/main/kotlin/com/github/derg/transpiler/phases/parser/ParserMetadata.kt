@@ -33,7 +33,7 @@ fun mutabilityOf(symbol: SymbolType): Mutability = when (symbol)
  * identifier.
  */
 fun nameParserOf(symbol: SymbolType): Parser<Name> =
-    ParserPattern({ namePatternOf(symbol) }, { it.produce("name") })
+    ParserPattern({ namePatternOf(symbol) }, { it["name"] })
 
 private fun namePatternOf(symbol: SymbolType) =
     ParserSequence("symbol" to ParserSymbol(symbol), "name" to ParserName())
@@ -42,7 +42,7 @@ private fun namePatternOf(symbol: SymbolType) =
  * Parses a symbol followed by an expression.
  */
 fun valueParserOf(symbol: SymbolType): Parser<Expression> =
-    ParserPattern({ valuePatternOf(symbol) }, { it.produce("expression") })
+    ParserPattern({ valuePatternOf(symbol) }, { it["expression"] })
 
 private fun valuePatternOf(symbol: SymbolType) =
     ParserSequence("symbol" to ParserSymbol(symbol), "expression" to expressionParserOf())
@@ -58,12 +58,8 @@ private fun argumentPatternOf() = ParserAnyOf(
     ParserSequence("name" to ParserName(), "sym" to ParserSymbol(SymbolType.ASSIGN), "expr" to expressionParserOf()),
 )
 
-private fun argumentOutcomeOf(values: Parsers): Argument?
-{
-    val name = values.produce<Name>("name")
-    val expression = values.produce<Expression>("expr") ?: return null
-    return Argument(name, expression)
-}
+private fun argumentOutcomeOf(values: Parsers): Argument =
+    Argument(values["name"], values["expr"])
 
 /**
  * Parses a function parameter definition from the token stream.
@@ -78,15 +74,12 @@ private fun parameterPatternOf() = ParserSequence(
     "value" to ParserOptional(valueParserOf(SymbolType.ASSIGN)),
 )
 
-private fun parameterOutcomeOf(values: Parsers): Parameter?
-{
-    return Parameter(
-        name = values.produce("name") ?: return null,
-        type = values.produce("type"),
-        value = values.produce("value"),
-        mutability = mutabilityOf(values.produce("mutability") ?: return null),
-    )
-}
+private fun parameterOutcomeOf(values: Parsers) = Parameter(
+    name = values["name"],
+    type = values["type"],
+    value = values["value"],
+    mutability = mutabilityOf(values["mutability"]),
+)
 
 /**
  * Parses a type property definition from the token stream.
@@ -102,16 +95,13 @@ private fun propertyPatternOf() = ParserSequence(
     "value" to ParserOptional(valueParserOf(SymbolType.ASSIGN)),
 )
 
-private fun propertyOutcomeOf(values: Parsers): Property?
-{
-    return Property(
-        name = values.produce("name") ?: return null,
-        type = values.produce("type"),
-        value = values.produce("value"),
-        visibility = visibilityOf(values.produce("visibility")),
-        mutability = mutabilityOf(values.produce("mutability") ?: return null)
-    )
-}
+private fun propertyOutcomeOf(values: Parsers) = Property(
+    name = values["name"],
+    type = values["type"],
+    value = values["value"],
+    visibility = visibilityOf(values["visibility"]),
+    mutability = mutabilityOf(values["mutability"]),
+)
 
 /**
  * Parses a single scope from the token stream.
@@ -128,12 +118,17 @@ private fun scopePatternOf() = ParserAnyOf(
     )
 )
 
-private fun scopeOutcomeOf(values: Parsers): Scope?
+private fun scopeOutcomeOf(values: Parsers): Scope
 {
-    val statement = values.produce<Statement>("single")
-    val statements = values.produce<List<Statement>>("multiple")
-    val isBraced = statement == null
-    return Scope(isBraced, statements ?: statement?.let { listOf(it) } ?: return null)
+    val statement = values.get<Statement?>("single")
+    val statements = values.get<List<Statement>?>("multiple")
+    
+    return when
+    {
+        statement != null  -> Scope(false, listOf(statement))
+        statements != null -> Scope(true, statements)
+        else               -> Scope(false, emptyList())
+    }
 }
 
 /**
@@ -149,11 +144,8 @@ private fun segmentPatternOf() = ParserSequence(
     "statements" to ParserRepeating(statementParserOf()),
 )
 
-private fun segmentOutcomeOf(values: Parsers): Segment
-{
-    return Segment(
-        module = values.produce("module"),
-        imports = values.produce<List<Name>>("imports")?.toSet() ?: emptySet(),
-        definitions = values.produce("statements") ?: emptyList(),
-    )
-}
+private fun segmentOutcomeOf(values: Parsers) = Segment(
+    module = values["module"],
+    imports = values["imports"],
+    definitions = values["statements"],
+)
