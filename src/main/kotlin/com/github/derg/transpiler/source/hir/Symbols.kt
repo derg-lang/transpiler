@@ -1,0 +1,135 @@
+package com.github.derg.transpiler.source.hir
+
+import com.github.derg.transpiler.source.*
+
+/**
+ * Objects which may be identified in source code are known as symbols. The symbols are typically located within a scope
+ * and may be resolved based on name or id.
+ */
+sealed interface Symbol
+{
+    val id: Id
+    val name: Name
+}
+
+/**
+ * The collection of a logical group of modules is known as a package, which consists of any number of source files
+ * joined together in an arbitrary manner. The modules within the package are permitted circular dependencies, under the
+ * condition that all symbols may be resolved in an unambiguous manner.
+ */
+data class Package(
+    override val id: Id,
+    override val name: Name,
+    val symbols: SymbolTable,
+) : Symbol
+
+/**
+ * The module represents a collection of symbols which are logically grouped into a cohesive unit. Every module should
+ * contain symbols which together form a unit within the software.
+ */
+data class Module(
+    override val id: Id,
+    override val name: Name,
+    val symbols: SymbolTable,
+) : Symbol
+{
+    /**
+     * The set of instructions which should be performed by the module when loaded. The order in which the instructions
+     * should be executed is defined by their order in the list.
+     */
+    var instructions: List<Instruction> = emptyList()
+}
+
+/**
+ * All data within a program must be represented as a type. Every type requires some amount of physical space in memory,
+ * which is used to allocate instances of the type on the heap or the stack. Types may be instantiated as variables or
+ * parameters, which may be accessed or modified as needed.
+ *
+ * @property size The size of the type in number of bytes, all nested properties included.
+ */
+data class Type(
+    override val id: Id,
+    override val name: Name,
+    val visibility: Visibility,
+    val size: Int,
+) : Symbol
+
+/**
+ * Executable code is found within functions, which form a smaller executable part of the program. Functions may take
+ * any number of input parameters, and may terminate processing by returning nothing, returning a value, or by raising
+ * and error.
+ */
+data class Function(
+    override val id: Id,
+    override val name: Name,
+    val visibility: Visibility,
+    val value: Id,
+    val error: Id,
+    val params: List<Parameter>,
+    val symbols: SymbolTable,
+) : Symbol
+{
+    data class Parameter(val type: Id, val name: Name?, val passability: Passability, val value: Value?)
+    
+    /**
+     * The set of instructions which should be performed by the function when invoked.  The order in which the
+     * instructions should be executed is defined by their order in the list.
+     */
+    var instructions: List<Instruction> = emptyList()
+}
+
+/**
+ * Variables holds values stored in memory at some arbitrary location. Variables may hold aa variety of different types
+ * of data, such as raw values, references to other variables or functions, locations in memory, and so on.
+ */
+data class Variable(
+    override val id: Id,
+    override val name: Name,
+    val visibility: Visibility,
+    val mutability: Mutability,
+    val assignability: Assignability,
+    val type: Id,
+) : Symbol
+
+/**
+ * All symbols within a single source program must be uniquely identifiable in some manner. A symbol does not
+ * necessarily refer to a unique instance of a function, but instead represents a source code object. This may be a
+ * type, function, variable, template, or any other identifiable object.
+ *
+ * All scopes may contain their own declarations of variables, functions, types, and so on. Each scope must track which
+ * object id is associated with each name, allowing each scope to hold arbitrary symbols.
+ *
+ * Scopes may be nested in other parent scopes, which impacts resolution of an identifier. If an identifier is not
+ * found in the current scope, all parent scopes are checked recursively to the root scope. In effect, a new scope
+ * allows a previously defined identifier to be shadowed.
+ *
+ * @property parent The parent scope symbol table, containing all inherited names from the outer scope.
+ */
+class SymbolTable(private val parent: SymbolTable? = null)
+{
+    private val identifiers = mutableMapOf<Name, MutableList<Symbol>>()
+    
+    /**
+     * Registers a new [symbol], allowing the symbol to be retrieved by id or name at this scope when desired. When
+     * multiple symbols are bound by the same name, the earlier bound names will be shadowed by the last bound name.
+     */
+    fun register(symbol: Symbol): Symbol
+    {
+        identifiers.getOrPut(symbol.name) { mutableListOf() }.add(symbol)
+        return symbol
+    }
+    
+    /**
+     * Resolves the symbols with the given [name], if any exist. The order in which symbols are provided, is the order
+     * in which they are seen by scope, innermost scope first. If multiple symbols with the same name is defined within
+     * the same scope, the symbol declared last is placed first.
+     */
+    fun find(name: Name): List<Symbol>
+    {
+        val inner = identifiers[name] ?: emptyList()
+        val outer = parent?.find(name) ?: emptyList()
+        
+        // Reverse inner scope, as all symbols are registered in the opposite order - outer scope is reversed too
+        return inner.reversed() + outer
+    }
+}
