@@ -126,7 +126,7 @@ fun variableParserOf(): Parser<Statement> =
     ParserPattern(::variablePatternOf, ::variableOutcomeOf)
 
 private fun variablePatternOf() = ParserSequence(
-    "visibility" to ParserOptional(ParserSymbol(SymbolType.PUB)),
+    "visibility" to visibilityParserOf(),
     "mutability" to ParserSymbol(SymbolType.VAL, SymbolType.VAR, SymbolType.MUT),
     "name" to ParserName(),
     "op" to ParserSymbol(SymbolType.ASSIGN),
@@ -137,7 +137,7 @@ private fun variableOutcomeOf(values: Parsers) = Definition.Variable(
     name = values["name"],
     type = null,
     value = values["value"],
-    visibility = visibilityOf(values["visibility"]),
+    visibility = values["visibility"],
     mutability = mutabilityOf(values["mutability"]),
 )
 
@@ -148,7 +148,7 @@ fun functionParserOf(): Parser<Statement> =
     ParserPattern(::functionPatternOf, ::functionOutcomeOf)
 
 private fun functionPatternOf() = ParserSequence(
-    "visibility" to ParserOptional(ParserSymbol(SymbolType.PUB)),
+    "visibility" to visibilityParserOf(),
     "fun" to ParserSymbol(SymbolType.FUN),
     "name" to ParserName(),
     "open_parenthesis" to ParserSymbol(SymbolType.OPEN_PARENTHESIS),
@@ -166,7 +166,7 @@ private fun functionOutcomeOf(values: Parsers) = Definition.Function(
     valueType = values["value"],
     errorType = values["error"],
     parameters = values["parameters"],
-    visibility = visibilityOf(values["visibility"]),
+    visibility = values["visibility"],
     statements = values["statements"],
 )
 
@@ -177,7 +177,7 @@ fun typeParserOf(): Parser<Statement> =
     ParserPattern(::typePatternOf, ::typeOutcomeOf)
 
 private fun typePatternOf() = ParserSequence(
-    "visibility" to ParserOptional(ParserSymbol(SymbolType.PUB)),
+    "visibility" to visibilityParserOf(),
     "type" to ParserSymbol(SymbolType.TYPE),
     "name" to ParserName(),
     "open_brace" to ParserSymbol(SymbolType.OPEN_BRACE),
@@ -187,6 +187,6 @@ private fun typePatternOf() = ParserSequence(
 
 private fun typeOutcomeOf(values: Parsers) = Definition.Type(
     name = values["name"],
-    visibility = visibilityOf(values["visibility"]),
+    visibility = values["visibility"],
     properties = values["properties"],
 )

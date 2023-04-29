@@ -11,9 +11,12 @@ import com.github.derg.transpiler.source.lexeme.SymbolType
  */
 fun visibilityOf(symbol: SymbolType?): Visibility = when (symbol)
 {
-    SymbolType.PUB -> Visibility.PUBLIC
-    null           -> Visibility.PRIVATE
-    else           -> throw IllegalStateException("Illegal symbol $symbol when parsing variable visibility")
+    SymbolType.EXPORTED  -> Visibility.EXPORTED
+    SymbolType.PRIVATE   -> Visibility.PRIVATE
+    SymbolType.PROTECTED -> Visibility.PROTECTED
+    SymbolType.PUBLIC    -> Visibility.PUBLIC
+    null                 -> Visibility.PRIVATE
+    else                 -> throw IllegalStateException("Illegal symbol $symbol when parsing variable visibility")
 }
 
 /**
@@ -46,6 +49,17 @@ fun valueParserOf(symbol: SymbolType): Parser<Expression> =
 
 private fun valuePatternOf(symbol: SymbolType) =
     ParserSequence("symbol" to ParserSymbol(symbol), "expression" to expressionParserOf())
+
+/**
+ * Parses a visibility from the token stream.
+ */
+fun visibilityParserOf(): Parser<Visibility> =
+    ParserPattern(::visibilityPatternOf, ::visibilityOf)
+
+private fun visibilityPatternOf() = ParserOptional(
+    ParserSymbol(SymbolType.EXPORTED, SymbolType.PRIVATE, SymbolType.PROTECTED, SymbolType.PUBLIC),
+    SymbolType.PRIVATE
+)
 
 /**
  * Parses a function call argument from the token stream.
@@ -88,7 +102,7 @@ fun propertyParserOf(): Parser<Property> =
     ParserPattern(::propertyPatternOf, ::propertyOutcomeOf)
 
 private fun propertyPatternOf() = ParserSequence(
-    "visibility" to ParserOptional(ParserSymbol(SymbolType.PUB)),
+    "visibility" to visibilityParserOf(),
     "mutability" to ParserSymbol(SymbolType.VAL, SymbolType.VAR, SymbolType.MUT),
     "name" to ParserName(),
     "type" to ParserOptional(nameParserOf(SymbolType.COLON)),
@@ -99,7 +113,7 @@ private fun propertyOutcomeOf(values: Parsers) = Property(
     name = values["name"],
     type = values["type"],
     value = values["value"],
-    visibility = visibilityOf(values["visibility"]),
+    visibility = values["visibility"],
     mutability = mutabilityOf(values["mutability"]),
 )
 

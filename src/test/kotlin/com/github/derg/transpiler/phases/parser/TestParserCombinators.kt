@@ -266,6 +266,14 @@ class TestParserOptional
     }
     
     @Test
+    fun `Given missing token, when parsing simple, then default produced`()
+    {
+        val tester = Tester { ParserOptional(ParserReal(), 7.toExp()) }
+        
+        tester.parse("").isDone().isValue(7.toExp()).resets()
+    }
+    
+    @Test
     fun `Given invalid token, when parsing, then correct error`()
     {
         val tester =

@@ -68,8 +68,11 @@ class TestParserVariable
         tester.parse("mut foo = 0").isChain(3, 1).isValue(varOf("foo", 0, mut = Mutability.MUTABLE))
         
         // Visibility must be correctly parsed
-        tester.parse("pub val foo = 0").isChain(4, 1).isValue(varOf("foo", 0, vis = Visibility.PUBLIC))
-        tester.parse("    val foo = 0").isChain(3, 1).isValue(varOf("foo", 0, vis = Visibility.PRIVATE))
+        tester.parse("exported  val foo = 0").isChain(4, 1).isValue(varOf("foo", 0, vis = Visibility.EXPORTED))
+        tester.parse("public    val foo = 0").isChain(4, 1).isValue(varOf("foo", 0, vis = Visibility.PUBLIC))
+        tester.parse("protected val foo = 0").isChain(4, 1).isValue(varOf("foo", 0, vis = Visibility.PROTECTED))
+        tester.parse("private   val foo = 0").isChain(4, 1).isValue(varOf("foo", 0, vis = Visibility.PRIVATE))
+        tester.parse("          val foo = 0").isChain(3, 1).isValue(varOf("foo", 0, vis = Visibility.PRIVATE))
     }
     
     @Test
@@ -112,8 +115,11 @@ class TestParserFunction
             .isValue(funOf("foo", params = listOf(parOf("a", type = "Foo", value = 1))))
         
         // Visibility must be correctly parsed
-        tester.parse("pub fun foo() {}").isChain(6, 1).isValue(funOf("foo", vis = Visibility.PUBLIC))
-        tester.parse("    fun foo() {}").isChain(5, 1).isValue(funOf("foo", vis = Visibility.PRIVATE))
+        tester.parse("exported  fun foo() {}").isChain(6, 1).isValue(funOf("foo", vis = Visibility.EXPORTED))
+        tester.parse("public    fun foo() {}").isChain(6, 1).isValue(funOf("foo", vis = Visibility.PUBLIC))
+        tester.parse("protected fun foo() {}").isChain(6, 1).isValue(funOf("foo", vis = Visibility.PROTECTED))
+        tester.parse("private   fun foo() {}").isChain(6, 1).isValue(funOf("foo", vis = Visibility.PRIVATE))
+        tester.parse("          fun foo() {}").isChain(5, 1).isValue(funOf("foo", vis = Visibility.PRIVATE))
     }
     
     @Test
@@ -160,9 +166,15 @@ class TestParserType
         tester.parse("type Foo { mut a: Bar }").isChain(7, 1)
             .isValue(typeOf("Foo", props = listOf(propOf("a", type = "Bar", mut = Mutability.MUTABLE))))
         
-        tester.parse("type Foo { pub val a: Bar }").isChain(8, 1)
+        tester.parse("type Foo { exported  val a: Bar }").isChain(8, 1)
+            .isValue(typeOf("Foo", props = listOf(propOf("a", type = "Bar", vis = Visibility.EXPORTED))))
+        tester.parse("type Foo { public    val a: Bar }").isChain(8, 1)
             .isValue(typeOf("Foo", props = listOf(propOf("a", type = "Bar", vis = Visibility.PUBLIC))))
-        tester.parse("type Foo {     val a: Bar }").isChain(7, 1)
+        tester.parse("type Foo { protected val a: Bar }").isChain(8, 1)
+            .isValue(typeOf("Foo", props = listOf(propOf("a", type = "Bar", vis = Visibility.PROTECTED))))
+        tester.parse("type Foo { private   val a: Bar }").isChain(8, 1)
+            .isValue(typeOf("Foo", props = listOf(propOf("a", type = "Bar", vis = Visibility.PRIVATE))))
+        tester.parse("type Foo {           val a: Bar }").isChain(7, 1)
             .isValue(typeOf("Foo", props = listOf(propOf("a", type = "Bar", vis = Visibility.PRIVATE))))
         
         tester.parse("type Foo { val a: Foo val b: Bar }").isChain(11, 1)
@@ -173,8 +185,11 @@ class TestParserType
             .isValue(typeOf("Foo", props = listOf(propOf("a", value = 1))))
         
         // Visibility must be correctly parsed
-        tester.parse("pub type Foo {}").isChain(4, 1).isValue(typeOf("Foo", vis = Visibility.PUBLIC))
-        tester.parse("    type Foo {}").isChain(3, 1).isValue(typeOf("Foo", vis = Visibility.PRIVATE))
+        tester.parse("exported  type Foo {}").isChain(4, 1).isValue(typeOf("Foo", vis = Visibility.EXPORTED))
+        tester.parse("public    type Foo {}").isChain(4, 1).isValue(typeOf("Foo", vis = Visibility.PUBLIC))
+        tester.parse("protected type Foo {}").isChain(4, 1).isValue(typeOf("Foo", vis = Visibility.PROTECTED))
+        tester.parse("private   type Foo {}").isChain(4, 1).isValue(typeOf("Foo", vis = Visibility.PRIVATE))
+        tester.parse("          type Foo {}").isChain(3, 1).isValue(typeOf("Foo", vis = Visibility.PRIVATE))
     }
     
     @Test

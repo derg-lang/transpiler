@@ -11,10 +11,22 @@ package com.github.derg.transpiler.source
 enum class Visibility
 {
     /**
+     * The object is accessible to everything outside the package; it may be used by any part of the source program,
+     * including third-party consumers.
+     */
+    EXPORTED,
+    
+    /**
+     * The object will be visible to all modules within the same package. Modules contained within other packages will
+     * not be able to access the object.
+     */
+    PUBLIC,
+    
+    /**
      * The object is accessible to everything within the same module as the object was declared in. The object will not
      * be visible to anything outside the current module.
      */
-    PUBLIC,
+    PROTECTED,
     
     /**
      * The object is only accessible to the current type in which the object was declared. For example, a private
