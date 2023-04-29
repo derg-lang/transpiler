@@ -151,7 +151,7 @@ private fun propertyOutcomeOf(values: Parsers) = Property(
 /**
  * Parses a single scope from the token stream.
  */
-fun scopeParserOf(): Parser<Scope> =
+fun scopeParserOf(): Parser<List<Statement>> =
     ParserPattern(::scopePatternOf, ::scopeOutcomeOf)
 
 private fun scopePatternOf() = ParserAnyOf(
@@ -163,16 +163,16 @@ private fun scopePatternOf() = ParserAnyOf(
     )
 )
 
-private fun scopeOutcomeOf(values: Parsers): Scope
+private fun scopeOutcomeOf(values: Parsers): List<Statement>
 {
     val statement = values.get<Statement?>("single")
     val statements = values.get<List<Statement>?>("multiple")
     
     return when
     {
-        statement != null  -> Scope(false, listOf(statement))
-        statements != null -> Scope(true, statements)
-        else               -> Scope(false, emptyList())
+        statement != null  -> listOf(statement)
+        statements != null -> statements
+        else               -> emptyList()
     }
 }
 

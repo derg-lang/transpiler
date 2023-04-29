@@ -13,7 +13,6 @@ import com.github.derg.transpiler.util.isSuccess
 import com.github.derg.transpiler.util.successOf
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
-import kotlin.test.assertNull
 
 /**
  * Converts [this] value into a literal expression if possible. The expression can only be generated from numeric,
@@ -174,7 +173,7 @@ fun parOf(
 /**
  * Generates a branch statement from the provided input parameters.
  */
-fun ifOf(predicate: Any, success: Scope, failure: Scope? = null) =
+fun ifOf(predicate: Any, success: List<Statement>, failure: List<Statement> = emptyList()) =
     Control.Branch(predicate.toExp(), success, failure)
 
 /**
@@ -182,12 +181,6 @@ fun ifOf(predicate: Any, success: Scope, failure: Scope? = null) =
  */
 fun whenOf(expression: Any, vararg branches: Pair<Any, Any>, default: Any? = null) =
     When(expression.toExp(), branches.map { it.first.toExp() to it.second.toExp() }, default?.toExp())
-
-/**
- * Generates a scope definition from the provided input parameters.
- */
-fun scopeOf(isBraced: Boolean, vararg statements: Statement) =
-    Scope(isBraced, statements.toList())
 
 /**
  * To simplify testing of the parsing of source code for any particular pattern factory, a helper class is provided.

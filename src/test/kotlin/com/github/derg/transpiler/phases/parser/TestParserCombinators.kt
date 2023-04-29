@@ -1,6 +1,5 @@
 package com.github.derg.transpiler.phases.parser
 
-import com.github.derg.transpiler.source.ast.Expression
 import com.github.derg.transpiler.source.ast.Operator
 import com.github.derg.transpiler.source.lexeme.EndOfFile
 import com.github.derg.transpiler.source.lexeme.Numeric

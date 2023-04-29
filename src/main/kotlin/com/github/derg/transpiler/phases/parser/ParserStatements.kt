@@ -67,7 +67,7 @@ private fun branchPatternOf() = ParserSequence(
     "if" to ParserSymbol(SymbolType.IF),
     "predicate" to expressionParserOf(),
     "success" to scopeParserOf(),
-    "failure" to ParserOptional(ParserPattern(::branchElsePatternOf, ::branchElseOutcomeOf)),
+    "failure" to ParserOptional(ParserPattern(::branchElsePatternOf, ::branchElseOutcomeOf), emptyList()),
 )
 
 private fun branchOutcomeOf(values: Parsers): Control.Branch =
@@ -76,7 +76,7 @@ private fun branchOutcomeOf(values: Parsers): Control.Branch =
 private fun branchElsePatternOf() =
     ParserSequence("symbol" to ParserSymbol(SymbolType.ELSE), "scope" to scopeParserOf())
 
-private fun branchElseOutcomeOf(values: Parsers): Scope =
+private fun branchElseOutcomeOf(values: Parsers): List<Statement> =
     values["scope"]
 
 /**

@@ -31,9 +31,9 @@ class TestParserStatement
         
         // Control flow
         tester.parse("if 1 a = 2").isWip(4).isOk(1).isDone()
-            .isValue(ifOf(1, scopeOf(isBraced = false, "a" assign 2)))
+            .isValue(ifOf(1, success = listOf("a" assign 2)))
         tester.parse("if 1 {} else a = 2").isWip(3).isOk(1).isWip(3).isOk(1).isDone()
-            .isValue(ifOf(1, scopeOf(isBraced = true), scopeOf(isBraced = false, "a" assign 2)))
+            .isValue(ifOf(1, success = emptyList(), failure = listOf("a" assign 2)))
         
         tester.parse("raise 1").isChain(1, 1).isValue(raiseOf(1))
         tester.parse("return 1").isChain(1, 1).isValue(returnOf(1))
@@ -180,7 +180,7 @@ class TestParserType
             .isValue(typeOf("Foo", props = listOf(propOf("a", type = "Bar", mut = Mutability.IMMUTABLE))))
         tester.parse("type Foo { var a: Bar }").isChain(7, 1)
             .isValue(typeOf("Foo", props = listOf(propOf("a", type = "Bar", mut = Mutability.MUTABLE))))
-    
+        
         tester.parse("type Foo { exported  val a: Bar }").isChain(8, 1)
             .isValue(typeOf("Foo", props = listOf(propOf("a", type = "Bar", vis = Visibility.EXPORTED))))
         tester.parse("type Foo { public    val a: Bar }").isChain(8, 1)

@@ -28,7 +28,7 @@ sealed interface Control : Statement
      * Splits the execution based on the [predicate]. If the predicate returns a `true` value, the [success] path is
      * chosen, otherwise the [failure] path is chosen (if specified).
      */
-    data class Branch(val predicate: Expression, val success: Scope, val failure: Scope?) : Control
+    data class Branch(val predicate: Expression, val success: List<Statement>, val failure: List<Statement>) : Control
     
     /**
      * While ordinarily expressions are not permitted to be statements, functions may be invoked directly as statements
