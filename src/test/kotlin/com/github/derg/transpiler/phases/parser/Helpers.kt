@@ -20,11 +20,11 @@ import kotlin.test.assertNull
  */
 fun Any.toExp(type: Name? = null): Expression = when (this)
 {
-    is Boolean    -> Value.Bool(this)
-    is Double     -> Value.Real(toBigDecimal(), type)
-    is Float      -> Value.Real(toBigDecimal(), type)
-    is Int        -> Value.Real(toBigDecimal(), type)
-    is String     -> Value.Text(this, type)
+    is Boolean    -> Constant.Bool(this)
+    is Double     -> Constant.Real(toBigDecimal(), type)
+    is Float      -> Constant.Real(toBigDecimal(), type)
+    is Int        -> Constant.Real(toBigDecimal(), type)
+    is String     -> Constant.Text(this, type)
     is Expression -> this
     else          -> throw IllegalStateException("Cannot convert '$this' to an expression")
 }

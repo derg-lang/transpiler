@@ -7,27 +7,27 @@ import com.github.derg.transpiler.source.Name
  * has the property of never changing, and as such allows optimizations such as constant folding, inlining, and compile
  * time calculations.
  */
-sealed interface Value : Expression
+sealed interface Constant : Expression
 {
     /**
      * Represents a `true` or `false` [value]. Booleans cannot hold any other value, and cannot be given a user-defined
      * literal.
      */
-    data class Bool(val value: Boolean) : Value
+    data class Bool(val value: Boolean) : Constant
     
     /**
      * Any real number may be represented in [value]. The precision of the number is limited by the target language and
-     * hardware. All numbers may have an optional [type] associated with them, indicating which user-defined literal
+     * hardware. All numbers may have an optional [literal] associated with them, indicating which user-defined literal
      * should be used to interpret the value.
      */
-    data class Real(val value: Number, val type: Name?) : Value
+    data class Real(val value: Number, val literal: Name?) : Constant
     
     /**
      * All strings may be represented in [value]. All types of text are permitted, although limitations may be imposed
-     * by the target language and hardware. All strings may have an optional [type] associated with them, indicating
+     * by the target language and hardware. All strings may have an optional [literal] associated with them, indicating
      * which user-defined literal should be used to interpret the value.
      */
-    data class Text(val value: String, val type: Name?) : Value
+    data class Text(val value: String, val literal: Name?) : Constant
 }
 
 /**
