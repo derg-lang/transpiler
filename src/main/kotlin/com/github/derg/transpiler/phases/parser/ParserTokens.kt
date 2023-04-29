@@ -1,13 +1,12 @@
 package com.github.derg.transpiler.phases.parser
 
 import com.github.derg.transpiler.source.Name
-import com.github.derg.transpiler.source.ast.Expression
 import com.github.derg.transpiler.source.ast.Constant
+import com.github.derg.transpiler.source.ast.Expression
 import com.github.derg.transpiler.source.lexeme.*
 import com.github.derg.transpiler.util.Result
 import com.github.derg.transpiler.util.failureOf
 import com.github.derg.transpiler.util.successOf
-import com.github.derg.transpiler.util.toSuccess
 
 /**
  * Parses a single identifier from the token stream.
