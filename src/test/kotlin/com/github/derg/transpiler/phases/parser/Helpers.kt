@@ -59,11 +59,11 @@ infix fun Any.opRaise(that: Any) = Operator.Raise(toExp(), that.toExp())
 
 // Generates assignment from operations
 infix fun Name.assign(that: Any) = Assignment.Assign(this, that.toExp())
-infix fun Name.assignAdd(that: Any) = Assignment.AssignAdd(this, that.toExp())
-infix fun Name.assignSub(that: Any) = Assignment.AssignSubtract(this, that.toExp())
-infix fun Name.assignMul(that: Any) = Assignment.AssignMultiply(this, that.toExp())
-infix fun Name.assignMod(that: Any) = Assignment.AssignModulo(this, that.toExp())
-infix fun Name.assignDiv(that: Any) = Assignment.AssignDivide(this, that.toExp())
+infix fun Name.assignAdd(that: Any) = Assignment.Assign(this, Operator.Add(Access.Variable(this), that.toExp()))
+infix fun Name.assignSub(that: Any) = Assignment.Assign(this, Operator.Subtract(Access.Variable(this), that.toExp()))
+infix fun Name.assignMul(that: Any) = Assignment.Assign(this, Operator.Multiply(Access.Variable(this), that.toExp()))
+infix fun Name.assignMod(that: Any) = Assignment.Assign(this, Operator.Modulo(Access.Variable(this), that.toExp()))
+infix fun Name.assignDiv(that: Any) = Assignment.Assign(this, Operator.Divide(Access.Variable(this), that.toExp()))
 
 // Generates statements from expressions
 fun invokeOf(expression: Any) = Control.Invoke(expression.toExp())

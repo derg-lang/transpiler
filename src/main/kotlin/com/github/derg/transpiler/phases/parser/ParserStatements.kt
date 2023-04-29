@@ -10,11 +10,11 @@ import com.github.derg.transpiler.source.lexeme.SymbolType
 private fun merge(name: Name, operator: SymbolType, rhs: Expression): Assignment = when (operator)
 {
     SymbolType.ASSIGN          -> Assignment.Assign(name, rhs)
-    SymbolType.ASSIGN_PLUS     -> Assignment.AssignAdd(name, rhs)
-    SymbolType.ASSIGN_MINUS    -> Assignment.AssignSubtract(name, rhs)
-    SymbolType.ASSIGN_MULTIPLY -> Assignment.AssignMultiply(name, rhs)
-    SymbolType.ASSIGN_MODULO   -> Assignment.AssignModulo(name, rhs)
-    SymbolType.ASSIGN_DIVIDE   -> Assignment.AssignDivide(name, rhs)
+    SymbolType.ASSIGN_PLUS     -> Assignment.Assign(name, Operator.Add(Access.Variable(name), rhs))
+    SymbolType.ASSIGN_MINUS    -> Assignment.Assign(name, Operator.Subtract(Access.Variable(name), rhs))
+    SymbolType.ASSIGN_MULTIPLY -> Assignment.Assign(name, Operator.Multiply(Access.Variable(name), rhs))
+    SymbolType.ASSIGN_MODULO   -> Assignment.Assign(name, Operator.Modulo(Access.Variable(name), rhs))
+    SymbolType.ASSIGN_DIVIDE   -> Assignment.Assign(name, Operator.Divide(Access.Variable(name), rhs))
     else                       -> throw IllegalStateException("Illegal operator $operator when parsing assignment")
 }
 

@@ -17,12 +17,7 @@ private fun Node.prettify(): String = when (this)
     is Access.Function           -> prettify()
     is Access.Subscript          -> prettify()
     is Access.Variable           -> name
-    is Assignment.Assign         -> stringifyAssignment("=", name, expression)
-    is Assignment.AssignAdd      -> stringifyAssignment("+=", name, expression)
-    is Assignment.AssignDivide   -> stringifyAssignment("/=", name, expression)
-    is Assignment.AssignModulo   -> stringifyAssignment("%=", name, expression)
-    is Assignment.AssignMultiply -> stringifyAssignment("*=", name, expression)
-    is Assignment.AssignSubtract -> stringifyAssignment("-=", name, expression)
+    is Assignment.Assign         -> stringifyAssignment(name, expression)
     is Constant.Bool             -> stringifyLiteral(value, null)
     is Constant.Real             -> stringifyLiteral(value, literal)
     is Constant.Text             -> stringifyLiteral(value, literal)
@@ -85,11 +80,11 @@ private fun stringifyBinary(operator: String, lhs: Expression, rhs: Expression):
     "(${lhs.prettify()} $operator ${rhs.prettify()})"
 
 /**
- * Converts the given [assignment] operation into a string representing an assignment to [name] with the value from the
+ * Converts the given assignment operation into a string representing an assignment to [name] with the value from the
  * given [expression].
  */
-private fun stringifyAssignment(assignment: String, name: Name, expression: Expression): String =
-    "ASSIGN $name $assignment ${expression.prettify()}"
+private fun stringifyAssignment(name: Name, expression: Expression): String =
+    "ASSIGN $name = ${expression.prettify()}"
 
 /**
  * Converts the given [value] literal into a string representing the literal with the given [type].
