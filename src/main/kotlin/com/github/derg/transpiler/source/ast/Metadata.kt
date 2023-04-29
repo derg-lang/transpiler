@@ -1,5 +1,6 @@
 package com.github.derg.transpiler.source.ast
 
+import com.github.derg.transpiler.source.Assignability
 import com.github.derg.transpiler.source.Mutability
 import com.github.derg.transpiler.source.Name
 import com.github.derg.transpiler.source.Visibility
@@ -17,13 +18,14 @@ data class Argument(
 
 /**
  * Every function may have any number of parameters, each with their own [name], optional [type] information, and
- * optional default [value]. Parameters must contain some degree of [mutability] specifier.
+ * optional default [value]. Parameters must contain a [mutability] and [assignability] specifier.
  */
 data class Parameter(
     val name: Name,
     val type: Name?,
     val value: Expression?,
     val mutability: Mutability,
+    val assignability: Assignability,
 )
 
 /**
@@ -32,6 +34,7 @@ data class Parameter(
  *
  * @param visibility The visibility of the variable, to whom it is possible to access.
  * @param mutability The kind of the variable, to which degree it is mutable.
+ * @param assignability The assignability of the variable, how values are assigned to it.
  */
 data class Property(
     val name: Name,
@@ -39,6 +42,7 @@ data class Property(
     val value: Expression?,
     val visibility: Visibility,
     val mutability: Mutability,
+    val assignability: Assignability,
 )
 
 /**

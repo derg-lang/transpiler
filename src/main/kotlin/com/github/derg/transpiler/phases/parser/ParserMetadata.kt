@@ -1,5 +1,6 @@
 package com.github.derg.transpiler.phases.parser
 
+import com.github.derg.transpiler.source.Assignability
 import com.github.derg.transpiler.source.Mutability
 import com.github.derg.transpiler.source.Name
 import com.github.derg.transpiler.source.Visibility
@@ -7,7 +8,7 @@ import com.github.derg.transpiler.source.ast.*
 import com.github.derg.transpiler.source.lexeme.SymbolType
 
 /**
- * Determines the given visibility from the provided [symbol].
+ * Determines the visibility from the provided [symbol].
  */
 fun visibilityOf(symbol: SymbolType?): Visibility = when (symbol)
 {
@@ -16,18 +17,28 @@ fun visibilityOf(symbol: SymbolType?): Visibility = when (symbol)
     SymbolType.PROTECTED -> Visibility.PROTECTED
     SymbolType.PUBLIC    -> Visibility.PUBLIC
     null                 -> Visibility.PRIVATE
-    else                 -> throw IllegalStateException("Illegal symbol $symbol when parsing variable visibility")
+    else                 -> throw IllegalStateException("Illegal symbol $symbol when parsing visibility")
 }
 
 /**
- * Determines the given mutability from the provided [symbol].
+ * Determines the mutability from the provided [symbol].
  */
 fun mutabilityOf(symbol: SymbolType): Mutability = when (symbol)
 {
-    SymbolType.VAL -> Mutability.VALUE
-    SymbolType.VAR -> Mutability.VARYING
-    SymbolType.MUT -> Mutability.MUTABLE
-    else           -> throw IllegalStateException("Illegal symbol $symbol when parsing variable mutability")
+    SymbolType.VALUE   -> Mutability.IMMUTABLE
+    SymbolType.VARYING -> Mutability.MUTABLE
+    else               -> throw IllegalStateException("Illegal symbol $symbol when parsing mutability")
+}
+
+/**
+ * Determines the assignability from the provided [symbol].
+ */
+fun assignabilityOf(symbol: SymbolType?): Assignability = when (symbol)
+{
+    SymbolType.MUTABLE   -> Assignability.ASSIGNABLE
+    SymbolType.REFERENCE -> Assignability.REFERENCE
+    null                 -> Assignability.CONSTANT
+    else                 -> throw IllegalStateException("Illegal symbol $symbol when parsing assignability")
 }
 
 /**
@@ -56,10 +67,17 @@ private fun valuePatternOf(symbol: SymbolType) =
 fun visibilityParserOf(): Parser<Visibility> =
     ParserPattern(::visibilityPatternOf, ::visibilityOf)
 
-private fun visibilityPatternOf() = ParserOptional(
-    ParserSymbol(SymbolType.EXPORTED, SymbolType.PRIVATE, SymbolType.PROTECTED, SymbolType.PUBLIC),
-    SymbolType.PRIVATE
-)
+private fun visibilityPatternOf() =
+    ParserOptional(ParserSymbol(SymbolType.EXPORTED, SymbolType.PRIVATE, SymbolType.PROTECTED, SymbolType.PUBLIC))
+
+/**
+ * Parses an assignability from the token stream.
+ */
+fun assignabilityParserOf(): Parser<Assignability> =
+    ParserPattern(::assignabilityPatternOf, ::assignabilityOf)
+
+private fun assignabilityPatternOf() =
+    ParserOptional(ParserSymbol(SymbolType.MUTABLE, SymbolType.REFERENCE))
 
 /**
  * Parses a function call argument from the token stream.
@@ -82,7 +100,8 @@ fun parameterParserOf(): Parser<Parameter> =
     ParserPattern(::parameterPatternOf, ::parameterOutcomeOf)
 
 private fun parameterPatternOf() = ParserSequence(
-    "mutability" to ParserSymbol(SymbolType.VAL, SymbolType.VAR, SymbolType.MUT),
+    "assignability" to assignabilityParserOf(),
+    "mutability" to ParserSymbol(SymbolType.VALUE, SymbolType.VARYING, SymbolType.MUTABLE),
     "name" to ParserName(),
     "type" to ParserOptional(nameParserOf(SymbolType.COLON)),
     "value" to ParserOptional(valueParserOf(SymbolType.ASSIGN)),
@@ -93,6 +112,7 @@ private fun parameterOutcomeOf(values: Parsers) = Parameter(
     type = values["type"],
     value = values["value"],
     mutability = mutabilityOf(values["mutability"]),
+    assignability = values["assignability"],
 )
 
 /**
@@ -103,7 +123,8 @@ fun propertyParserOf(): Parser<Property> =
 
 private fun propertyPatternOf() = ParserSequence(
     "visibility" to visibilityParserOf(),
-    "mutability" to ParserSymbol(SymbolType.VAL, SymbolType.VAR, SymbolType.MUT),
+    "assignability" to assignabilityParserOf(),
+    "mutability" to ParserSymbol(SymbolType.VALUE, SymbolType.VARYING, SymbolType.MUTABLE),
     "name" to ParserName(),
     "type" to ParserOptional(nameParserOf(SymbolType.COLON)),
     "value" to ParserOptional(valueParserOf(SymbolType.ASSIGN)),
@@ -115,6 +136,7 @@ private fun propertyOutcomeOf(values: Parsers) = Property(
     value = values["value"],
     visibility = values["visibility"],
     mutability = mutabilityOf(values["mutability"]),
+    assignability = values["assignability"],
 )
 
 /**

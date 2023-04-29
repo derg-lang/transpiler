@@ -1,6 +1,7 @@
 package com.github.derg.transpiler.phases.parser
 
 import com.github.derg.transpiler.phases.lexer.tokenize
+import com.github.derg.transpiler.source.Assignability
 import com.github.derg.transpiler.source.Mutability
 import com.github.derg.transpiler.source.Name
 import com.github.derg.transpiler.source.Visibility
@@ -104,13 +105,15 @@ fun propOf(
     type: Name? = null,
     value: Any? = null,
     vis: Visibility = Visibility.PRIVATE,
-    mut: Mutability = Mutability.VALUE,
+    mut: Mutability = Mutability.IMMUTABLE,
+    ass: Assignability = Assignability.CONSTANT,
 ) = Property(
     name = name,
     type = type,
     value = value?.toExp(),
     visibility = vis,
     mutability = mut,
+    assignability = ass,
 )
 
 /**
@@ -121,13 +124,15 @@ fun varOf(
     value: Any,
     type: Name? = null,
     vis: Visibility = Visibility.PRIVATE,
-    mut: Mutability = Mutability.VALUE,
+    mut: Mutability = Mutability.IMMUTABLE,
+    ass: Assignability = Assignability.CONSTANT,
 ) = Definition.Variable(
     name = name,
     type = type,
     value = value.toExp(),
     visibility = vis,
     mutability = mut,
+    assignability = ass,
 )
 
 /**
@@ -156,12 +161,14 @@ fun parOf(
     name: Name,
     type: Name? = null,
     value: Any? = null,
-    mut: Mutability = Mutability.VALUE,
+    mut: Mutability = Mutability.IMMUTABLE,
+    ass: Assignability = Assignability.CONSTANT,
 ) = Parameter(
     name = name,
     type = type,
     value = value?.toExp(),
     mutability = mut,
+    assignability = ass,
 )
 
 /**

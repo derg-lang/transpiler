@@ -36,28 +36,61 @@ enum class Visibility
 }
 
 /**
- * The kind of variable determines what is permitted regarding the data the variable holds. The kind specifies the
+ * The kind of mutability determines what is permitted regarding the data the variable holds. The kind specifies the
  * variable mutability level, restricting the variable from never-changing, to fully mutable.
  */
 enum class Mutability
 {
     /**
      * The variable is considered a constant. The value can never change, and the properties associated with the value
-     * cannot change either. The variable is considered deeply constant, and the user cannot assume that its memory
-     * address will remain constant. All variables which are constant may be inlined, or statically computed to other
-     * values at compile time, wherever possible.
+     * cannot change either. The variable is considered deeply immutable, and the user is guaranteed that its memory
+     * space will remain unchanged.
+     *
+     * All forms of mutable operations on immutable objects is strictly forbidden. Only non-mutation operations may be
+     * performed on such objects. Most builtin types (i.e. integers, booleans) are immutable. Any properties explicitly
+     * marked as mutable may be mutated, however.
+     *
+     * All variables which are immutable and contains no explicitly mutable properties may be inlined, or statically
+     * computed to other values at compile time, wherever possible.
      */
-    VALUE,
+    IMMUTABLE,
     
     /**
-     * The variable is considered unchanging and can never change. However, the variable is still possible to mutate by
-     * invoking mutating functions or writing different values to the variable properties.
-     */
-    VARYING,
-    
-    /**
-     * The variable is considered fully mutable and can change in every imaginable way. The variable may be re-assigned
-     * a different value, and mutated by either function calls or by updating the variable properties.
+     * The variable may be mutated by invoking mutating functions or writing different values to the variable
+     * properties.
+     *
+     * The variable itself may be subject to other constraints preventing assigning new values to it, however. see
+     * [Assignability] for more information.
      */
     MUTABLE,
+}
+
+/**
+ * Variables may be re-assigned a different value in certain cases, for example during the assignment statement. In many
+ * cases, variables cannot be re-assigned due to their mutability constraints, or their special properties. The
+ * assignability property determines how assigning new values to a variable behaves, or whether it is legal in the first
+ * place.
+ */
+enum class Assignability
+{
+    /**
+     * The variable is marked as a constant and cannot be re-assigned for any purpose. It may still be mutated, if it is
+     * marked as mutable. Phrased differently, a constant is a variable which can never be re-assigned after creation;
+     * it will always point to the same instance as it was created with.
+     */
+    CONSTANT,
+    
+    /**
+     * The variable may be re-assigned as desired. The implementation of re-assignment determines how the memory is
+     * updated. For trivial types, the entire memory region is overwritten, although certain types may define a more
+     * complicated assignment scheme, where memory is not fully overwritten.
+     */
+    ASSIGNABLE,
+    
+    /**
+     * The variable is a reference type and points to some other location in memory. The variable itself may not be
+     * re-assigned to point to some other location in memory, but instead allows the target location to be updated
+     * instead.
+     */
+    REFERENCE,
 }

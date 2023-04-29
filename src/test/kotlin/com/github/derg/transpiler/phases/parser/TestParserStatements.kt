@@ -1,5 +1,6 @@
 package com.github.derg.transpiler.phases.parser
 
+import com.github.derg.transpiler.source.Assignability
 import com.github.derg.transpiler.source.Mutability
 import com.github.derg.transpiler.source.Visibility
 import com.github.derg.transpiler.source.lexeme.EndOfFile
@@ -62,10 +63,14 @@ class TestParserVariable
     @Test
     fun `Given valid token, when parsing, then correctly parsed`()
     {
+        // Assignability must be correctly parsed
+        tester.parse("mut val foo = 0").isChain(4, 1).isValue(varOf("foo", 0, ass = Assignability.ASSIGNABLE))
+        tester.parse("ref val foo = 0").isChain(4, 1).isValue(varOf("foo", 0, ass = Assignability.REFERENCE))
+        tester.parse("    val foo = 0").isChain(3, 1).isValue(varOf("foo", 0, ass = Assignability.CONSTANT))
+        
         // Mutability must be correctly parsed
-        tester.parse("val foo = 0").isChain(3, 1).isValue(varOf("foo", 0, mut = Mutability.VALUE))
-        tester.parse("var foo = 0").isChain(3, 1).isValue(varOf("foo", 0, mut = Mutability.VARYING))
-        tester.parse("mut foo = 0").isChain(3, 1).isValue(varOf("foo", 0, mut = Mutability.MUTABLE))
+        tester.parse("val foo = 0").isChain(3, 1).isValue(varOf("foo", 0, mut = Mutability.IMMUTABLE))
+        tester.parse("var foo = 0").isChain(3, 1).isValue(varOf("foo", 0, mut = Mutability.MUTABLE))
         
         // Visibility must be correctly parsed
         tester.parse("exported  val foo = 0").isChain(4, 1).isValue(varOf("foo", 0, vis = Visibility.EXPORTED))
@@ -98,11 +103,16 @@ class TestParserFunction
         tester.parse("fun foo(): Foo -> Bar {}").isChain(9, 1).isValue(funOf("foo", valType = "Bar", errType = "Foo"))
         
         // Parameters must be correctly parsed
+        tester.parse("fun foo(mut val a: Foo) {}").isChain(10, 1)
+            .isValue(funOf("foo", params = listOf(parOf("a", type = "Foo", ass = Assignability.ASSIGNABLE))))
+        tester.parse("fun foo(ref val a: Foo) {}").isChain(10, 1)
+            .isValue(funOf("foo", params = listOf(parOf("a", type = "Foo", ass = Assignability.REFERENCE))))
+        tester.parse("fun foo(    val a: Foo) {}").isChain(9, 1)
+            .isValue(funOf("foo", params = listOf(parOf("a", type = "Foo", ass = Assignability.CONSTANT))))
+        
         tester.parse("fun foo(val a: Foo) {}").isChain(9, 1)
-            .isValue(funOf("foo", params = listOf(parOf("a", type = "Foo", mut = Mutability.VALUE))))
+            .isValue(funOf("foo", params = listOf(parOf("a", type = "Foo", mut = Mutability.IMMUTABLE))))
         tester.parse("fun foo(var a: Foo) {}").isChain(9, 1)
-            .isValue(funOf("foo", params = listOf(parOf("a", type = "Foo", mut = Mutability.VARYING))))
-        tester.parse("fun foo(mut a: Foo) {}").isChain(9, 1)
             .isValue(funOf("foo", params = listOf(parOf("a", type = "Foo", mut = Mutability.MUTABLE))))
         
         tester.parse("fun foo(val a: Foo, val b: Bar) {}").isChain(14, 1)
@@ -159,13 +169,18 @@ class TestParserType
         tester.parse("type Foo {}").isChain(3, 1).isValue(typeOf("Foo"))
         
         // Properties must be correctly parsed
-        tester.parse("type Foo { val a: Bar }").isChain(7, 1)
-            .isValue(typeOf("Foo", props = listOf(propOf("a", type = "Bar", mut = Mutability.VALUE))))
-        tester.parse("type Foo { var a: Bar }").isChain(7, 1)
-            .isValue(typeOf("Foo", props = listOf(propOf("a", type = "Bar", mut = Mutability.VARYING))))
-        tester.parse("type Foo { mut a: Bar }").isChain(7, 1)
-            .isValue(typeOf("Foo", props = listOf(propOf("a", type = "Bar", mut = Mutability.MUTABLE))))
+        tester.parse("type Foo { mut val a: Bar }").isChain(8, 1)
+            .isValue(typeOf("Foo", props = listOf(propOf("a", type = "Bar", ass = Assignability.ASSIGNABLE))))
+        tester.parse("type Foo { ref val a: Bar }").isChain(8, 1)
+            .isValue(typeOf("Foo", props = listOf(propOf("a", type = "Bar", ass = Assignability.REFERENCE))))
+        tester.parse("type Foo {     val a: Bar }").isChain(7, 1)
+            .isValue(typeOf("Foo", props = listOf(propOf("a", type = "Bar", ass = Assignability.CONSTANT))))
         
+        tester.parse("type Foo { val a: Bar }").isChain(7, 1)
+            .isValue(typeOf("Foo", props = listOf(propOf("a", type = "Bar", mut = Mutability.IMMUTABLE))))
+        tester.parse("type Foo { var a: Bar }").isChain(7, 1)
+            .isValue(typeOf("Foo", props = listOf(propOf("a", type = "Bar", mut = Mutability.MUTABLE))))
+    
         tester.parse("type Foo { exported  val a: Bar }").isChain(8, 1)
             .isValue(typeOf("Foo", props = listOf(propOf("a", type = "Bar", vis = Visibility.EXPORTED))))
         tester.parse("type Foo { public    val a: Bar }").isChain(8, 1)

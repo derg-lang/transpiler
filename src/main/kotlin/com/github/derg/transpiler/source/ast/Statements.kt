@@ -1,5 +1,6 @@
 package com.github.derg.transpiler.source.ast
 
+import com.github.derg.transpiler.source.Assignability
 import com.github.derg.transpiler.source.Mutability
 import com.github.derg.transpiler.source.Name
 import com.github.derg.transpiler.source.Visibility
@@ -111,5 +112,6 @@ sealed interface Definition : Statement
         val value: Expression,
         val visibility: Visibility,
         val mutability: Mutability,
+        val assignability: Assignability,
     ) : Definition
 }

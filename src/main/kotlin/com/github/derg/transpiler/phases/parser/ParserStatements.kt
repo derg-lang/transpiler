@@ -1,5 +1,6 @@
 package com.github.derg.transpiler.phases.parser
 
+import com.github.derg.transpiler.source.Assignability
 import com.github.derg.transpiler.source.Name
 import com.github.derg.transpiler.source.ast.*
 import com.github.derg.transpiler.source.lexeme.SymbolType
@@ -127,7 +128,8 @@ fun variableParserOf(): Parser<Statement> =
 
 private fun variablePatternOf() = ParserSequence(
     "visibility" to visibilityParserOf(),
-    "mutability" to ParserSymbol(SymbolType.VAL, SymbolType.VAR, SymbolType.MUT),
+    "assignability" to assignabilityParserOf(),
+    "mutability" to ParserSymbol(SymbolType.VALUE, SymbolType.VARYING, SymbolType.MUTABLE),
     "name" to ParserName(),
     "op" to ParserSymbol(SymbolType.ASSIGN),
     "value" to expressionParserOf(),
@@ -139,6 +141,7 @@ private fun variableOutcomeOf(values: Parsers) = Definition.Variable(
     value = values["value"],
     visibility = values["visibility"],
     mutability = mutabilityOf(values["mutability"]),
+    assignability = values["assignability"],
 )
 
 /**
