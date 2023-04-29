@@ -71,6 +71,15 @@ private fun visibilityPatternOf() =
     ParserOptional(ParserSymbol(SymbolType.EXPORTED, SymbolType.PRIVATE, SymbolType.PROTECTED, SymbolType.PUBLIC))
 
 /**
+ * Parses a mutability from the token stream.
+ */
+fun mutabilityParserOf(): Parser<Mutability> =
+    ParserPattern(::mutabilityPatternOf, ::mutabilityOf)
+
+private fun mutabilityPatternOf() =
+    ParserSymbol(SymbolType.VALUE, SymbolType.VARYING)
+
+/**
  * Parses an assignability from the token stream.
  */
 fun assignabilityParserOf(): Parser<Assignability> =
@@ -101,7 +110,7 @@ fun parameterParserOf(): Parser<Parameter> =
 
 private fun parameterPatternOf() = ParserSequence(
     "assignability" to assignabilityParserOf(),
-    "mutability" to ParserSymbol(SymbolType.VALUE, SymbolType.VARYING, SymbolType.MUTABLE),
+    "mutability" to mutabilityParserOf(),
     "name" to ParserName(),
     "type" to ParserOptional(nameParserOf(SymbolType.COLON)),
     "value" to ParserOptional(valueParserOf(SymbolType.ASSIGN)),
@@ -111,7 +120,7 @@ private fun parameterOutcomeOf(values: Parsers) = Parameter(
     name = values["name"],
     type = values["type"],
     value = values["value"],
-    mutability = mutabilityOf(values["mutability"]),
+    mutability = values["mutability"],
     assignability = values["assignability"],
 )
 
@@ -124,7 +133,7 @@ fun propertyParserOf(): Parser<Property> =
 private fun propertyPatternOf() = ParserSequence(
     "visibility" to visibilityParserOf(),
     "assignability" to assignabilityParserOf(),
-    "mutability" to ParserSymbol(SymbolType.VALUE, SymbolType.VARYING, SymbolType.MUTABLE),
+    "mutability" to mutabilityParserOf(),
     "name" to ParserName(),
     "type" to ParserOptional(nameParserOf(SymbolType.COLON)),
     "value" to ParserOptional(valueParserOf(SymbolType.ASSIGN)),
@@ -135,7 +144,7 @@ private fun propertyOutcomeOf(values: Parsers) = Property(
     type = values["type"],
     value = values["value"],
     visibility = values["visibility"],
-    mutability = mutabilityOf(values["mutability"]),
+    mutability = values["mutability"],
     assignability = values["assignability"],
 )
 

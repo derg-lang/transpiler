@@ -129,7 +129,7 @@ fun variableParserOf(): Parser<Statement> =
 private fun variablePatternOf() = ParserSequence(
     "visibility" to visibilityParserOf(),
     "assignability" to assignabilityParserOf(),
-    "mutability" to ParserSymbol(SymbolType.VALUE, SymbolType.VARYING, SymbolType.MUTABLE),
+    "mutability" to mutabilityParserOf(),
     "name" to ParserName(),
     "op" to ParserSymbol(SymbolType.ASSIGN),
     "value" to expressionParserOf(),
@@ -140,7 +140,7 @@ private fun variableOutcomeOf(values: Parsers) = Definition.Variable(
     type = null,
     value = values["value"],
     visibility = values["visibility"],
-    mutability = mutabilityOf(values["mutability"]),
+    mutability = values["mutability"],
     assignability = values["assignability"],
 )
 
