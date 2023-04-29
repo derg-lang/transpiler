@@ -42,7 +42,7 @@ class TestParserSegment
     {
         tester.parse("").isChain().isValue(segmentOf())
         tester.parse("module foo").isChain(1, 1).isValue(segmentOf(module = "foo"))
-        tester.parse("use foo").isChain(1, 1).isValue(segmentOf(imports = setOf("foo")))
+        tester.parse("use foo").isChain(1, 1).isValue(segmentOf(imports = listOf("foo")))
         tester.parse("val foo = 0").isChain(3, 1).isValue(segmentOf(statements = listOf(varOf("foo", 0))))
         tester.parse("fun foo() {}").isChain(5, 1).isValue(segmentOf(statements = listOf(funOf("foo"))))
     }

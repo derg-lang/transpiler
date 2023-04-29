@@ -17,13 +17,13 @@ class Parsers(parsers: Map<String, Parser<*>>)
      * Retrieves the produced item for the parser stored under the given [key].
      */
     @Suppress("UNCHECKED_CAST")
-    fun <Type> produce(key: String): Type? = items[key] as? Type
+    operator fun <Type> get(key: String): Type = items[key] as Type
 }
 
 /**
  * Retrieves all values of all parsers in [this] list under the given [key].
  */
-fun <Type> List<Parsers>.produce(key: String): List<Type> = mapNotNull { it.produce(key) }
+fun <Type> List<Parsers>.produce(key: String): List<Type> = map { it[key] }
 
 /**
  * Parses the token stream in such a way that exactly one of the provided parsers parses. If more than a single pattern
@@ -37,7 +37,7 @@ class ParserAnyOf<Type>(vararg parsers: Parser<Type>) : Parser<Type>
     private val disqualified = mutableSetOf<Int>()
     
     override fun skipable(): Boolean = parsers.any { it.second.skipable() }
-    override fun produce(): Type? = parsers.singleOrNull { it.first !in disqualified }?.second?.produce()
+    override fun produce(): Type = parsers.single { it.first !in disqualified }.second.produce()
     
     override fun parse(token: Token): Result<ParseOk, ParseError>
     {
@@ -179,7 +179,7 @@ class ParserRepeating<Type>(private val parser: Parser<Type>, private val separa
     private fun swapAndParse(token: Token, current: Parser<*>): Result<ParseOk, ParseError>
     {
         if (!isSeparator)
-            parser.produce()?.let { values.add(it) }
+            parser.produce().let { values.add(it) }
         
         current.reset()
         isIncomplete = false
@@ -207,7 +207,7 @@ class ParserOptional<Type>(private val parser: Parser<Type>) : Parser<Type?>
     private var isOngoing = false
     
     override fun skipable(): Boolean = true
-    override fun produce(): Type? = parser.produce()
+    override fun produce(): Type? = if (isOngoing) parser.produce() else null
     
     override fun parse(token: Token): Result<ParseOk, ParseError>
     {
@@ -229,7 +229,7 @@ class ParserOptional<Type>(private val parser: Parser<Type>) : Parser<Type?>
  * parser is also satisfied and may use the [mapper] to produce the final output. This parser may be used recursively as
  * well, i.e. allowing an expression parser to parse another expression while in the middle of parsing.
  */
-class ParserPattern<Type, Out>(private val factory: () -> Parser<Out>, private val mapper: (Out) -> Type?) :
+class ParserPattern<Type, Out>(private val factory: () -> Parser<Out>, private val mapper: (Out) -> Type) :
     Parser<Type>
 {
     private var parser: Parser<Out>? = null
@@ -241,7 +241,7 @@ class ParserPattern<Type, Out>(private val factory: () -> Parser<Out>, private v
     private fun parser(): Parser<Out> = parser ?: factory().also { parser = it }
     
     override fun skipable(): Boolean = parser().skipable()
-    override fun produce(): Type? = parser?.produce()?.let(mapper)
+    override fun produce(): Type = mapper(parser().produce())
     override fun parse(token: Token): Result<ParseOk, ParseError> = parser().parse(token)
     override fun reset()
     {

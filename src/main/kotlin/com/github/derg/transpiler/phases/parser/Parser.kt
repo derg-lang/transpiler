@@ -17,7 +17,7 @@ fun parse(input: String): Segment
     val parser = segmentParserOf()
     val tokens = tokenize(input).map { it.data } + EndOfFile
     tokens.fold { parser.parse(it) }.valueOr { throw IllegalStateException("Failed parsing token: $it") }
-    return parser.produce() ?: throw IllegalStateException("Failed to produce segment")
+    return parser.produce()
 }
 
 /**
@@ -37,7 +37,7 @@ interface Parser<Type>
      * Pulls out the produced value from the parser, if it contains any finished items. A parser can only contain any
      * finished items by being provided with enough tokens to construct the item.
      */
-    fun produce(): Type?
+    fun produce(): Type
     
     /**
      * Provides a single new [token] to the parser. If the parser accepts the token, a success is returned. If the

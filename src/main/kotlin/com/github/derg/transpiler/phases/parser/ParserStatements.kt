@@ -54,13 +54,8 @@ private fun assignmentPatternOf() = ParserSequence(
     "rhs" to expressionParserOf(),
 )
 
-private fun assignmentOutcomeOf(values: Parsers): Assignment?
-{
-    val name = values.produce<Name>("name") ?: return null
-    val op = values.produce<SymbolType>("op") ?: return null
-    val rhs = values.produce<Expression>("rhs") ?: return null
-    return merge(name, op, rhs)
-}
+private fun assignmentOutcomeOf(values: Parsers): Assignment =
+    merge(values["name"], values["op"], values["rhs"])
 
 /**
  * Parses a single branch control from the token stream.
@@ -72,16 +67,17 @@ private fun branchPatternOf() = ParserSequence(
     "if" to ParserSymbol(SymbolType.IF),
     "predicate" to expressionParserOf(),
     "success" to scopeParserOf(),
-    "other" to ParserOptional(ParserSequence("else" to ParserSymbol(SymbolType.ELSE), "failure" to scopeParserOf())),
+    "failure" to ParserOptional(ParserPattern(::branchElsePatternOf, ::branchElseOutcomeOf)),
 )
 
-private fun branchOutcomeOf(values: Parsers): Control.Branch?
-{
-    val predicate = values.produce<Expression>("predicate") ?: return null
-    val success = values.produce<Scope>("success") ?: return null
-    val failure = values.produce<Parsers>("other")?.produce<Scope>("failure")
-    return Control.Branch(predicate, success, failure)
-}
+private fun branchOutcomeOf(values: Parsers): Control.Branch =
+    Control.Branch(values["predicate"], values["success"], values["failure"])
+
+private fun branchElsePatternOf() =
+    ParserSequence("symbol" to ParserSymbol(SymbolType.ELSE), "scope" to scopeParserOf())
+
+private fun branchElseOutcomeOf(values: Parsers): Scope =
+    values["scope"]
 
 /**
  * Parses a single raise control flow from the token stream.
@@ -94,11 +90,8 @@ private fun raisePatternOf() = ParserSequence(
     "expression" to expressionParserOf(),
 )
 
-private fun raiseOutcomeOf(values: Parsers): Control.Raise?
-{
-    val expression = values.produce<Expression>("expression") ?: return null
-    return Control.Raise(expression)
-}
+private fun raiseOutcomeOf(values: Parsers): Control.Raise =
+    Control.Raise(values["expression"])
 
 /**
  * Parses a single return control flow from the token stream.
@@ -111,9 +104,9 @@ private fun returnPatternOf() = ParserSequence(
     "expression" to expressionParserOf(),
 )
 
-private fun returnOutcomeOf(values: Parsers): Control.Return?
+private fun returnOutcomeOf(values: Parsers): Control.Return
 {
-    val expression = values.produce<Expression>("expression") ?: return null
+    val expression = values.get<Expression>("expression")
     // TODO: The magic string `_` should not be used. Use the type-information of the function to remove it
     return if (expression == Access.Variable("_")) Control.Return(null) else Control.Return(expression)
 }
@@ -140,16 +133,13 @@ private fun variablePatternOf() = ParserSequence(
     "value" to expressionParserOf(),
 )
 
-private fun variableOutcomeOf(values: Parsers): Definition?
-{
-    return Definition.Variable(
-        name = values.produce("name") ?: return null,
-        type = null,
-        value = values.produce("value") ?: return null,
-        visibility = visibilityOf(values.produce("visibility")),
-        mutability = mutabilityOf(values.produce("mutability") ?: return null),
-    )
-}
+private fun variableOutcomeOf(values: Parsers) = Definition.Variable(
+    name = values["name"],
+    type = null,
+    value = values["value"],
+    visibility = visibilityOf(values["visibility"]),
+    mutability = mutabilityOf(values["mutability"]),
+)
 
 /**
  * Parses a function definition from the token stream.
@@ -171,17 +161,14 @@ private fun functionPatternOf() = ParserSequence(
     "close_brace" to ParserSymbol(SymbolType.CLOSE_BRACE),
 )
 
-private fun functionOutcomeOf(values: Parsers): Definition?
-{
-    return Definition.Function(
-        name = values.produce("name") ?: return null,
-        valueType = values.produce("value"),
-        errorType = values.produce("error"),
-        parameters = values.produce("parameters") ?: return null,
-        visibility = visibilityOf(values.produce("visibility")),
-        statements = values.produce("statements") ?: return null,
-    )
-}
+private fun functionOutcomeOf(values: Parsers) = Definition.Function(
+    name = values["name"],
+    valueType = values["value"],
+    errorType = values["error"],
+    parameters = values["parameters"],
+    visibility = visibilityOf(values["visibility"]),
+    statements = values["statements"],
+)
 
 /**
  * Parses a type definition from the token stream.
@@ -198,11 +185,8 @@ private fun typePatternOf() = ParserSequence(
     "close_brace" to ParserSymbol(SymbolType.CLOSE_BRACE),
 )
 
-private fun typeOutcomeOf(values: Parsers): Definition?
-{
-    return Definition.Type(
-        name = values.produce("name") ?: return null,
-        visibility = visibilityOf(values.produce("visibility")),
-        properties = values.produce("properties") ?: emptyList(),
-    )
-}
+private fun typeOutcomeOf(values: Parsers) = Definition.Type(
+    name = values["name"],
+    visibility = visibilityOf(values["visibility"]),
+    properties = values["properties"],
+)
