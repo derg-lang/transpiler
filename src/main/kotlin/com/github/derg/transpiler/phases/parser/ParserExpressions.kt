@@ -1,7 +1,9 @@
 package com.github.derg.transpiler.phases.parser
 
-import com.github.derg.transpiler.source.Name
-import com.github.derg.transpiler.source.ast.*
+import com.github.derg.transpiler.source.ast.Access
+import com.github.derg.transpiler.source.ast.Expression
+import com.github.derg.transpiler.source.ast.Operator
+import com.github.derg.transpiler.source.ast.When
 import com.github.derg.transpiler.source.lexeme.SymbolType
 
 /**

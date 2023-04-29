@@ -1,13 +1,12 @@
 package com.github.derg.transpiler.phases.parser
 
 import com.github.derg.transpiler.source.Name
+import com.github.derg.transpiler.source.ast.Constant
 import com.github.derg.transpiler.source.ast.Expression
-import com.github.derg.transpiler.source.ast.Value
 import com.github.derg.transpiler.source.lexeme.*
 import com.github.derg.transpiler.util.Result
 import com.github.derg.transpiler.util.failureOf
 import com.github.derg.transpiler.util.successOf
-import com.github.derg.transpiler.util.toSuccess
 
 /**
  * Parses a single identifier from the token stream.
@@ -76,8 +75,8 @@ class ParserBool : Parser<Expression>
         val symbol = token as? Symbol ?: return failureOf(ParseError.UnexpectedToken(token))
         expression = when (symbol.type)
         {
-            SymbolType.TRUE  -> Value.Bool(true)
-            SymbolType.FALSE -> Value.Bool(false)
+            SymbolType.TRUE  -> Constant.Bool(true)
+            SymbolType.FALSE -> Constant.Bool(false)
             else             -> return failureOf(ParseError.UnexpectedToken(token))
         }
         return successOf(ParseOk.Complete)
@@ -104,7 +103,7 @@ class ParserReal : Parser<Expression>
             return successOf(ParseOk.Finished)
         
         val number = token as? Numeric ?: return failureOf(ParseError.UnexpectedToken(token))
-        expression = Value.Real(number.value, number.type)
+        expression = Constant.Real(number.value, number.type)
         return successOf(ParseOk.Complete)
     }
     
@@ -129,7 +128,7 @@ class ParserText : Parser<Expression>
             return successOf(ParseOk.Finished)
         
         val string = token as? Textual ?: return failureOf(ParseError.UnexpectedToken(token))
-        expression = Value.Text(string.value, string.type)
+        expression = Constant.Text(string.value, string.type)
         return successOf(ParseOk.Complete)
     }
     

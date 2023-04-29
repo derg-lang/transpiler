@@ -1,8 +1,6 @@
 package com.github.derg.transpiler.source.ast
 
-import com.github.derg.transpiler.source.Mutability
-import com.github.derg.transpiler.source.Name
-import com.github.derg.transpiler.source.Visibility
+import com.github.derg.transpiler.source.*
 
 /**
  * In order to invoke any sort of function, sometimes arguments must be provided. Arguments consist of a single
@@ -17,13 +15,14 @@ data class Argument(
 
 /**
  * Every function may have any number of parameters, each with their own [name], optional [type] information, and
- * optional default [value]. Parameters must contain some degree of [mutability] specifier.
+ * optional default [value]. Parameters must contain a [passability] and [assignability] specifier.
  */
 data class Parameter(
     val name: Name,
     val type: Name?,
     val value: Expression?,
-    val mutability: Mutability,
+    val passability: Passability,
+    val assignability: Assignability,
 )
 
 /**
@@ -32,6 +31,7 @@ data class Parameter(
  *
  * @param visibility The visibility of the variable, to whom it is possible to access.
  * @param mutability The kind of the variable, to which degree it is mutable.
+ * @param assignability The assignability of the variable, how values are assigned to it.
  */
 data class Property(
     val name: Name,
@@ -39,18 +39,7 @@ data class Property(
     val value: Expression?,
     val visibility: Visibility,
     val mutability: Mutability,
-)
-
-/**
- * The collection of any number of [statements] within a logical unit is known as a scope. The scope permits arbitrary
- * code to be performed, including defining new variables, functions, types, and so on. All executable parts of the
- * program must be located within a scope.
- *
- * @property isBraced Whether the scope is surrounded with braces or not.
- */
-data class Scope(
-    val isBraced: Boolean,
-    val statements: List<Statement>,
+    val assignability: Assignability,
 )
 
 /**

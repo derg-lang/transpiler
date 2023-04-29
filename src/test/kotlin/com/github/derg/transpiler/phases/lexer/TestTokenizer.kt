@@ -200,7 +200,7 @@ class TestTokenizer
             fun `Given variable definition, when tokenizing, then correct sequence`()
             {
                 val expected = listOf(
-                    localizedOf(0, 3, Symbol(VAL)),
+                    localizedOf(0, 3, Symbol(VALUE)),
                     localizedOf(4, 8, Identifier("variable")),
                     localizedOf(13, 1, Symbol(ASSIGN)),
                     localizedOf(15, 2, Numeric(42.toBigDecimal(), null)),

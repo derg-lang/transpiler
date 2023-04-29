@@ -201,16 +201,21 @@ class ParserRepeating<Type>(private val parser: Parser<Type>, private val separa
  * Parses the token stream in such a way that the parser is considered optional. If the parser does not accept the first
  * token, the parser is considered satisfied and will not require additional tokens. However, if the parser has accepted
  * any tokens, the parser must be provided enough tokens to satisfy the wrapped parser.
+ *
+ * If the parser could not locate any suitable tokens, when producing the outcome, the [default] will be returned
+ * instead.
  */
-class ParserOptional<Type>(private val parser: Parser<Type>) : Parser<Type?>
+class ParserOptional<Type>(private val parser: Parser<Type>, private val default: Type? = null) : Parser<Type?>
 {
+    private var isParsing = false
     private var isOngoing = false
     
     override fun skipable(): Boolean = true
-    override fun produce(): Type? = if (isOngoing) parser.produce() else null
+    override fun produce(): Type? = if (isOngoing) parser.produce() else if (isParsing) default else null
     
     override fun parse(token: Token): Result<ParseOk, ParseError>
     {
+        isParsing = true
         val outcome = parser.parse(token)
             .valueOr { return if (isOngoing) failureOf(it) else successOf(ParseOk.Finished) }
         isOngoing = true
@@ -220,6 +225,7 @@ class ParserOptional<Type>(private val parser: Parser<Type>) : Parser<Type?>
     override fun reset()
     {
         parser.reset()
+        isParsing = false
         isOngoing = false
     }
 }

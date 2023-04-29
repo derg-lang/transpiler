@@ -1,30 +1,54 @@
 package com.github.derg.transpiler.phases.parser
 
-import com.github.derg.transpiler.source.Mutability
-import com.github.derg.transpiler.source.Name
-import com.github.derg.transpiler.source.Visibility
+import com.github.derg.transpiler.source.*
 import com.github.derg.transpiler.source.ast.*
 import com.github.derg.transpiler.source.lexeme.SymbolType
 
 /**
- * Determines the given visibility from the provided [symbol].
+ * Determines the visibility from the provided [symbol].
  */
 fun visibilityOf(symbol: SymbolType?): Visibility = when (symbol)
 {
-    SymbolType.PUB -> Visibility.PUBLIC
-    null           -> Visibility.PRIVATE
-    else           -> throw IllegalStateException("Illegal symbol $symbol when parsing variable visibility")
+    SymbolType.EXPORTED  -> Visibility.EXPORTED
+    SymbolType.PRIVATE   -> Visibility.PRIVATE
+    SymbolType.PROTECTED -> Visibility.PROTECTED
+    SymbolType.PUBLIC    -> Visibility.PUBLIC
+    null                 -> Visibility.PRIVATE
+    else                 -> throw IllegalStateException("Illegal symbol $symbol when parsing visibility")
 }
 
 /**
- * Determines the given mutability from the provided [symbol].
+ * Determines the mutability from the provided [symbol].
  */
 fun mutabilityOf(symbol: SymbolType): Mutability = when (symbol)
 {
-    SymbolType.VAL -> Mutability.VALUE
-    SymbolType.VAR -> Mutability.VARYING
-    SymbolType.MUT -> Mutability.MUTABLE
-    else           -> throw IllegalStateException("Illegal symbol $symbol when parsing variable mutability")
+    SymbolType.VALUE   -> Mutability.IMMUTABLE
+    SymbolType.VARYING -> Mutability.MUTABLE
+    else               -> throw IllegalStateException("Illegal symbol $symbol when parsing mutability")
+}
+
+/**
+ * Determines the passability from the provided [symbol].
+ */
+fun passabilityOf(symbol: SymbolType?): Passability = when (symbol)
+{
+    SymbolType.IN    -> Passability.IN
+    SymbolType.INOUT -> Passability.INOUT
+    SymbolType.OUT   -> Passability.OUT
+    SymbolType.MOVE  -> Passability.MOVE
+    null             -> Passability.IN
+    else             -> throw IllegalStateException("Illegal symbol $symbol when parsing passability")
+}
+
+/**
+ * Determines the assignability from the provided [symbol].
+ */
+fun assignabilityOf(symbol: SymbolType?): Assignability = when (symbol)
+{
+    SymbolType.MUTABLE   -> Assignability.ASSIGNABLE
+    SymbolType.REFERENCE -> Assignability.REFERENCE
+    null                 -> Assignability.CONSTANT
+    else                 -> throw IllegalStateException("Illegal symbol $symbol when parsing assignability")
 }
 
 /**
@@ -48,6 +72,42 @@ private fun valuePatternOf(symbol: SymbolType) =
     ParserSequence("symbol" to ParserSymbol(symbol), "expression" to expressionParserOf())
 
 /**
+ * Parses a visibility from the token stream.
+ */
+fun visibilityParserOf(): Parser<Visibility> =
+    ParserPattern(::visibilityPatternOf, ::visibilityOf)
+
+private fun visibilityPatternOf() =
+    ParserOptional(ParserSymbol(SymbolType.EXPORTED, SymbolType.PRIVATE, SymbolType.PROTECTED, SymbolType.PUBLIC))
+
+/**
+ * Parses a mutability from the token stream.
+ */
+fun mutabilityParserOf(): Parser<Mutability> =
+    ParserPattern(::mutabilityPatternOf, ::mutabilityOf)
+
+private fun mutabilityPatternOf() =
+    ParserSymbol(SymbolType.VALUE, SymbolType.VARYING)
+
+/**
+ * Parses a passability from the token stream.
+ */
+fun passabilityParserOf(): Parser<Passability> =
+    ParserPattern(::passabilityPatternOf, ::passabilityOf)
+
+private fun passabilityPatternOf() =
+    ParserOptional(ParserSymbol(SymbolType.IN, SymbolType.INOUT, SymbolType.OUT, SymbolType.MOVE))
+
+/**
+ * Parses an assignability from the token stream.
+ */
+fun assignabilityParserOf(): Parser<Assignability> =
+    ParserPattern(::assignabilityPatternOf, ::assignabilityOf)
+
+private fun assignabilityPatternOf() =
+    ParserOptional(ParserSymbol(SymbolType.MUTABLE, SymbolType.REFERENCE))
+
+/**
  * Parses a function call argument from the token stream.
  */
 fun argumentParserOf(): Parser<Argument> =
@@ -68,7 +128,8 @@ fun parameterParserOf(): Parser<Parameter> =
     ParserPattern(::parameterPatternOf, ::parameterOutcomeOf)
 
 private fun parameterPatternOf() = ParserSequence(
-    "mutability" to ParserSymbol(SymbolType.VAL, SymbolType.VAR, SymbolType.MUT),
+    "passability" to passabilityParserOf(),
+    "assignability" to assignabilityParserOf(),
     "name" to ParserName(),
     "type" to ParserOptional(nameParserOf(SymbolType.COLON)),
     "value" to ParserOptional(valueParserOf(SymbolType.ASSIGN)),
@@ -78,7 +139,8 @@ private fun parameterOutcomeOf(values: Parsers) = Parameter(
     name = values["name"],
     type = values["type"],
     value = values["value"],
-    mutability = mutabilityOf(values["mutability"]),
+    passability = values["passability"],
+    assignability = values["assignability"],
 )
 
 /**
@@ -88,8 +150,9 @@ fun propertyParserOf(): Parser<Property> =
     ParserPattern(::propertyPatternOf, ::propertyOutcomeOf)
 
 private fun propertyPatternOf() = ParserSequence(
-    "visibility" to ParserOptional(ParserSymbol(SymbolType.PUB)),
-    "mutability" to ParserSymbol(SymbolType.VAL, SymbolType.VAR, SymbolType.MUT),
+    "visibility" to visibilityParserOf(),
+    "assignability" to assignabilityParserOf(),
+    "mutability" to mutabilityParserOf(),
     "name" to ParserName(),
     "type" to ParserOptional(nameParserOf(SymbolType.COLON)),
     "value" to ParserOptional(valueParserOf(SymbolType.ASSIGN)),
@@ -99,14 +162,15 @@ private fun propertyOutcomeOf(values: Parsers) = Property(
     name = values["name"],
     type = values["type"],
     value = values["value"],
-    visibility = visibilityOf(values["visibility"]),
-    mutability = mutabilityOf(values["mutability"]),
+    visibility = values["visibility"],
+    mutability = values["mutability"],
+    assignability = values["assignability"],
 )
 
 /**
  * Parses a single scope from the token stream.
  */
-fun scopeParserOf(): Parser<Scope> =
+fun scopeParserOf(): Parser<List<Statement>> =
     ParserPattern(::scopePatternOf, ::scopeOutcomeOf)
 
 private fun scopePatternOf() = ParserAnyOf(
@@ -118,16 +182,16 @@ private fun scopePatternOf() = ParserAnyOf(
     )
 )
 
-private fun scopeOutcomeOf(values: Parsers): Scope
+private fun scopeOutcomeOf(values: Parsers): List<Statement>
 {
     val statement = values.get<Statement?>("single")
     val statements = values.get<List<Statement>?>("multiple")
     
     return when
     {
-        statement != null  -> Scope(false, listOf(statement))
-        statements != null -> Scope(true, statements)
-        else               -> Scope(false, emptyList())
+        statement != null  -> listOf(statement)
+        statements != null -> statements
+        else               -> emptyList()
     }
 }
 

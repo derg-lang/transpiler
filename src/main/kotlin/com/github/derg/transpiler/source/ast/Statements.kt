@@ -1,5 +1,6 @@
 package com.github.derg.transpiler.source.ast
 
+import com.github.derg.transpiler.source.Assignability
 import com.github.derg.transpiler.source.Mutability
 import com.github.derg.transpiler.source.Name
 import com.github.derg.transpiler.source.Visibility
@@ -15,31 +16,6 @@ sealed interface Assignment : Statement
      * Assigns the given [expression] to [name], returning the new value of [name].
      */
     data class Assign(val name: Name, val expression: Expression) : Assignment
-    
-    /**
-     * Adds the given [expression] to [name], returning the new value of [name].
-     */
-    data class AssignAdd(val name: Name, val expression: Expression) : Assignment
-    
-    /**
-     * Subtracts the given [expression] from [name], returning the new value of [name].
-     */
-    data class AssignSubtract(val name: Name, val expression: Expression) : Assignment
-    
-    /**
-     * Multiplies [name] with the given [expression], returning the new value of [name].
-     */
-    data class AssignMultiply(val name: Name, val expression: Expression) : Assignment
-    
-    /**
-     * Divides [name] by the given [expression], returning the new value of [name].
-     */
-    data class AssignDivide(val name: Name, val expression: Expression) : Assignment
-    
-    /**
-     * Assigns the modulo of [name] with the given [expression], returning the new value of [name].
-     */
-    data class AssignModulo(val name: Name, val expression: Expression) : Assignment
 }
 
 /**
@@ -52,7 +28,7 @@ sealed interface Control : Statement
      * Splits the execution based on the [predicate]. If the predicate returns a `true` value, the [success] path is
      * chosen, otherwise the [failure] path is chosen (if specified).
      */
-    data class Branch(val predicate: Expression, val success: Scope, val failure: Scope?) : Control
+    data class Branch(val predicate: Expression, val success: List<Statement>, val failure: List<Statement>) : Control
     
     /**
      * While ordinarily expressions are not permitted to be statements, functions may be invoked directly as statements
@@ -136,5 +112,6 @@ sealed interface Definition : Statement
         val value: Expression,
         val visibility: Visibility,
         val mutability: Mutability,
+        val assignability: Assignability,
     ) : Definition
 }

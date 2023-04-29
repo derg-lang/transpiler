@@ -18,10 +18,10 @@ class TestParserScope
     @Test
     fun `Given valid token, when parsing, then correct scope`()
     {
-        tester.parse("{}").isChain(1, 1).isValue(scopeOf(isBraced = true))
-        tester.parse("a = 1").isChain(2, 1).isValue(scopeOf(isBraced = false, "a" assign 1))
-        tester.parse("{ a = 1 }").isChain(4, 1).isValue(scopeOf(isBraced = true, "a" assign 1))
-        tester.parse("{ a = 1 b = 2 }").isChain(7, 1).isValue(scopeOf(isBraced = true, "a" assign 1, "b" assign 2))
+        tester.parse("{}").isChain(1, 1).isValue(emptyList())
+        tester.parse("a = 1").isChain(2, 1).isValue(listOf("a" assign 1))
+        tester.parse("{ a = 1 }").isChain(4, 1).isValue(listOf("a" assign 1))
+        tester.parse("{ a = 1 b = 2 }").isChain(7, 1).isValue(listOf("a" assign 1, "b" assign 2))
     }
     
     @Test

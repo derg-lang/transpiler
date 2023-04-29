@@ -1,9 +1,7 @@
 package com.github.derg.transpiler.phases.parser
 
 import com.github.derg.transpiler.phases.lexer.tokenize
-import com.github.derg.transpiler.source.Mutability
-import com.github.derg.transpiler.source.Name
-import com.github.derg.transpiler.source.Visibility
+import com.github.derg.transpiler.source.*
 import com.github.derg.transpiler.source.ast.*
 import com.github.derg.transpiler.source.lexeme.EndOfFile
 import com.github.derg.transpiler.source.lexeme.Token
@@ -12,7 +10,6 @@ import com.github.derg.transpiler.util.isSuccess
 import com.github.derg.transpiler.util.successOf
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
-import kotlin.test.assertNull
 
 /**
  * Converts [this] value into a literal expression if possible. The expression can only be generated from numeric,
@@ -20,11 +17,11 @@ import kotlin.test.assertNull
  */
 fun Any.toExp(type: Name? = null): Expression = when (this)
 {
-    is Boolean    -> Value.Bool(this)
-    is Double     -> Value.Real(toBigDecimal(), type)
-    is Float      -> Value.Real(toBigDecimal(), type)
-    is Int        -> Value.Real(toBigDecimal(), type)
-    is String     -> Value.Text(this, type)
+    is Boolean    -> Constant.Bool(this)
+    is Double     -> Constant.Real(toBigDecimal(), type)
+    is Float      -> Constant.Real(toBigDecimal(), type)
+    is Int        -> Constant.Real(toBigDecimal(), type)
+    is String     -> Constant.Text(this, type)
     is Expression -> this
     else          -> throw IllegalStateException("Cannot convert '$this' to an expression")
 }
@@ -59,11 +56,11 @@ infix fun Any.opRaise(that: Any) = Operator.Raise(toExp(), that.toExp())
 
 // Generates assignment from operations
 infix fun Name.assign(that: Any) = Assignment.Assign(this, that.toExp())
-infix fun Name.assignAdd(that: Any) = Assignment.AssignAdd(this, that.toExp())
-infix fun Name.assignSub(that: Any) = Assignment.AssignSubtract(this, that.toExp())
-infix fun Name.assignMul(that: Any) = Assignment.AssignMultiply(this, that.toExp())
-infix fun Name.assignMod(that: Any) = Assignment.AssignModulo(this, that.toExp())
-infix fun Name.assignDiv(that: Any) = Assignment.AssignDivide(this, that.toExp())
+infix fun Name.assignAdd(that: Any) = Assignment.Assign(this, Operator.Add(Access.Variable(this), that.toExp()))
+infix fun Name.assignSub(that: Any) = Assignment.Assign(this, Operator.Subtract(Access.Variable(this), that.toExp()))
+infix fun Name.assignMul(that: Any) = Assignment.Assign(this, Operator.Multiply(Access.Variable(this), that.toExp()))
+infix fun Name.assignMod(that: Any) = Assignment.Assign(this, Operator.Modulo(Access.Variable(this), that.toExp()))
+infix fun Name.assignDiv(that: Any) = Assignment.Assign(this, Operator.Divide(Access.Variable(this), that.toExp()))
 
 // Generates statements from expressions
 fun invokeOf(expression: Any) = Control.Invoke(expression.toExp())
@@ -104,13 +101,15 @@ fun propOf(
     type: Name? = null,
     value: Any? = null,
     vis: Visibility = Visibility.PRIVATE,
-    mut: Mutability = Mutability.VALUE,
+    mut: Mutability = Mutability.IMMUTABLE,
+    ass: Assignability = Assignability.CONSTANT,
 ) = Property(
     name = name,
     type = type,
     value = value?.toExp(),
     visibility = vis,
     mutability = mut,
+    assignability = ass,
 )
 
 /**
@@ -121,13 +120,15 @@ fun varOf(
     value: Any,
     type: Name? = null,
     vis: Visibility = Visibility.PRIVATE,
-    mut: Mutability = Mutability.VALUE,
+    mut: Mutability = Mutability.IMMUTABLE,
+    ass: Assignability = Assignability.CONSTANT,
 ) = Definition.Variable(
     name = name,
     type = type,
     value = value.toExp(),
     visibility = vis,
     mutability = mut,
+    assignability = ass,
 )
 
 /**
@@ -156,18 +157,20 @@ fun parOf(
     name: Name,
     type: Name? = null,
     value: Any? = null,
-    mut: Mutability = Mutability.VALUE,
+    pas: Passability = Passability.IN,
+    ass: Assignability = Assignability.CONSTANT,
 ) = Parameter(
     name = name,
     type = type,
     value = value?.toExp(),
-    mutability = mut,
+    passability = pas,
+    assignability = ass,
 )
 
 /**
  * Generates a branch statement from the provided input parameters.
  */
-fun ifOf(predicate: Any, success: Scope, failure: Scope? = null) =
+fun ifOf(predicate: Any, success: List<Statement>, failure: List<Statement> = emptyList()) =
     Control.Branch(predicate.toExp(), success, failure)
 
 /**
@@ -175,12 +178,6 @@ fun ifOf(predicate: Any, success: Scope, failure: Scope? = null) =
  */
 fun whenOf(expression: Any, vararg branches: Pair<Any, Any>, default: Any? = null) =
     When(expression.toExp(), branches.map { it.first.toExp() to it.second.toExp() }, default?.toExp())
-
-/**
- * Generates a scope definition from the provided input parameters.
- */
-fun scopeOf(isBraced: Boolean, vararg statements: Statement) =
-    Scope(isBraced, statements.toList())
 
 /**
  * To simplify testing of the parsing of source code for any particular pattern factory, a helper class is provided.

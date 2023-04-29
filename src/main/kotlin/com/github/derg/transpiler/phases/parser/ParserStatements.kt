@@ -10,11 +10,11 @@ import com.github.derg.transpiler.source.lexeme.SymbolType
 private fun merge(name: Name, operator: SymbolType, rhs: Expression): Assignment = when (operator)
 {
     SymbolType.ASSIGN          -> Assignment.Assign(name, rhs)
-    SymbolType.ASSIGN_PLUS     -> Assignment.AssignAdd(name, rhs)
-    SymbolType.ASSIGN_MINUS    -> Assignment.AssignSubtract(name, rhs)
-    SymbolType.ASSIGN_MULTIPLY -> Assignment.AssignMultiply(name, rhs)
-    SymbolType.ASSIGN_MODULO   -> Assignment.AssignModulo(name, rhs)
-    SymbolType.ASSIGN_DIVIDE   -> Assignment.AssignDivide(name, rhs)
+    SymbolType.ASSIGN_PLUS     -> Assignment.Assign(name, Operator.Add(Access.Variable(name), rhs))
+    SymbolType.ASSIGN_MINUS    -> Assignment.Assign(name, Operator.Subtract(Access.Variable(name), rhs))
+    SymbolType.ASSIGN_MULTIPLY -> Assignment.Assign(name, Operator.Multiply(Access.Variable(name), rhs))
+    SymbolType.ASSIGN_MODULO   -> Assignment.Assign(name, Operator.Modulo(Access.Variable(name), rhs))
+    SymbolType.ASSIGN_DIVIDE   -> Assignment.Assign(name, Operator.Divide(Access.Variable(name), rhs))
     else                       -> throw IllegalStateException("Illegal operator $operator when parsing assignment")
 }
 
@@ -67,7 +67,7 @@ private fun branchPatternOf() = ParserSequence(
     "if" to ParserSymbol(SymbolType.IF),
     "predicate" to expressionParserOf(),
     "success" to scopeParserOf(),
-    "failure" to ParserOptional(ParserPattern(::branchElsePatternOf, ::branchElseOutcomeOf)),
+    "failure" to ParserOptional(ParserPattern(::branchElsePatternOf, ::branchElseOutcomeOf), emptyList()),
 )
 
 private fun branchOutcomeOf(values: Parsers): Control.Branch =
@@ -76,7 +76,7 @@ private fun branchOutcomeOf(values: Parsers): Control.Branch =
 private fun branchElsePatternOf() =
     ParserSequence("symbol" to ParserSymbol(SymbolType.ELSE), "scope" to scopeParserOf())
 
-private fun branchElseOutcomeOf(values: Parsers): Scope =
+private fun branchElseOutcomeOf(values: Parsers): List<Statement> =
     values["scope"]
 
 /**
@@ -126,8 +126,9 @@ fun variableParserOf(): Parser<Statement> =
     ParserPattern(::variablePatternOf, ::variableOutcomeOf)
 
 private fun variablePatternOf() = ParserSequence(
-    "visibility" to ParserOptional(ParserSymbol(SymbolType.PUB)),
-    "mutability" to ParserSymbol(SymbolType.VAL, SymbolType.VAR, SymbolType.MUT),
+    "visibility" to visibilityParserOf(),
+    "assignability" to assignabilityParserOf(),
+    "mutability" to mutabilityParserOf(),
     "name" to ParserName(),
     "op" to ParserSymbol(SymbolType.ASSIGN),
     "value" to expressionParserOf(),
@@ -137,8 +138,9 @@ private fun variableOutcomeOf(values: Parsers) = Definition.Variable(
     name = values["name"],
     type = null,
     value = values["value"],
-    visibility = visibilityOf(values["visibility"]),
-    mutability = mutabilityOf(values["mutability"]),
+    visibility = values["visibility"],
+    mutability = values["mutability"],
+    assignability = values["assignability"],
 )
 
 /**
@@ -148,7 +150,7 @@ fun functionParserOf(): Parser<Statement> =
     ParserPattern(::functionPatternOf, ::functionOutcomeOf)
 
 private fun functionPatternOf() = ParserSequence(
-    "visibility" to ParserOptional(ParserSymbol(SymbolType.PUB)),
+    "visibility" to visibilityParserOf(),
     "fun" to ParserSymbol(SymbolType.FUN),
     "name" to ParserName(),
     "open_parenthesis" to ParserSymbol(SymbolType.OPEN_PARENTHESIS),
@@ -166,7 +168,7 @@ private fun functionOutcomeOf(values: Parsers) = Definition.Function(
     valueType = values["value"],
     errorType = values["error"],
     parameters = values["parameters"],
-    visibility = visibilityOf(values["visibility"]),
+    visibility = values["visibility"],
     statements = values["statements"],
 )
 
@@ -177,7 +179,7 @@ fun typeParserOf(): Parser<Statement> =
     ParserPattern(::typePatternOf, ::typeOutcomeOf)
 
 private fun typePatternOf() = ParserSequence(
-    "visibility" to ParserOptional(ParserSymbol(SymbolType.PUB)),
+    "visibility" to visibilityParserOf(),
     "type" to ParserSymbol(SymbolType.TYPE),
     "name" to ParserName(),
     "open_brace" to ParserSymbol(SymbolType.OPEN_BRACE),
@@ -187,6 +189,6 @@ private fun typePatternOf() = ParserSequence(
 
 private fun typeOutcomeOf(values: Parsers) = Definition.Type(
     name = values["name"],
-    visibility = visibilityOf(values["visibility"]),
+    visibility = values["visibility"],
     properties = values["properties"],
 )
