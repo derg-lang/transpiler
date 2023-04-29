@@ -133,3 +133,27 @@ enum class Passability
      */
     MOVE,
 }
+
+// TODO: Consider the following code, how will destroying variables work?
+/*
+fun read_data(out rows list<data>): error -> bool
+{
+    // Implementation omitted
+}
+
+fun do_work(): error
+{
+    val mut list<data> rows
+    while read_data(rows) ! // How will `rows` be destroyed when an error occurs?
+        process_data(rows)
+}
+
+An approach of solving this issue is to default-construct the value when it is left hanging in an uninitialized state.
+This means the object will always be *valid* albeit not populated with meaningful data until it is either initialized by
+an `out` parameter function call, or initialized explicitly.
+
+The caller will always run the destructor, cleaning up the local instance. The callee will only clean up its instance if
+it has actually moved anything into the `out` variable, passing the fresh one to the caller for cleanup. This means that
+if an error occurs before the second instance is made, the caller cleans up the mess - otherwise, the callee cleans up
+one instance, and the caller the other.
+*/
