@@ -1,10 +1,7 @@
 package com.github.derg.transpiler.phases.parser
 
 import com.github.derg.transpiler.phases.lexer.tokenize
-import com.github.derg.transpiler.source.Assignability
-import com.github.derg.transpiler.source.Mutability
-import com.github.derg.transpiler.source.Name
-import com.github.derg.transpiler.source.Visibility
+import com.github.derg.transpiler.source.*
 import com.github.derg.transpiler.source.ast.*
 import com.github.derg.transpiler.source.lexeme.EndOfFile
 import com.github.derg.transpiler.source.lexeme.Token
@@ -160,13 +157,13 @@ fun parOf(
     name: Name,
     type: Name? = null,
     value: Any? = null,
-    mut: Mutability = Mutability.IMMUTABLE,
+    pas: Passability = Passability.IN,
     ass: Assignability = Assignability.CONSTANT,
 ) = Parameter(
     name = name,
     type = type,
     value = value?.toExp(),
-    mutability = mut,
+    passability = pas,
     assignability = ass,
 )
 

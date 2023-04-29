@@ -2,6 +2,7 @@ package com.github.derg.transpiler.phases.parser
 
 import com.github.derg.transpiler.source.Assignability
 import com.github.derg.transpiler.source.Mutability
+import com.github.derg.transpiler.source.Passability
 import com.github.derg.transpiler.source.Visibility
 import com.github.derg.transpiler.source.lexeme.EndOfFile
 import org.junit.jupiter.api.Test
@@ -103,25 +104,31 @@ class TestParserFunction
         tester.parse("fun foo(): Foo -> Bar {}").isChain(9, 1).isValue(funOf("foo", valType = "Bar", errType = "Foo"))
         
         // Parameters must be correctly parsed
-        tester.parse("fun foo(mut val a: Foo) {}").isChain(10, 1)
+        tester.parse("fun foo(mut a: Foo) {}").isChain(9, 1)
             .isValue(funOf("foo", params = listOf(parOf("a", type = "Foo", ass = Assignability.ASSIGNABLE))))
-        tester.parse("fun foo(ref val a: Foo) {}").isChain(10, 1)
+        tester.parse("fun foo(ref a: Foo) {}").isChain(9, 1)
             .isValue(funOf("foo", params = listOf(parOf("a", type = "Foo", ass = Assignability.REFERENCE))))
-        tester.parse("fun foo(    val a: Foo) {}").isChain(9, 1)
+        tester.parse("fun foo(    a: Foo) {}").isChain(8, 1)
             .isValue(funOf("foo", params = listOf(parOf("a", type = "Foo", ass = Assignability.CONSTANT))))
         
-        tester.parse("fun foo(val a: Foo) {}").isChain(9, 1)
-            .isValue(funOf("foo", params = listOf(parOf("a", type = "Foo", mut = Mutability.IMMUTABLE))))
-        tester.parse("fun foo(var a: Foo) {}").isChain(9, 1)
-            .isValue(funOf("foo", params = listOf(parOf("a", type = "Foo", mut = Mutability.MUTABLE))))
+        tester.parse("fun foo(in    a: Foo) {}").isChain(9, 1)
+            .isValue(funOf("foo", params = listOf(parOf("a", type = "Foo", pas = Passability.IN))))
+        tester.parse("fun foo(inout a: Foo) {}").isChain(9, 1)
+            .isValue(funOf("foo", params = listOf(parOf("a", type = "Foo", pas = Passability.INOUT))))
+        tester.parse("fun foo(out   a: Foo) {}").isChain(9, 1)
+            .isValue(funOf("foo", params = listOf(parOf("a", type = "Foo", pas = Passability.OUT))))
+        tester.parse("fun foo(move  a: Foo) {}").isChain(9, 1)
+            .isValue(funOf("foo", params = listOf(parOf("a", type = "Foo", pas = Passability.MOVE))))
+        tester.parse("fun foo(      a: Foo) {}").isChain(8, 1)
+            .isValue(funOf("foo", params = listOf(parOf("a", type = "Foo", pas = Passability.IN))))
         
-        tester.parse("fun foo(val a: Foo, val b: Bar) {}").isChain(14, 1)
+        tester.parse("fun foo(a: Foo, b: Bar) {}").isChain(12, 1)
             .isValue(funOf("foo", params = listOf(parOf("a", type = "Foo"), parOf("b", type = "Bar"))))
         
         // Default values for parameters must be supported
-        tester.parse("fun foo(val a = 1) {}").isChain(9, 1)
+        tester.parse("fun foo(a = 1) {}").isChain(8, 1)
             .isValue(funOf("foo", params = listOf(parOf("a", value = 1))))
-        tester.parse("fun foo(val a: Foo = 1) {}").isChain(11, 1)
+        tester.parse("fun foo(a: Foo = 1) {}").isChain(10, 1)
             .isValue(funOf("foo", params = listOf(parOf("a", type = "Foo", value = 1))))
         
         // Visibility must be correctly parsed

@@ -1,9 +1,6 @@
 package com.github.derg.transpiler.source.ast
 
-import com.github.derg.transpiler.source.Assignability
-import com.github.derg.transpiler.source.Mutability
-import com.github.derg.transpiler.source.Name
-import com.github.derg.transpiler.source.Visibility
+import com.github.derg.transpiler.source.*
 
 /**
  * In order to invoke any sort of function, sometimes arguments must be provided. Arguments consist of a single
@@ -18,13 +15,13 @@ data class Argument(
 
 /**
  * Every function may have any number of parameters, each with their own [name], optional [type] information, and
- * optional default [value]. Parameters must contain a [mutability] and [assignability] specifier.
+ * optional default [value]. Parameters must contain a [passability] and [assignability] specifier.
  */
 data class Parameter(
     val name: Name,
     val type: Name?,
     val value: Expression?,
-    val mutability: Mutability,
+    val passability: Passability,
     val assignability: Assignability,
 )
 

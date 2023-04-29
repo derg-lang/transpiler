@@ -94,3 +94,42 @@ enum class Assignability
      */
     REFERENCE,
 }
+
+/**
+ * Defines the properties a value is expected to have when passed into a function as a parameter. Depending on how the
+ * value is expected to be used, certain attributes and requirements will be imposed on the value.
+ *
+ * See https://github.com/hsutter/708 for further information.
+ */
+enum class Passability
+{
+    /**
+     * Marks the value as an input-only value. Within a function, the variable cannot be modified in any way, shape, or
+     * form. The value is considered immutable within the function. The value must be initialized before it can be
+     * passed into the function, and may be a rvalue.
+     */
+    IN,
+    
+    /**
+     * The value must be mutated in some manner within a function using it. At least one path within the function must
+     * have a non-const usage of the variable. The value must be a non-const lvalue.
+     */
+    INOUT,
+    
+    /**
+     * Marks the value as an output-only value. The value must be initialized or assigned to within the function, and
+     * cannot be read from before it has been provided a value. The value must be non-const variable, and cannot be a
+     * rvalue.
+     *
+     * Within the function using the parameter, the variable is considered mutable. Outside the function, the variable
+     * is assigned either mutable or immutable, and will be treated as such.
+     */
+    OUT,
+    
+    /**
+     * Consumes the provided value, meaning it cannot be accessed anymore. Any value passed into a function call using
+     * this option makes the value lost on the outside of the function. Effectively, this is a way to pass ownership of
+     * any value into and out of a function.
+     */
+    MOVE,
+}

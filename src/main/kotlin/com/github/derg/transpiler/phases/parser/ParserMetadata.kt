@@ -1,9 +1,6 @@
 package com.github.derg.transpiler.phases.parser
 
-import com.github.derg.transpiler.source.Assignability
-import com.github.derg.transpiler.source.Mutability
-import com.github.derg.transpiler.source.Name
-import com.github.derg.transpiler.source.Visibility
+import com.github.derg.transpiler.source.*
 import com.github.derg.transpiler.source.ast.*
 import com.github.derg.transpiler.source.lexeme.SymbolType
 
@@ -28,6 +25,19 @@ fun mutabilityOf(symbol: SymbolType): Mutability = when (symbol)
     SymbolType.VALUE   -> Mutability.IMMUTABLE
     SymbolType.VARYING -> Mutability.MUTABLE
     else               -> throw IllegalStateException("Illegal symbol $symbol when parsing mutability")
+}
+
+/**
+ * Determines the passability from the provided [symbol].
+ */
+fun passabilityOf(symbol: SymbolType?): Passability = when (symbol)
+{
+    SymbolType.IN    -> Passability.IN
+    SymbolType.INOUT -> Passability.INOUT
+    SymbolType.OUT   -> Passability.OUT
+    SymbolType.MOVE  -> Passability.MOVE
+    null             -> Passability.IN
+    else             -> throw IllegalStateException("Illegal symbol $symbol when parsing passability")
 }
 
 /**
@@ -80,6 +90,15 @@ private fun mutabilityPatternOf() =
     ParserSymbol(SymbolType.VALUE, SymbolType.VARYING)
 
 /**
+ * Parses a passability from the token stream.
+ */
+fun passabilityParserOf(): Parser<Passability> =
+    ParserPattern(::passabilityPatternOf, ::passabilityOf)
+
+private fun passabilityPatternOf() =
+    ParserOptional(ParserSymbol(SymbolType.IN, SymbolType.INOUT, SymbolType.OUT, SymbolType.MOVE))
+
+/**
  * Parses an assignability from the token stream.
  */
 fun assignabilityParserOf(): Parser<Assignability> =
@@ -109,8 +128,8 @@ fun parameterParserOf(): Parser<Parameter> =
     ParserPattern(::parameterPatternOf, ::parameterOutcomeOf)
 
 private fun parameterPatternOf() = ParserSequence(
+    "passability" to passabilityParserOf(),
     "assignability" to assignabilityParserOf(),
-    "mutability" to mutabilityParserOf(),
     "name" to ParserName(),
     "type" to ParserOptional(nameParserOf(SymbolType.COLON)),
     "value" to ParserOptional(valueParserOf(SymbolType.ASSIGN)),
@@ -120,7 +139,7 @@ private fun parameterOutcomeOf(values: Parsers) = Parameter(
     name = values["name"],
     type = values["type"],
     value = values["value"],
-    mutability = values["mutability"],
+    passability = values["passability"],
     assignability = values["assignability"],
 )
 
