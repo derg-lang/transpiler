@@ -2,8 +2,7 @@ package com.github.derg.transpiler.phases.resolver
 
 import com.github.derg.transpiler.source.Id
 import com.github.derg.transpiler.source.Name
-import com.github.derg.transpiler.source.ast.Expression
-import com.github.derg.transpiler.source.ast.Segment
+import com.github.derg.transpiler.source.ast.*
 import com.github.derg.transpiler.source.hir.*
 import com.github.derg.transpiler.source.hir.Function
 import com.github.derg.transpiler.util.*
@@ -153,8 +152,36 @@ private fun Function.isCompatibleWith(parameters: List<Type>): Boolean
 /**
  * Converts the given [expression] into a value which represents the same expression.
  */
-internal fun SymbolTable.resolveRequiredValue(expression: Expression): Result<Value, ResolveError> =
-    ConverterExpressions(this).convert(expression)
+internal fun SymbolTable.resolveRequiredValue(expression: Expression): Result<Value, ResolveError> = when (expression)
+{
+    is Access.Function       -> ConverterInvoke(this)(expression)
+    is Access.Subscript      -> TODO()
+    is Access.Variable       -> ConverterRead(this)(expression)
+    is Constant.Bool         -> ConverterBool(expression)
+    is Constant.Real         -> ConverterReal(this)(expression)
+    is Constant.Text         -> ConverterText(this)(expression)
+    is Operator.Add          -> ConverterAdd(this)(expression)
+    is Operator.And          -> ConverterAnd(this)(expression)
+    is Operator.Catch        -> TODO()
+    is Operator.Divide       -> ConverterDivide(this)(expression)
+    is Operator.Equal        -> ConverterEqual(this)(expression)
+    is Operator.Greater      -> ConverterGreater(this)(expression)
+    is Operator.GreaterEqual -> ConverterGreaterEqual(this)(expression)
+    is Operator.Less         -> ConverterLess(this)(expression)
+    is Operator.LessEqual    -> ConverterLessEqual(this)(expression)
+    is Operator.Minus        -> ConverterUnaryMinus(this)(expression)
+    is Operator.Modulo       -> ConverterModulo(this)(expression)
+    is Operator.Multiply     -> ConverterMultiply(this)(expression)
+    is Operator.Not          -> ConverterNot(this)(expression)
+    is Operator.NotEqual     -> ConverterNotEqual(this)(expression)
+    is Operator.Or           -> ConverterOr(this)(expression)
+    is Operator.Plus         -> ConverterUnaryPlus(this)(expression)
+    is Operator.Raise        -> TODO()
+    is Operator.Subtract     -> ConverterSubtract(this)(expression)
+    is Operator.ThreeWay     -> TODO()
+    is Operator.Xor          -> ConverterXor(this)(expression)
+    is When                  -> TODO()
+}
 
 /**
  * Converts the given [name] into a variable.

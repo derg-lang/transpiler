@@ -1,6 +1,9 @@
 package com.github.derg.transpiler.phases.resolver
 
-import com.github.derg.transpiler.source.ast.*
+import com.github.derg.transpiler.source.ast.Assignment
+import com.github.derg.transpiler.source.ast.Control
+import com.github.derg.transpiler.source.ast.Definition
+import com.github.derg.transpiler.source.ast.Statement
 import com.github.derg.transpiler.source.hir.*
 import com.github.derg.transpiler.source.hir.Function
 import com.github.derg.transpiler.util.*
@@ -89,7 +92,7 @@ class ConverterStatements(private val symbols: SymbolTable)
         if (variable !is Variable)
             return ResolveError.Unknown.toFailure()
         
-        val value = resolveValue(expression).valueOr { return failureOf(it) }
+        val value = symbols.resolveRequiredValue(expression).valueOr { return failureOf(it) }
         if (variable.type != value.type)
             return ResolveError.Unknown.toFailure()
         
@@ -98,7 +101,7 @@ class ConverterStatements(private val symbols: SymbolTable)
     
     private fun Control.Branch.toInstruction(): Result<Instruction, ResolveError>
     {
-        val value = resolveValue(predicate).valueOr { return failureOf(it) }
+        val value = symbols.resolveRequiredValue(predicate).valueOr { return failureOf(it) }
         if (value !is ValueBool)
             return ResolveError.Unknown.toFailure()
         
@@ -115,10 +118,10 @@ class ConverterStatements(private val symbols: SymbolTable)
     }
     
     private fun Control.Raise.toInstruction(): Result<Instruction, ResolveError> =
-        resolveValue(expression).mapValue { Raise(it) }
+        symbols.resolveRequiredValue(expression).mapValue { Raise(it) }
     
     private fun Control.Return.toInstruction(): Result<Instruction, ResolveError> =
-        if (expression == null) Exit.toSuccess() else resolveValue(expression).mapValue { Return(it) }
+        if (expression == null) Exit.toSuccess() else symbols.resolveRequiredValue(expression).mapValue { Return(it) }
     
     private fun Definition.Variable.toInstruction(): Result<Instruction, ResolveError>
     {
@@ -126,16 +129,10 @@ class ConverterStatements(private val symbols: SymbolTable)
         if (variable !is Variable)
             return ResolveError.Unknown.toFailure()
         
-        val value = resolveValue(value).valueOr { return failureOf(it) }
+        val value = symbols.resolveRequiredValue(value).valueOr { return failureOf(it) }
         if (variable.type != value.type)
             return ResolveError.Unknown.toFailure()
         
         return Assign(variable, value).toSuccess()
     }
-    
-    /**
-     * Converts the [expression] into a value, if it is provided. If no expression was provided, no value is returned.
-     */
-    private fun resolveValue(expression: Expression): Result<Value, ResolveError> =
-        ConverterExpressions(symbols).convert(expression)
 }
