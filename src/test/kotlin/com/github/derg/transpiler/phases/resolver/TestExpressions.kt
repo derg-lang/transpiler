@@ -2,7 +2,7 @@ package com.github.derg.transpiler.phases.resolver
 
 import com.github.derg.transpiler.phases.parser.toArg
 import com.github.derg.transpiler.phases.parser.toExp
-import com.github.derg.transpiler.phases.resolver.ResolveError.MismatchedCallableParams
+import com.github.derg.transpiler.phases.resolver.ResolveError.MismatchedFunctionTypes
 import com.github.derg.transpiler.source.ast.Access
 import com.github.derg.transpiler.source.ast.Constant
 import com.github.derg.transpiler.source.ast.Operator
@@ -27,7 +27,7 @@ class TestConverterAnd
     @Test
     fun `Given unknown overload, when resolving, then correct error`()
     {
-        val expected = MismatchedCallableParams(SymbolType.AND.symbol, listOf(Builtin.BOOL, Builtin.INT32))
+        val expected = MismatchedFunctionTypes(SymbolType.AND.symbol, listOf(Builtin.BOOL, Builtin.INT32))
         
         assertEquals(expected.toFailure(), converter(Operator.And(false.e, 0.e)))
     }
@@ -60,7 +60,7 @@ class TestConverterAdd
     @Test
     fun `Given unknown overload, when resolving, then correct error`()
     {
-        val expected = MismatchedCallableParams(SymbolType.PLUS.symbol, listOf(Builtin.BOOL, Builtin.BOOL))
+        val expected = MismatchedFunctionTypes(SymbolType.PLUS.symbol, listOf(Builtin.BOOL, Builtin.BOOL))
         
         assertEquals(expected.toFailure(), converter(Operator.Add(true.e, false.e)))
     }
@@ -104,7 +104,7 @@ class TestConverterDivide
     @Test
     fun `Given unknown overload, when resolving, then correct error`()
     {
-        val expected = MismatchedCallableParams(SymbolType.DIVIDE.symbol, listOf(Builtin.BOOL, Builtin.BOOL))
+        val expected = MismatchedFunctionTypes(SymbolType.DIVIDE.symbol, listOf(Builtin.BOOL, Builtin.BOOL))
         
         assertEquals(expected.toFailure(), converter(Operator.Divide(true.e, false.e)))
     }
@@ -138,7 +138,7 @@ class TestConverterEqual
     @Test
     fun `Given unknown overload, when resolving, then correct error`()
     {
-        val expected = MismatchedCallableParams(SymbolType.EQUAL.symbol, listOf(Builtin.BOOL, Builtin.INT32))
+        val expected = MismatchedFunctionTypes(SymbolType.EQUAL.symbol, listOf(Builtin.BOOL, Builtin.INT32))
         
         assertEquals(expected.toFailure(), converter(Operator.Equal(true.e, 1.e)))
     }
@@ -171,7 +171,7 @@ class TestConverterGreater
     @Test
     fun `Given unknown overload, when resolving, then correct error`()
     {
-        val expected = MismatchedCallableParams(SymbolType.GREATER.symbol, listOf(Builtin.BOOL, Builtin.BOOL))
+        val expected = MismatchedFunctionTypes(SymbolType.GREATER.symbol, listOf(Builtin.BOOL, Builtin.BOOL))
         
         assertEquals(expected.toFailure(), converter(Operator.Greater(true.e, false.e)))
     }
@@ -204,7 +204,7 @@ class TestConverterGreaterEqual
     @Test
     fun `Given unknown overload, when resolving, then correct error`()
     {
-        val expected = MismatchedCallableParams(SymbolType.GREATER_EQUAL.symbol, listOf(Builtin.BOOL, Builtin.BOOL))
+        val expected = MismatchedFunctionTypes(SymbolType.GREATER_EQUAL.symbol, listOf(Builtin.BOOL, Builtin.BOOL))
         
         assertEquals(expected.toFailure(), converter(Operator.GreaterEqual(true.e, false.e)))
     }
@@ -253,7 +253,7 @@ class TestConverterInvoke
     @Test
     fun `Given invalid parameters, when resolving, then correct error`()
     {
-        val expected = MismatchedCallableParams(params.name, listOf(Builtin.BOOL))
+        val expected = MismatchedFunctionTypes(params.name, listOf(Builtin.BOOL))
         
         assertEquals(expected.toFailure(), converter(Access.Function(params.name, listOf(true.toArg()))))
     }
@@ -286,7 +286,7 @@ class TestConverterLess
     @Test
     fun `Given unknown overload, when resolving, then correct error`()
     {
-        val expected = MismatchedCallableParams(SymbolType.LESS.symbol, listOf(Builtin.BOOL, Builtin.BOOL))
+        val expected = MismatchedFunctionTypes(SymbolType.LESS.symbol, listOf(Builtin.BOOL, Builtin.BOOL))
         
         assertEquals(expected.toFailure(), converter(Operator.Less(true.e, false.e)))
     }
@@ -319,7 +319,7 @@ class TestConverterLessEqual
     @Test
     fun `Given unknown overload, when resolving, then correct error`()
     {
-        val expected = MismatchedCallableParams(SymbolType.LESS_EQUAL.symbol, listOf(Builtin.BOOL, Builtin.BOOL))
+        val expected = MismatchedFunctionTypes(SymbolType.LESS_EQUAL.symbol, listOf(Builtin.BOOL, Builtin.BOOL))
         
         assertEquals(expected.toFailure(), converter(Operator.LessEqual(true.e, false.e)))
     }
@@ -352,7 +352,7 @@ class TestConverterModulo
     @Test
     fun `Given unknown overload, when resolving, then correct error`()
     {
-        val expected = MismatchedCallableParams(SymbolType.MODULO.symbol, listOf(Builtin.BOOL, Builtin.BOOL))
+        val expected = MismatchedFunctionTypes(SymbolType.MODULO.symbol, listOf(Builtin.BOOL, Builtin.BOOL))
         
         assertEquals(expected.toFailure(), converter(Operator.Modulo(true.e, false.e)))
     }
@@ -385,7 +385,7 @@ class TestConverterMultiply
     @Test
     fun `Given unknown overload, when resolving, then correct error`()
     {
-        val expected = MismatchedCallableParams(SymbolType.MULTIPLY.symbol, listOf(Builtin.BOOL, Builtin.BOOL))
+        val expected = MismatchedFunctionTypes(SymbolType.MULTIPLY.symbol, listOf(Builtin.BOOL, Builtin.BOOL))
         
         assertEquals(expected.toFailure(), converter(Operator.Multiply(true.e, false.e)))
     }
@@ -405,7 +405,7 @@ class TestConverterNot
     @Test
     fun `Given unknown overload, when resolving, then correct error`()
     {
-        val expected = MismatchedCallableParams(SymbolType.NOT.symbol, listOf(Builtin.INT32))
+        val expected = MismatchedFunctionTypes(SymbolType.NOT.symbol, listOf(Builtin.INT32))
         
         assertEquals(expected.toFailure(), converter(Operator.Not(0.e)))
     }
@@ -439,7 +439,7 @@ class TestConverterNotEqual
     @Test
     fun `Given unknown overload, when resolving, then correct error`()
     {
-        val expected = MismatchedCallableParams(SymbolType.NOT_EQUAL.symbol, listOf(Builtin.BOOL, Builtin.INT32))
+        val expected = MismatchedFunctionTypes(SymbolType.NOT_EQUAL.symbol, listOf(Builtin.BOOL, Builtin.INT32))
         
         assertEquals(expected.toFailure(), converter(Operator.NotEqual(true.e, 1.e)))
     }
@@ -459,7 +459,7 @@ class TestConverterOr
     @Test
     fun `Given unknown overload, when resolving, then correct error`()
     {
-        val expected = MismatchedCallableParams(SymbolType.OR.symbol, listOf(Builtin.BOOL, Builtin.INT32))
+        val expected = MismatchedFunctionTypes(SymbolType.OR.symbol, listOf(Builtin.BOOL, Builtin.INT32))
         
         assertEquals(expected.toFailure(), converter(Operator.Or(false.e, 0.e)))
     }
@@ -546,7 +546,7 @@ class TestConverterSubtract
     @Test
     fun `Given unknown overload, when resolving, then correct error`()
     {
-        val expected = MismatchedCallableParams(SymbolType.MINUS.symbol, listOf(Builtin.BOOL, Builtin.BOOL))
+        val expected = MismatchedFunctionTypes(SymbolType.MINUS.symbol, listOf(Builtin.BOOL, Builtin.BOOL))
         
         assertEquals(expected.toFailure(), converter(Operator.Subtract(true.e, false.e)))
     }
@@ -605,7 +605,7 @@ class TestConverterUnaryMinus
     @Test
     fun `Given unknown overload, when resolving, then correct error`()
     {
-        val expected = MismatchedCallableParams(SymbolType.MINUS.symbol, listOf(Builtin.VOID))
+        val expected = MismatchedFunctionTypes(SymbolType.MINUS.symbol, listOf(Builtin.VOID))
         
         assertEquals(expected.toFailure(), converter(Operator.Minus("".e)))
     }
@@ -638,7 +638,7 @@ class TestConverterUnaryPlus
     @Test
     fun `Given unknown overload, when resolving, then correct error`()
     {
-        val expected = MismatchedCallableParams(SymbolType.PLUS.symbol, listOf(Builtin.VOID))
+        val expected = MismatchedFunctionTypes(SymbolType.PLUS.symbol, listOf(Builtin.VOID))
         
         assertEquals(expected.toFailure(), converter(Operator.Plus("".e)))
     }
@@ -658,7 +658,7 @@ class TestConverterXor
     @Test
     fun `Given unknown overload, when resolving, then correct error`()
     {
-        val expected = MismatchedCallableParams(SymbolType.XOR.symbol, listOf(Builtin.BOOL, Builtin.INT32))
+        val expected = MismatchedFunctionTypes(SymbolType.XOR.symbol, listOf(Builtin.BOOL, Builtin.INT32))
         
         assertEquals(expected.toFailure(), converter(Operator.Xor(false.e, 0.e)))
     }

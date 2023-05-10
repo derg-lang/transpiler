@@ -40,7 +40,7 @@ internal class ConverterAnd(private val symbols: SymbolTable)
         if (lhs is ValueBool && rhs is ValueBool)
             return BoolAnd(lhs, rhs).toSuccess()
         
-        return ResolveError.MismatchedCallableParams(SymbolType.AND.symbol, listOf(lhs.type, rhs.type)).toFailure()
+        return ResolveError.MismatchedFunctionTypes(SymbolType.AND.symbol, listOf(lhs.type, rhs.type)).toFailure()
     }
 }
 
@@ -239,7 +239,7 @@ internal class ConverterNot(private val symbols: SymbolTable)
         if (expr is ValueBool)
             return BoolNot(expr).toSuccess()
         
-        return ResolveError.MismatchedCallableParams(SymbolType.NOT.symbol, listOf(expr.type)).toFailure()
+        return ResolveError.MismatchedFunctionTypes(SymbolType.NOT.symbol, listOf(expr.type)).toFailure()
     }
 }
 
@@ -273,7 +273,7 @@ internal class ConverterOr(private val symbols: SymbolTable)
         if (lhs is ValueBool && rhs is ValueBool)
             return BoolOr(lhs, rhs).toSuccess()
         
-        return ResolveError.MismatchedCallableParams(SymbolType.OR.symbol, listOf(lhs.type, rhs.type)).toFailure()
+        return ResolveError.MismatchedFunctionTypes(SymbolType.OR.symbol, listOf(lhs.type, rhs.type)).toFailure()
     }
 }
 
@@ -376,6 +376,6 @@ internal class ConverterXor(private val symbols: SymbolTable)
         if (lhs is ValueBool && rhs is ValueBool)
             return BoolXor(lhs, rhs).toSuccess()
         
-        return ResolveError.MismatchedCallableParams(SymbolType.XOR.symbol, listOf(lhs.type, rhs.type)).toFailure()
+        return ResolveError.MismatchedFunctionTypes(SymbolType.XOR.symbol, listOf(lhs.type, rhs.type)).toFailure()
     }
 }

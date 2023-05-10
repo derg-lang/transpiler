@@ -15,10 +15,7 @@ data class Assign(val variable: Variable, val value: Value) : Instruction
  * Conditional execution is possible by branching the control flow one a [predicate]. If the predicates matches, the
  * [success] branch is selected, otherwise [failure] is.
  */
-data class Condition(val predicate: Value, val success: Branch, val failure: Branch) : Instruction
-{
-    class Branch(val symbols: SymbolTable, val instructions: List<Instruction>)
-}
+data class Condition(val predicate: Value, val success: Scope, val failure: Scope) : Instruction
 
 /**
  * Exits the current function call, returning control flow to whomever called the function in the first place. No

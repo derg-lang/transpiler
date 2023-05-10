@@ -46,7 +46,7 @@ sealed interface ResolveError
      * No function candidates were found for the function with the given [name], when invoked with the given
      * [parameters].
      */
-    data class MismatchedCallableParams(val name: Name, val parameters: List<Type>) : ResolveError
+    data class MismatchedFunctionTypes(val name: Name, val parameters: List<Type>) : ResolveError
     
     /**
      * During type resolution, a parameter was resolved to the [expected] type, but the default value provided for the
@@ -59,6 +59,11 @@ sealed interface ResolveError
      * variable resolved to the [actual] type instead.
      */
     data class MismatchedVariableType(val expected: Type, val actual: Type) : ResolveError
+    
+    /**
+     * The provided [type] is not permitted for usage as a predicate in a branch statement.
+     */
+    data class InvalidPredicateType(val type: Type) : ResolveError
     
     /**
      * An unknown error, catch-all for anything that has gone wrong. Naturally, this should be replaced with more
@@ -139,7 +144,7 @@ internal fun SymbolTable.resolveRequiredFunction(name: Name, parameters: List<Ty
         return ResolveError.UnknownFunction(name).toFailure()
     
     val candidates = functions.filter { it.isCompatibleWith(parameters) }
-    return candidates.firstOrNull()?.toSuccess() ?: ResolveError.MismatchedCallableParams(name, parameters).toFailure()
+    return candidates.firstOrNull()?.toSuccess() ?: ResolveError.MismatchedFunctionTypes(name, parameters).toFailure()
 }
 
 private fun Function.isCompatibleWith(parameters: List<Type>): Boolean
@@ -191,4 +196,16 @@ internal fun SymbolTable.resolveRequiredVariable(name: Name): Result<Variable, R
     // TODO: Support function variables as well
     val candidate = find(name).filterIsInstance<Variable>().firstOrNull()
     return candidate?.toSuccess() ?: ResolveError.UnknownVariable(name).toFailure()
+}
+
+/**
+ * Converts all the provided [statements] into instructions, baked into a new scope.
+ */
+internal fun SymbolTable.resolveScope(statements: List<Statement>): Result<Scope, ResolveError>
+{
+    val inner = SymbolTable(this)
+    val converter = ConverterStatements(inner)
+    converter.prepare(statements).valueOr { return failureOf(it) }
+    val instructions = converter.convert(statements).valueOr { return failureOf(it) }
+    return Scope(instructions, inner).toSuccess()
 }

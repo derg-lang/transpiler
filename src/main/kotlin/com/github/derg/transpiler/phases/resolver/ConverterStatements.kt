@@ -74,41 +74,17 @@ class ConverterStatements(private val symbols: SymbolTable)
     fun convert(statements: List<Statement>): Result<List<Instruction>, ResolveError> =
         statements.fold { convert(it) }
     
-    fun convert(statement: Statement): Result<Instruction, ResolveError> = when (statement)
+    private fun convert(statement: Statement): Result<Instruction, ResolveError> = when (statement)
     {
         is Assignment.Assign   -> ConverterAssign(symbols)(statement)
-        is Control.Branch      -> statement.toInstruction()
+        is Control.Branch      -> ConverterBranch(symbols)(statement)
         is Control.Invoke      -> TODO()
-        is Control.Raise       -> statement.toInstruction()
-        is Control.Return      -> statement.toInstruction()
+        is Control.Raise       -> ConverterRaise(symbols)(statement)
+        is Control.Return      -> ConverterReturn(symbols)(statement)
         is Definition.Function -> Nop.toSuccess()
         is Definition.Type     -> Nop.toSuccess()
         is Definition.Variable -> statement.toInstruction()
     }
-    
-    private fun Control.Branch.toInstruction(): Result<Instruction, ResolveError>
-    {
-        val value = symbols.resolveRequiredValue(predicate).valueOr { return failureOf(it) }
-        if (value !is ValueBool)
-            return ResolveError.Unknown.toFailure()
-        
-        val sSymbols = SymbolTable(symbols)
-        val fSymbols = SymbolTable(symbols)
-        val sConv = ConverterStatements(sSymbols)
-        val fConv = ConverterStatements(fSymbols)
-        
-        return Condition(
-            predicate = value,
-            success = Condition.Branch(sSymbols, sConv.convert(success).valueOr { return failureOf(it) }),
-            failure = Condition.Branch(fSymbols, fConv.convert(failure).valueOr { return failureOf(it) }),
-        ).toSuccess()
-    }
-    
-    private fun Control.Raise.toInstruction(): Result<Instruction, ResolveError> =
-        symbols.resolveRequiredValue(expression).mapValue { Raise(it) }
-    
-    private fun Control.Return.toInstruction(): Result<Instruction, ResolveError> =
-        if (expression == null) Exit.toSuccess() else symbols.resolveRequiredValue(expression).mapValue { Return(it) }
     
     private fun Definition.Variable.toInstruction(): Result<Instruction, ResolveError>
     {

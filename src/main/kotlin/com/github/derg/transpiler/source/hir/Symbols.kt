@@ -146,3 +146,18 @@ class SymbolTable(private val parent: SymbolTable? = null)
         return inner.reversed() + outer
     }
 }
+
+/**
+ * Scopes defines a region of codebase independent of other scopes at the same depth. Scopes may inherit all named
+ * objects from parent scopes; the scope may read all symbols defined in the [symbols] table. The scope contains a set
+ * of executable [instructions].
+ */
+class Scope(val instructions: List<Instruction>, val symbols: SymbolTable)
+{
+    override fun hashCode(): Int = instructions.hashCode()
+    override fun equals(other: Any?): Boolean = when (other)
+    {
+        is Scope -> this.instructions == other.instructions
+        else     -> false
+    }
+}
