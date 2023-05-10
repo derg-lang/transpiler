@@ -76,7 +76,7 @@ class ConverterStatements(private val symbols: SymbolTable)
     
     fun convert(statement: Statement): Result<Instruction, ResolveError> = when (statement)
     {
-        is Assignment.Assign   -> statement.toInstruction()
+        is Assignment.Assign   -> ConverterAssign(symbols)(statement)
         is Control.Branch      -> statement.toInstruction()
         is Control.Invoke      -> TODO()
         is Control.Raise       -> statement.toInstruction()
@@ -84,19 +84,6 @@ class ConverterStatements(private val symbols: SymbolTable)
         is Definition.Function -> Nop.toSuccess()
         is Definition.Type     -> Nop.toSuccess()
         is Definition.Variable -> statement.toInstruction()
-    }
-    
-    private fun Assignment.Assign.toInstruction(): Result<Instruction, ResolveError>
-    {
-        val variable = symbols.find(name).firstOrNull() ?: return failureOf(ResolveError.Unknown)
-        if (variable !is Variable)
-            return ResolveError.Unknown.toFailure()
-        
-        val value = symbols.resolveRequiredValue(expression).valueOr { return failureOf(it) }
-        if (variable.type != value.type)
-            return ResolveError.Unknown.toFailure()
-        
-        return Assign(variable, value).toSuccess()
     }
     
     private fun Control.Branch.toInstruction(): Result<Instruction, ResolveError>
