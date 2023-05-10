@@ -260,6 +260,40 @@ class ConverterSubtract(private val symbols: SymbolTable)
     }
 }
 
+class ConverterUnaryMinus(private val symbols: SymbolTable)
+{
+    operator fun invoke(node: Operator.Minus): Result<Value, ResolveError>
+    {
+        val rhs = symbols.resolveRequiredValue(node.expression).valueOr { return failureOf(it) }
+        
+        if (rhs is ValueInt32)
+            return Int32Neg(rhs).toSuccess()
+        if (rhs is ValueInt64)
+            return Int64Neg(rhs).toSuccess()
+        
+        val function = symbols.resolveRequiredFunction(SymbolType.MINUS.symbol, listOf(rhs.type))
+            .valueOr { return failureOf(it) }
+        return valueOf(function, listOf(rhs)).toSuccess()
+    }
+}
+
+class ConverterUnaryPlus(private val symbols: SymbolTable)
+{
+    operator fun invoke(node: Operator.Plus): Result<Value, ResolveError>
+    {
+        val rhs = symbols.resolveRequiredValue(node.expression).valueOr { return failureOf(it) }
+        
+        if (rhs is ValueInt32)
+            return rhs.toSuccess()
+        if (rhs is ValueInt64)
+            return rhs.toSuccess()
+        
+        val function = symbols.resolveRequiredFunction(SymbolType.PLUS.symbol, listOf(rhs.type))
+            .valueOr { return failureOf(it) }
+        return valueOf(function, listOf(rhs)).toSuccess()
+    }
+}
+
 class ConverterXor(private val symbols: SymbolTable)
 {
     operator fun invoke(node: Operator.Xor): Result<Value, ResolveError>

@@ -2,7 +2,6 @@ package com.github.derg.transpiler.phases.resolver
 
 import com.github.derg.transpiler.source.ast.Access
 import com.github.derg.transpiler.source.ast.Constant
-import com.github.derg.transpiler.source.ast.Operator
 import com.github.derg.transpiler.source.hir.*
 import com.github.derg.transpiler.util.toFailure
 import com.github.derg.transpiler.util.toSuccess
@@ -59,23 +58,5 @@ class TestConverterExpressions
         assertEquals(Int64Const(3L).toSuccess(), converter.convert(Constant.Real(3, Builtin.LIT_INT64)))
         
         assertEquals(ResolveError.UnknownLiteral("foo").toFailure(), converter.convert(Constant.Real(0, "foo")))
-    }
-    
-    @Test
-    fun `Given unary minus expression, when resolving, then correctly resolved`()
-    {
-        assertEquals(Int32Neg(1.v).toSuccess(), converter.convert(Operator.Minus(1.e)))
-        assertEquals(Int64Neg(1L.v).toSuccess(), converter.convert(Operator.Minus(1L.e)))
-        
-        assertEquals(ResolveError.Unsupported.toFailure(), converter.convert(Operator.Minus(false.e)))
-    }
-    
-    @Test
-    fun `Given unary plus expression, when resolving, then correctly resolved`()
-    {
-        assertEquals(1.v.toSuccess(), converter.convert(Operator.Plus(1.e)))
-        assertEquals(1L.v.toSuccess(), converter.convert(Operator.Plus(1L.e)))
-        
-        assertEquals(ResolveError.Unsupported.toFailure(), converter.convert(Operator.Plus(false.e)))
     }
 }

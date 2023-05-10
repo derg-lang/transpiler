@@ -25,7 +25,7 @@ class ConverterExpressions(private val symbols: SymbolTable)
         is Access.Variable       -> expression.toValue()
         is Constant.Bool         -> expression.toValue()
         is Constant.Real         -> expression.toValue()
-        is Constant.Text         -> TODO()
+        is Constant.Text         -> expression.toValue()
         is Operator.Add          -> ConverterAdd(symbols)(expression)
         is Operator.And          -> ConverterAnd(symbols)(expression)
         is Operator.Catch        -> TODO()
@@ -35,13 +35,13 @@ class ConverterExpressions(private val symbols: SymbolTable)
         is Operator.GreaterEqual -> ConverterGreaterEqual(symbols)(expression)
         is Operator.Less         -> ConverterLess(symbols)(expression)
         is Operator.LessEqual    -> ConverterLessEqual(symbols)(expression)
-        is Operator.Minus        -> expression.toValue()
+        is Operator.Minus        -> ConverterUnaryMinus(symbols)(expression)
         is Operator.Modulo       -> ConverterModulo(symbols)(expression)
         is Operator.Multiply     -> ConverterMultiply(symbols)(expression)
         is Operator.Not          -> ConverterNot(symbols)(expression)
         is Operator.NotEqual     -> ConverterNotEqual(symbols)(expression)
         is Operator.Or           -> ConverterOr(symbols)(expression)
-        is Operator.Plus         -> expression.toValue()
+        is Operator.Plus         -> ConverterUnaryPlus(symbols)(expression)
         is Operator.Raise        -> TODO()
         is Operator.Subtract     -> ConverterSubtract(symbols)(expression)
         is Operator.ThreeWay     -> TODO()
@@ -103,25 +103,5 @@ class ConverterExpressions(private val symbols: SymbolTable)
         else                    -> ResolveError.UnknownLiteral(literal).toFailure()
     }
     
-    private fun Operator.Minus.toValue(): Result<Value, ResolveError>
-    {
-        val value = convert(expression).valueOr { return failureOf(it) }
-        return when (value)
-        {
-            is ValueInt32 -> Int32Neg(value).toSuccess()
-            is ValueInt64 -> Int64Neg(value).toSuccess()
-            else          -> ResolveError.Unsupported.toFailure()
-        }
-    }
-    
-    private fun Operator.Plus.toValue(): Result<Value, ResolveError>
-    {
-        val value = convert(expression).valueOr { return failureOf(it) }
-        return when (value)
-        {
-            is ValueInt32 -> value.toSuccess()
-            is ValueInt64 -> value.toSuccess()
-            else          -> ResolveError.Unsupported.toFailure()
-        }
-    }
+    private fun Constant.Text.toValue(): Result<Value, ResolveError> = ValueStrUnicode.toSuccess()
 }

@@ -10,6 +10,7 @@ val Int.e: Expression get() = Constant.Real(this, Builtin.LIT_INT32)
 val Int.v: ValueInt32 get() = Int32Const(this)
 val Long.e: Expression get() = Constant.Real(this, Builtin.LIT_INT64)
 val Long.v: ValueInt64 get() = Int64Const(this)
+val String.e: Expression get() = Constant.Text(this, "")
 
 /**
  * Generates a function from the provided input parameters.

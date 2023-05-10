@@ -83,6 +83,16 @@ data class Int64Mod(val lhs: ValueInt64, val rhs: ValueInt64) : ValueInt64
 data class Int64Neg(val rhs: ValueInt64) : ValueInt64
 
 /**
+ * Unicode strings.
+ */
+// TODO: Implement me
+object ValueStrUnicode : Value
+{
+    override val type: Type
+        get() = Builtin.VOID
+}
+
+/**
  * Any value which is produced from user-defined objects.
  */
 sealed interface ValueUserDefined : Value

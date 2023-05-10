@@ -434,6 +434,72 @@ class TestConverterSubtract
     }
 }
 
+class TestConverterUnaryMinus
+{
+    private val symbols = SymbolTable(Builtin.SYMBOLS)
+    private val converter = ConverterUnaryMinus(symbols)
+    
+    private val function = hirFunOf(
+        name = SymbolType.MINUS.symbol,
+        valueType = Builtin.BOOL,
+        params = listOf(hirParOf("rhs", Builtin.BOOL)),
+    ).also { symbols.register(it) }
+    
+    @Test
+    fun `Given builtin types, when resolving, then correct outcome`()
+    {
+        assertEquals(Int32Neg(1.v).toSuccess(), converter(Operator.Minus(1.e)))
+        assertEquals(Int64Neg(1L.v).toSuccess(), converter(Operator.Minus(1L.e)))
+    }
+    
+    @Test
+    fun `Given known overload, when resolving, then correct error`()
+    {
+        assertEquals(BoolCall(function, listOf(true.v)).toSuccess(), converter(Operator.Minus(true.e)))
+    }
+    
+    @Test
+    fun `Given unknown overload, when resolving, then correct error`()
+    {
+        val expected = MismatchedCallableParams(SymbolType.MINUS.symbol, listOf(Builtin.VOID))
+        
+        assertEquals(expected.toFailure(), converter(Operator.Minus("".e)))
+    }
+}
+
+class TestConverterUnaryPlus
+{
+    private val symbols = SymbolTable(Builtin.SYMBOLS)
+    private val converter = ConverterUnaryPlus(symbols)
+    
+    private val function = hirFunOf(
+        name = SymbolType.PLUS.symbol,
+        valueType = Builtin.BOOL,
+        params = listOf(hirParOf("rhs", Builtin.BOOL)),
+    ).also { symbols.register(it) }
+    
+    @Test
+    fun `Given builtin types, when resolving, then correct outcome`()
+    {
+        assertEquals(1.v.toSuccess(), converter(Operator.Plus(1.e)))
+        assertEquals(1L.v.toSuccess(), converter(Operator.Plus(1L.e)))
+    }
+    
+    @Test
+    fun `Given known overload, when resolving, then correct error`()
+    {
+        assertEquals(BoolCall(function, listOf(true.v)).toSuccess(), converter(Operator.Plus(true.e)))
+    }
+    
+    @Test
+    fun `Given unknown overload, when resolving, then correct error`()
+    {
+        val expected = MismatchedCallableParams(SymbolType.PLUS.symbol, listOf(Builtin.VOID))
+        
+        assertEquals(expected.toFailure(), converter(Operator.Plus("".e)))
+    }
+}
+
 class TestConverterXor
 {
     private val symbols = SymbolTable(Builtin.SYMBOLS)
