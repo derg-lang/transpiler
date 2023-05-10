@@ -2,6 +2,7 @@ package com.github.derg.transpiler.phases.resolver
 
 import com.github.derg.transpiler.source.Id
 import com.github.derg.transpiler.source.Name
+import com.github.derg.transpiler.source.ast.Expression
 import com.github.derg.transpiler.source.ast.Segment
 import com.github.derg.transpiler.source.hir.*
 import com.github.derg.transpiler.util.*
@@ -35,6 +36,12 @@ sealed interface ResolveError
      * The type with the given [name] could not be found in the current or any outer scope.
      */
     data class UnknownType(val name: Name) : ResolveError
+    
+    /**
+     * No function candidates were found for the function with the given [name], when invoked with the given
+     * [parameters].
+     */
+    data class MismatchedCallableParams(val name: Name, val parameters: List<Type>) : ResolveError
     
     /**
      * During type resolution, a parameter was resolved to the [expected] type, but the default value provided for the
@@ -100,3 +107,29 @@ class Resolver(private val symbols: SymbolTable)
         return `package`.toSuccess()
     }
 }
+
+/**
+ * Converts the given [name] into a type which has it as the name. Any other symbol with the same name, but are not a
+ * type, will be ignored. If the name is not provided, [Builtin.VOID] is returned instead.
+ */
+internal fun SymbolTable.resolveOptionalType(name: Name?): Result<Type, ResolveError>
+{
+    if (name == null)
+        return Builtin.VOID.toSuccess()
+    
+    val symbol = find(name).filterIsInstance<Type>().firstOrNull()
+    return symbol?.toSuccess() ?: ResolveError.UnknownType(name).toFailure()
+}
+
+/**
+ * Converts the given [expression] into a value which represents the same expression. If no expression was provided, an
+ * empty value is returned instead.
+ */
+internal fun SymbolTable.resolveOptionalValue(expression: Expression?): Result<Value?, ResolveError> =
+    if (expression == null) successOf(null) else resolveRequiredValue(expression)
+
+/**
+ * Converts the given [expression] into a value which represents the same expression.
+ */
+internal fun SymbolTable.resolveRequiredValue(expression: Expression): Result<Value, ResolveError> =
+    ConverterExpressions(this).convert(expression)

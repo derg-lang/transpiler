@@ -2,39 +2,11 @@ package com.github.derg.transpiler.phases.resolver
 
 import com.github.derg.transpiler.source.IdProvider
 import com.github.derg.transpiler.source.IdProviderSystem
-import com.github.derg.transpiler.source.Name
 import com.github.derg.transpiler.source.ast.Definition
-import com.github.derg.transpiler.source.ast.Expression
 import com.github.derg.transpiler.source.ast.Parameter
 import com.github.derg.transpiler.source.hir.*
 import com.github.derg.transpiler.source.hir.Function
 import com.github.derg.transpiler.util.*
-
-/**
- * Converts the given [name] into a type which has it as the name. Any other symbol with the same name, but are not a
- * type, will be ignored. If the name is not provided, [Builtin.VOID] is returned instead.
- */
-private fun SymbolTable.resolveOptionalType(name: Name?): Result<Type, ResolveError>
-{
-    if (name == null)
-        return Builtin.VOID.toSuccess()
-    
-    val symbol = find(name).filterIsInstance<Type>().firstOrNull()
-    return symbol?.toSuccess() ?: ResolveError.UnknownType(name).toFailure()
-}
-
-/**
- * Converts the given [expression] into a value which represents the same expression. If no expression was provided, an
- * empty value is returned instead.
- */
-private fun SymbolTable.resolveOptionalValue(expression: Expression?): Result<Value?, ResolveError> =
-    if (expression == null) successOf(null) else resolveRequiredValue(expression)
-
-/**
- * Converts the given [expression] into a value which represents the same expression.
- */
-private fun SymbolTable.resolveRequiredValue(expression: Expression): Result<Value, ResolveError> =
-    ConverterExpressions(this).convert(expression)
 
 /**
  * Function declarations contain information which must be type-checked and verified. The function declaration contains

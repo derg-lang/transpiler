@@ -71,14 +71,6 @@ class TestConverterExpressions
     }
     
     @Test
-    fun `Given and expression, when resolving, then correctly resolved`()
-    {
-        assertEquals(BoolAnd(true.v, false.v).toSuccess(), converter.convert(Operator.And(true.e, false.e)))
-        
-        assertEquals(ResolveError.Unsupported.toFailure(), converter.convert(Operator.Add(false.e, 0.e)))
-    }
-    
-    @Test
     fun `Given divide expression, when resolving, then correctly resolved`()
     {
         assertEquals(Int32Div(1.v, 2.v).toSuccess(), converter.convert(Operator.Divide(1.e, 2.e)))
@@ -162,14 +154,6 @@ class TestConverterExpressions
     }
     
     @Test
-    fun `Given or expression, when resolving, then correctly resolved`()
-    {
-        assertEquals(BoolOr(true.v, false.v).toSuccess(), converter.convert(Operator.Or(true.e, false.e)))
-        
-        assertEquals(ResolveError.Unsupported.toFailure(), converter.convert(Operator.Or(false.e, 0.e)))
-    }
-    
-    @Test
     fun `Given subtract expression, when resolving, then correctly resolved`()
     {
         assertEquals(Int32Sub(1.v, 2.v).toSuccess(), converter.convert(Operator.Subtract(1.e, 2.e)))
@@ -188,27 +172,11 @@ class TestConverterExpressions
     }
     
     @Test
-    fun `Given unary not expression, when resolving, then correctly resolved`()
-    {
-        assertEquals(BoolNot(true.v).toSuccess(), converter.convert(Operator.Not(true.e)))
-        
-        assertEquals(ResolveError.Unsupported.toFailure(), converter.convert(Operator.Not(1.e)))
-    }
-    
-    @Test
     fun `Given unary plus expression, when resolving, then correctly resolved`()
     {
         assertEquals(1.v.toSuccess(), converter.convert(Operator.Plus(1.e)))
         assertEquals(1L.v.toSuccess(), converter.convert(Operator.Plus(1L.e)))
         
         assertEquals(ResolveError.Unsupported.toFailure(), converter.convert(Operator.Plus(false.e)))
-    }
-    
-    @Test
-    fun `Given xor expression, when resolving, then correctly resolved`()
-    {
-        assertEquals(BoolXor(true.v, false.v).toSuccess(), converter.convert(Operator.Xor(true.e, false.e)))
-        
-        assertEquals(ResolveError.Unsupported.toFailure(), converter.convert(Operator.Xor(false.e, 0.e)))
     }
 }

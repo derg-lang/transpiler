@@ -27,7 +27,7 @@ class ConverterExpressions(private val symbols: SymbolTable)
         is Constant.Real         -> expression.toValue()
         is Constant.Text         -> TODO()
         is Operator.Add          -> expression.toValue()
-        is Operator.And          -> expression.toValue()
+        is Operator.And          -> ConverterAnd(symbols)(expression)
         is Operator.Catch        -> TODO()
         is Operator.Divide       -> expression.toValue()
         is Operator.Equal        -> expression.toValue()
@@ -38,14 +38,14 @@ class ConverterExpressions(private val symbols: SymbolTable)
         is Operator.Minus        -> expression.toValue()
         is Operator.Modulo       -> expression.toValue()
         is Operator.Multiply     -> expression.toValue()
-        is Operator.Not          -> expression.toValue()
+        is Operator.Not          -> ConverterNot(symbols)(expression)
         is Operator.NotEqual     -> expression.toValue()
-        is Operator.Or           -> expression.toValue()
+        is Operator.Or           -> ConverterOr(symbols)(expression)
         is Operator.Plus         -> expression.toValue()
         is Operator.Raise        -> TODO()
         is Operator.Subtract     -> expression.toValue()
         is Operator.ThreeWay     -> TODO()
-        is Operator.Xor          -> expression.toValue()
+        is Operator.Xor          -> ConverterXor(symbols)(expression)
         is When                  -> TODO()
     }
     
@@ -112,17 +112,6 @@ class ConverterExpressions(private val symbols: SymbolTable)
             lhs is ValueInt32 && rhs is ValueInt32 -> Int32Add(lhs, rhs).toSuccess()
             lhs is ValueInt64 && rhs is ValueInt64 -> Int64Add(lhs, rhs).toSuccess()
             else                                   -> ResolveError.Unsupported.toFailure()
-        }
-    }
-    
-    private fun Operator.And.toValue(): Result<Value, ResolveError>
-    {
-        val lhs = convert(lhs).valueOr { return failureOf(it) }
-        val rhs = convert(rhs).valueOr { return failureOf(it) }
-        return when
-        {
-            lhs is ValueBool && rhs is ValueBool -> BoolAnd(lhs, rhs).toSuccess()
-            else                                 -> ResolveError.Unsupported.toFailure()
         }
     }
     
@@ -234,16 +223,6 @@ class ConverterExpressions(private val symbols: SymbolTable)
         }
     }
     
-    private fun Operator.Not.toValue(): Result<Value, ResolveError>
-    {
-        val value = convert(expression).valueOr { return failureOf(it) }
-        return when (value)
-        {
-            is ValueBool -> BoolNot(value).toSuccess()
-            else         -> ResolveError.Unsupported.toFailure()
-        }
-    }
-    
     private fun Operator.NotEqual.toValue(): Result<Value, ResolveError>
     {
         val lhs = convert(lhs).valueOr { return failureOf(it) }
@@ -254,17 +233,6 @@ class ConverterExpressions(private val symbols: SymbolTable)
             lhs is ValueInt32 && rhs is ValueInt32 -> Int32Ne(lhs, rhs).toSuccess()
             lhs is ValueInt64 && rhs is ValueInt64 -> Int64Ne(lhs, rhs).toSuccess()
             else                                   -> ResolveError.Unsupported.toFailure()
-        }
-    }
-    
-    private fun Operator.Or.toValue(): Result<Value, ResolveError>
-    {
-        val lhs = convert(lhs).valueOr { return failureOf(it) }
-        val rhs = convert(rhs).valueOr { return failureOf(it) }
-        return when
-        {
-            lhs is ValueBool && rhs is ValueBool -> BoolOr(lhs, rhs).toSuccess()
-            else                                 -> ResolveError.Unsupported.toFailure()
         }
     }
     
@@ -288,17 +256,6 @@ class ConverterExpressions(private val symbols: SymbolTable)
             lhs is ValueInt32 && rhs is ValueInt32 -> Int32Sub(lhs, rhs).toSuccess()
             lhs is ValueInt64 && rhs is ValueInt64 -> Int64Sub(lhs, rhs).toSuccess()
             else                                   -> ResolveError.Unsupported.toFailure()
-        }
-    }
-    
-    private fun Operator.Xor.toValue(): Result<Value, ResolveError>
-    {
-        val lhs = convert(lhs).valueOr { return failureOf(it) }
-        val rhs = convert(rhs).valueOr { return failureOf(it) }
-        return when
-        {
-            lhs is ValueBool && rhs is ValueBool -> BoolXor(lhs, rhs).toSuccess()
-            else                                 -> ResolveError.Unsupported.toFailure()
         }
     }
 }
