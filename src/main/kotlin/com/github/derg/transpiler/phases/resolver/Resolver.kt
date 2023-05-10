@@ -43,6 +43,12 @@ sealed interface ResolveError
     data class MismatchedParameterType(val expected: Type, val actual: Type) : ResolveError
     
     /**
+     * During type resolution, a variable was resolved to the [expected] type, but the explicitly provided type for the
+     * variable resolved to the [actual] type instead.
+     */
+    data class MismatchedVariableType(val expected: Type, val actual: Type) : ResolveError
+    
+    /**
      * An unknown error, catch-all for anything that has gone wrong. Naturally, this should be replaced with more
      * specific and detailed errors.
      */

@@ -1,8 +1,5 @@
 package com.github.derg.transpiler.phases.resolver
 
-import com.github.derg.transpiler.source.Assignability
-import com.github.derg.transpiler.source.Id
-import com.github.derg.transpiler.source.Name
 import com.github.derg.transpiler.source.ast.*
 import com.github.derg.transpiler.source.hir.*
 import com.github.derg.transpiler.source.hir.Function
@@ -45,10 +42,12 @@ class ConverterStatements(private val symbols: SymbolTable)
             .filterIsInstance<Definition.Function>()
             .map { it to DeclaratorFunction(symbols)(it).valueOr { err -> return failureOf(err) } }
         
-        // Variables may depend on each other, so the order in which they are defined matters. They must be defined
+        // Variables may depend on each other, so the order in which they are defined matters. They must be declared
         // before any functions are defined, as the functions may depend on those variables.
-        for (variable in statements.filterIsInstance<Definition.Variable>())
-            variable.toDeclaration().valueOr { return failureOf(it) }.also { symbols.register(it) }
+        statements
+            .filterIsInstance<Definition.Variable>()
+            .fold { DeclaratorVariable(symbols)(it) }
+            .onFailure { return failureOf(it) }
         
         // All required symbols are now valid, can register them in the symbol table, they may now be defined too.
         // TODO: Define types, too
@@ -130,36 +129,6 @@ class ConverterStatements(private val symbols: SymbolTable)
     private fun Definition.Type.toDeclaration(): Result<Type, ResolveError>
     {
         TODO()
-    }
-    
-    private fun Definition.Variable.toDeclaration(): Result<Variable, ResolveError>
-    {
-        // Note: Type inference fails here if the order in which variables are declared does not correspond to the
-        //       order in which they are initialized.
-        val type = resolveType(type).valueOr { return failureOf(it) }
-            ?: resolveValue(value).valueOr { return failureOf(it) }.type
-        
-        return Variable(
-            id = Id.randomUUID(),
-            name = name,
-            visibility = visibility,
-            mutability = mutability,
-            assignability = Assignability.ASSIGNABLE,
-            type = type,
-        ).toSuccess()
-    }
-    
-    /**
-     * Retrieves the id of the [Type] with the given [name] in the current scope. If the name is not provided, no type
-     * is expected and [Builtin.VOID] is returned instead.
-     */
-    private fun resolveType(name: Name?): Result<Type?, ResolveError>
-    {
-        if (name == null)
-            return successOf(null)
-        
-        val type = symbols.find(name).filterIsInstance<Type>().firstOrNull()
-        return type?.toSuccess() ?: ResolveError.Unknown.toFailure()
     }
     
     /**

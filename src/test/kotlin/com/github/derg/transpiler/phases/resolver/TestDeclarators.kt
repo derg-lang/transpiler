@@ -2,6 +2,7 @@ package com.github.derg.transpiler.phases.resolver
 
 import com.github.derg.transpiler.phases.parser.funOf
 import com.github.derg.transpiler.phases.parser.parOf
+import com.github.derg.transpiler.phases.parser.varOf
 import com.github.derg.transpiler.source.IdProviderNil
 import com.github.derg.transpiler.source.hir.*
 import com.github.derg.transpiler.util.toFailure
@@ -140,6 +141,47 @@ class TestDeclaratorParameter
     {
         val node = parOf("parameter", type = Builtin.INT32.name, value = true.e)
         val expected = ResolveError.MismatchedParameterType(expected = Builtin.INT32, actual = Builtin.BOOL)
+        
+        assertEquals(expected.toFailure(), declarator(node))
+    }
+}
+
+class TestDeclaratorVariable
+{
+    private val symbols = SymbolTable(Builtin.SYMBOLS)
+    private val declarator = DeclaratorVariable(symbols, IdProviderNil)
+    
+    @Test
+    fun `Given basic, when declaring, then registered`()
+    {
+        val symbol = declarator(varOf("variable", 1.e)).valueOrDie()
+        
+        assertEquals(listOf(symbol), symbols.find(symbol.name))
+    }
+    
+    @Test
+    fun `Given basic, when declaring, then correct outcome`()
+    {
+        val node = varOf("variable", 1.e)
+        val expected = variableOf(node.name, type = Builtin.INT32)
+        
+        assertEquals(expected.toSuccess(), declarator(node))
+    }
+    
+    @Test
+    fun `Given valid type, when declaring, then correct outcome`()
+    {
+        val node = varOf("variable", 1.e, type = Builtin.INT32.name)
+        val expected = variableOf(node.name, type = Builtin.INT32)
+        
+        assertEquals(expected.toSuccess(), declarator(node))
+    }
+    
+    @Test
+    fun `Given invalid type, when declaring, then correct error`()
+    {
+        val node = varOf("variable", 1.e, type = Builtin.BOOL.name)
+        val expected = ResolveError.MismatchedVariableType(expected = Builtin.BOOL, actual = Builtin.INT32)
         
         assertEquals(expected.toFailure(), declarator(node))
     }

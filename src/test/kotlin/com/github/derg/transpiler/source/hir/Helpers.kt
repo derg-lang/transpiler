@@ -11,18 +11,6 @@ val Int.v: ValueInt32 get() = Int32Const(this)
 val Long.e: Expression get() = Constant.Real(this, Builtin.LIT_INT64)
 val Long.v: ValueInt64 get() = Int64Const(this)
 
-fun variableOf(
-    name: Name,
-    type: Type,
-) = Variable(
-    id = IdProviderNil.random(),
-    name = name,
-    visibility = Visibility.PRIVATE,
-    mutability = Mutability.IMMUTABLE,
-    assignability = Assignability.CONSTANT,
-    type = type,
-)
-
 /**
  * Generates a function from the provided input parameters.
  */
@@ -34,14 +22,14 @@ fun functionOf(
 ) = Function(
     id = IdProviderNil.random(),
     name = name,
-    visibility = Visibility.PRIVATE,
     value = valueType,
     error = errorType,
     params = params,
+    visibility = Visibility.PRIVATE,
 )
 
 /**
- * Generates a function parameter from the provided input parameters.
+ * Generates a parameter from the provided input parameters.
  */
 fun parameterOf(
     name: Name,
@@ -51,6 +39,21 @@ fun parameterOf(
     id = IdProviderNil.random(),
     name = name,
     type = type,
-    passability = Passability.IN,
     value = value,
+    passability = Passability.IN,
+)
+
+/**
+ * Generates a variable from the provided input parameters.
+ */
+fun variableOf(
+    name: Name,
+    type: Type,
+) = Variable(
+    id = IdProviderNil.random(),
+    name = name,
+    type = type,
+    visibility = Visibility.PRIVATE,
+    mutability = Mutability.IMMUTABLE,
+    assignability = Assignability.CONSTANT,
 )

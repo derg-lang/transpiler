@@ -62,18 +62,18 @@ data class Type(
 data class Function(
     override val id: Id,
     override val name: Name,
-    val visibility: Visibility,
     val value: Type,
     val error: Type,
     val params: List<Parameter>,
+    val visibility: Visibility,
 ) : Symbol
 {
     data class Parameter(
         override val id: Id,
         override val name: Name,
         val type: Type,
-        val passability: Passability,
         val value: Value?,
+        val passability: Passability,
     ) : Symbol
     
     /**
@@ -95,10 +95,10 @@ data class Function(
 data class Variable(
     override val id: Id,
     override val name: Name,
+    val type: Type,
     val visibility: Visibility,
     val mutability: Mutability,
     val assignability: Assignability,
-    val type: Type,
 ) : Symbol
 
 /**
