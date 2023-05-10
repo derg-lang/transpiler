@@ -12,3 +12,27 @@ typealias Name = String
  * uniquely identify not only the specific object, but also the specific type of object.
  */
 typealias Id = UUID
+
+/**
+ * The id provider is a source for arbitrary ids.
+ */
+interface IdProvider
+{
+    fun random(): Id
+}
+
+/**
+ * The default implementation for providing random ids.
+ */
+object IdProviderSystem : IdProvider
+{
+    override fun random(): Id = Id.randomUUID()
+}
+
+/**
+ * The fixed id provider generates the same nil id with every instantiation.
+ */
+object IdProviderNil : IdProvider
+{
+    override fun random(): Id = Id(0L, 0L)
+}

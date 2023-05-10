@@ -63,13 +63,23 @@ data class Function(
     override val id: Id,
     override val name: Name,
     val visibility: Visibility,
-    val value: Id,
-    val error: Id,
+    val value: Type,
+    val error: Type,
     val params: List<Parameter>,
-    val symbols: SymbolTable,
 ) : Symbol
 {
-    data class Parameter(val type: Id, val name: Name?, val passability: Passability, val value: Value?)
+    data class Parameter(
+        override val id: Id,
+        override val name: Name,
+        val type: Type,
+        val passability: Passability,
+        val value: Value?,
+    ) : Symbol
+    
+    /**
+     * The nested symbols within the function, such as all inner functions, types, parameters, and other named symbols.
+     */
+    lateinit var symbols: SymbolTable
     
     /**
      * The set of instructions which should be performed by the function when invoked.  The order in which the
@@ -88,7 +98,7 @@ data class Variable(
     val visibility: Visibility,
     val mutability: Mutability,
     val assignability: Assignability,
-    val type: Id,
+    val type: Type,
 ) : Symbol
 
 /**
@@ -113,7 +123,7 @@ class SymbolTable(private val parent: SymbolTable? = null)
      * Registers a new [symbol], allowing the symbol to be retrieved by id or name at this scope when desired. When
      * multiple symbols are bound by the same name, the earlier bound names will be shadowed by the last bound name.
      */
-    fun register(symbol: Symbol): Symbol
+    fun <Type : Symbol> register(symbol: Type): Type
     {
         identifiers.getOrPut(symbol.name) { mutableListOf() }.add(symbol)
         return symbol

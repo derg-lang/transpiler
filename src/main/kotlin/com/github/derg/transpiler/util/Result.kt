@@ -23,6 +23,7 @@ val <Value, Error> Result<Value, Error>.isFailure: Boolean get() = this is Resul
 
 fun <Value, Error> Result<Value, Error>.valueOrNull(): Value? = (this as? Result.Success<Value>)?.value
 fun <Value, Error> Result<Value, Error>.errorOrNull(): Error? = (this as? Result.Failure<Error>)?.error
+fun <Value, Error> Result<Value, Error>.valueOrDie(): Value = valueOrNull() ?: throw IllegalStateException()
 
 /**
  * Folds the result value such that either the success value is returned, or a value is produced by [function].
@@ -82,11 +83,12 @@ fun <Value, Error, T> Result<Value, Error>.mapError(transformation: (Error) -> T
 /**
  * Transforms the result into a different result type only when this result represents a success.
  */
-fun <Value, Error, T> Result<Value, Error>.flatMap(transformation: (Value) -> Result<T, Error>): Result<T, Error> = when (this)
-{
-    is Result.Success -> transformation(value)
-    is Result.Failure -> this
-}
+fun <Value, Error, T> Result<Value, Error>.flatMap(transformation: (Value) -> Result<T, Error>): Result<T, Error> =
+    when (this)
+    {
+        is Result.Success -> transformation(value)
+        is Result.Failure -> this
+    }
 
 /**
  * Transforms the result using either the [success] or [failure] transformations, depending on the result outcome.

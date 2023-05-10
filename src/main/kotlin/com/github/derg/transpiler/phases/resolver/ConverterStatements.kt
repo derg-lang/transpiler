@@ -3,7 +3,6 @@ package com.github.derg.transpiler.phases.resolver
 import com.github.derg.transpiler.source.Assignability
 import com.github.derg.transpiler.source.Id
 import com.github.derg.transpiler.source.Name
-import com.github.derg.transpiler.source.Passability
 import com.github.derg.transpiler.source.ast.*
 import com.github.derg.transpiler.source.hir.*
 import com.github.derg.transpiler.source.hir.Function
@@ -44,8 +43,7 @@ class ConverterStatements(private val symbols: SymbolTable)
             .onEach { symbols.register(it.second) }
         val functions = statements
             .filterIsInstance<Definition.Function>()
-            .map { it to it.toDeclaration().valueOr { err -> return failureOf(err) } }
-            .onEach { symbols.register(it.second) }
+            .map { it to DeclaratorFunction(symbols)(it).valueOr { err -> return failureOf(err) } }
         
         // Variables may depend on each other, so the order in which they are defined matters. They must be defined
         // before any functions are defined, as the functions may depend on those variables.
@@ -134,38 +132,11 @@ class ConverterStatements(private val symbols: SymbolTable)
         TODO()
     }
     
-    private fun Definition.Function.toDeclaration(): Result<Function, ResolveError>
-    {
-        return Function(
-            id = Id.randomUUID(),
-            name = name,
-            visibility = visibility,
-            value = resolveTypeId(valueType).valueOr { return failureOf(it) } ?: Builtin.VOID.id,
-            error = resolveTypeId(errorType).valueOr { return failureOf(it) } ?: Builtin.VOID.id,
-            params = parameters.fold { it.toDeclaration() }.valueOr { return failureOf(it) },
-            symbols = SymbolTable(symbols),
-        ).toSuccess()
-    }
-    
-    private fun Parameter.toDeclaration(): Result<Function.Parameter, ResolveError>
-    {
-        val type = resolveTypeId(type).valueOr { return failureOf(it) }
-        val value = if (value == null) null else resolveValue(value).valueOr { return failureOf(it) }
-        val combined = type ?: value?.type ?: return ResolveError.Unknown.toFailure()
-        
-        return Function.Parameter(
-            type = combined,
-            name = name,
-            passability = Passability.IN,
-            value = value,
-        ).toSuccess()
-    }
-    
     private fun Definition.Variable.toDeclaration(): Result<Variable, ResolveError>
     {
         // Note: Type inference fails here if the order in which variables are declared does not correspond to the
         //       order in which they are initialized.
-        val type = resolveTypeId(type).valueOr { return failureOf(it) }
+        val type = resolveType(type).valueOr { return failureOf(it) }
             ?: resolveValue(value).valueOr { return failureOf(it) }.type
         
         return Variable(
@@ -182,13 +153,13 @@ class ConverterStatements(private val symbols: SymbolTable)
      * Retrieves the id of the [Type] with the given [name] in the current scope. If the name is not provided, no type
      * is expected and [Builtin.VOID] is returned instead.
      */
-    private fun resolveTypeId(name: Name?): Result<Id?, ResolveError>
+    private fun resolveType(name: Name?): Result<Type?, ResolveError>
     {
         if (name == null)
             return successOf(null)
         
         val type = symbols.find(name).filterIsInstance<Type>().firstOrNull()
-        return type?.id?.toSuccess() ?: ResolveError.Unknown.toFailure()
+        return type?.toSuccess() ?: ResolveError.Unknown.toFailure()
     }
     
     /**

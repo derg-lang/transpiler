@@ -15,7 +15,7 @@ class TestConverterStatements
     @Test
     fun `Given assign statement, when resolving, then correctly resolved`()
     {
-        val variable = variableOf("foo", type = Builtin.INT32.id).also { symbols.register(it) }
+        val variable = variableOf("foo", type = Builtin.INT32).also { symbols.register(it) }
         val expected = Assign(variable, 1.v)
         
         assertEquals(expected.toSuccess(), converter.convert(Assignment.Assign("foo", 1.e)))

@@ -1,7 +1,5 @@
 package com.github.derg.transpiler.source.hir
 
-import com.github.derg.transpiler.source.Id
-
 /**
  * All values the source code operates on, are represented as expressions. Expressions may be constant values provided
  * by the developers, parameters passed into functions, intermediary computations of sub-expressions, evaluations of a
@@ -12,7 +10,7 @@ sealed interface Value
     /**
      * The type id of the value. The type must always be possible to determine for any value, when resolved.
      */
-    val type: Id
+    val type: Type
 }
 
 /**
@@ -20,8 +18,8 @@ sealed interface Value
  */
 sealed interface ValueBool : Value
 {
-    override val type: Id
-        get() = Builtin.BOOL.id
+    override val type: Type
+        get() = Builtin.BOOL
 }
 
 data class BoolConst(val value: Boolean) : ValueBool
@@ -39,8 +37,8 @@ data class BoolNot(val rhs: ValueBool) : ValueBool
  */
 sealed interface ValueInt32 : Value
 {
-    override val type: Id
-        get() = Builtin.INT32.id
+    override val type: Type
+        get() = Builtin.INT32
 }
 
 data class Int32Const(val value: Int) : ValueInt32
@@ -64,8 +62,8 @@ data class Int32Neg(val rhs: ValueInt32) : ValueInt32
  */
 sealed interface ValueInt64 : Value
 {
-    override val type: Id
-        get() = Builtin.INT64.id
+    override val type: Type
+        get() = Builtin.INT64
 }
 
 data class Int64Const(val value: Long) : ValueInt64
@@ -91,12 +89,12 @@ sealed interface ValueUserDefined : Value
 
 data class UserDefinedRead(val variable: Variable) : ValueUserDefined
 {
-    override val type: Id
+    override val type: Type
         get() = variable.type
 }
 
 data class UserDefinedCall(val function: Function, val params: List<Value>) : ValueUserDefined
 {
-    override val type: Id
+    override val type: Type
         get() = function.value
 }

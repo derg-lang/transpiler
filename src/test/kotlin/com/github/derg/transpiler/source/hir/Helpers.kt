@@ -3,7 +3,6 @@ package com.github.derg.transpiler.source.hir
 import com.github.derg.transpiler.source.*
 import com.github.derg.transpiler.source.ast.Constant
 import com.github.derg.transpiler.source.ast.Expression
-import com.github.derg.transpiler.source.hir.SymbolTable
 
 val Boolean.e: Expression get() = Constant.Bool(this)
 val Boolean.v: ValueBool get() = BoolConst(this)
@@ -14,9 +13,9 @@ val Long.v: ValueInt64 get() = Int64Const(this)
 
 fun variableOf(
     name: Name,
-    type: Id,
+    type: Type,
 ) = Variable(
-    id = Id.randomUUID(),
+    id = IdProviderNil.random(),
     name = name,
     visibility = Visibility.PRIVATE,
     mutability = Mutability.IMMUTABLE,
@@ -24,16 +23,34 @@ fun variableOf(
     type = type,
 )
 
+/**
+ * Generates a function from the provided input parameters.
+ */
 fun functionOf(
     name: Name,
-    valueType: Id = Builtin.VOID.id,
-    errorType: Id = Builtin.VOID.id,
+    valueType: Type = Builtin.VOID,
+    errorType: Type = Builtin.VOID,
+    params: List<Function.Parameter> = emptyList(),
 ) = Function(
-    id = Id.randomUUID(),
+    id = IdProviderNil.random(),
     name = name,
     visibility = Visibility.PRIVATE,
     value = valueType,
     error = errorType,
-    params = emptyList(),
-    symbols = SymbolTable(Builtin.SYMBOLS),
+    params = params,
+)
+
+/**
+ * Generates a function parameter from the provided input parameters.
+ */
+fun parameterOf(
+    name: Name,
+    type: Type,
+    value: Value? = null,
+) = Function.Parameter(
+    id = IdProviderNil.random(),
+    name = name,
+    type = type,
+    passability = Passability.IN,
+    value = value,
 )

@@ -62,7 +62,7 @@ class ConverterExpressions(private val symbols: SymbolTable)
             {
                 // TODO: Ensure all parameters are sorted in correct order
                 // TODO: Verify that we actually found the correct overload
-                return when (symbol.value)
+                return when (symbol.value.id)
                 {
                     Builtin.BOOL.id  -> BoolCall(symbol, params)
                     Builtin.INT32.id -> Int32Call(symbol, params)
@@ -79,7 +79,7 @@ class ConverterExpressions(private val symbols: SymbolTable)
         val symbol = symbols.find(name).firstOrNull() ?: return ResolveError.Unknown.toFailure()
         if (symbol is Variable)
         {
-            return when (symbol.type)
+            return when (symbol.type.id)
             {
                 Builtin.BOOL.id  -> BoolRead(symbol)
                 Builtin.INT32.id -> Int32Read(symbol)

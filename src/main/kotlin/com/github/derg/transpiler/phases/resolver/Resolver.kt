@@ -3,10 +3,7 @@ package com.github.derg.transpiler.phases.resolver
 import com.github.derg.transpiler.source.Id
 import com.github.derg.transpiler.source.Name
 import com.github.derg.transpiler.source.ast.Segment
-import com.github.derg.transpiler.source.hir.Builtin
-import com.github.derg.transpiler.source.hir.Module
-import com.github.derg.transpiler.source.hir.Package
-import com.github.derg.transpiler.source.hir.SymbolTable
+import com.github.derg.transpiler.source.hir.*
 import com.github.derg.transpiler.util.*
 
 /**
@@ -33,6 +30,17 @@ sealed interface ResolveError
      * The literal [name] is not recognized and cannot be used to convert the constant into a sensible value.
      */
     data class UnknownLiteral(val name: Name) : ResolveError
+    
+    /**
+     * The type with the given [name] could not be found in the current or any outer scope.
+     */
+    data class UnknownType(val name: Name) : ResolveError
+    
+    /**
+     * During type resolution, a parameter was resolved to the [expected] type, but the default value provided for the
+     * parameter resolved to the [actual] type instead.
+     */
+    data class MismatchedParameterType(val expected: Type, val actual: Type) : ResolveError
     
     /**
      * An unknown error, catch-all for anything that has gone wrong. Naturally, this should be replaced with more
