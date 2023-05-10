@@ -71,6 +71,7 @@ data class Function(
     val visibility: Visibility,
 ) : Symbol
 {
+    // TODO: Move this out of the function and into the root level of this file
     data class Parameter(
         override val id: Id,
         override val name: Name,
@@ -80,15 +81,10 @@ data class Function(
     ) : Symbol
     
     /**
-     * The nested symbols within the function, such as all inner functions, types, parameters, and other named symbols.
+     * The symbols and instructions associated with the function will be assigned when the function is defined. The
+     * scope will hold all such information.
      */
-    lateinit var symbols: SymbolTable
-    
-    /**
-     * The set of instructions which should be performed by the function when invoked.  The order in which the
-     * instructions should be executed is defined by their order in the list.
-     */
-    var instructions: List<Instruction> = emptyList()
+    lateinit var scope: Scope
 }
 
 /**

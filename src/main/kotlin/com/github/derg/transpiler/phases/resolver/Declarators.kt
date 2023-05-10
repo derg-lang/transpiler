@@ -29,7 +29,7 @@ class DeclaratorFunction(private val symbols: SymbolTable, private val ids: IdPr
             error = errorType,
             params = parameters,
             visibility = node.visibility,
-        ).also { it.symbols = SymbolTable(symbols) }.also { symbols.register(it) }.toSuccess()
+        ).also { symbols.register(it) }.toSuccess()
     }
 }
 

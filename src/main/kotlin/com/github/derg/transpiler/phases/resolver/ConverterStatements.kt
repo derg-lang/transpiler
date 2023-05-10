@@ -9,27 +9,6 @@ import com.github.derg.transpiler.source.hir.Function
 import com.github.derg.transpiler.util.*
 
 /**
- * Defines the function based on the contents provided by the [definition]. Once defined, the function will be ready
- * for usage in all other use-cases, such as optimization and code generation.
- */
-private fun Function.define(definition: Definition.Function): Result<Unit, ResolveError>
-{
-    val converter = ConverterStatements(symbols)
-    converter.prepare(definition.statements).onFailure { return failureOf(it) }
-    instructions = converter.convert(definition.statements).valueOr { return failureOf(it) }
-    return successOf()
-}
-
-/**
- * Defines the type based on the contents provided by the [definition].
- */
-private fun Type.define(definition: Definition.Type): Result<Unit, ResolveError>
-{
-    // TODO: Implement me
-    return successOf()
-}
-
-/**
  *
  */
 class ConverterStatements(private val symbols: SymbolTable)
@@ -97,5 +76,25 @@ class ConverterStatements(private val symbols: SymbolTable)
             return ResolveError.Unknown.toFailure()
         
         return Assign(variable, value).toSuccess()
+    }
+    
+    /**
+     * Defines the function based on the contents provided by the [definition]. Once defined, the function will be ready
+     * for usage in all other use-cases, such as optimization and code generation.
+     */
+    private fun Function.define(definition: Definition.Function): Result<Unit, ResolveError>
+    {
+        scope = symbols.resolveScope(definition.statements).valueOr { return failureOf(it) }
+        params.forEach { scope.symbols.register(it) }
+        return successOf()
+    }
+    
+    /**
+     * Defines the type based on the contents provided by the [definition].
+     */
+    private fun Type.define(definition: Definition.Type): Result<Unit, ResolveError>
+    {
+        // TODO: Implement me
+        return successOf()
     }
 }

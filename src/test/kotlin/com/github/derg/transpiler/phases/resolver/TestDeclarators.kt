@@ -71,14 +71,6 @@ class TestDeclaratorFunction
     }
     
     @Test
-    fun `Given parameter, when declaring, then registered`()
-    {
-        val symbol = declarator(funOf("function", params = listOf(parOf("parameter")))).valueOrDie()
-        
-        assertEquals(listOf(symbol.params[0]), symbol.symbols.find(symbol.params[0].name))
-    }
-    
-    @Test
     fun `Given parameter, when declaring, then correct outcome`()
     {
         val node = funOf("function", params = listOf(parOf("a", type = Builtin.INT32.name)))
