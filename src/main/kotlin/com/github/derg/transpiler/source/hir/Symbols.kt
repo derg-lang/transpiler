@@ -44,15 +44,18 @@ data class Module(
  * All data within a program must be represented as a type. Every type requires some amount of physical space in memory,
  * which is used to allocate instances of the type on the heap or the stack. Types may be instantiated as variables or
  * parameters, which may be accessed or modified as needed.
- *
- * @property size The size of the type in number of bytes, all nested properties included.
  */
 data class Type(
     override val id: Id,
     override val name: Name,
     val visibility: Visibility,
-    val size: Int,
 ) : Symbol
+{
+    /**
+     * The size of the type in number of bytes, all nested properties included.
+     */
+    var size: Int = 0
+}
 
 /**
  * Executable code is found within functions, which form a smaller executable part of the program. Functions may take

@@ -2,6 +2,7 @@ package com.github.derg.transpiler.phases.resolver
 
 import com.github.derg.transpiler.phases.parser.funOf
 import com.github.derg.transpiler.phases.parser.parOf
+import com.github.derg.transpiler.phases.parser.typeOf
 import com.github.derg.transpiler.phases.parser.varOf
 import com.github.derg.transpiler.source.IdProviderNil
 import com.github.derg.transpiler.source.hir.*
@@ -28,7 +29,7 @@ class TestDeclaratorFunction
     fun `Given basic, when declaring, then correct outcome`()
     {
         val node = funOf("function")
-        val expected = functionOf(node.name)
+        val expected = hirFunOf(node.name)
         
         assertEquals(expected.toSuccess(), declarator(node))
     }
@@ -37,7 +38,7 @@ class TestDeclaratorFunction
     fun `Given valid return type, when declaring, then correct outcome`()
     {
         val node = funOf("function", valType = Builtin.INT32.name)
-        val expected = functionOf(node.name, valueType = Builtin.INT32)
+        val expected = hirFunOf(node.name, valueType = Builtin.INT32)
         
         assertEquals(expected.toSuccess(), declarator(node))
     }
@@ -55,7 +56,7 @@ class TestDeclaratorFunction
     fun `Given valid error type, when declaring, then correct outcome`()
     {
         val node = funOf("function", errType = Builtin.INT32.name)
-        val expected = functionOf(node.name, errorType = Builtin.INT32)
+        val expected = hirFunOf(node.name, errorType = Builtin.INT32)
         
         assertEquals(expected.toSuccess(), declarator(node))
     }
@@ -81,7 +82,7 @@ class TestDeclaratorFunction
     fun `Given parameter, when declaring, then correct outcome`()
     {
         val node = funOf("function", params = listOf(parOf("a", type = Builtin.INT32.name)))
-        val expected = functionOf(node.name, params = listOf(parameterOf("a", type = Builtin.INT32)))
+        val expected = hirFunOf(node.name, params = listOf(hirParOf("a", type = Builtin.INT32)))
         
         assertEquals(expected.toSuccess(), declarator(node))
     }
@@ -104,7 +105,7 @@ class TestDeclaratorParameter
     fun `Given valid type, when declaring, then registered`()
     {
         val node = parOf("parameter", type = Builtin.INT32.name)
-        val expected = parameterOf(node.name, type = Builtin.INT32)
+        val expected = hirParOf(node.name, type = Builtin.INT32)
         
         assertEquals(expected.toSuccess(), declarator(node))
     }
@@ -113,7 +114,7 @@ class TestDeclaratorParameter
     fun `Given valid type, when declaring, then correct outcome`()
     {
         val node = parOf("parameter", type = Builtin.INT32.name)
-        val expected = parameterOf(node.name, type = Builtin.INT32)
+        val expected = hirParOf(node.name, type = Builtin.INT32)
         
         assertEquals(expected.toSuccess(), declarator(node))
     }
@@ -131,7 +132,7 @@ class TestDeclaratorParameter
     fun `Given valid value, when declaring, then correct outcome`()
     {
         val node = parOf("parameter", type = Builtin.INT32.name, value = 1.e)
-        val expected = parameterOf(node.name, type = Builtin.INT32, value = 1.v)
+        val expected = hirParOf(node.name, type = Builtin.INT32, value = 1.v)
         
         assertEquals(expected.toSuccess(), declarator(node))
     }
@@ -143,6 +144,29 @@ class TestDeclaratorParameter
         val expected = ResolveError.MismatchedParameterType(expected = Builtin.INT32, actual = Builtin.BOOL)
         
         assertEquals(expected.toFailure(), declarator(node))
+    }
+}
+
+class TestDeclaratorType
+{
+    private val symbols = SymbolTable(Builtin.SYMBOLS)
+    private val declarator = DeclaratorType(symbols, IdProviderNil)
+    
+    @Test
+    fun `Given basic, when declaring, then registered`()
+    {
+        val symbol = declarator(typeOf("type")).valueOrDie()
+        
+        assertEquals(listOf(symbol), symbols.find(symbol.name))
+    }
+    
+    @Test
+    fun `Given basic, when declaring, then correct outcome`()
+    {
+        val node = typeOf("type")
+        val expected = hirTypeOf(node.name)
+        
+        assertEquals(expected.toSuccess(), declarator(node))
     }
 }
 
@@ -163,7 +187,7 @@ class TestDeclaratorVariable
     fun `Given basic, when declaring, then correct outcome`()
     {
         val node = varOf("variable", 1.e)
-        val expected = variableOf(node.name, type = Builtin.INT32)
+        val expected = hirVarOf(node.name, type = Builtin.INT32)
         
         assertEquals(expected.toSuccess(), declarator(node))
     }
@@ -172,7 +196,7 @@ class TestDeclaratorVariable
     fun `Given valid type, when declaring, then correct outcome`()
     {
         val node = varOf("variable", 1.e, type = Builtin.INT32.name)
-        val expected = variableOf(node.name, type = Builtin.INT32)
+        val expected = hirVarOf(node.name, type = Builtin.INT32)
         
         assertEquals(expected.toSuccess(), declarator(node))
     }

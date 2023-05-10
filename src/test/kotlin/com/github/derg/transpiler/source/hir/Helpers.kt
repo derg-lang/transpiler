@@ -14,7 +14,7 @@ val Long.v: ValueInt64 get() = Int64Const(this)
 /**
  * Generates a function from the provided input parameters.
  */
-fun functionOf(
+fun hirFunOf(
     name: Name,
     valueType: Type = Builtin.VOID,
     errorType: Type = Builtin.VOID,
@@ -31,7 +31,7 @@ fun functionOf(
 /**
  * Generates a parameter from the provided input parameters.
  */
-fun parameterOf(
+fun hirParOf(
     name: Name,
     type: Type,
     value: Value? = null,
@@ -44,9 +44,20 @@ fun parameterOf(
 )
 
 /**
+ * Generates a type from the provided input parameters.
+ */
+fun hirTypeOf(
+    name: Name,
+) = Type(
+    id = IdProviderNil.random(),
+    name = name,
+    visibility = Visibility.PRIVATE,
+)
+
+/**
  * Generates a variable from the provided input parameters.
  */
-fun variableOf(
+fun hirVarOf(
     name: Name,
     type: Type,
 ) = Variable(

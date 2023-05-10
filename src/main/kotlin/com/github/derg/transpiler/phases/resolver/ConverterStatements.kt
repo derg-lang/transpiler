@@ -6,7 +6,7 @@ import com.github.derg.transpiler.source.hir.Function
 import com.github.derg.transpiler.util.*
 
 /**
- * Defines the function based on the contends provided by the [definition]. Once defined, the function will be ready
+ * Defines the function based on the contents provided by the [definition]. Once defined, the function will be ready
  * for usage in all other use-cases, such as optimization and code generation.
  */
 private fun Function.define(definition: Definition.Function): Result<Unit, ResolveError>
@@ -14,6 +14,15 @@ private fun Function.define(definition: Definition.Function): Result<Unit, Resol
     val converter = ConverterStatements(symbols)
     converter.prepare(definition.statements).onFailure { return failureOf(it) }
     instructions = converter.convert(definition.statements).valueOr { return failureOf(it) }
+    return successOf()
+}
+
+/**
+ * Defines the type based on the contents provided by the [definition].
+ */
+private fun Type.define(definition: Definition.Type): Result<Unit, ResolveError>
+{
+    // TODO: Implement me
     return successOf()
 }
 
@@ -36,11 +45,12 @@ class ConverterStatements(private val symbols: SymbolTable)
         // before the later functions and types have been declared in source code.
         val types = statements
             .filterIsInstance<Definition.Type>()
-            .map { it to it.toDeclaration().valueOr { err -> return failureOf(err) } }
-            .onEach { symbols.register(it.second) }
+            .fold { t -> DeclaratorType(symbols)(t).mapValue { t to it } }
+            .valueOr { return failureOf(it) }
         val functions = statements
             .filterIsInstance<Definition.Function>()
-            .map { it to DeclaratorFunction(symbols)(it).valueOr { err -> return failureOf(err) } }
+            .fold { f -> DeclaratorFunction(symbols)(f).mapValue { f to it } }
+            .valueOr { return failureOf(it) }
         
         // Variables may depend on each other, so the order in which they are defined matters. They must be declared
         // before any functions are defined, as the functions may depend on those variables.
@@ -50,9 +60,8 @@ class ConverterStatements(private val symbols: SymbolTable)
             .onFailure { return failureOf(it) }
         
         // All required symbols are now valid, can register them in the symbol table, they may now be defined too.
-        // TODO: Define types, too
         functions.fold { it.second.define(it.first) }.onFailure { return failureOf(it) }
-        
+        types.fold { it.second.define(it.first) }.onFailure { return failureOf(it) }
         return successOf()
     }
     
@@ -122,13 +131,6 @@ class ConverterStatements(private val symbols: SymbolTable)
             return ResolveError.Unknown.toFailure()
         
         return Assign(variable, value).toSuccess()
-    }
-    
-    // ...
-    
-    private fun Definition.Type.toDeclaration(): Result<Type, ResolveError>
-    {
-        TODO()
     }
     
     /**

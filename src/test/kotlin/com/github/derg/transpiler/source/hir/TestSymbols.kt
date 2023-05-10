@@ -1,15 +1,13 @@
 package com.github.derg.transpiler.source.hir
 
 import com.github.derg.transpiler.source.Id
-import com.github.derg.transpiler.source.Visibility
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 
 /**
  * Helper function for binding a new arbitrary id under the given [name].
  */
-private fun SymbolTable.register(name: String): Symbol =
-    register(Type(id = Id.randomUUID(), name = name, visibility = Visibility.PRIVATE, size = 0))
+private fun SymbolTable.register(name: String): Symbol = register(hirTypeOf(name))
 
 class TestSymbolTable
 {

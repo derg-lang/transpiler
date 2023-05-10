@@ -28,5 +28,4 @@ private fun typeOf(name: Name, size: Int) = Type(
     id = Id.randomUUID(),
     name = name,
     visibility = Visibility.EXPORTED,
-    size = size,
-)
+).also { it.size = size }

@@ -17,7 +17,7 @@ class TestConverterExpressions
     @Test
     fun `Given invoke expression, when resolving, then correctly resolved`()
     {
-        val function = functionOf("foo", valueType = Builtin.INT32).also { symbols.register(it) }
+        val function = hirFunOf("foo", valueType = Builtin.INT32).also { symbols.register(it) }
         
         assertEquals(
             Int32Call(function, emptyList()).toSuccess(),
@@ -33,9 +33,9 @@ class TestConverterExpressions
     @Test
     fun `Given access expression, when resolving, then correctly resolved`()
     {
-        val boolVar = variableOf("var_bool", Builtin.BOOL).also { symbols.register(it) }
-        val int32Var = variableOf("var_int32", Builtin.INT32).also { symbols.register(it) }
-        val int64Var = variableOf("var_int64", Builtin.INT64).also { symbols.register(it) }
+        val boolVar = hirVarOf("var_bool", Builtin.BOOL).also { symbols.register(it) }
+        val int32Var = hirVarOf("var_int32", Builtin.INT32).also { symbols.register(it) }
+        val int64Var = hirVarOf("var_int64", Builtin.INT64).also { symbols.register(it) }
         
         assertEquals(BoolRead(boolVar).toSuccess(), converter.convert(Access.Variable(boolVar.name)))
         assertEquals(Int32Read(int32Var).toSuccess(), converter.convert(Access.Variable(int32Var.name)))

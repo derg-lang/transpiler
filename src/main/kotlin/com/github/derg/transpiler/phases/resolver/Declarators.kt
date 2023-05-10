@@ -86,6 +86,22 @@ class DeclaratorParameter(private val symbols: SymbolTable, private val ids: IdP
 }
 
 /**
+ * Type declarations contain information about the type itself. The declaration only allows the type to be referred to
+ * at a later time, but does not include any information about the contents of the type.
+ */
+class DeclaratorType(private val symbols: SymbolTable, private val ids: IdProvider = IdProviderSystem)
+{
+    operator fun invoke(node: Definition.Type): Result<Type, ResolveError>
+    {
+        return Type(
+            id = ids.random(),
+            name = node.name,
+            visibility = node.visibility,
+        ).also { symbols.register(it) }.toSuccess()
+    }
+}
+
+/**
  * Variable declaration contain information about the value which is stored in memory. This information must be
  * type-checked and sanitized, to verify that the optional type resolves to the same type as the value of the variable.
  */
