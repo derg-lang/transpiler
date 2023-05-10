@@ -1,6 +1,7 @@
 package com.github.derg.transpiler.phases.resolver
 
 import com.github.derg.transpiler.phases.resolver.ResolveError.MismatchedCallableParams
+import com.github.derg.transpiler.source.ast.Constant
 import com.github.derg.transpiler.source.ast.Operator
 import com.github.derg.transpiler.source.hir.*
 import com.github.derg.transpiler.source.lexeme.SymbolType
@@ -48,7 +49,7 @@ class TestConverterAdd
     }
     
     @Test
-    fun `Given known overload, when resolving, then correct error`()
+    fun `Given known overload, when resolving, then correct outcome`()
     {
         assertEquals(BoolCall(function, listOf(1.v, 2L.v)).toSuccess(), converter(Operator.Add(1.e, 2L.e)))
     }
@@ -59,6 +60,17 @@ class TestConverterAdd
         val expected = MismatchedCallableParams(SymbolType.PLUS.symbol, listOf(Builtin.BOOL, Builtin.BOOL))
         
         assertEquals(expected.toFailure(), converter(Operator.Add(true.e, false.e)))
+    }
+}
+
+class TestConverterBool
+{
+    private val converter = ConverterBool
+    
+    @Test
+    fun `Given builtin types, when resolving, then correct outcome`()
+    {
+        assertEquals(BoolConst(true).toSuccess(), converter(Constant.Bool(true)))
     }
 }
 
@@ -81,7 +93,7 @@ class TestConverterDivide
     }
     
     @Test
-    fun `Given known overload, when resolving, then correct error`()
+    fun `Given known overload, when resolving, then correct outcome`()
     {
         assertEquals(BoolCall(function, listOf(1.v, 2L.v)).toSuccess(), converter(Operator.Divide(1.e, 2L.e)))
     }
@@ -115,7 +127,7 @@ class TestConverterEqual
     }
     
     @Test
-    fun `Given known overload, when resolving, then correct error`()
+    fun `Given known overload, when resolving, then correct outcome`()
     {
         assertEquals(BoolCall(function, listOf(1.v, 2L.v)).toSuccess(), converter(Operator.Equal(1.e, 2L.e)))
     }
@@ -148,7 +160,7 @@ class TestConverterGreater
     }
     
     @Test
-    fun `Given known overload, when resolving, then correct error`()
+    fun `Given known overload, when resolving, then correct outcome`()
     {
         assertEquals(BoolCall(function, listOf(1.v, 2L.v)).toSuccess(), converter(Operator.Greater(1.e, 2L.e)))
     }
@@ -181,7 +193,7 @@ class TestConverterGreaterEqual
     }
     
     @Test
-    fun `Given known overload, when resolving, then correct error`()
+    fun `Given known overload, when resolving, then correct outcome`()
     {
         assertEquals(BoolCall(function, listOf(1.v, 2L.v)).toSuccess(), converter(Operator.GreaterEqual(1.e, 2L.e)))
     }
@@ -214,7 +226,7 @@ class TestConverterLess
     }
     
     @Test
-    fun `Given known overload, when resolving, then correct error`()
+    fun `Given known overload, when resolving, then correct outcome`()
     {
         assertEquals(BoolCall(function, listOf(1.v, 2L.v)).toSuccess(), converter(Operator.Less(1.e, 2L.e)))
     }
@@ -247,7 +259,7 @@ class TestConverterLessEqual
     }
     
     @Test
-    fun `Given known overload, when resolving, then correct error`()
+    fun `Given known overload, when resolving, then correct outcome`()
     {
         assertEquals(BoolCall(function, listOf(1.v, 2L.v)).toSuccess(), converter(Operator.LessEqual(1.e, 2L.e)))
     }
@@ -280,7 +292,7 @@ class TestConverterModulo
     }
     
     @Test
-    fun `Given known overload, when resolving, then correct error`()
+    fun `Given known overload, when resolving, then correct outcome`()
     {
         assertEquals(BoolCall(function, listOf(1.v, 2L.v)).toSuccess(), converter(Operator.Modulo(1.e, 2L.e)))
     }
@@ -313,7 +325,7 @@ class TestConverterMultiply
     }
     
     @Test
-    fun `Given known overload, when resolving, then correct error`()
+    fun `Given known overload, when resolving, then correct outcome`()
     {
         assertEquals(BoolCall(function, listOf(1.v, 2L.v)).toSuccess(), converter(Operator.Multiply(1.e, 2L.e)))
     }
@@ -367,7 +379,7 @@ class TestConverterNotEqual
     }
     
     @Test
-    fun `Given known overload, when resolving, then correct error`()
+    fun `Given known overload, when resolving, then correct outcome`()
     {
         assertEquals(BoolCall(function, listOf(1.v, 2L.v)).toSuccess(), converter(Operator.NotEqual(1.e, 2L.e)))
     }
@@ -401,6 +413,34 @@ class TestConverterOr
     }
 }
 
+class TestConverterReal
+{
+    private val symbols = SymbolTable(Builtin.SYMBOLS)
+    private val converter = ConverterReal(symbols)
+    
+    @Test
+    fun `Given builtin types, when resolving, then correct outcome`()
+    {
+        assertEquals(Int32Const(1).toSuccess(), converter(Constant.Real(1, null)))
+        assertEquals(Int32Const(2).toSuccess(), converter(Constant.Real(2, Builtin.LIT_INT32)))
+        assertEquals(Int64Const(3).toSuccess(), converter(Constant.Real(3, Builtin.LIT_INT64)))
+    }
+    
+    @Test
+    fun `Given known overload, when resolving, then correct outcome`()
+    {
+        // TODO: Implement me
+    }
+    
+    @Test
+    fun `Given unknown overload, when resolving, then correct error`()
+    {
+        val expected = ResolveError.UnknownLiteral("unknown")
+        
+        assertEquals(expected.toFailure(), converter(Constant.Real(1, "unknown")))
+    }
+}
+
 class TestConverterSubtract
 {
     private val symbols = SymbolTable(Builtin.SYMBOLS)
@@ -420,7 +460,7 @@ class TestConverterSubtract
     }
     
     @Test
-    fun `Given known overload, when resolving, then correct error`()
+    fun `Given known overload, when resolving, then correct outcome`()
     {
         assertEquals(BoolCall(function, listOf(1.v, 2L.v)).toSuccess(), converter(Operator.Subtract(1.e, 2L.e)))
     }
@@ -431,6 +471,32 @@ class TestConverterSubtract
         val expected = MismatchedCallableParams(SymbolType.MINUS.symbol, listOf(Builtin.BOOL, Builtin.BOOL))
         
         assertEquals(expected.toFailure(), converter(Operator.Subtract(true.e, false.e)))
+    }
+}
+
+class TestConverterText
+{
+    private val symbols = SymbolTable(Builtin.SYMBOLS)
+    private val converter = ConverterText(symbols)
+    
+    @Test
+    fun `Given builtin types, when resolving, then correct outcome`()
+    {
+        // TODO: Implement me
+    }
+    
+    @Test
+    fun `Given known overload, when resolving, then correct outcome`()
+    {
+        // TODO: Implement me
+    }
+    
+    @Test
+    fun `Given unknown overload, when resolving, then correct error`()
+    {
+        val expected = ResolveError.UnknownLiteral("unknown")
+        
+        assertEquals(expected.toFailure(), converter(Constant.Text("", "unknown")))
     }
 }
 
@@ -453,7 +519,7 @@ class TestConverterUnaryMinus
     }
     
     @Test
-    fun `Given known overload, when resolving, then correct error`()
+    fun `Given known overload, when resolving, then correct outcome`()
     {
         assertEquals(BoolCall(function, listOf(true.v)).toSuccess(), converter(Operator.Minus(true.e)))
     }
@@ -486,7 +552,7 @@ class TestConverterUnaryPlus
     }
     
     @Test
-    fun `Given known overload, when resolving, then correct error`()
+    fun `Given known overload, when resolving, then correct outcome`()
     {
         assertEquals(BoolCall(function, listOf(true.v)).toSuccess(), converter(Operator.Plus(true.e)))
     }

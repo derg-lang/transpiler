@@ -1,5 +1,6 @@
 package com.github.derg.transpiler.phases.resolver
 
+import com.github.derg.transpiler.source.ast.Constant
 import com.github.derg.transpiler.source.ast.Operator
 import com.github.derg.transpiler.source.hir.*
 import com.github.derg.transpiler.source.hir.Function
@@ -47,6 +48,12 @@ class ConverterAdd(private val symbols: SymbolTable)
             .valueOr { return failureOf(it) }
         return valueOf(function, listOf(lhs, rhs)).toSuccess()
     }
+}
+
+object ConverterBool
+{
+    operator fun invoke(node: Constant.Bool): Result<Value, ResolveError> =
+        BoolConst(node.value).toSuccess()
 }
 
 class ConverterDivide(private val symbols: SymbolTable)
@@ -242,6 +249,21 @@ class ConverterOr(private val symbols: SymbolTable)
     }
 }
 
+class ConverterReal(private val symbols: SymbolTable)
+{
+    operator fun invoke(node: Constant.Real): Result<Value, ResolveError>
+    {
+        // TODO: Fail operation if number is too large
+        if (node.literal == Builtin.LIT_INT32 || node.literal == null)
+            return Int32Const(node.value.toInt()).toSuccess()
+        if (node.literal == Builtin.LIT_INT64)
+            return Int64Const(node.value.toLong()).toSuccess()
+        
+        // TODO: Support custom literals
+        return ResolveError.UnknownLiteral(node.literal).toFailure()
+    }
+}
+
 class ConverterSubtract(private val symbols: SymbolTable)
 {
     operator fun invoke(node: Operator.Subtract): Result<Value, ResolveError>
@@ -257,6 +279,19 @@ class ConverterSubtract(private val symbols: SymbolTable)
         val function = symbols.resolveRequiredFunction(SymbolType.MINUS.symbol, listOf(lhs.type, rhs.type))
             .valueOr { return failureOf(it) }
         return valueOf(function, listOf(lhs, rhs)).toSuccess()
+    }
+}
+
+class ConverterText(private val symbols: SymbolTable)
+{
+    operator fun invoke(node: Constant.Text): Result<Value, ResolveError>
+    {
+        // TODO: Implement me
+        if (node.literal == null)
+            return ValueStrUnicode.toSuccess()
+        
+        // TODO: Support custom literals
+        return ResolveError.UnknownLiteral(node.literal).toFailure()
     }
 }
 

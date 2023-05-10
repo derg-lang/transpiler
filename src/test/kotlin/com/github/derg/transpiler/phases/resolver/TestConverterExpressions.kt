@@ -1,7 +1,6 @@
 package com.github.derg.transpiler.phases.resolver
 
 import com.github.derg.transpiler.source.ast.Access
-import com.github.derg.transpiler.source.ast.Constant
 import com.github.derg.transpiler.source.hir.*
 import com.github.derg.transpiler.util.toFailure
 import com.github.derg.transpiler.util.toSuccess
@@ -41,22 +40,5 @@ class TestConverterExpressions
         assertEquals(Int64Read(int64Var).toSuccess(), converter.convert(Access.Variable(int64Var.name)))
         
         assertEquals(ResolveError.Unknown.toFailure(), converter.convert(Access.Variable("foo")))
-    }
-    
-    @Test
-    fun `Given const bool expression, when resolving, then correctly resolved`()
-    {
-        assertEquals(BoolConst(true).toSuccess(), converter.convert(Constant.Bool(true)))
-        assertEquals(BoolConst(false).toSuccess(), converter.convert(Constant.Bool(false)))
-    }
-    
-    @Test
-    fun `Given const real expression, when resolving, then correctly resolved`()
-    {
-        assertEquals(Int32Const(1).toSuccess(), converter.convert(Constant.Real(1, null))) // Default literal
-        assertEquals(Int32Const(2).toSuccess(), converter.convert(Constant.Real(2, Builtin.LIT_INT32)))
-        assertEquals(Int64Const(3L).toSuccess(), converter.convert(Constant.Real(3, Builtin.LIT_INT64)))
-        
-        assertEquals(ResolveError.UnknownLiteral("foo").toFailure(), converter.convert(Constant.Real(0, "foo")))
     }
 }

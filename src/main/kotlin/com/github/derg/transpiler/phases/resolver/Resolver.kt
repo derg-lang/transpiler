@@ -130,12 +130,6 @@ internal fun SymbolTable.resolveOptionalValue(expression: Expression?): Result<V
     if (expression == null) successOf(null) else resolveRequiredValue(expression)
 
 /**
- * Converts the given [expression] into a value which represents the same expression.
- */
-internal fun SymbolTable.resolveRequiredValue(expression: Expression): Result<Value, ResolveError> =
-    ConverterExpressions(this).convert(expression)
-
-/**
  * Converts the given [name] into a function which is compatible with the provided [parameters].
  */
 internal fun SymbolTable.resolveRequiredFunction(name: Name, parameters: List<Type>): Result<Function, ResolveError>
@@ -151,3 +145,9 @@ private fun Function.isCompatibleWith(parameters: List<Type>): Boolean
         return false
     return this.params.zip(parameters).all { it.first.type.id == it.second.id }
 }
+
+/**
+ * Converts the given [expression] into a value which represents the same expression.
+ */
+internal fun SymbolTable.resolveRequiredValue(expression: Expression): Result<Value, ResolveError> =
+    ConverterExpressions(this).convert(expression)

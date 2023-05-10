@@ -23,9 +23,9 @@ class ConverterExpressions(private val symbols: SymbolTable)
         is Access.Function       -> expression.toValue()
         is Access.Subscript      -> TODO()
         is Access.Variable       -> expression.toValue()
-        is Constant.Bool         -> expression.toValue()
-        is Constant.Real         -> expression.toValue()
-        is Constant.Text         -> expression.toValue()
+        is Constant.Bool         -> ConverterBool(expression)
+        is Constant.Real         -> ConverterReal(symbols)(expression)
+        is Constant.Text         -> ConverterText(symbols)(expression)
         is Operator.Add          -> ConverterAdd(symbols)(expression)
         is Operator.And          -> ConverterAnd(symbols)(expression)
         is Operator.Catch        -> TODO()
@@ -92,16 +92,4 @@ class ConverterExpressions(private val symbols: SymbolTable)
         // TODO: Support reading types as values, too...?
         return ResolveError.Unsupported.toFailure()
     }
-    
-    private fun Constant.Bool.toValue(): Result<Value, ResolveError> =
-        BoolConst(value).toSuccess()
-    
-    private fun Constant.Real.toValue(): Result<Value, ResolveError> = when (literal)
-    {
-        Builtin.LIT_INT32, null -> Int32Const(value.toInt()).toSuccess() // TODO: Fail operation if number is too large
-        Builtin.LIT_INT64       -> Int64Const(value.toLong()).toSuccess() // TODO: Fail operation if number is too large
-        else                    -> ResolveError.UnknownLiteral(literal).toFailure()
-    }
-    
-    private fun Constant.Text.toValue(): Result<Value, ResolveError> = ValueStrUnicode.toSuccess()
 }
