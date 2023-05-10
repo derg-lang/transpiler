@@ -1,6 +1,9 @@
 package com.github.derg.transpiler.phases.resolver
 
+import com.github.derg.transpiler.phases.parser.toArg
+import com.github.derg.transpiler.phases.parser.toExp
 import com.github.derg.transpiler.phases.resolver.ResolveError.MismatchedCallableParams
+import com.github.derg.transpiler.source.ast.Access
 import com.github.derg.transpiler.source.ast.Constant
 import com.github.derg.transpiler.source.ast.Operator
 import com.github.derg.transpiler.source.hir.*
@@ -207,6 +210,55 @@ class TestConverterGreaterEqual
     }
 }
 
+class TestConverterInvoke
+{
+    private val symbols = SymbolTable(Builtin.SYMBOLS)
+    private val converter = ConverterInvoke(symbols)
+    
+    private val bool = hirFunOf(name = "bool", valueType = Builtin.BOOL).also { symbols.register(it) }
+    private val int32 = hirFunOf(name = "int32", valueType = Builtin.INT32).also { symbols.register(it) }
+    private val int64 = hirFunOf(name = "int64", valueType = Builtin.INT64).also { symbols.register(it) }
+    
+    private val params = hirFunOf(
+        name = "params",
+        valueType = Builtin.BOOL,
+        params = listOf(hirParOf("foo", Builtin.INT32), hirParOf("bar", Builtin.INT64)),
+    ).also { symbols.register(it) }
+    
+    @Test
+    fun `Given builtin types, when resolving, then correct outcome`()
+    {
+        assertEquals(BoolCall(bool, emptyList()).toSuccess(), converter(Access.Function(bool.name, emptyList())))
+        assertEquals(Int32Call(int32, emptyList()).toSuccess(), converter(Access.Function(int32.name, emptyList())))
+        assertEquals(Int64Call(int64, emptyList()).toSuccess(), converter(Access.Function(int64.name, emptyList())))
+    }
+    
+    @Test
+    fun `Given unknown function, when resolving, then correct error`()
+    {
+        val expected = ResolveError.UnknownFunction("unknown")
+        
+        assertEquals(expected.toFailure(), converter(Access.Function("unknown", emptyList())))
+    }
+    
+    @Test
+    fun `Given valid parameters, when resolving, then correct outcome`()
+    {
+        val input = Access.Function(params.name, listOf(1.toArg(), 2.toExp(Builtin.LIT_INT64).toArg()))
+        val expected = BoolCall(params, listOf(1.v, 2L.v))
+        
+        assertEquals(expected.toSuccess(), converter(input))
+    }
+    
+    @Test
+    fun `Given invalid parameters, when resolving, then correct error`()
+    {
+        val expected = MismatchedCallableParams(params.name, listOf(Builtin.BOOL))
+        
+        assertEquals(expected.toFailure(), converter(Access.Function(params.name, listOf(true.toArg()))))
+    }
+}
+
 class TestConverterLess
 {
     private val symbols = SymbolTable(Builtin.SYMBOLS)
@@ -410,6 +462,32 @@ class TestConverterOr
         val expected = MismatchedCallableParams(SymbolType.OR.symbol, listOf(Builtin.BOOL, Builtin.INT32))
         
         assertEquals(expected.toFailure(), converter(Operator.Or(false.e, 0.e)))
+    }
+}
+
+class TestConverterRead
+{
+    private val symbols = SymbolTable(Builtin.SYMBOLS)
+    private val converter = ConverterRead(symbols)
+    
+    private val bool = hirVarOf(name = "bool", type = Builtin.BOOL).also { symbols.register(it) }
+    private val int32 = hirVarOf(name = "int32", type = Builtin.INT32).also { symbols.register(it) }
+    private val int64 = hirVarOf(name = "int64", type = Builtin.INT64).also { symbols.register(it) }
+    
+    @Test
+    fun `Given builtin types, when resolving, then correct outcome`()
+    {
+        assertEquals(BoolRead(bool).toSuccess(), converter(Access.Variable(bool.name)))
+        assertEquals(Int32Read(int32).toSuccess(), converter(Access.Variable(int32.name)))
+        assertEquals(Int64Read(int64).toSuccess(), converter(Access.Variable(int64.name)))
+    }
+    
+    @Test
+    fun `Given unknown variable, when resolving, then correct error`()
+    {
+        val expected = ResolveError.UnknownVariable("unknown")
+        
+        assertEquals(expected.toFailure(), converter(Access.Variable("unknown")))
     }
 }
 

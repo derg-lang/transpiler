@@ -1,9 +1,9 @@
 package com.github.derg.transpiler.phases.resolver
 
 import com.github.derg.transpiler.source.ast.*
-import com.github.derg.transpiler.source.hir.*
-import com.github.derg.transpiler.source.hir.Function
-import com.github.derg.transpiler.util.*
+import com.github.derg.transpiler.source.hir.SymbolTable
+import com.github.derg.transpiler.source.hir.Value
+import com.github.derg.transpiler.util.Result
 
 /**
  * In order to acquire meaningful values from the source code, in a type-safe manner, all expressions must be converted
@@ -20,9 +20,9 @@ class ConverterExpressions(private val symbols: SymbolTable)
      */
     fun convert(expression: Expression): Result<Value, ResolveError> = when (expression)
     {
-        is Access.Function       -> expression.toValue()
+        is Access.Function       -> ConverterInvoke(symbols)(expression)
         is Access.Subscript      -> TODO()
-        is Access.Variable       -> expression.toValue()
+        is Access.Variable       -> ConverterRead(symbols)(expression)
         is Constant.Bool         -> ConverterBool(expression)
         is Constant.Real         -> ConverterReal(symbols)(expression)
         is Constant.Text         -> ConverterText(symbols)(expression)
@@ -47,49 +47,5 @@ class ConverterExpressions(private val symbols: SymbolTable)
         is Operator.ThreeWay     -> TODO()
         is Operator.Xor          -> ConverterXor(symbols)(expression)
         is When                  -> TODO()
-    }
-    
-    private fun Access.Function.toValue(): Result<Value, ResolveError>
-    {
-        val params = arguments.fold { convert(it.expression) }.valueOr { return failureOf(it) }
-        for (symbol in symbols.find(name))
-        {
-            // TODO: Support variable invoking
-            if (symbol is Variable)
-                return ResolveError.Unsupported.toFailure()
-            
-            if (symbol is Function)
-            {
-                // TODO: Ensure all parameters are sorted in correct order
-                // TODO: Verify that we actually found the correct overload
-                return when (symbol.value.id)
-                {
-                    Builtin.BOOL.id  -> BoolCall(symbol, params)
-                    Builtin.INT32.id -> Int32Call(symbol, params)
-                    Builtin.INT64.id -> Int64Call(symbol, params)
-                    else             -> UserDefinedCall(symbol, params)
-                }.toSuccess()
-            }
-        }
-        return ResolveError.UnknownCallable(name).toFailure()
-    }
-    
-    private fun Access.Variable.toValue(): Result<Value, ResolveError>
-    {
-        val symbol = symbols.find(name).firstOrNull() ?: return ResolveError.Unknown.toFailure()
-        if (symbol is Variable)
-        {
-            return when (symbol.type.id)
-            {
-                Builtin.BOOL.id  -> BoolRead(symbol)
-                Builtin.INT32.id -> Int32Read(symbol)
-                Builtin.INT64.id -> Int64Read(symbol)
-                else             -> UserDefinedRead(symbol)
-            }.toSuccess()
-        }
-        
-        // TODO: Support reading functions as values, too
-        // TODO: Support reading types as values, too...?
-        return ResolveError.Unsupported.toFailure()
     }
 }

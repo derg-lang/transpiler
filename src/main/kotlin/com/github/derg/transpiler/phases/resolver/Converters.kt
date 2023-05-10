@@ -1,5 +1,6 @@
 package com.github.derg.transpiler.phases.resolver
 
+import com.github.derg.transpiler.source.ast.Access
 import com.github.derg.transpiler.source.ast.Constant
 import com.github.derg.transpiler.source.ast.Operator
 import com.github.derg.transpiler.source.hir.*
@@ -18,7 +19,18 @@ private fun valueOf(function: Function, parameters: List<Value>): Value = when (
     else             -> UserDefinedCall(function, parameters)
 }
 
-class ConverterAnd(private val symbols: SymbolTable)
+/**
+ * Generates a value from a memory read of the [variable].
+ */
+private fun valueOf(variable: Variable): Value = when (variable.type.id)
+{
+    Builtin.BOOL.id  -> BoolRead(variable)
+    Builtin.INT32.id -> Int32Read(variable)
+    Builtin.INT64.id -> Int64Read(variable)
+    else             -> UserDefinedRead(variable)
+}
+
+internal class ConverterAnd(private val symbols: SymbolTable)
 {
     operator fun invoke(node: Operator.And): Result<Value, ResolveError>
     {
@@ -32,7 +44,7 @@ class ConverterAnd(private val symbols: SymbolTable)
     }
 }
 
-class ConverterAdd(private val symbols: SymbolTable)
+internal class ConverterAdd(private val symbols: SymbolTable)
 {
     operator fun invoke(node: Operator.Add): Result<Value, ResolveError>
     {
@@ -50,13 +62,13 @@ class ConverterAdd(private val symbols: SymbolTable)
     }
 }
 
-object ConverterBool
+internal object ConverterBool
 {
     operator fun invoke(node: Constant.Bool): Result<Value, ResolveError> =
         BoolConst(node.value).toSuccess()
 }
 
-class ConverterDivide(private val symbols: SymbolTable)
+internal class ConverterDivide(private val symbols: SymbolTable)
 {
     operator fun invoke(node: Operator.Divide): Result<Value, ResolveError>
     {
@@ -74,7 +86,7 @@ class ConverterDivide(private val symbols: SymbolTable)
     }
 }
 
-class ConverterEqual(private val symbols: SymbolTable)
+internal class ConverterEqual(private val symbols: SymbolTable)
 {
     operator fun invoke(node: Operator.Equal): Result<Value, ResolveError>
     {
@@ -94,7 +106,7 @@ class ConverterEqual(private val symbols: SymbolTable)
     }
 }
 
-class ConverterGreater(private val symbols: SymbolTable)
+internal class ConverterGreater(private val symbols: SymbolTable)
 {
     operator fun invoke(node: Operator.Greater): Result<Value, ResolveError>
     {
@@ -112,7 +124,7 @@ class ConverterGreater(private val symbols: SymbolTable)
     }
 }
 
-class ConverterGreaterEqual(private val symbols: SymbolTable)
+internal class ConverterGreaterEqual(private val symbols: SymbolTable)
 {
     operator fun invoke(node: Operator.GreaterEqual): Result<Value, ResolveError>
     {
@@ -130,7 +142,23 @@ class ConverterGreaterEqual(private val symbols: SymbolTable)
     }
 }
 
-class ConverterLess(private val symbols: SymbolTable)
+internal class ConverterInvoke(private val symbols: SymbolTable)
+{
+    operator fun invoke(node: Access.Function): Result<Value, ResolveError>
+    {
+        // TODO: Determine parameter ordering based on names as well - just position alone is not enough
+        val values = node.arguments
+            .fold { symbols.resolveRequiredValue(it.expression) }
+            .valueOr { return failureOf(it) }
+        
+        val function = symbols
+            .resolveRequiredFunction(node.name, values.map { it.type })
+            .valueOr { return failureOf(it) }
+        return valueOf(function, values).toSuccess()
+    }
+}
+
+internal class ConverterLess(private val symbols: SymbolTable)
 {
     operator fun invoke(node: Operator.Less): Result<Value, ResolveError>
     {
@@ -148,7 +176,7 @@ class ConverterLess(private val symbols: SymbolTable)
     }
 }
 
-class ConverterLessEqual(private val symbols: SymbolTable)
+internal class ConverterLessEqual(private val symbols: SymbolTable)
 {
     operator fun invoke(node: Operator.LessEqual): Result<Value, ResolveError>
     {
@@ -166,7 +194,7 @@ class ConverterLessEqual(private val symbols: SymbolTable)
     }
 }
 
-class ConverterModulo(private val symbols: SymbolTable)
+internal class ConverterModulo(private val symbols: SymbolTable)
 {
     operator fun invoke(node: Operator.Modulo): Result<Value, ResolveError>
     {
@@ -184,7 +212,7 @@ class ConverterModulo(private val symbols: SymbolTable)
     }
 }
 
-class ConverterMultiply(private val symbols: SymbolTable)
+internal class ConverterMultiply(private val symbols: SymbolTable)
 {
     operator fun invoke(node: Operator.Multiply): Result<Value, ResolveError>
     {
@@ -202,7 +230,7 @@ class ConverterMultiply(private val symbols: SymbolTable)
     }
 }
 
-class ConverterNot(private val symbols: SymbolTable)
+internal class ConverterNot(private val symbols: SymbolTable)
 {
     operator fun invoke(node: Operator.Not): Result<Value, ResolveError>
     {
@@ -215,7 +243,7 @@ class ConverterNot(private val symbols: SymbolTable)
     }
 }
 
-class ConverterNotEqual(private val symbols: SymbolTable)
+internal class ConverterNotEqual(private val symbols: SymbolTable)
 {
     operator fun invoke(node: Operator.NotEqual): Result<Value, ResolveError>
     {
@@ -235,7 +263,7 @@ class ConverterNotEqual(private val symbols: SymbolTable)
     }
 }
 
-class ConverterOr(private val symbols: SymbolTable)
+internal class ConverterOr(private val symbols: SymbolTable)
 {
     operator fun invoke(node: Operator.Or): Result<Value, ResolveError>
     {
@@ -249,7 +277,16 @@ class ConverterOr(private val symbols: SymbolTable)
     }
 }
 
-class ConverterReal(private val symbols: SymbolTable)
+internal class ConverterRead(private val symbols: SymbolTable)
+{
+    operator fun invoke(node: Access.Variable): Result<Value, ResolveError>
+    {
+        val variable = symbols.resolveRequiredVariable(node.name).valueOr { return failureOf(it) }
+        return valueOf(variable).toSuccess()
+    }
+}
+
+internal class ConverterReal(private val symbols: SymbolTable)
 {
     operator fun invoke(node: Constant.Real): Result<Value, ResolveError>
     {
@@ -264,7 +301,7 @@ class ConverterReal(private val symbols: SymbolTable)
     }
 }
 
-class ConverterSubtract(private val symbols: SymbolTable)
+internal class ConverterSubtract(private val symbols: SymbolTable)
 {
     operator fun invoke(node: Operator.Subtract): Result<Value, ResolveError>
     {
@@ -282,7 +319,7 @@ class ConverterSubtract(private val symbols: SymbolTable)
     }
 }
 
-class ConverterText(private val symbols: SymbolTable)
+internal class ConverterText(private val symbols: SymbolTable)
 {
     operator fun invoke(node: Constant.Text): Result<Value, ResolveError>
     {
@@ -295,7 +332,7 @@ class ConverterText(private val symbols: SymbolTable)
     }
 }
 
-class ConverterUnaryMinus(private val symbols: SymbolTable)
+internal class ConverterUnaryMinus(private val symbols: SymbolTable)
 {
     operator fun invoke(node: Operator.Minus): Result<Value, ResolveError>
     {
@@ -312,7 +349,7 @@ class ConverterUnaryMinus(private val symbols: SymbolTable)
     }
 }
 
-class ConverterUnaryPlus(private val symbols: SymbolTable)
+internal class ConverterUnaryPlus(private val symbols: SymbolTable)
 {
     operator fun invoke(node: Operator.Plus): Result<Value, ResolveError>
     {
@@ -329,7 +366,7 @@ class ConverterUnaryPlus(private val symbols: SymbolTable)
     }
 }
 
-class ConverterXor(private val symbols: SymbolTable)
+internal class ConverterXor(private val symbols: SymbolTable)
 {
     operator fun invoke(node: Operator.Xor): Result<Value, ResolveError>
     {

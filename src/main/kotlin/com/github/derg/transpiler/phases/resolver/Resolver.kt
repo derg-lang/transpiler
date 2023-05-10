@@ -26,7 +26,7 @@ sealed interface ResolveError
      * The callable object with the given [name] is not recognized and did not resolve to anything which could be
      * invoked.
      */
-    data class UnknownCallable(val name: Name) : ResolveError
+    data class UnknownFunction(val name: Name) : ResolveError
     
     /**
      * The literal [name] is not recognized and cannot be used to convert the constant into a sensible value.
@@ -37,6 +37,11 @@ sealed interface ResolveError
      * The type with the given [name] could not be found in the current or any outer scope.
      */
     data class UnknownType(val name: Name) : ResolveError
+    
+    /**
+     * The variable with the given [name] could not be found in the current or any outer scope.
+     */
+    data class UnknownVariable(val name: Name) : ResolveError
     
     /**
      * No function candidates were found for the function with the given [name], when invoked with the given
@@ -61,11 +66,6 @@ sealed interface ResolveError
      * specific and detailed errors.
      */
     object Unknown : ResolveError
-    
-    /**
-     * The operation is not yet supported or just not implemented yet.
-     */
-    object Unsupported : ResolveError
 }
 
 /**
@@ -135,7 +135,11 @@ internal fun SymbolTable.resolveOptionalValue(expression: Expression?): Result<V
 internal fun SymbolTable.resolveRequiredFunction(name: Name, parameters: List<Type>): Result<Function, ResolveError>
 {
     // TODO: Support variable callables as well
-    val candidates = find(name).filterIsInstance<Function>().filter { it.isCompatibleWith(parameters) }
+    val functions = find(name).filterIsInstance<Function>()
+    if (functions.isEmpty())
+        return ResolveError.UnknownFunction(name).toFailure()
+    
+    val candidates = functions.filter { it.isCompatibleWith(parameters) }
     return candidates.firstOrNull()?.toSuccess() ?: ResolveError.MismatchedCallableParams(name, parameters).toFailure()
 }
 
@@ -151,3 +155,13 @@ private fun Function.isCompatibleWith(parameters: List<Type>): Boolean
  */
 internal fun SymbolTable.resolveRequiredValue(expression: Expression): Result<Value, ResolveError> =
     ConverterExpressions(this).convert(expression)
+
+/**
+ * Converts the given [name] into a variable.
+ */
+internal fun SymbolTable.resolveRequiredVariable(name: Name): Result<Variable, ResolveError>
+{
+    // TODO: Support function variables as well
+    val candidate = find(name).filterIsInstance<Variable>().firstOrNull()
+    return candidate?.toSuccess() ?: ResolveError.UnknownVariable(name).toFailure()
+}
