@@ -95,6 +95,172 @@ class TestConverterDivide
     }
 }
 
+class TestConverterEqual
+{
+    private val symbols = SymbolTable(Builtin.SYMBOLS)
+    private val converter = ConverterEqual(symbols)
+    
+    private val function = hirFunOf(
+        name = SymbolType.EQUAL.symbol,
+        valueType = Builtin.BOOL,
+        params = listOf(hirParOf("lhs", Builtin.INT32), hirParOf("rhs", Builtin.INT64)),
+    ).also { symbols.register(it) }
+    
+    @Test
+    fun `Given builtin types, when resolving, then correct outcome`()
+    {
+        assertEquals(BoolEq(true.v, false.v).toSuccess(), converter(Operator.Equal(true.e, false.e)))
+        assertEquals(Int32Eq(1.v, 2.v).toSuccess(), converter(Operator.Equal(1.e, 2.e)))
+        assertEquals(Int64Eq(1L.v, 2L.v).toSuccess(), converter(Operator.Equal(1L.e, 2L.e)))
+    }
+    
+    @Test
+    fun `Given known overload, when resolving, then correct error`()
+    {
+        assertEquals(BoolCall(function, listOf(1.v, 2L.v)).toSuccess(), converter(Operator.Equal(1.e, 2L.e)))
+    }
+    
+    @Test
+    fun `Given unknown overload, when resolving, then correct error`()
+    {
+        val expected = MismatchedCallableParams(SymbolType.EQUAL.symbol, listOf(Builtin.BOOL, Builtin.INT32))
+        
+        assertEquals(expected.toFailure(), converter(Operator.Equal(true.e, 1.e)))
+    }
+}
+
+class TestConverterGreater
+{
+    private val symbols = SymbolTable(Builtin.SYMBOLS)
+    private val converter = ConverterGreater(symbols)
+    
+    private val function = hirFunOf(
+        name = SymbolType.GREATER.symbol,
+        valueType = Builtin.BOOL,
+        params = listOf(hirParOf("lhs", Builtin.INT32), hirParOf("rhs", Builtin.INT64)),
+    ).also { symbols.register(it) }
+    
+    @Test
+    fun `Given builtin types, when resolving, then correct outcome`()
+    {
+        assertEquals(Int32Gt(1.v, 2.v).toSuccess(), converter(Operator.Greater(1.e, 2.e)))
+        assertEquals(Int64Gt(1L.v, 2L.v).toSuccess(), converter(Operator.Greater(1L.e, 2L.e)))
+    }
+    
+    @Test
+    fun `Given known overload, when resolving, then correct error`()
+    {
+        assertEquals(BoolCall(function, listOf(1.v, 2L.v)).toSuccess(), converter(Operator.Greater(1.e, 2L.e)))
+    }
+    
+    @Test
+    fun `Given unknown overload, when resolving, then correct error`()
+    {
+        val expected = MismatchedCallableParams(SymbolType.GREATER.symbol, listOf(Builtin.BOOL, Builtin.BOOL))
+        
+        assertEquals(expected.toFailure(), converter(Operator.Greater(true.e, false.e)))
+    }
+}
+
+class TestConverterGreaterEqual
+{
+    private val symbols = SymbolTable(Builtin.SYMBOLS)
+    private val converter = ConverterGreaterEqual(symbols)
+    
+    private val function = hirFunOf(
+        name = SymbolType.GREATER_EQUAL.symbol,
+        valueType = Builtin.BOOL,
+        params = listOf(hirParOf("lhs", Builtin.INT32), hirParOf("rhs", Builtin.INT64)),
+    ).also { symbols.register(it) }
+    
+    @Test
+    fun `Given builtin types, when resolving, then correct outcome`()
+    {
+        assertEquals(Int32Ge(1.v, 2.v).toSuccess(), converter(Operator.GreaterEqual(1.e, 2.e)))
+        assertEquals(Int64Ge(1L.v, 2L.v).toSuccess(), converter(Operator.GreaterEqual(1L.e, 2L.e)))
+    }
+    
+    @Test
+    fun `Given known overload, when resolving, then correct error`()
+    {
+        assertEquals(BoolCall(function, listOf(1.v, 2L.v)).toSuccess(), converter(Operator.GreaterEqual(1.e, 2L.e)))
+    }
+    
+    @Test
+    fun `Given unknown overload, when resolving, then correct error`()
+    {
+        val expected = MismatchedCallableParams(SymbolType.GREATER_EQUAL.symbol, listOf(Builtin.BOOL, Builtin.BOOL))
+        
+        assertEquals(expected.toFailure(), converter(Operator.GreaterEqual(true.e, false.e)))
+    }
+}
+
+class TestConverterLess
+{
+    private val symbols = SymbolTable(Builtin.SYMBOLS)
+    private val converter = ConverterLess(symbols)
+    
+    private val function = hirFunOf(
+        name = SymbolType.LESS.symbol,
+        valueType = Builtin.BOOL,
+        params = listOf(hirParOf("lhs", Builtin.INT32), hirParOf("rhs", Builtin.INT64)),
+    ).also { symbols.register(it) }
+    
+    @Test
+    fun `Given builtin types, when resolving, then correct outcome`()
+    {
+        assertEquals(Int32Lt(1.v, 2.v).toSuccess(), converter(Operator.Less(1.e, 2.e)))
+        assertEquals(Int64Lt(1L.v, 2L.v).toSuccess(), converter(Operator.Less(1L.e, 2L.e)))
+    }
+    
+    @Test
+    fun `Given known overload, when resolving, then correct error`()
+    {
+        assertEquals(BoolCall(function, listOf(1.v, 2L.v)).toSuccess(), converter(Operator.Less(1.e, 2L.e)))
+    }
+    
+    @Test
+    fun `Given unknown overload, when resolving, then correct error`()
+    {
+        val expected = MismatchedCallableParams(SymbolType.LESS.symbol, listOf(Builtin.BOOL, Builtin.BOOL))
+        
+        assertEquals(expected.toFailure(), converter(Operator.Less(true.e, false.e)))
+    }
+}
+
+class TestConverterLessEqual
+{
+    private val symbols = SymbolTable(Builtin.SYMBOLS)
+    private val converter = ConverterLessEqual(symbols)
+    
+    private val function = hirFunOf(
+        name = SymbolType.LESS_EQUAL.symbol,
+        valueType = Builtin.BOOL,
+        params = listOf(hirParOf("lhs", Builtin.INT32), hirParOf("rhs", Builtin.INT64)),
+    ).also { symbols.register(it) }
+    
+    @Test
+    fun `Given builtin types, when resolving, then correct outcome`()
+    {
+        assertEquals(Int32Le(1.v, 2.v).toSuccess(), converter(Operator.LessEqual(1.e, 2.e)))
+        assertEquals(Int64Le(1L.v, 2L.v).toSuccess(), converter(Operator.LessEqual(1L.e, 2L.e)))
+    }
+    
+    @Test
+    fun `Given known overload, when resolving, then correct error`()
+    {
+        assertEquals(BoolCall(function, listOf(1.v, 2L.v)).toSuccess(), converter(Operator.LessEqual(1.e, 2L.e)))
+    }
+    
+    @Test
+    fun `Given unknown overload, when resolving, then correct error`()
+    {
+        val expected = MismatchedCallableParams(SymbolType.LESS_EQUAL.symbol, listOf(Builtin.BOOL, Builtin.BOOL))
+        
+        assertEquals(expected.toFailure(), converter(Operator.LessEqual(true.e, false.e)))
+    }
+}
+
 class TestConverterModulo
 {
     private val symbols = SymbolTable(Builtin.SYMBOLS)
@@ -178,6 +344,40 @@ class TestConverterNot
         val expected = MismatchedCallableParams(SymbolType.NOT.symbol, listOf(Builtin.INT32))
         
         assertEquals(expected.toFailure(), converter(Operator.Not(0.e)))
+    }
+}
+
+class TestConverterNotEqual
+{
+    private val symbols = SymbolTable(Builtin.SYMBOLS)
+    private val converter = ConverterNotEqual(symbols)
+    
+    private val function = hirFunOf(
+        name = SymbolType.NOT_EQUAL.symbol,
+        valueType = Builtin.BOOL,
+        params = listOf(hirParOf("lhs", Builtin.INT32), hirParOf("rhs", Builtin.INT64)),
+    ).also { symbols.register(it) }
+    
+    @Test
+    fun `Given builtin types, when resolving, then correct outcome`()
+    {
+        assertEquals(BoolNe(true.v, false.v).toSuccess(), converter(Operator.NotEqual(true.e, false.e)))
+        assertEquals(Int32Ne(1.v, 2.v).toSuccess(), converter(Operator.NotEqual(1.e, 2.e)))
+        assertEquals(Int64Ne(1L.v, 2L.v).toSuccess(), converter(Operator.NotEqual(1L.e, 2L.e)))
+    }
+    
+    @Test
+    fun `Given known overload, when resolving, then correct error`()
+    {
+        assertEquals(BoolCall(function, listOf(1.v, 2L.v)).toSuccess(), converter(Operator.NotEqual(1.e, 2L.e)))
+    }
+    
+    @Test
+    fun `Given unknown overload, when resolving, then correct error`()
+    {
+        val expected = MismatchedCallableParams(SymbolType.NOT_EQUAL.symbol, listOf(Builtin.BOOL, Builtin.INT32))
+        
+        assertEquals(expected.toFailure(), converter(Operator.NotEqual(true.e, 1.e)))
     }
 }
 

@@ -62,62 +62,6 @@ class TestConverterExpressions
     }
     
     @Test
-    fun `Given equal expression, when resolving, then correctly resolved`()
-    {
-        assertEquals(BoolEq(true.v, false.v).toSuccess(), converter.convert(Operator.Equal(true.e, false.e)))
-        assertEquals(Int32Eq(1.v, 2.v).toSuccess(), converter.convert(Operator.Equal(1.e, 2.e)))
-        assertEquals(Int64Eq(1L.v, 2L.v).toSuccess(), converter.convert(Operator.Equal(1L.e, 2L.e)))
-        
-        assertEquals(ResolveError.Unsupported.toFailure(), converter.convert(Operator.Equal(false.e, 0.e)))
-    }
-    
-    @Test
-    fun `Given greater expression, when resolving, then correctly resolved`()
-    {
-        assertEquals(Int32Gt(1.v, 2.v).toSuccess(), converter.convert(Operator.Greater(1.e, 2.e)))
-        assertEquals(Int64Gt(1L.v, 2L.v).toSuccess(), converter.convert(Operator.Greater(1L.e, 2L.e)))
-        
-        assertEquals(ResolveError.Unsupported.toFailure(), converter.convert(Operator.Greater(false.e, 0.e)))
-    }
-    
-    @Test
-    fun `Given greater equal expression, when resolving, then correctly resolved`()
-    {
-        assertEquals(Int32Ge(1.v, 2.v).toSuccess(), converter.convert(Operator.GreaterEqual(1.e, 2.e)))
-        assertEquals(Int64Ge(1L.v, 2L.v).toSuccess(), converter.convert(Operator.GreaterEqual(1L.e, 2L.e)))
-        
-        assertEquals(ResolveError.Unsupported.toFailure(), converter.convert(Operator.GreaterEqual(false.e, 0.e)))
-    }
-    
-    @Test
-    fun `Given lesser expression, when resolving, then correctly resolved`()
-    {
-        assertEquals(Int32Lt(1.v, 2.v).toSuccess(), converter.convert(Operator.Less(1.e, 2.e)))
-        assertEquals(Int64Lt(1L.v, 2L.v).toSuccess(), converter.convert(Operator.Less(1L.e, 2L.e)))
-        
-        assertEquals(ResolveError.Unsupported.toFailure(), converter.convert(Operator.Less(false.e, 0.e)))
-    }
-    
-    @Test
-    fun `Given lesser equal expression, when resolving, then correctly resolved`()
-    {
-        assertEquals(Int32Le(1.v, 2.v).toSuccess(), converter.convert(Operator.LessEqual(1.e, 2.e)))
-        assertEquals(Int64Le(1L.v, 2L.v).toSuccess(), converter.convert(Operator.LessEqual(1L.e, 2L.e)))
-        
-        assertEquals(ResolveError.Unsupported.toFailure(), converter.convert(Operator.LessEqual(false.e, 0.e)))
-    }
-    
-    @Test
-    fun `Given not equal expression, when resolving, then correctly resolved`()
-    {
-        assertEquals(BoolNe(true.v, false.v).toSuccess(), converter.convert(Operator.NotEqual(true.e, false.e)))
-        assertEquals(Int32Ne(1.v, 2.v).toSuccess(), converter.convert(Operator.NotEqual(1.e, 2.e)))
-        assertEquals(Int64Ne(1L.v, 2L.v).toSuccess(), converter.convert(Operator.NotEqual(1L.e, 2L.e)))
-        
-        assertEquals(ResolveError.Unsupported.toFailure(), converter.convert(Operator.NotEqual(false.e, 0.e)))
-    }
-    
-    @Test
     fun `Given unary minus expression, when resolving, then correctly resolved`()
     {
         assertEquals(Int32Neg(1.v).toSuccess(), converter.convert(Operator.Minus(1.e)))

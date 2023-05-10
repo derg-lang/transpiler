@@ -30,16 +30,16 @@ class ConverterExpressions(private val symbols: SymbolTable)
         is Operator.And          -> ConverterAnd(symbols)(expression)
         is Operator.Catch        -> TODO()
         is Operator.Divide       -> ConverterDivide(symbols)(expression)
-        is Operator.Equal        -> expression.toValue()
-        is Operator.Greater      -> expression.toValue()
-        is Operator.GreaterEqual -> expression.toValue()
-        is Operator.Less         -> expression.toValue()
-        is Operator.LessEqual    -> expression.toValue()
+        is Operator.Equal        -> ConverterEqual(symbols)(expression)
+        is Operator.Greater      -> ConverterGreater(symbols)(expression)
+        is Operator.GreaterEqual -> ConverterGreaterEqual(symbols)(expression)
+        is Operator.Less         -> ConverterLess(symbols)(expression)
+        is Operator.LessEqual    -> ConverterLessEqual(symbols)(expression)
         is Operator.Minus        -> expression.toValue()
         is Operator.Modulo       -> ConverterModulo(symbols)(expression)
         is Operator.Multiply     -> ConverterMultiply(symbols)(expression)
         is Operator.Not          -> ConverterNot(symbols)(expression)
-        is Operator.NotEqual     -> expression.toValue()
+        is Operator.NotEqual     -> ConverterNotEqual(symbols)(expression)
         is Operator.Or           -> ConverterOr(symbols)(expression)
         is Operator.Plus         -> expression.toValue()
         is Operator.Raise        -> TODO()
@@ -103,67 +103,6 @@ class ConverterExpressions(private val symbols: SymbolTable)
         else                    -> ResolveError.UnknownLiteral(literal).toFailure()
     }
     
-    private fun Operator.Equal.toValue(): Result<Value, ResolveError>
-    {
-        val lhs = convert(lhs).valueOr { return failureOf(it) }
-        val rhs = convert(rhs).valueOr { return failureOf(it) }
-        return when
-        {
-            lhs is ValueBool && rhs is ValueBool   -> BoolEq(lhs, rhs).toSuccess()
-            lhs is ValueInt32 && rhs is ValueInt32 -> Int32Eq(lhs, rhs).toSuccess()
-            lhs is ValueInt64 && rhs is ValueInt64 -> Int64Eq(lhs, rhs).toSuccess()
-            else                                   -> ResolveError.Unsupported.toFailure()
-        }
-    }
-    
-    private fun Operator.Greater.toValue(): Result<Value, ResolveError>
-    {
-        val lhs = convert(lhs).valueOr { return failureOf(it) }
-        val rhs = convert(rhs).valueOr { return failureOf(it) }
-        return when
-        {
-            lhs is ValueInt32 && rhs is ValueInt32 -> Int32Gt(lhs, rhs).toSuccess()
-            lhs is ValueInt64 && rhs is ValueInt64 -> Int64Gt(lhs, rhs).toSuccess()
-            else                                   -> ResolveError.Unsupported.toFailure()
-        }
-    }
-    
-    private fun Operator.GreaterEqual.toValue(): Result<Value, ResolveError>
-    {
-        val lhs = convert(lhs).valueOr { return failureOf(it) }
-        val rhs = convert(rhs).valueOr { return failureOf(it) }
-        return when
-        {
-            lhs is ValueInt32 && rhs is ValueInt32 -> Int32Ge(lhs, rhs).toSuccess()
-            lhs is ValueInt64 && rhs is ValueInt64 -> Int64Ge(lhs, rhs).toSuccess()
-            else                                   -> ResolveError.Unsupported.toFailure()
-        }
-    }
-    
-    private fun Operator.Less.toValue(): Result<Value, ResolveError>
-    {
-        val lhs = convert(lhs).valueOr { return failureOf(it) }
-        val rhs = convert(rhs).valueOr { return failureOf(it) }
-        return when
-        {
-            lhs is ValueInt32 && rhs is ValueInt32 -> Int32Lt(lhs, rhs).toSuccess()
-            lhs is ValueInt64 && rhs is ValueInt64 -> Int64Lt(lhs, rhs).toSuccess()
-            else                                   -> ResolveError.Unsupported.toFailure()
-        }
-    }
-    
-    private fun Operator.LessEqual.toValue(): Result<Value, ResolveError>
-    {
-        val lhs = convert(lhs).valueOr { return failureOf(it) }
-        val rhs = convert(rhs).valueOr { return failureOf(it) }
-        return when
-        {
-            lhs is ValueInt32 && rhs is ValueInt32 -> Int32Le(lhs, rhs).toSuccess()
-            lhs is ValueInt64 && rhs is ValueInt64 -> Int64Le(lhs, rhs).toSuccess()
-            else                                   -> ResolveError.Unsupported.toFailure()
-        }
-    }
-    
     private fun Operator.Minus.toValue(): Result<Value, ResolveError>
     {
         val value = convert(expression).valueOr { return failureOf(it) }
@@ -172,19 +111,6 @@ class ConverterExpressions(private val symbols: SymbolTable)
             is ValueInt32 -> Int32Neg(value).toSuccess()
             is ValueInt64 -> Int64Neg(value).toSuccess()
             else          -> ResolveError.Unsupported.toFailure()
-        }
-    }
-    
-    private fun Operator.NotEqual.toValue(): Result<Value, ResolveError>
-    {
-        val lhs = convert(lhs).valueOr { return failureOf(it) }
-        val rhs = convert(rhs).valueOr { return failureOf(it) }
-        return when
-        {
-            lhs is ValueBool && rhs is ValueBool   -> BoolNe(lhs, rhs).toSuccess()
-            lhs is ValueInt32 && rhs is ValueInt32 -> Int32Ne(lhs, rhs).toSuccess()
-            lhs is ValueInt64 && rhs is ValueInt64 -> Int64Ne(lhs, rhs).toSuccess()
-            else                                   -> ResolveError.Unsupported.toFailure()
         }
     }
     

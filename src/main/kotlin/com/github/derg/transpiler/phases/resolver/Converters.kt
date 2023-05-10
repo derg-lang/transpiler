@@ -67,6 +67,98 @@ class ConverterDivide(private val symbols: SymbolTable)
     }
 }
 
+class ConverterEqual(private val symbols: SymbolTable)
+{
+    operator fun invoke(node: Operator.Equal): Result<Value, ResolveError>
+    {
+        val lhs = symbols.resolveRequiredValue(node.lhs).valueOr { return failureOf(it) }
+        val rhs = symbols.resolveRequiredValue(node.rhs).valueOr { return failureOf(it) }
+        
+        if (lhs is ValueBool && rhs is ValueBool)
+            return BoolEq(lhs, rhs).toSuccess()
+        if (lhs is ValueInt32 && rhs is ValueInt32)
+            return Int32Eq(lhs, rhs).toSuccess()
+        if (lhs is ValueInt64 && rhs is ValueInt64)
+            return Int64Eq(lhs, rhs).toSuccess()
+        
+        val function = symbols.resolveRequiredFunction(SymbolType.EQUAL.symbol, listOf(lhs.type, rhs.type))
+            .valueOr { return failureOf(it) }
+        return valueOf(function, listOf(lhs, rhs)).toSuccess()
+    }
+}
+
+class ConverterGreater(private val symbols: SymbolTable)
+{
+    operator fun invoke(node: Operator.Greater): Result<Value, ResolveError>
+    {
+        val lhs = symbols.resolveRequiredValue(node.lhs).valueOr { return failureOf(it) }
+        val rhs = symbols.resolveRequiredValue(node.rhs).valueOr { return failureOf(it) }
+        
+        if (lhs is ValueInt32 && rhs is ValueInt32)
+            return Int32Gt(lhs, rhs).toSuccess()
+        if (lhs is ValueInt64 && rhs is ValueInt64)
+            return Int64Gt(lhs, rhs).toSuccess()
+        
+        val function = symbols.resolveRequiredFunction(SymbolType.GREATER.symbol, listOf(lhs.type, rhs.type))
+            .valueOr { return failureOf(it) }
+        return valueOf(function, listOf(lhs, rhs)).toSuccess()
+    }
+}
+
+class ConverterGreaterEqual(private val symbols: SymbolTable)
+{
+    operator fun invoke(node: Operator.GreaterEqual): Result<Value, ResolveError>
+    {
+        val lhs = symbols.resolveRequiredValue(node.lhs).valueOr { return failureOf(it) }
+        val rhs = symbols.resolveRequiredValue(node.rhs).valueOr { return failureOf(it) }
+        
+        if (lhs is ValueInt32 && rhs is ValueInt32)
+            return Int32Ge(lhs, rhs).toSuccess()
+        if (lhs is ValueInt64 && rhs is ValueInt64)
+            return Int64Ge(lhs, rhs).toSuccess()
+        
+        val function = symbols.resolveRequiredFunction(SymbolType.GREATER_EQUAL.symbol, listOf(lhs.type, rhs.type))
+            .valueOr { return failureOf(it) }
+        return valueOf(function, listOf(lhs, rhs)).toSuccess()
+    }
+}
+
+class ConverterLess(private val symbols: SymbolTable)
+{
+    operator fun invoke(node: Operator.Less): Result<Value, ResolveError>
+    {
+        val lhs = symbols.resolveRequiredValue(node.lhs).valueOr { return failureOf(it) }
+        val rhs = symbols.resolveRequiredValue(node.rhs).valueOr { return failureOf(it) }
+        
+        if (lhs is ValueInt32 && rhs is ValueInt32)
+            return Int32Lt(lhs, rhs).toSuccess()
+        if (lhs is ValueInt64 && rhs is ValueInt64)
+            return Int64Lt(lhs, rhs).toSuccess()
+        
+        val function = symbols.resolveRequiredFunction(SymbolType.LESS.symbol, listOf(lhs.type, rhs.type))
+            .valueOr { return failureOf(it) }
+        return valueOf(function, listOf(lhs, rhs)).toSuccess()
+    }
+}
+
+class ConverterLessEqual(private val symbols: SymbolTable)
+{
+    operator fun invoke(node: Operator.LessEqual): Result<Value, ResolveError>
+    {
+        val lhs = symbols.resolveRequiredValue(node.lhs).valueOr { return failureOf(it) }
+        val rhs = symbols.resolveRequiredValue(node.rhs).valueOr { return failureOf(it) }
+        
+        if (lhs is ValueInt32 && rhs is ValueInt32)
+            return Int32Le(lhs, rhs).toSuccess()
+        if (lhs is ValueInt64 && rhs is ValueInt64)
+            return Int64Le(lhs, rhs).toSuccess()
+        
+        val function = symbols.resolveRequiredFunction(SymbolType.LESS_EQUAL.symbol, listOf(lhs.type, rhs.type))
+            .valueOr { return failureOf(it) }
+        return valueOf(function, listOf(lhs, rhs)).toSuccess()
+    }
+}
+
 class ConverterModulo(private val symbols: SymbolTable)
 {
     operator fun invoke(node: Operator.Modulo): Result<Value, ResolveError>
@@ -113,6 +205,26 @@ class ConverterNot(private val symbols: SymbolTable)
             return BoolNot(expr).toSuccess()
         
         return ResolveError.MismatchedCallableParams(SymbolType.NOT.symbol, listOf(expr.type)).toFailure()
+    }
+}
+
+class ConverterNotEqual(private val symbols: SymbolTable)
+{
+    operator fun invoke(node: Operator.NotEqual): Result<Value, ResolveError>
+    {
+        val lhs = symbols.resolveRequiredValue(node.lhs).valueOr { return failureOf(it) }
+        val rhs = symbols.resolveRequiredValue(node.rhs).valueOr { return failureOf(it) }
+        
+        if (lhs is ValueBool && rhs is ValueBool)
+            return BoolNe(lhs, rhs).toSuccess()
+        if (lhs is ValueInt32 && rhs is ValueInt32)
+            return Int32Ne(lhs, rhs).toSuccess()
+        if (lhs is ValueInt64 && rhs is ValueInt64)
+            return Int64Ne(lhs, rhs).toSuccess()
+        
+        val function = symbols.resolveRequiredFunction(SymbolType.NOT_EQUAL.symbol, listOf(lhs.type, rhs.type))
+            .valueOr { return failureOf(it) }
+        return valueOf(function, listOf(lhs, rhs)).toSuccess()
     }
 }
 
