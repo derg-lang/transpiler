@@ -26,24 +26,24 @@ class ConverterExpressions(private val symbols: SymbolTable)
         is Constant.Bool         -> expression.toValue()
         is Constant.Real         -> expression.toValue()
         is Constant.Text         -> TODO()
-        is Operator.Add          -> expression.toValue()
+        is Operator.Add          -> ConverterAdd(symbols)(expression)
         is Operator.And          -> ConverterAnd(symbols)(expression)
         is Operator.Catch        -> TODO()
-        is Operator.Divide       -> expression.toValue()
+        is Operator.Divide       -> ConverterDivide(symbols)(expression)
         is Operator.Equal        -> expression.toValue()
         is Operator.Greater      -> expression.toValue()
         is Operator.GreaterEqual -> expression.toValue()
         is Operator.Less         -> expression.toValue()
         is Operator.LessEqual    -> expression.toValue()
         is Operator.Minus        -> expression.toValue()
-        is Operator.Modulo       -> expression.toValue()
-        is Operator.Multiply     -> expression.toValue()
+        is Operator.Modulo       -> ConverterModulo(symbols)(expression)
+        is Operator.Multiply     -> ConverterMultiply(symbols)(expression)
         is Operator.Not          -> ConverterNot(symbols)(expression)
         is Operator.NotEqual     -> expression.toValue()
         is Operator.Or           -> ConverterOr(symbols)(expression)
         is Operator.Plus         -> expression.toValue()
         is Operator.Raise        -> TODO()
-        is Operator.Subtract     -> expression.toValue()
+        is Operator.Subtract     -> ConverterSubtract(symbols)(expression)
         is Operator.ThreeWay     -> TODO()
         is Operator.Xor          -> ConverterXor(symbols)(expression)
         is When                  -> TODO()
@@ -101,30 +101,6 @@ class ConverterExpressions(private val symbols: SymbolTable)
         Builtin.LIT_INT32, null -> Int32Const(value.toInt()).toSuccess() // TODO: Fail operation if number is too large
         Builtin.LIT_INT64       -> Int64Const(value.toLong()).toSuccess() // TODO: Fail operation if number is too large
         else                    -> ResolveError.UnknownLiteral(literal).toFailure()
-    }
-    
-    private fun Operator.Add.toValue(): Result<Value, ResolveError>
-    {
-        val lhs = convert(lhs).valueOr { return failureOf(it) }
-        val rhs = convert(rhs).valueOr { return failureOf(it) }
-        return when
-        {
-            lhs is ValueInt32 && rhs is ValueInt32 -> Int32Add(lhs, rhs).toSuccess()
-            lhs is ValueInt64 && rhs is ValueInt64 -> Int64Add(lhs, rhs).toSuccess()
-            else                                   -> ResolveError.Unsupported.toFailure()
-        }
-    }
-    
-    private fun Operator.Divide.toValue(): Result<Value, ResolveError>
-    {
-        val lhs = convert(lhs).valueOr { return failureOf(it) }
-        val rhs = convert(rhs).valueOr { return failureOf(it) }
-        return when
-        {
-            lhs is ValueInt32 && rhs is ValueInt32 -> Int32Div(lhs, rhs).toSuccess()
-            lhs is ValueInt64 && rhs is ValueInt64 -> Int64Div(lhs, rhs).toSuccess()
-            else                                   -> ResolveError.Unsupported.toFailure()
-        }
     }
     
     private fun Operator.Equal.toValue(): Result<Value, ResolveError>
@@ -199,30 +175,6 @@ class ConverterExpressions(private val symbols: SymbolTable)
         }
     }
     
-    private fun Operator.Modulo.toValue(): Result<Value, ResolveError>
-    {
-        val lhs = convert(lhs).valueOr { return failureOf(it) }
-        val rhs = convert(rhs).valueOr { return failureOf(it) }
-        return when
-        {
-            lhs is ValueInt32 && rhs is ValueInt32 -> Int32Mod(lhs, rhs).toSuccess()
-            lhs is ValueInt64 && rhs is ValueInt64 -> Int64Mod(lhs, rhs).toSuccess()
-            else                                   -> ResolveError.Unsupported.toFailure()
-        }
-    }
-    
-    private fun Operator.Multiply.toValue(): Result<Value, ResolveError>
-    {
-        val lhs = convert(lhs).valueOr { return failureOf(it) }
-        val rhs = convert(rhs).valueOr { return failureOf(it) }
-        return when
-        {
-            lhs is ValueInt32 && rhs is ValueInt32 -> Int32Mul(lhs, rhs).toSuccess()
-            lhs is ValueInt64 && rhs is ValueInt64 -> Int64Mul(lhs, rhs).toSuccess()
-            else                                   -> ResolveError.Unsupported.toFailure()
-        }
-    }
-    
     private fun Operator.NotEqual.toValue(): Result<Value, ResolveError>
     {
         val lhs = convert(lhs).valueOr { return failureOf(it) }
@@ -244,18 +196,6 @@ class ConverterExpressions(private val symbols: SymbolTable)
             is ValueInt32 -> value.toSuccess()
             is ValueInt64 -> value.toSuccess()
             else          -> ResolveError.Unsupported.toFailure()
-        }
-    }
-    
-    private fun Operator.Subtract.toValue(): Result<Value, ResolveError>
-    {
-        val lhs = convert(lhs).valueOr { return failureOf(it) }
-        val rhs = convert(rhs).valueOr { return failureOf(it) }
-        return when
-        {
-            lhs is ValueInt32 && rhs is ValueInt32 -> Int32Sub(lhs, rhs).toSuccess()
-            lhs is ValueInt64 && rhs is ValueInt64 -> Int64Sub(lhs, rhs).toSuccess()
-            else                                   -> ResolveError.Unsupported.toFailure()
         }
     }
 }

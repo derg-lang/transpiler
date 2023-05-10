@@ -62,24 +62,6 @@ class TestConverterExpressions
     }
     
     @Test
-    fun `Given add expression, when resolving, then correctly resolved`()
-    {
-        assertEquals(Int32Add(1.v, 2.v).toSuccess(), converter.convert(Operator.Add(1.e, 2.e)))
-        assertEquals(Int64Add(1L.v, 2L.v).toSuccess(), converter.convert(Operator.Add(1L.e, 2L.e)))
-        
-        assertEquals(ResolveError.Unsupported.toFailure(), converter.convert(Operator.Add(false.e, 0.e)))
-    }
-    
-    @Test
-    fun `Given divide expression, when resolving, then correctly resolved`()
-    {
-        assertEquals(Int32Div(1.v, 2.v).toSuccess(), converter.convert(Operator.Divide(1.e, 2.e)))
-        assertEquals(Int64Div(1L.v, 2L.v).toSuccess(), converter.convert(Operator.Divide(1L.e, 2L.e)))
-        
-        assertEquals(ResolveError.Unsupported.toFailure(), converter.convert(Operator.Divide(false.e, 0.e)))
-    }
-    
-    @Test
     fun `Given equal expression, when resolving, then correctly resolved`()
     {
         assertEquals(BoolEq(true.v, false.v).toSuccess(), converter.convert(Operator.Equal(true.e, false.e)))
@@ -126,24 +108,6 @@ class TestConverterExpressions
     }
     
     @Test
-    fun `Given modulo expression, when resolving, then correctly resolved`()
-    {
-        assertEquals(Int32Mod(1.v, 2.v).toSuccess(), converter.convert(Operator.Modulo(1.e, 2.e)))
-        assertEquals(Int64Mod(1L.v, 2L.v).toSuccess(), converter.convert(Operator.Modulo(1L.e, 2L.e)))
-        
-        assertEquals(ResolveError.Unsupported.toFailure(), converter.convert(Operator.Modulo(false.e, 0.e)))
-    }
-    
-    @Test
-    fun `Given multiply expression, when resolving, then correctly resolved`()
-    {
-        assertEquals(Int32Mul(1.v, 2.v).toSuccess(), converter.convert(Operator.Multiply(1.e, 2.e)))
-        assertEquals(Int64Mul(1L.v, 2L.v).toSuccess(), converter.convert(Operator.Multiply(1L.e, 2L.e)))
-        
-        assertEquals(ResolveError.Unsupported.toFailure(), converter.convert(Operator.Multiply(false.e, 0.e)))
-    }
-    
-    @Test
     fun `Given not equal expression, when resolving, then correctly resolved`()
     {
         assertEquals(BoolNe(true.v, false.v).toSuccess(), converter.convert(Operator.NotEqual(true.e, false.e)))
@@ -151,15 +115,6 @@ class TestConverterExpressions
         assertEquals(Int64Ne(1L.v, 2L.v).toSuccess(), converter.convert(Operator.NotEqual(1L.e, 2L.e)))
         
         assertEquals(ResolveError.Unsupported.toFailure(), converter.convert(Operator.NotEqual(false.e, 0.e)))
-    }
-    
-    @Test
-    fun `Given subtract expression, when resolving, then correctly resolved`()
-    {
-        assertEquals(Int32Sub(1.v, 2.v).toSuccess(), converter.convert(Operator.Subtract(1.e, 2.e)))
-        assertEquals(Int64Sub(1L.v, 2L.v).toSuccess(), converter.convert(Operator.Subtract(1L.e, 2L.e)))
-        
-        assertEquals(ResolveError.Unsupported.toFailure(), converter.convert(Operator.Subtract(false.e, 0.e)))
     }
     
     @Test

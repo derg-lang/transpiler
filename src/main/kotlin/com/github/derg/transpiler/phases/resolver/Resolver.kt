@@ -5,6 +5,7 @@ import com.github.derg.transpiler.source.Name
 import com.github.derg.transpiler.source.ast.Expression
 import com.github.derg.transpiler.source.ast.Segment
 import com.github.derg.transpiler.source.hir.*
+import com.github.derg.transpiler.source.hir.Function
 import com.github.derg.transpiler.util.*
 
 /**
@@ -117,8 +118,8 @@ internal fun SymbolTable.resolveOptionalType(name: Name?): Result<Type, ResolveE
     if (name == null)
         return Builtin.VOID.toSuccess()
     
-    val symbol = find(name).filterIsInstance<Type>().firstOrNull()
-    return symbol?.toSuccess() ?: ResolveError.UnknownType(name).toFailure()
+    val candidate = find(name).filterIsInstance<Type>().firstOrNull()
+    return candidate?.toSuccess() ?: ResolveError.UnknownType(name).toFailure()
 }
 
 /**
@@ -133,3 +134,20 @@ internal fun SymbolTable.resolveOptionalValue(expression: Expression?): Result<V
  */
 internal fun SymbolTable.resolveRequiredValue(expression: Expression): Result<Value, ResolveError> =
     ConverterExpressions(this).convert(expression)
+
+/**
+ * Converts the given [name] into a function which is compatible with the provided [parameters].
+ */
+internal fun SymbolTable.resolveRequiredFunction(name: Name, parameters: List<Type>): Result<Function, ResolveError>
+{
+    // TODO: Support variable callables as well
+    val candidates = find(name).filterIsInstance<Function>().filter { it.isCompatibleWith(parameters) }
+    return candidates.firstOrNull()?.toSuccess() ?: ResolveError.MismatchedCallableParams(name, parameters).toFailure()
+}
+
+private fun Function.isCompatibleWith(parameters: List<Type>): Boolean
+{
+    if (this.params.size != parameters.size)
+        return false
+    return this.params.zip(parameters).all { it.first.type.id == it.second.id }
+}
