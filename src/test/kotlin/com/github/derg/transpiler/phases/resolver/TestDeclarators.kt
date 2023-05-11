@@ -6,11 +6,45 @@ import com.github.derg.transpiler.phases.parser.typeOf
 import com.github.derg.transpiler.phases.parser.varOf
 import com.github.derg.transpiler.source.IdProviderNil
 import com.github.derg.transpiler.source.hir.*
+import com.github.derg.transpiler.util.isSuccess
 import com.github.derg.transpiler.util.toFailure
 import com.github.derg.transpiler.util.toSuccess
 import com.github.derg.transpiler.util.valueOrDie
-import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
+
+class TestDeclarator
+{
+    private val symbols = SymbolTable(Builtin.SYMBOLS)
+    private val declarator = Declarator(symbols, IdProviderNil)
+    
+    @Test
+    fun `Given function, when declaring, then registered`()
+    {
+        val node = funOf("name")
+        
+        assertTrue(declarator(listOf(node)).isSuccess)
+        assertFalse(symbols.find(node.name).isEmpty())
+    }
+    
+    @Test
+    fun `Given type, when declaring, then registered`()
+    {
+        val node = typeOf("name")
+        
+        assertTrue(declarator(listOf(node)).isSuccess)
+        assertFalse(symbols.find(node.name).isEmpty())
+    }
+    
+    @Test
+    fun `Given variable, when declaring, then registered`()
+    {
+        val node = varOf("name", 0)
+        
+        assertTrue(declarator(listOf(node)).isSuccess)
+        assertFalse(symbols.find(node.name).isEmpty())
+    }
+}
 
 class TestDeclaratorFunction
 {

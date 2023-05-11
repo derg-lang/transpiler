@@ -1,6 +1,7 @@
 package com.github.derg.transpiler.phases.resolver
 
 import com.github.derg.transpiler.source.Id
+import com.github.derg.transpiler.source.IdProviderSystem
 import com.github.derg.transpiler.source.Name
 import com.github.derg.transpiler.source.ast.*
 import com.github.derg.transpiler.source.hir.*
@@ -64,12 +65,6 @@ sealed interface ResolveError
      * The provided [type] is not permitted for usage as a predicate in a branch statement.
      */
     data class InvalidPredicateType(val type: Type) : ResolveError
-    
-    /**
-     * An unknown error, catch-all for anything that has gone wrong. Naturally, this should be replaced with more
-     * specific and detailed errors.
-     */
-    object Unknown : ResolveError
 }
 
 /**
@@ -96,18 +91,14 @@ class Resolver(private val symbols: SymbolTable)
         // With all modules sorted in the appropriate order, they may be processed in that very same ordering
         for ((moduleName, groupedSegments) in groups.entries)
         {
-            // TODO: Figure out a suitable default name
-            val module = Module(Id.randomUUID(), moduleName ?: "__main", SymbolTable(`package`.symbols))
-                .also { `package`.symbols.register(it) }
-            val converter = ConverterStatements(module.symbols)
-            
             // TODO: Sort all instructions in the order in which they can be initialized. How can we determine in which
             //       order all instructions should be executed? Try to execute them and just try to find an ordering
             //       that "just works"? Cannot allow side-effect functions to be invoked in that case.
+            // TODO: Figure out a suitable default name for modules
+            val module = Module(Id.randomUUID(), moduleName ?: "__main").also { `package`.symbols.register(it) }
             val statements = groupedSegments.flatMap { it.definitions }
-            converter.prepare(statements).onFailure { return failureOf(it) }
             
-            module.instructions = converter.convert(statements).valueOr { return failureOf(it) }
+            module.scope = `package`.symbols.resolveScope(statements).valueOr { return failureOf(it) }
         }
         return `package`.toSuccess()
     }
@@ -152,6 +143,21 @@ private fun Function.isCompatibleWith(parameters: List<Type>): Boolean
     if (this.params.size != parameters.size)
         return false
     return this.params.zip(parameters).all { it.first.type.id == it.second.id }
+}
+
+/**
+ * Converts the given [statement] into an instruction which when executed performs the statement action.
+ */
+internal fun SymbolTable.resolveStatement(statement: Statement): Result<Instruction, ResolveError> = when (statement)
+{
+    is Assignment.Assign   -> ConverterAssign(this)(statement)
+    is Control.Branch      -> ConverterBranch(this)(statement)
+    is Control.Invoke      -> TODO()
+    is Control.Raise       -> ConverterRaise(this)(statement)
+    is Control.Return      -> ConverterReturn(this)(statement)
+    is Definition.Function -> Nop.toSuccess()
+    is Definition.Type     -> Nop.toSuccess()
+    is Definition.Variable -> ConverterAssign(this)(Assignment.Assign(statement.name, statement.value))
 }
 
 /**
@@ -204,8 +210,15 @@ internal fun SymbolTable.resolveRequiredVariable(name: Name): Result<Variable, R
 internal fun SymbolTable.resolveScope(statements: List<Statement>): Result<Scope, ResolveError>
 {
     val inner = SymbolTable(this)
-    val converter = ConverterStatements(inner)
-    converter.prepare(statements).valueOr { return failureOf(it) }
-    val instructions = converter.convert(statements).valueOr { return failureOf(it) }
-    return Scope(instructions, inner).toSuccess()
+    
+    // In order to perform type checking, all statements must be declared up-front. Once the declaration has taken
+    // place, we may define the symbols and use them where appropriate.
+    val context = Declarator(inner, IdProviderSystem)(statements).valueOr { return failureOf(it) }
+    
+    context.functions.fold { DefinerFunction(inner)(it.first, it.second) }.onFailure { return failureOf(it) }
+    context.types.fold { DefinerType(inner)(it.first, it.second) }.onFailure { return failureOf(it) }
+    
+    // Once all setup is completed, we may finally convert the statements into actually executable code.
+    val instructions = statements.fold { inner.resolveStatement(it) }.valueOr { return failureOf(it) }
+    return Scope(instructions.filterNot { it == Nop }, inner).toSuccess()
 }

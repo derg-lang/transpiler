@@ -30,14 +30,13 @@ data class Package(
 data class Module(
     override val id: Id,
     override val name: Name,
-    val symbols: SymbolTable,
 ) : Symbol
 {
     /**
-     * The set of instructions which should be performed by the module when loaded. The order in which the instructions
-     * should be executed is defined by their order in the list.
+     * The symbols and instructions associated with the module will be assigned when the module is defined. The scope
+     * will hold all such information.
      */
-    var instructions: List<Instruction> = emptyList()
+    lateinit var scope: Scope
 }
 
 /**
@@ -133,6 +132,7 @@ class SymbolTable(private val parent: SymbolTable? = null)
      * in which they are seen by scope, innermost scope first. If multiple symbols with the same name is defined within
      * the same scope, the symbol declared last is placed first.
      */
+    // TODO: Rename method to `resolve` or something similar
     fun find(name: Name): List<Symbol>
     {
         val inner = identifiers[name] ?: emptyList()

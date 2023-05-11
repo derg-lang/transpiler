@@ -1,27 +1,74 @@
 package com.github.derg.transpiler.phases.resolver
 
 import com.github.derg.transpiler.source.IdProvider
-import com.github.derg.transpiler.source.IdProviderSystem
 import com.github.derg.transpiler.source.ast.Definition
 import com.github.derg.transpiler.source.ast.Parameter
+import com.github.derg.transpiler.source.ast.Statement
 import com.github.derg.transpiler.source.hir.*
 import com.github.derg.transpiler.source.hir.Function
 import com.github.derg.transpiler.util.*
 
 /**
+ * The declarator is responsible for making sure all definitions are properly registered within the symbol table before
+ * any of the instructions are resolved. Declaring all symbols is the initial phase of the resolver phase.
+ */
+internal class Declarator(symbols: SymbolTable, ids: IdProvider)
+{
+    private val func = DeclaratorFunction(symbols, ids)
+    private val type = DeclaratorType(symbols, ids)
+    private val vari = DeclaratorVariable(symbols, ids)
+    
+    operator fun invoke(nodes: List<Statement>): Result<DeclaredSymbols, ResolveError>
+    {
+        // Must ensure all functions and types are declared in advance, as they may be referring to each other in a
+        // non-trivial manners. At any scope level, all functions and types must be able to "see" each other, even
+        // before the later functions and types have been declared in source code. A similar story holds for variables.
+        // In order to reference the variable by name at a later stage, when assigning values, the variable must already
+        // be registered.
+        val context = DeclaredSymbols()
+        
+        nodes
+            .filterIsInstance<Definition.Variable>()
+            .fold { def -> vari(def).mapValue { it to def } }
+            .onFailure { return failureOf(it) }
+        nodes
+            .filterIsInstance<Definition.Function>()
+            .fold { def -> func(def).mapValue { it to def.statements } }
+            .valueOr { return failureOf(it) }
+            .forEach { context.functions.add(it) }
+        nodes
+            .filterIsInstance<Definition.Type>()
+            .fold { def -> type(def).mapValue { it to def } }
+            .valueOr { return failureOf(it) }
+            .forEach { context.types.add(it) }
+        
+        // TODO: Symbols must be registered at this point - not when actually declaring them.
+        // TODO: Do not register function parameters in the symbol table, this should be done when defining function.
+        return successOf(context)
+    }
+}
+
+internal class DeclaredSymbols
+{
+    val functions = mutableListOf<Pair<Function, List<Statement>>>()
+    val types = mutableListOf<Pair<Type, Definition.Type>>()
+}
+
+/**
  * Function declarations contain information which must be type-checked and verified. The function declaration contains
  * all information required to later reference a function in a type-safe manner.
  */
-class DeclaratorFunction(private val symbols: SymbolTable, private val ids: IdProvider = IdProviderSystem)
+internal class DeclaratorFunction(private val symbols: SymbolTable, private val ids: IdProvider)
 {
+    private val param = DeclaratorParameter(symbols, ids)
+    
     operator fun invoke(node: Definition.Function): Result<Function, ResolveError>
     {
-        val declarator = DeclaratorParameter(symbols, ids)
-        
         val valueType = symbols.resolveOptionalType(node.valueType).valueOr { return failureOf(it) }
         val errorType = symbols.resolveOptionalType(node.errorType).valueOr { return failureOf(it) }
-        val parameters = node.parameters.map { p -> declarator(p).valueOr { return failureOf(it) } }
+        val parameters = node.parameters.map { p -> param(p).valueOr { return failureOf(it) } }
         
+        // TODO: Verify that there are no conflicting functions in the same scope
         return Function(
             id = ids.random(),
             name = node.name,
@@ -37,7 +84,7 @@ class DeclaratorFunction(private val symbols: SymbolTable, private val ids: IdPr
  * Parameter declarations contain information about a value which is passed into a function; this information must be
  * type-checked and sanitized, to verify that the optional value resolves to the same type as the parameter.
  */
-class DeclaratorParameter(private val symbols: SymbolTable, private val ids: IdProvider = IdProviderSystem)
+internal class DeclaratorParameter(private val symbols: SymbolTable, private val ids: IdProvider)
 {
     operator fun invoke(node: Parameter): Result<Function.Parameter, ResolveError>
     {
@@ -47,6 +94,7 @@ class DeclaratorParameter(private val symbols: SymbolTable, private val ids: IdP
         if (value != null && value.type.id != type.id)
             return ResolveError.MismatchedParameterType(expected = type, actual = value.type).toFailure()
         
+        // TODO: Verify that there are no conflicting parameters in the same scope
         return Function.Parameter(
             id = ids.random(),
             name = node.name,
@@ -61,10 +109,11 @@ class DeclaratorParameter(private val symbols: SymbolTable, private val ids: IdP
  * Type declarations contain information about the type itself. The declaration only allows the type to be referred to
  * at a later time, but does not include any information about the contents of the type.
  */
-class DeclaratorType(private val symbols: SymbolTable, private val ids: IdProvider = IdProviderSystem)
+internal class DeclaratorType(private val symbols: SymbolTable, private val ids: IdProvider)
 {
     operator fun invoke(node: Definition.Type): Result<Type, ResolveError>
     {
+        // TODO: Verify that there are no conflicting types in the same scope
         return Type(
             id = ids.random(),
             name = node.name,
@@ -77,7 +126,7 @@ class DeclaratorType(private val symbols: SymbolTable, private val ids: IdProvid
  * Variable declaration contain information about the value which is stored in memory. This information must be
  * type-checked and sanitized, to verify that the optional type resolves to the same type as the value of the variable.
  */
-class DeclaratorVariable(private val symbols: SymbolTable, private val ids: IdProvider = IdProviderSystem)
+internal class DeclaratorVariable(private val symbols: SymbolTable, private val ids: IdProvider)
 {
     operator fun invoke(node: Definition.Variable): Result<Variable, ResolveError>
     {
@@ -89,6 +138,7 @@ class DeclaratorVariable(private val symbols: SymbolTable, private val ids: IdPr
         if (value.type.id != type.id && type.id != Builtin.VOID.id)
             return ResolveError.MismatchedVariableType(expected = type, actual = value.type).toFailure()
         
+        // TODO: Verify that there are no conflicting variables in the same scope
         return Variable(
             id = ids.random(),
             name = node.name,
