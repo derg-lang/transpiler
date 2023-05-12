@@ -205,11 +205,11 @@ fun segmentParserOf(): Parser<Segment> =
 private fun segmentPatternOf() = ParserSequence(
     "module" to ParserOptional(nameParserOf(SymbolType.MODULE)),
     "imports" to ParserRepeating(nameParserOf(SymbolType.USE)),
-    "statements" to ParserRepeating(statementParserOf()),
+    "definitions" to ParserRepeating(ParserAnyOf(variableParserOf(), functionParserOf(), typeParserOf())),
 )
 
 private fun segmentOutcomeOf(values: Parsers) = Segment(
     module = values["module"],
     imports = values["imports"],
-    definitions = values["statements"],
+    definitions = values["definitions"],
 )

@@ -30,29 +30,31 @@ data class Package(
 data class Module(
     override val id: Id,
     override val name: Name,
-    val symbols: SymbolTable,
 ) : Symbol
 {
     /**
-     * The set of instructions which should be performed by the module when loaded. The order in which the instructions
-     * should be executed is defined by their order in the list.
+     * The symbols and instructions associated with the module will be assigned when the module is defined. The scope
+     * will hold all such information.
      */
-    var instructions: List<Instruction> = emptyList()
+    lateinit var scope: Scope
 }
 
 /**
  * All data within a program must be represented as a type. Every type requires some amount of physical space in memory,
  * which is used to allocate instances of the type on the heap or the stack. Types may be instantiated as variables or
  * parameters, which may be accessed or modified as needed.
- *
- * @property size The size of the type in number of bytes, all nested properties included.
  */
 data class Type(
     override val id: Id,
     override val name: Name,
     val visibility: Visibility,
-    val size: Int,
 ) : Symbol
+{
+    /**
+     * The size of the type in number of bytes, all nested properties included.
+     */
+    var size: Int = 0
+}
 
 /**
  * Executable code is found within functions, which form a smaller executable part of the program. Functions may take
@@ -62,20 +64,26 @@ data class Type(
 data class Function(
     override val id: Id,
     override val name: Name,
-    val visibility: Visibility,
-    val value: Id,
-    val error: Id,
+    val value: Type,
+    val error: Type,
     val params: List<Parameter>,
-    val symbols: SymbolTable,
+    val visibility: Visibility,
 ) : Symbol
 {
-    data class Parameter(val type: Id, val name: Name?, val passability: Passability, val value: Value?)
+    // TODO: Move this out of the function and into the root level of this file
+    data class Parameter(
+        override val id: Id,
+        override val name: Name,
+        val type: Type,
+        val value: Value?,
+        val passability: Passability,
+    ) : Symbol
     
     /**
-     * The set of instructions which should be performed by the function when invoked.  The order in which the
-     * instructions should be executed is defined by their order in the list.
+     * The symbols and instructions associated with the function will be assigned when the function is defined. The
+     * scope will hold all such information.
      */
-    var instructions: List<Instruction> = emptyList()
+    lateinit var scope: Scope
 }
 
 /**
@@ -85,10 +93,10 @@ data class Function(
 data class Variable(
     override val id: Id,
     override val name: Name,
+    val type: Type,
     val visibility: Visibility,
     val mutability: Mutability,
     val assignability: Assignability,
-    val type: Id,
 ) : Symbol
 
 /**
@@ -113,7 +121,7 @@ class SymbolTable(private val parent: SymbolTable? = null)
      * Registers a new [symbol], allowing the symbol to be retrieved by id or name at this scope when desired. When
      * multiple symbols are bound by the same name, the earlier bound names will be shadowed by the last bound name.
      */
-    fun register(symbol: Symbol): Symbol
+    fun <Type : Symbol> register(symbol: Type): Type
     {
         identifiers.getOrPut(symbol.name) { mutableListOf() }.add(symbol)
         return symbol
@@ -124,6 +132,7 @@ class SymbolTable(private val parent: SymbolTable? = null)
      * in which they are seen by scope, innermost scope first. If multiple symbols with the same name is defined within
      * the same scope, the symbol declared last is placed first.
      */
+    // TODO: Rename method to `resolve` or something similar
     fun find(name: Name): List<Symbol>
     {
         val inner = identifiers[name] ?: emptyList()
@@ -131,5 +140,29 @@ class SymbolTable(private val parent: SymbolTable? = null)
         
         // Reverse inner scope, as all symbols are registered in the opposite order - outer scope is reversed too
         return inner.reversed() + outer
+    }
+    
+    override fun toString(): String = "{identifiers=$identifiers}"
+    override fun hashCode(): Int = identifiers.hashCode()
+    override fun equals(other: Any?): Boolean = when (other)
+    {
+        is SymbolTable -> identifiers == other.identifiers
+        else           -> false
+    }
+}
+
+/**
+ * Scopes defines a region of codebase independent of other scopes at the same depth. Scopes may inherit all named
+ * objects from parent scopes; the scope may read all symbols defined in the [symbols] table. The scope contains a set
+ * of executable [instructions].
+ */
+class Scope(val instructions: List<Instruction>, val symbols: SymbolTable)
+{
+    override fun toString(): String = "{instructions=$instructions, symbols=$symbols}"
+    override fun hashCode(): Int = instructions.hashCode()
+    override fun equals(other: Any?): Boolean = when (other)
+    {
+        is Scope -> instructions == other.instructions && symbols == other.symbols
+        else     -> false
     }
 }
