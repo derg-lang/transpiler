@@ -12,7 +12,7 @@ import com.github.derg.transpiler.util.*
  * The declarator is responsible for making sure all definitions are properly registered within the symbol table before
  * any of the instructions are resolved. Declaring all symbols is the initial phase of the resolver phase.
  */
-internal class Declarator(symbols: SymbolTable, ids: IdProvider)
+internal class Declarator(private val symbols: SymbolTable, ids: IdProvider)
 {
     private val func = DeclaratorFunction(symbols, ids)
     private val type = DeclaratorType(symbols, ids)
@@ -27,23 +27,28 @@ internal class Declarator(symbols: SymbolTable, ids: IdProvider)
         // be registered.
         val context = DeclaredSymbols()
         
-        nodes
+        val variables = nodes
             .filterIsInstance<Definition.Variable>()
             .fold { def -> vari(def).mapValue { it to def } }
-            .onFailure { return failureOf(it) }
-        nodes
+            .valueOr { return failureOf(it) }
+        val functions = nodes
             .filterIsInstance<Definition.Function>()
             .fold { def -> func(def).mapValue { it to def.statements } }
             .valueOr { return failureOf(it) }
-            .forEach { context.functions.add(it) }
-        nodes
+        val types = nodes
             .filterIsInstance<Definition.Type>()
             .fold { def -> type(def).mapValue { it to def } }
             .valueOr { return failureOf(it) }
-            .forEach { context.types.add(it) }
         
-        // TODO: Symbols must be registered at this point - not when actually declaring them.
-        // TODO: Do not register function parameters in the symbol table, this should be done when defining function.
+        // Every declared symbol, must be registered in the symbol table for later referencing
+        variables.onEach { symbols.register(it.first) }
+        functions.onEach { symbols.register(it.first) }
+        types.onEach { symbols.register(it.first) }
+        
+        // Functions and types must be tightly related to their definitions.
+        // TODO: Consider re-structuring this, it is an unnatural coupling
+        functions.forEach { context.functions.add(it) }
+        types.forEach { context.types.add(it) }
         return successOf(context)
     }
 }
@@ -76,7 +81,7 @@ internal class DeclaratorFunction(private val symbols: SymbolTable, private val 
             error = errorType,
             params = parameters,
             visibility = node.visibility,
-        ).also { symbols.register(it) }.toSuccess()
+        ).toSuccess()
     }
 }
 
@@ -101,7 +106,7 @@ internal class DeclaratorParameter(private val symbols: SymbolTable, private val
             type = type,
             value = value,
             passability = node.passability,
-        ).also { symbols.register(it) }.toSuccess()
+        ).toSuccess()
     }
 }
 
@@ -118,7 +123,7 @@ internal class DeclaratorType(private val symbols: SymbolTable, private val ids:
             id = ids.random(),
             name = node.name,
             visibility = node.visibility,
-        ).also { symbols.register(it) }.toSuccess()
+        ).toSuccess()
     }
 }
 
@@ -146,6 +151,6 @@ internal class DeclaratorVariable(private val symbols: SymbolTable, private val 
             visibility = node.visibility,
             mutability = node.mutability,
             assignability = node.assignability,
-        ).also { symbols.register(it) }.toSuccess()
+        ).toSuccess()
     }
 }

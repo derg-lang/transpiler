@@ -141,6 +141,14 @@ class SymbolTable(private val parent: SymbolTable? = null)
         // Reverse inner scope, as all symbols are registered in the opposite order - outer scope is reversed too
         return inner.reversed() + outer
     }
+    
+    override fun toString(): String = "{identifiers=$identifiers}"
+    override fun hashCode(): Int = identifiers.hashCode()
+    override fun equals(other: Any?): Boolean = when (other)
+    {
+        is SymbolTable -> identifiers == other.identifiers
+        else           -> false
+    }
 }
 
 /**
@@ -150,10 +158,11 @@ class SymbolTable(private val parent: SymbolTable? = null)
  */
 class Scope(val instructions: List<Instruction>, val symbols: SymbolTable)
 {
+    override fun toString(): String = "{instructions=$instructions, symbols=$symbols}"
     override fun hashCode(): Int = instructions.hashCode()
     override fun equals(other: Any?): Boolean = when (other)
     {
-        is Scope -> this.instructions == other.instructions
+        is Scope -> instructions == other.instructions && symbols == other.symbols
         else     -> false
     }
 }

@@ -9,7 +9,6 @@ import com.github.derg.transpiler.source.hir.*
 import com.github.derg.transpiler.util.isSuccess
 import com.github.derg.transpiler.util.toFailure
 import com.github.derg.transpiler.util.toSuccess
-import com.github.derg.transpiler.util.valueOrDie
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
@@ -50,14 +49,6 @@ class TestDeclaratorFunction
 {
     private val symbols = SymbolTable(Builtin.SYMBOLS)
     private val declarator = DeclaratorFunction(symbols, IdProviderNil)
-    
-    @Test
-    fun `Given basic, when declaring, then registered`()
-    {
-        val symbol = declarator(funOf("function")).valueOrDie()
-        
-        assertEquals(listOf(symbol), symbols.find(symbol.name))
-    }
     
     @Test
     fun `Given basic, when declaring, then correct outcome`()
@@ -120,14 +111,6 @@ class TestDeclaratorParameter
     private val declarator = DeclaratorParameter(symbols, IdProviderNil)
     
     @Test
-    fun `Given basic, when declaring, then registered`()
-    {
-        val symbol = declarator(parOf("parameter")).valueOrDie()
-        
-        assertEquals(listOf(symbol), symbols.find(symbol.name))
-    }
-    
-    @Test
     fun `Given valid type, when declaring, then registered`()
     {
         val node = parOf("parameter", type = Builtin.INT32.name)
@@ -179,14 +162,6 @@ class TestDeclaratorType
     private val declarator = DeclaratorType(symbols, IdProviderNil)
     
     @Test
-    fun `Given basic, when declaring, then registered`()
-    {
-        val symbol = declarator(typeOf("type")).valueOrDie()
-        
-        assertEquals(listOf(symbol), symbols.find(symbol.name))
-    }
-    
-    @Test
     fun `Given basic, when declaring, then correct outcome`()
     {
         val node = typeOf("type")
@@ -200,14 +175,6 @@ class TestDeclaratorVariable
 {
     private val symbols = SymbolTable(Builtin.SYMBOLS)
     private val declarator = DeclaratorVariable(symbols, IdProviderNil)
-    
-    @Test
-    fun `Given basic, when declaring, then registered`()
-    {
-        val symbol = declarator(varOf("variable", 1.e)).valueOrDie()
-        
-        assertEquals(listOf(symbol), symbols.find(symbol.name))
-    }
     
     @Test
     fun `Given basic, when declaring, then correct outcome`()

@@ -68,12 +68,14 @@ sealed interface ResolveError
 }
 
 /**
- *
+ * TODO: Highly in-progress and untested code, but it will do for now! Make sure to re-visit this part of the codebase
+ *       at some point not too far into the future and actually clean up whatever is going on in here.
  */
 class Resolver(private val symbols: SymbolTable)
 {
     /**
-     *
+     * Constructs a package with the given [name] from the collection of [segments]. Every segment may refer to zero or
+     * one module; all modules will be compiled in the appropriate order.
      */
     fun resolve(name: Name, segments: List<Segment>): Result<Package, ResolveError>
     {
