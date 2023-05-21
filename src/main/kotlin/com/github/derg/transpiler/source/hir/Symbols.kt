@@ -33,10 +33,9 @@ data class Module(
 ) : Symbol
 {
     /**
-     * The symbols and instructions associated with the module will be assigned when the module is defined. The scope
-     * will hold all such information.
+     * The symbols associated with the module will be assigned when the module is defined.
      */
-    lateinit var scope: Scope
+    val symbols = SymbolTable()
 }
 
 /**

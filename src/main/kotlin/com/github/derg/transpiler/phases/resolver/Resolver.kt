@@ -98,9 +98,9 @@ class Resolver(private val symbols: SymbolTable)
             //       that "just works"? Cannot allow side-effect functions to be invoked in that case.
             // TODO: Figure out a suitable default name for modules
             val module = Module(Id.randomUUID(), moduleName ?: "__main").also { `package`.symbols.register(it) }
-            val statements = groupedSegments.flatMap { it.definitions }
+            val definitions = groupedSegments.flatMap { it.definitions }
             
-            module.scope = `package`.symbols.resolveScope(statements).valueOr { return failureOf(it) }
+            module.symbols.registerSymbols(definitions).valueOr { return failureOf(it) }
         }
         return `package`.toSuccess()
     }
@@ -157,8 +157,6 @@ internal fun SymbolTable.resolveStatement(statement: Statement): Result<Instruct
     is Control.Invoke      -> TODO()
     is Control.Raise       -> ConverterRaise(this)(statement)
     is Control.Return      -> ConverterReturn(this)(statement)
-    is Definition.Function -> Nop.toSuccess()
-    is Definition.Type     -> Nop.toSuccess()
     is Definition.Variable -> ConverterAssign(this)(Assignment.Assign(statement.name, statement.value))
 }
 
@@ -207,20 +205,31 @@ internal fun SymbolTable.resolveRequiredVariable(name: Name): Result<Variable, R
 }
 
 /**
+ * Converts all the provided [definitions] into instructions, baked into a new scope.
+ */
+internal fun SymbolTable.registerSymbols(definitions: List<Definition>): Result<Unit, ResolveError>
+{
+    // In order to perform type checking, all statements must be declared up-front. Once the declaration has taken
+    // place, we may define the symbols and use them where appropriate.
+    val context = Declarator(this, IdProviderSystem)(definitions).valueOr { return failureOf(it) }
+    
+    // TODO: The definition order depends on how symbols depend on each other - cannot define something before all
+    //       dependencies have been defined first
+    context.functions.fold { DefinerFunction(this)(it.first, it.second) }.onFailure { return failureOf(it) }
+    context.types.fold { DefinerType(this)(it.first, it.second) }.onFailure { return failureOf(it) }
+    
+    return successOf()
+}
+
+/**
  * Converts all the provided [statements] into instructions, baked into a new scope.
  */
 internal fun SymbolTable.resolveScope(statements: List<Statement>): Result<Scope, ResolveError>
 {
     val inner = SymbolTable(this)
     
-    // In order to perform type checking, all statements must be declared up-front. Once the declaration has taken
-    // place, we may define the symbols and use them where appropriate.
-    val context = Declarator(inner, IdProviderSystem)(statements).valueOr { return failureOf(it) }
+    inner.registerSymbols(statements.filterIsInstance<Definition>()).onFailure { return failureOf(it) }
     
-    context.functions.fold { DefinerFunction(inner)(it.first, it.second) }.onFailure { return failureOf(it) }
-    context.types.fold { DefinerType(inner)(it.first, it.second) }.onFailure { return failureOf(it) }
-    
-    // Once all setup is completed, we may finally convert the statements into actually executable code.
     val instructions = statements.fold { inner.resolveStatement(it) }.valueOr { return failureOf(it) }
-    return Scope(instructions.filterNot { it == Nop }, inner).toSuccess()
+    return Scope(instructions, inner).toSuccess()
 }

@@ -18,7 +18,7 @@ internal class Declarator(private val symbols: SymbolTable, ids: IdProvider)
     private val type = DeclaratorType(symbols, ids)
     private val vari = DeclaratorVariable(symbols, ids)
     
-    operator fun invoke(nodes: List<Statement>): Result<DeclaredSymbols, ResolveError>
+    operator fun invoke(nodes: List<Definition>): Result<DeclaredSymbols, ResolveError>
     {
         // Must ensure all functions and types are declared in advance, as they may be referring to each other in a
         // non-trivial manners. At any scope level, all functions and types must be able to "see" each other, even
