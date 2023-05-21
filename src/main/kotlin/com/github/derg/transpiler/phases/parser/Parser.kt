@@ -25,7 +25,7 @@ fun parse(input: String): Segment
  * together form the abstract syntax tree describing the full source code. The abstract syntax tree may be utilized to
  * perform various operations on the source code in a manner which is simpler than performing text manipulations.
  */
-interface Parser<Type>
+interface Parser<out Type>
 {
     /**
      * Determines whether the parser requires at least one token in order to produce any meaningful content or not. Any

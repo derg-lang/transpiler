@@ -23,7 +23,7 @@ val <Value, Error> Result<Value, Error>.isFailure: Boolean get() = this is Resul
 
 fun <Value, Error> Result<Value, Error>.valueOrNull(): Value? = (this as? Result.Success<Value>)?.value
 fun <Value, Error> Result<Value, Error>.errorOrNull(): Error? = (this as? Result.Failure<Error>)?.error
-fun <Value, Error> Result<Value, Error>.valueOrDie(): Value = valueOrNull() ?: throw IllegalStateException()
+fun <Value, Error> Result<Value, Error>.valueOrDie(): Value = valueOr { throw IllegalStateException(it.toString()) }
 
 /**
  * Folds the result value such that either the success value is returned, or a value is produced by [function].
