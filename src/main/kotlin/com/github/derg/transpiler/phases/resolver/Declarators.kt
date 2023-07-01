@@ -1,11 +1,9 @@
 package com.github.derg.transpiler.phases.resolver
 
-import com.github.derg.transpiler.source.IdProvider
-import com.github.derg.transpiler.source.ast.Definition
-import com.github.derg.transpiler.source.ast.Parameter
-import com.github.derg.transpiler.source.ast.Statement
-import com.github.derg.transpiler.source.hir.*
-import com.github.derg.transpiler.source.hir.Function
+import com.github.derg.transpiler.source.*
+import com.github.derg.transpiler.source.ast.*
+import com.github.derg.transpiler.source.thir.*
+import com.github.derg.transpiler.source.thir.Function
 import com.github.derg.transpiler.util.*
 
 /**
@@ -18,7 +16,7 @@ internal class Declarator(private val symbols: SymbolTable, ids: IdProvider)
     private val type = DeclaratorType(symbols, ids)
     private val vari = DeclaratorVariable(symbols, ids)
     
-    operator fun invoke(nodes: List<Definition>): Result<DeclaredSymbols, ResolveError>
+    operator fun invoke(nodes: List<AstDefinition>): Result<DeclaredSymbols, ResolveError>
     {
         // Must ensure all functions and types are declared in advance, as they may be referring to each other in a
         // non-trivial manners. At any scope level, all functions and types must be able to "see" each other, even
@@ -28,15 +26,15 @@ internal class Declarator(private val symbols: SymbolTable, ids: IdProvider)
         val context = DeclaredSymbols()
         
         val variables = nodes
-            .filterIsInstance<Definition.Variable>()
+            .filterIsInstance<AstVariable>()
             .fold { def -> vari(def).mapValue { it to def } }
             .valueOr { return failureOf(it) }
         val functions = nodes
-            .filterIsInstance<Definition.Function>()
+            .filterIsInstance<AstFunction>()
             .fold { def -> func(def).mapValue { it to def.statements } }
             .valueOr { return failureOf(it) }
         val types = nodes
-            .filterIsInstance<Definition.Type>()
+            .filterIsInstance<AstType>()
             .fold { def -> type(def).mapValue { it to def } }
             .valueOr { return failureOf(it) }
         
@@ -55,8 +53,8 @@ internal class Declarator(private val symbols: SymbolTable, ids: IdProvider)
 
 internal class DeclaredSymbols
 {
-    val functions = mutableListOf<Pair<Function, List<Statement>>>()
-    val types = mutableListOf<Pair<Type, Definition.Type>>()
+    val functions = mutableListOf<Pair<Function, List<AstStatement>>>()
+    val types = mutableListOf<Pair<Type, AstType>>()
 }
 
 /**
@@ -67,7 +65,7 @@ internal class DeclaratorFunction(private val symbols: SymbolTable, private val 
 {
     private val param = DeclaratorParameter(symbols, ids)
     
-    operator fun invoke(node: Definition.Function): Result<Function, ResolveError>
+    operator fun invoke(node: AstFunction): Result<Function, ResolveError>
     {
         val valueType = symbols.resolveOptionalType(node.valueType).valueOr { return failureOf(it) }
         val errorType = symbols.resolveOptionalType(node.errorType).valueOr { return failureOf(it) }
@@ -91,7 +89,7 @@ internal class DeclaratorFunction(private val symbols: SymbolTable, private val 
  */
 internal class DeclaratorParameter(private val symbols: SymbolTable, private val ids: IdProvider)
 {
-    operator fun invoke(node: Parameter): Result<Function.Parameter, ResolveError>
+    operator fun invoke(node: AstParameter): Result<Function.Parameter, ResolveError>
     {
         val type = symbols.resolveOptionalType(node.type).valueOr { return failureOf(it) }
         val value = symbols.resolveOptionalValue(node.value).valueOr { return failureOf(it) }
@@ -116,7 +114,7 @@ internal class DeclaratorParameter(private val symbols: SymbolTable, private val
  */
 internal class DeclaratorType(private val symbols: SymbolTable, private val ids: IdProvider)
 {
-    operator fun invoke(node: Definition.Type): Result<Type, ResolveError>
+    operator fun invoke(node: AstType): Result<Type, ResolveError>
     {
         // TODO: Verify that there are no conflicting types in the same scope
         return Type(
@@ -133,7 +131,7 @@ internal class DeclaratorType(private val symbols: SymbolTable, private val ids:
  */
 internal class DeclaratorVariable(private val symbols: SymbolTable, private val ids: IdProvider)
 {
-    operator fun invoke(node: Definition.Variable): Result<Variable, ResolveError>
+    operator fun invoke(node: AstVariable): Result<Variable, ResolveError>
     {
         // Note: Type inference fails here if the order in which variables are declared does not correspond to the
         //       order in which they are initialized.

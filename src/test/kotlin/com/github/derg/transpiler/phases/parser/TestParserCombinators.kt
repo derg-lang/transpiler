@@ -1,11 +1,9 @@
 package com.github.derg.transpiler.phases.parser
 
-import com.github.derg.transpiler.source.ast.Operator
-import com.github.derg.transpiler.source.lexeme.EndOfFile
-import com.github.derg.transpiler.source.lexeme.Numeric
-import com.github.derg.transpiler.source.lexeme.SymbolType
-import org.junit.jupiter.api.Assertions.assertTrue
-import org.junit.jupiter.api.Test
+import com.github.derg.transpiler.source.ast.*
+import com.github.derg.transpiler.source.lexeme.*
+import org.junit.jupiter.api.*
+import org.junit.jupiter.api.Assertions.*
 
 private const val REAL = "real"
 private const val BOOL = "bool"
@@ -203,8 +201,7 @@ class TestParserRepeating
     @Test
     fun `Given valid token, when parsing empty separator, then value produced`()
     {
-        val tester =
-            Tester { ParserRepeating(ParserSequence(REAL to ParserReal(), BOOL to ParserBool())) }
+        val tester = Tester { ParserRepeating(ParserSequence(REAL to ParserReal(), BOOL to ParserBool())) }
         
         tester.parse("1 true").isWip(1).isOk(1).isDone()
             .hasValue(REAL, 1.toExp())
@@ -255,8 +252,7 @@ class TestParserOptional
     @Test
     fun `Given valid token, when parsing complex, then value produced`()
     {
-        val tester =
-            Tester { ParserOptional(ParserSequence(REAL to ParserReal(), BOOL to ParserBool())) }
+        val tester = Tester { ParserOptional(ParserSequence(REAL to ParserReal(), BOOL to ParserBool())) }
         
         tester.parse("").isDone()
             .hasValue(REAL, null).hasValue(BOOL, null)
@@ -275,8 +271,7 @@ class TestParserOptional
     @Test
     fun `Given invalid token, when parsing, then correct error`()
     {
-        val tester =
-            Tester { ParserOptional(ParserSequence(REAL to ParserReal(), BOOL to ParserBool())) }
+        val tester = Tester { ParserOptional(ParserSequence(REAL to ParserReal(), BOOL to ParserBool())) }
         
         tester.parse("1 bah").isWip(1).isBad { ParseError.UnexpectedToken(it[1]) }
     }
@@ -285,14 +280,14 @@ class TestParserOptional
 class TestParserPattern
 {
     private fun pattern() = ParserSequence("lhs" to ParserReal(), "rhs" to ParserReal())
-    private fun converter(outcome: Parsers) = Operator.Add(outcome["lhs"], outcome["rhs"])
+    private fun converter(outcome: Parsers) = AstAdd(outcome["lhs"], outcome["rhs"])
     
     @Test
     fun `Given valid token, when parsing simple, then value produced`()
     {
         val tester = Tester { ParserPattern(::pattern, ::converter) }
         
-        tester.parse("1 2").isWip(1).isOk(1).isDone().isValue(1 opAdd 2).resets()
+        tester.parse("1 2").isWip(1).isOk(1).isDone().isValue(1 astAdd 2).resets()
     }
     
     @Test

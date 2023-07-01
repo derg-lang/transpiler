@@ -1,6 +1,6 @@
 package com.github.derg.transpiler.phases.parser
 
-import com.github.derg.transpiler.source.lexeme.Token
+import com.github.derg.transpiler.source.lexeme.*
 import com.github.derg.transpiler.util.*
 
 /**

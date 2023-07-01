@@ -1,13 +1,12 @@
 package com.github.derg.transpiler.phases.resolver
 
-import com.github.derg.transpiler.source.ast.Assignment
-import com.github.derg.transpiler.source.ast.Control
-import com.github.derg.transpiler.source.hir.*
+import com.github.derg.transpiler.source.ast.*
+import com.github.derg.transpiler.source.thir.*
 import com.github.derg.transpiler.util.*
 
 internal class ConverterAssign(private val symbols: SymbolTable)
 {
-    operator fun invoke(node: Assignment.Assign): Result<Instruction, ResolveError>
+    operator fun invoke(node: AstAssign): Result<Instruction, ResolveError>
     {
         val variable = symbols.resolveRequiredVariable(node.name).valueOr { return failureOf(it) }
         val value = symbols.resolveRequiredValue(node.expression).valueOr { return failureOf(it) }
@@ -21,7 +20,7 @@ internal class ConverterAssign(private val symbols: SymbolTable)
 
 internal class ConverterBranch(private val symbols: SymbolTable)
 {
-    operator fun invoke(node: Control.Branch): Result<Instruction, ResolveError>
+    operator fun invoke(node: AstBranch): Result<Instruction, ResolveError>
     {
         val predicate = symbols.resolveRequiredValue(node.predicate).valueOr { return failureOf(it) }
         if (predicate.type.id != Builtin.BOOL.id)
@@ -37,7 +36,7 @@ internal class ConverterBranch(private val symbols: SymbolTable)
 
 internal class ConverterRaise(private val symbols: SymbolTable)
 {
-    operator fun invoke(node: Control.Raise): Result<Instruction, ResolveError>
+    operator fun invoke(node: AstReturnError): Result<Instruction, ResolveError>
     {
         val value = symbols.resolveRequiredValue(node.expression).valueOr { return failureOf(it) }
         return Raise(value).toSuccess()
@@ -46,7 +45,7 @@ internal class ConverterRaise(private val symbols: SymbolTable)
 
 internal class ConverterReturn(private val symbols: SymbolTable)
 {
-    operator fun invoke(node: Control.Return): Result<Instruction, ResolveError>
+    operator fun invoke(node: AstReturnValue): Result<Instruction, ResolveError>
     {
         val value = symbols.resolveOptionalValue(node.expression).valueOr { return failureOf(it) }
         return if (value == null) Exit.toSuccess() else Return(value).toSuccess()

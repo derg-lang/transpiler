@@ -1,21 +1,16 @@
-package com.github.derg.transpiler.source.hir
+package com.github.derg.transpiler.source.thir
 
 import com.github.derg.transpiler.source.*
-import com.github.derg.transpiler.source.ast.Constant
-import com.github.derg.transpiler.source.ast.Expression
 
-val Boolean.e: Expression get() = Constant.Bool(this)
-val Boolean.v: ValueBool get() = BoolConst(this)
-val Int.e: Expression get() = Constant.Real(this, Builtin.LIT_INT32)
-val Int.v: ValueInt32 get() = Int32Const(this)
-val Long.e: Expression get() = Constant.Real(this, Builtin.LIT_INT64)
-val Long.v: ValueInt64 get() = Int64Const(this)
-val String.e: Expression get() = Constant.Text(this, null)
+// Helper literals for generating an expression node from a primitive value
+val Boolean.thir: ValueBool get() = BoolConst(this)
+val Int.thir: ValueInt32 get() = Int32Const(this)
+val Long.thir: ValueInt64 get() = Int64Const(this)
 
 /**
  * Generates a function from the provided input parameters.
  */
-fun hirFunOf(
+fun thirFunOf(
     name: Name,
     valueType: Type = Builtin.VOID,
     errorType: Type = Builtin.VOID,
@@ -32,7 +27,7 @@ fun hirFunOf(
 /**
  * Generates a parameter from the provided input parameters.
  */
-fun hirParOf(
+fun thirParOf(
     name: Name,
     type: Type,
     value: Value? = null,
@@ -47,7 +42,7 @@ fun hirParOf(
 /**
  * Generates a type from the provided input parameters.
  */
-fun hirTypeOf(
+fun thirTypeOf(
     name: Name,
 ) = Type(
     id = IdProviderNil.random(),
@@ -58,7 +53,7 @@ fun hirTypeOf(
 /**
  * Generates a variable from the provided input parameters.
  */
-fun hirVarOf(
+fun thirVarOf(
     name: Name,
     type: Type,
 ) = Variable(

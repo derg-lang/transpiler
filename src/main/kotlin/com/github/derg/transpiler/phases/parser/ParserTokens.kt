@@ -1,12 +1,9 @@
 package com.github.derg.transpiler.phases.parser
 
-import com.github.derg.transpiler.source.Name
-import com.github.derg.transpiler.source.ast.Constant
-import com.github.derg.transpiler.source.ast.Expression
+import com.github.derg.transpiler.source.*
+import com.github.derg.transpiler.source.ast.*
 import com.github.derg.transpiler.source.lexeme.*
-import com.github.derg.transpiler.util.Result
-import com.github.derg.transpiler.util.failureOf
-import com.github.derg.transpiler.util.successOf
+import com.github.derg.transpiler.util.*
 
 /**
  * Parses a single identifier from the token stream.
@@ -63,9 +60,9 @@ class ParserSymbol(vararg symbols: SymbolType) : Parser<SymbolType>
 /**
  * Parses a single boolean value from the token stream.
  */
-class ParserBool : Parser<Expression>
+class ParserBool : Parser<AstExpression>
 {
-    private var expression: Expression? = null
+    private var expression: AstExpression? = null
     
     override fun parse(token: Token): Result<ParseOk, ParseError>
     {
@@ -75,15 +72,15 @@ class ParserBool : Parser<Expression>
         val symbol = token as? Symbol ?: return failureOf(ParseError.UnexpectedToken(token))
         expression = when (symbol.type)
         {
-            SymbolType.TRUE  -> Constant.Bool(true)
-            SymbolType.FALSE -> Constant.Bool(false)
+            SymbolType.TRUE  -> AstBool(true)
+            SymbolType.FALSE -> AstBool(false)
             else             -> return failureOf(ParseError.UnexpectedToken(token))
         }
         return successOf(ParseOk.Complete)
     }
     
     override fun skipable(): Boolean = false
-    override fun produce(): Expression = expression ?: throw IllegalStateException("No expression has been parsed")
+    override fun produce(): AstExpression = expression ?: throw IllegalStateException("No expression has been parsed")
     override fun reset()
     {
         expression = null
@@ -93,9 +90,9 @@ class ParserBool : Parser<Expression>
 /**
  * Parses a single numeric value from the token stream.
  */
-class ParserReal : Parser<Expression>
+class ParserReal : Parser<AstExpression>
 {
-    private var expression: Expression? = null
+    private var expression: AstExpression? = null
     
     override fun parse(token: Token): Result<ParseOk, ParseError>
     {
@@ -103,12 +100,12 @@ class ParserReal : Parser<Expression>
             return successOf(ParseOk.Finished)
         
         val number = token as? Numeric ?: return failureOf(ParseError.UnexpectedToken(token))
-        expression = Constant.Real(number.value, number.type)
+        expression = AstReal(number.value, number.type)
         return successOf(ParseOk.Complete)
     }
     
     override fun skipable(): Boolean = false
-    override fun produce(): Expression = expression ?: throw IllegalStateException("No expression has been parsed")
+    override fun produce(): AstExpression = expression ?: throw IllegalStateException("No expression has been parsed")
     override fun reset()
     {
         expression = null
@@ -118,9 +115,9 @@ class ParserReal : Parser<Expression>
 /**
  * Parses a single string value from the token stream.
  */
-class ParserText : Parser<Expression>
+class ParserText : Parser<AstExpression>
 {
-    private var expression: Expression? = null
+    private var expression: AstExpression? = null
     
     override fun parse(token: Token): Result<ParseOk, ParseError>
     {
@@ -128,12 +125,12 @@ class ParserText : Parser<Expression>
             return successOf(ParseOk.Finished)
         
         val string = token as? Textual ?: return failureOf(ParseError.UnexpectedToken(token))
-        expression = Constant.Text(string.value, string.type)
+        expression = AstText(string.value, string.type)
         return successOf(ParseOk.Complete)
     }
     
     override fun skipable(): Boolean = false
-    override fun produce(): Expression = expression ?: throw IllegalStateException("No expression has been parsed")
+    override fun produce(): AstExpression = expression ?: throw IllegalStateException("No expression has been parsed")
     override fun reset()
     {
         expression = null

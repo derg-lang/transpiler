@@ -1,11 +1,9 @@
 package com.github.derg.transpiler.phases.resolver
 
-import com.github.derg.transpiler.source.ast.Access
-import com.github.derg.transpiler.source.ast.Constant
-import com.github.derg.transpiler.source.ast.Operator
-import com.github.derg.transpiler.source.hir.*
-import com.github.derg.transpiler.source.hir.Function
-import com.github.derg.transpiler.source.lexeme.SymbolType
+import com.github.derg.transpiler.source.ast.*
+import com.github.derg.transpiler.source.lexeme.*
+import com.github.derg.transpiler.source.thir.*
+import com.github.derg.transpiler.source.thir.Function
 import com.github.derg.transpiler.util.*
 
 /**
@@ -32,7 +30,7 @@ private fun valueOf(variable: Variable): Value = when (variable.type.id)
 
 internal class ConverterAnd(private val symbols: SymbolTable)
 {
-    operator fun invoke(node: Operator.And): Result<Value, ResolveError>
+    operator fun invoke(node: AstAnd): Result<Value, ResolveError>
     {
         val lhs = symbols.resolveRequiredValue(node.lhs).valueOr { return failureOf(it) }
         val rhs = symbols.resolveRequiredValue(node.rhs).valueOr { return failureOf(it) }
@@ -46,7 +44,7 @@ internal class ConverterAnd(private val symbols: SymbolTable)
 
 internal class ConverterAdd(private val symbols: SymbolTable)
 {
-    operator fun invoke(node: Operator.Add): Result<Value, ResolveError>
+    operator fun invoke(node: AstAdd): Result<Value, ResolveError>
     {
         val lhs = symbols.resolveRequiredValue(node.lhs).valueOr { return failureOf(it) }
         val rhs = symbols.resolveRequiredValue(node.rhs).valueOr { return failureOf(it) }
@@ -64,13 +62,29 @@ internal class ConverterAdd(private val symbols: SymbolTable)
 
 internal object ConverterBool
 {
-    operator fun invoke(node: Constant.Bool): Result<Value, ResolveError> =
+    operator fun invoke(node: AstBool): Result<Value, ResolveError> =
         BoolConst(node.value).toSuccess()
+}
+
+internal class ConverterCall(private val symbols: SymbolTable)
+{
+    operator fun invoke(node: AstCall): Result<Value, ResolveError>
+    {
+        // TODO: Determine parameter ordering based on names as well - just position alone is not enough
+        val values = node.arguments
+            .fold { symbols.resolveRequiredValue(it.expression) }
+            .valueOr { return failureOf(it) }
+        
+        val function = symbols
+            .resolveRequiredFunction(node.name, values.map { it.type })
+            .valueOr { return failureOf(it) }
+        return valueOf(function, values).toSuccess()
+    }
 }
 
 internal class ConverterDivide(private val symbols: SymbolTable)
 {
-    operator fun invoke(node: Operator.Divide): Result<Value, ResolveError>
+    operator fun invoke(node: AstDivide): Result<Value, ResolveError>
     {
         val lhs = symbols.resolveRequiredValue(node.lhs).valueOr { return failureOf(it) }
         val rhs = symbols.resolveRequiredValue(node.rhs).valueOr { return failureOf(it) }
@@ -88,7 +102,7 @@ internal class ConverterDivide(private val symbols: SymbolTable)
 
 internal class ConverterEqual(private val symbols: SymbolTable)
 {
-    operator fun invoke(node: Operator.Equal): Result<Value, ResolveError>
+    operator fun invoke(node: AstEqual): Result<Value, ResolveError>
     {
         val lhs = symbols.resolveRequiredValue(node.lhs).valueOr { return failureOf(it) }
         val rhs = symbols.resolveRequiredValue(node.rhs).valueOr { return failureOf(it) }
@@ -108,7 +122,7 @@ internal class ConverterEqual(private val symbols: SymbolTable)
 
 internal class ConverterGreater(private val symbols: SymbolTable)
 {
-    operator fun invoke(node: Operator.Greater): Result<Value, ResolveError>
+    operator fun invoke(node: AstGreater): Result<Value, ResolveError>
     {
         val lhs = symbols.resolveRequiredValue(node.lhs).valueOr { return failureOf(it) }
         val rhs = symbols.resolveRequiredValue(node.rhs).valueOr { return failureOf(it) }
@@ -126,7 +140,7 @@ internal class ConverterGreater(private val symbols: SymbolTable)
 
 internal class ConverterGreaterEqual(private val symbols: SymbolTable)
 {
-    operator fun invoke(node: Operator.GreaterEqual): Result<Value, ResolveError>
+    operator fun invoke(node: AstGreaterEqual): Result<Value, ResolveError>
     {
         val lhs = symbols.resolveRequiredValue(node.lhs).valueOr { return failureOf(it) }
         val rhs = symbols.resolveRequiredValue(node.rhs).valueOr { return failureOf(it) }
@@ -142,25 +156,9 @@ internal class ConverterGreaterEqual(private val symbols: SymbolTable)
     }
 }
 
-internal class ConverterInvoke(private val symbols: SymbolTable)
-{
-    operator fun invoke(node: Access.Function): Result<Value, ResolveError>
-    {
-        // TODO: Determine parameter ordering based on names as well - just position alone is not enough
-        val values = node.arguments
-            .fold { symbols.resolveRequiredValue(it.expression) }
-            .valueOr { return failureOf(it) }
-        
-        val function = symbols
-            .resolveRequiredFunction(node.name, values.map { it.type })
-            .valueOr { return failureOf(it) }
-        return valueOf(function, values).toSuccess()
-    }
-}
-
 internal class ConverterLess(private val symbols: SymbolTable)
 {
-    operator fun invoke(node: Operator.Less): Result<Value, ResolveError>
+    operator fun invoke(node: AstLess): Result<Value, ResolveError>
     {
         val lhs = symbols.resolveRequiredValue(node.lhs).valueOr { return failureOf(it) }
         val rhs = symbols.resolveRequiredValue(node.rhs).valueOr { return failureOf(it) }
@@ -178,7 +176,7 @@ internal class ConverterLess(private val symbols: SymbolTable)
 
 internal class ConverterLessEqual(private val symbols: SymbolTable)
 {
-    operator fun invoke(node: Operator.LessEqual): Result<Value, ResolveError>
+    operator fun invoke(node: AstLessEqual): Result<Value, ResolveError>
     {
         val lhs = symbols.resolveRequiredValue(node.lhs).valueOr { return failureOf(it) }
         val rhs = symbols.resolveRequiredValue(node.rhs).valueOr { return failureOf(it) }
@@ -196,7 +194,7 @@ internal class ConverterLessEqual(private val symbols: SymbolTable)
 
 internal class ConverterModulo(private val symbols: SymbolTable)
 {
-    operator fun invoke(node: Operator.Modulo): Result<Value, ResolveError>
+    operator fun invoke(node: AstModulo): Result<Value, ResolveError>
     {
         val lhs = symbols.resolveRequiredValue(node.lhs).valueOr { return failureOf(it) }
         val rhs = symbols.resolveRequiredValue(node.rhs).valueOr { return failureOf(it) }
@@ -214,7 +212,7 @@ internal class ConverterModulo(private val symbols: SymbolTable)
 
 internal class ConverterMultiply(private val symbols: SymbolTable)
 {
-    operator fun invoke(node: Operator.Multiply): Result<Value, ResolveError>
+    operator fun invoke(node: AstMultiply): Result<Value, ResolveError>
     {
         val lhs = symbols.resolveRequiredValue(node.lhs).valueOr { return failureOf(it) }
         val rhs = symbols.resolveRequiredValue(node.rhs).valueOr { return failureOf(it) }
@@ -232,7 +230,7 @@ internal class ConverterMultiply(private val symbols: SymbolTable)
 
 internal class ConverterNot(private val symbols: SymbolTable)
 {
-    operator fun invoke(node: Operator.Not): Result<Value, ResolveError>
+    operator fun invoke(node: AstNot): Result<Value, ResolveError>
     {
         val expr = symbols.resolveRequiredValue(node.expression).valueOr { return failureOf(it) }
         
@@ -245,7 +243,7 @@ internal class ConverterNot(private val symbols: SymbolTable)
 
 internal class ConverterNotEqual(private val symbols: SymbolTable)
 {
-    operator fun invoke(node: Operator.NotEqual): Result<Value, ResolveError>
+    operator fun invoke(node: AstNotEqual): Result<Value, ResolveError>
     {
         val lhs = symbols.resolveRequiredValue(node.lhs).valueOr { return failureOf(it) }
         val rhs = symbols.resolveRequiredValue(node.rhs).valueOr { return failureOf(it) }
@@ -265,7 +263,7 @@ internal class ConverterNotEqual(private val symbols: SymbolTable)
 
 internal class ConverterOr(private val symbols: SymbolTable)
 {
-    operator fun invoke(node: Operator.Or): Result<Value, ResolveError>
+    operator fun invoke(node: AstOr): Result<Value, ResolveError>
     {
         val lhs = symbols.resolveRequiredValue(node.lhs).valueOr { return failureOf(it) }
         val rhs = symbols.resolveRequiredValue(node.rhs).valueOr { return failureOf(it) }
@@ -279,7 +277,7 @@ internal class ConverterOr(private val symbols: SymbolTable)
 
 internal class ConverterRead(private val symbols: SymbolTable)
 {
-    operator fun invoke(node: Access.Variable): Result<Value, ResolveError>
+    operator fun invoke(node: AstRead): Result<Value, ResolveError>
     {
         val variable = symbols.resolveRequiredVariable(node.name).valueOr { return failureOf(it) }
         return valueOf(variable).toSuccess()
@@ -288,7 +286,7 @@ internal class ConverterRead(private val symbols: SymbolTable)
 
 internal class ConverterReal(private val symbols: SymbolTable)
 {
-    operator fun invoke(node: Constant.Real): Result<Value, ResolveError>
+    operator fun invoke(node: AstReal): Result<Value, ResolveError>
     {
         // TODO: Fail operation if number is too large
         if (node.literal == Builtin.LIT_INT32 || node.literal == null)
@@ -303,7 +301,7 @@ internal class ConverterReal(private val symbols: SymbolTable)
 
 internal class ConverterSubtract(private val symbols: SymbolTable)
 {
-    operator fun invoke(node: Operator.Subtract): Result<Value, ResolveError>
+    operator fun invoke(node: AstSubtract): Result<Value, ResolveError>
     {
         val lhs = symbols.resolveRequiredValue(node.lhs).valueOr { return failureOf(it) }
         val rhs = symbols.resolveRequiredValue(node.rhs).valueOr { return failureOf(it) }
@@ -321,7 +319,7 @@ internal class ConverterSubtract(private val symbols: SymbolTable)
 
 internal class ConverterText(private val symbols: SymbolTable)
 {
-    operator fun invoke(node: Constant.Text): Result<Value, ResolveError>
+    operator fun invoke(node: AstText): Result<Value, ResolveError>
     {
         // TODO: Implement me
         if (node.literal == null)
@@ -334,7 +332,7 @@ internal class ConverterText(private val symbols: SymbolTable)
 
 internal class ConverterUnaryMinus(private val symbols: SymbolTable)
 {
-    operator fun invoke(node: Operator.Minus): Result<Value, ResolveError>
+    operator fun invoke(node: AstMinus): Result<Value, ResolveError>
     {
         val rhs = symbols.resolveRequiredValue(node.expression).valueOr { return failureOf(it) }
         
@@ -351,7 +349,7 @@ internal class ConverterUnaryMinus(private val symbols: SymbolTable)
 
 internal class ConverterUnaryPlus(private val symbols: SymbolTable)
 {
-    operator fun invoke(node: Operator.Plus): Result<Value, ResolveError>
+    operator fun invoke(node: AstPlus): Result<Value, ResolveError>
     {
         val rhs = symbols.resolveRequiredValue(node.expression).valueOr { return failureOf(it) }
         
@@ -368,7 +366,7 @@ internal class ConverterUnaryPlus(private val symbols: SymbolTable)
 
 internal class ConverterXor(private val symbols: SymbolTable)
 {
-    operator fun invoke(node: Operator.Xor): Result<Value, ResolveError>
+    operator fun invoke(node: AstXor): Result<Value, ResolveError>
     {
         val lhs = symbols.resolveRequiredValue(node.lhs).valueOr { return failureOf(it) }
         val rhs = symbols.resolveRequiredValue(node.rhs).valueOr { return failureOf(it) }

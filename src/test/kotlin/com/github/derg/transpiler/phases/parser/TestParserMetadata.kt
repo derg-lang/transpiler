@@ -1,7 +1,8 @@
 package com.github.derg.transpiler.phases.parser
 
-import com.github.derg.transpiler.source.lexeme.EndOfFile
-import org.junit.jupiter.api.Test
+import com.github.derg.transpiler.source.ast.*
+import com.github.derg.transpiler.source.lexeme.*
+import org.junit.jupiter.api.*
 
 /**
  * Determines whether the current token stream is parsed correctly. The expectation is that there will be [wipCount]
@@ -19,9 +20,9 @@ class TestParserScope
     fun `Given valid token, when parsing, then correct scope`()
     {
         tester.parse("{}").isChain(1, 1).isValue(emptyList())
-        tester.parse("a = 1").isChain(2, 1).isValue(listOf("a" assign 1))
-        tester.parse("{ a = 1 }").isChain(4, 1).isValue(listOf("a" assign 1))
-        tester.parse("{ a = 1 b = 2 }").isChain(7, 1).isValue(listOf("a" assign 1, "b" assign 2))
+        tester.parse("a = 1").isChain(2, 1).isValue(listOf("a" astAssign 1))
+        tester.parse("{ a = 1 }").isChain(4, 1).isValue(listOf("a" astAssign 1))
+        tester.parse("{ a = 1 b = 2 }").isChain(7, 1).isValue(listOf("a" astAssign 1, "b" astAssign 2))
     }
     
     @Test
@@ -40,11 +41,11 @@ class TestParserSegment
     @Test
     fun `Given valid segment, when parsing, then correctly parsed`()
     {
-        tester.parse("").isChain().isValue(segmentOf())
-        tester.parse("module foo").isChain(1, 1).isValue(segmentOf(module = "foo"))
-        tester.parse("use foo").isChain(1, 1).isValue(segmentOf(imports = listOf("foo")))
-        tester.parse("val foo = 0").isChain(3, 1).isValue(segmentOf(statements = listOf(varOf("foo", 0))))
-        tester.parse("fun foo() {}").isChain(5, 1).isValue(segmentOf(statements = listOf(funOf("foo"))))
+        tester.parse("").isChain().isValue(astSegmentOf())
+        tester.parse("module foo").isChain(1, 1).isValue(astSegmentOf(module = "foo"))
+        tester.parse("use foo").isChain(1, 1).isValue(astSegmentOf(imports = listOf("foo")))
+        tester.parse("val foo = 0").isChain(3, 1).isValue(astSegmentOf(statements = listOf(astVarOf("foo", 0))))
+        tester.parse("fun foo() {}").isChain(5, 1).isValue(astSegmentOf(statements = listOf(astFunOf("foo"))))
     }
     
     @Test

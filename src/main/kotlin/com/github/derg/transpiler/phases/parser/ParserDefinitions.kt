@@ -1,12 +1,12 @@
 package com.github.derg.transpiler.phases.parser
 
-import com.github.derg.transpiler.source.ast.Definition
-import com.github.derg.transpiler.source.lexeme.SymbolType
+import com.github.derg.transpiler.source.ast.*
+import com.github.derg.transpiler.source.lexeme.*
 
 /**
  * Parses a single statement from the token stream.
  */
-fun definitionParserOf(): Parser<Definition> = ParserAnyOf(
+fun definitionParserOf(): Parser<AstDefinition> = ParserAnyOf(
     functionParserOf(),
     typeParserOf(),
     variableParserOf(),
@@ -15,7 +15,7 @@ fun definitionParserOf(): Parser<Definition> = ParserAnyOf(
 /**
  * Parses a function definition from the token stream.
  */
-fun functionParserOf(): Parser<Definition.Function> =
+fun functionParserOf(): Parser<AstFunction> =
     ParserPattern(::functionPatternOf, ::functionOutcomeOf)
 
 private fun functionPatternOf() = ParserSequence(
@@ -32,7 +32,7 @@ private fun functionPatternOf() = ParserSequence(
     "close_brace" to ParserSymbol(SymbolType.CLOSE_BRACE),
 )
 
-private fun functionOutcomeOf(values: Parsers) = Definition.Function(
+private fun functionOutcomeOf(values: Parsers) = AstFunction(
     name = values["name"],
     valueType = values["value"],
     errorType = values["error"],
@@ -44,7 +44,7 @@ private fun functionOutcomeOf(values: Parsers) = Definition.Function(
 /**
  * Parses a type definition from the token stream.
  */
-fun typeParserOf(): Parser<Definition.Type> =
+fun typeParserOf(): Parser<AstType> =
     ParserPattern(::typePatternOf, ::typeOutcomeOf)
 
 private fun typePatternOf() = ParserSequence(
@@ -56,7 +56,7 @@ private fun typePatternOf() = ParserSequence(
     "close_brace" to ParserSymbol(SymbolType.CLOSE_BRACE),
 )
 
-private fun typeOutcomeOf(values: Parsers) = Definition.Type(
+private fun typeOutcomeOf(values: Parsers) = AstType(
     name = values["name"],
     visibility = values["visibility"],
     properties = values["properties"],
@@ -65,7 +65,7 @@ private fun typeOutcomeOf(values: Parsers) = Definition.Type(
 /**
  * Parses a variable definition from the token stream.
  */
-fun variableParserOf(): Parser<Definition.Variable> =
+fun variableParserOf(): Parser<AstVariable> =
     ParserPattern(::variablePatternOf, ::variableOutcomeOf)
 
 private fun variablePatternOf() = ParserSequence(
@@ -77,7 +77,7 @@ private fun variablePatternOf() = ParserSequence(
     "value" to expressionParserOf(),
 )
 
-private fun variableOutcomeOf(values: Parsers) = Definition.Variable(
+private fun variableOutcomeOf(values: Parsers) = AstVariable(
     name = values["name"],
     type = null,
     value = values["value"],

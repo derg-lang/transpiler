@@ -1,12 +1,10 @@
 package com.github.derg.transpiler.phases.lexer
 
-import com.github.derg.transpiler.core.Localized
-import com.github.derg.transpiler.core.Location
+import com.github.derg.transpiler.core.*
 import com.github.derg.transpiler.source.lexeme.*
 import com.github.derg.transpiler.source.lexeme.SymbolType.*
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Nested
-import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.*
+import org.junit.jupiter.api.Assertions.*
 
 /**
  * Generates a new localized token.

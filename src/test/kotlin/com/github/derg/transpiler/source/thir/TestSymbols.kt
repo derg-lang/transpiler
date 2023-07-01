@@ -1,13 +1,13 @@
-package com.github.derg.transpiler.source.hir
+package com.github.derg.transpiler.source.thir
 
-import com.github.derg.transpiler.source.Id
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Test
+import com.github.derg.transpiler.source.*
+import org.junit.jupiter.api.*
+import org.junit.jupiter.api.Assertions.*
 
 /**
  * Helper function for binding a new arbitrary id under the given [name].
  */
-private fun SymbolTable.register(name: String): Symbol = register(hirTypeOf(name))
+private fun SymbolTable.register(name: String): Symbol = register(thirTypeOf(name))
 
 class TestSymbolTable
 {

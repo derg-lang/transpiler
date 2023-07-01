@@ -8,19 +8,19 @@ import com.github.derg.transpiler.source.*
  * associated with. Arguments must be specified in the correct order, although the ordering may be ignored if the
  * arguments are named instead.
  */
-data class Argument(
+data class AstArgument(
     val name: Name?,
-    val expression: Expression,
+    val expression: AstExpression,
 )
 
 /**
  * Every function may have any number of parameters, each with their own [name], optional [type] information, and
  * optional default [value]. Parameters must contain a [passability] and [assignability] specifier.
  */
-data class Parameter(
+data class AstParameter(
     val name: Name,
     val type: Name?,
-    val value: Expression?,
+    val value: AstExpression?,
     val passability: Passability,
     val assignability: Assignability,
 )
@@ -33,10 +33,10 @@ data class Parameter(
  * @param mutability The kind of the variable, to which degree it is mutable.
  * @param assignability The assignability of the variable, how values are assigned to it.
  */
-data class Property(
+data class AstProperty(
     val name: Name,
     val type: Name?,
-    val value: Expression?,
+    val value: AstExpression?,
     val visibility: Visibility,
     val mutability: Mutability,
     val assignability: Assignability,
@@ -51,8 +51,8 @@ data class Property(
  * @param imports The modules which are to be imported into this segment.
  * @param definitions All components which are injected into the module by this segment.
  */
-data class Segment(
+data class AstSegment(
     val module: Name?,
     val imports: List<Name>,
-    val definitions: List<Definition>,
+    val definitions: List<AstDefinition>,
 )

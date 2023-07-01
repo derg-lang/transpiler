@@ -1,7 +1,8 @@
 package com.github.derg.transpiler.phases.parser
 
-import com.github.derg.transpiler.source.lexeme.EndOfFile
-import org.junit.jupiter.api.Test
+import com.github.derg.transpiler.source.ast.*
+import com.github.derg.transpiler.source.lexeme.*
+import org.junit.jupiter.api.*
 
 /**
  * Determines whether the current token stream is parsed correctly. The expectation is that there will be [wipCount]
@@ -19,26 +20,26 @@ class TestParserStatement
     fun `Given valid token, when parsing, then correct statement`()
     {
         // Assignments
-        tester.parse("a = 1").isChain(2, 1).isValue("a" assign 1)
-        tester.parse("a += 1").isChain(2, 1).isValue("a" assignAdd 1)
-        tester.parse("a -= 1").isChain(2, 1).isValue("a" assignSub 1)
-        tester.parse("a *= 1").isChain(2, 1).isValue("a" assignMul 1)
-        tester.parse("a %= 1").isChain(2, 1).isValue("a" assignMod 1)
-        tester.parse("a /= 1").isChain(2, 1).isValue("a" assignDiv 1)
-        tester.parse("val foo = 0").isChain(3, 1).isValue(varOf("foo", 0))
+        tester.parse("a = 1").isChain(2, 1).isValue("a" astAssign 1)
+        tester.parse("a += 1").isChain(2, 1).isValue("a" astAssignAdd 1)
+        tester.parse("a -= 1").isChain(2, 1).isValue("a" astAssignSub 1)
+        tester.parse("a *= 1").isChain(2, 1).isValue("a" astAssignMul 1)
+        tester.parse("a %= 1").isChain(2, 1).isValue("a" astAssignMod 1)
+        tester.parse("a /= 1").isChain(2, 1).isValue("a" astAssignDiv 1)
+        tester.parse("val foo = 0").isChain(3, 1).isValue(astVarOf("foo", 0))
         
         // Control flow
         tester.parse("if 1 a = 2").isWip(4).isOk(1).isDone()
-            .isValue(ifOf(1, success = listOf("a" assign 2)))
+            .isValue(astIfOf(1, success = listOf("a" astAssign 2)))
         tester.parse("if 1 {} else a = 2").isWip(3).isOk(1).isWip(3).isOk(1).isDone()
-            .isValue(ifOf(1, success = emptyList(), failure = listOf("a" assign 2)))
+            .isValue(astIfOf(1, success = emptyList(), failure = listOf("a" astAssign 2)))
         
-        tester.parse("raise 1").isChain(1, 1).isValue(raiseOf(1))
-        tester.parse("return 1").isChain(1, 1).isValue(returnOf(1))
-        tester.parse("return _").isChain(1, 1).isValue(returnOf())
+        tester.parse("raise 1").isChain(1, 1).isValue(astRaiseOf(1))
+        tester.parse("return 1").isChain(1, 1).isValue(astReturnOf(1))
+        tester.parse("return _").isChain(1, 1).isValue(astReturnOf())
         
         // Function call
-        tester.parse("a()").isChain(2, 1).isValue(invokeOf("a".toFun()))
+        tester.parse("a()").isChain(2, 1).isValue(astInvokeOf("a".toFun()))
     }
     
     @Test

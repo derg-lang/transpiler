@@ -1,10 +1,7 @@
 package com.github.derg.transpiler.phases.parser
 
-import com.github.derg.transpiler.source.ast.Access
-import com.github.derg.transpiler.source.ast.Expression
-import com.github.derg.transpiler.source.ast.Operator
-import com.github.derg.transpiler.source.ast.When
-import com.github.derg.transpiler.source.lexeme.SymbolType
+import com.github.derg.transpiler.source.ast.*
+import com.github.derg.transpiler.source.lexeme.*
 
 /**
  * Operators have a specific precedence associated with them. The higher the precedence, the later they are evaluated in
@@ -38,43 +35,43 @@ private val PRECEDENCE = mapOf(
 /**
  * Joins together the [lhs] and [rhs] expression using the specified [operator].
  */
-private fun mergeInfix(lhs: Expression, operator: SymbolType, rhs: Expression): Expression = when (operator)
+private fun mergeInfix(lhs: AstExpression, operator: SymbolType, rhs: AstExpression): AstExpression = when (operator)
 {
-    SymbolType.AND           -> Operator.And(lhs, rhs)
-    SymbolType.DIVIDE        -> Operator.Divide(lhs, rhs)
-    SymbolType.EQUAL         -> Operator.Equal(lhs, rhs)
-    SymbolType.EXCLAMATION   -> Operator.Raise(lhs, rhs)
-    SymbolType.GREATER       -> Operator.Greater(lhs, rhs)
-    SymbolType.GREATER_EQUAL -> Operator.GreaterEqual(lhs, rhs)
-    SymbolType.LESS          -> Operator.Less(lhs, rhs)
-    SymbolType.LESS_EQUAL    -> Operator.LessEqual(lhs, rhs)
-    SymbolType.MINUS         -> Operator.Subtract(lhs, rhs)
-    SymbolType.MODULO        -> Operator.Modulo(lhs, rhs)
-    SymbolType.MULTIPLY      -> Operator.Multiply(lhs, rhs)
-    SymbolType.NOT_EQUAL     -> Operator.NotEqual(lhs, rhs)
-    SymbolType.OR            -> Operator.Or(lhs, rhs)
-    SymbolType.PLUS          -> Operator.Add(lhs, rhs)
-    SymbolType.QUESTION      -> Operator.Catch(lhs, rhs)
-    SymbolType.THREE_WAY     -> Operator.ThreeWay(lhs, rhs)
-    SymbolType.XOR           -> Operator.Xor(lhs, rhs)
+    SymbolType.AND           -> AstAnd(lhs, rhs)
+    SymbolType.DIVIDE        -> AstDivide(lhs, rhs)
+    SymbolType.EQUAL         -> AstEqual(lhs, rhs)
+    SymbolType.EXCLAMATION   -> AstRaise(lhs, rhs)
+    SymbolType.GREATER       -> AstGreater(lhs, rhs)
+    SymbolType.GREATER_EQUAL -> AstGreaterEqual(lhs, rhs)
+    SymbolType.LESS          -> AstLess(lhs, rhs)
+    SymbolType.LESS_EQUAL    -> AstLessEqual(lhs, rhs)
+    SymbolType.MINUS         -> AstSubtract(lhs, rhs)
+    SymbolType.MODULO        -> AstModulo(lhs, rhs)
+    SymbolType.MULTIPLY      -> AstMultiply(lhs, rhs)
+    SymbolType.NOT_EQUAL     -> AstNotEqual(lhs, rhs)
+    SymbolType.OR            -> AstOr(lhs, rhs)
+    SymbolType.PLUS          -> AstAdd(lhs, rhs)
+    SymbolType.QUESTION      -> AstCatch(lhs, rhs)
+    SymbolType.THREE_WAY     -> AstThreeWay(lhs, rhs)
+    SymbolType.XOR           -> AstXor(lhs, rhs)
     else                     -> throw IllegalStateException("Illegal operator $operator when parsing operator")
 }
 
 /**
  * Joins together the prefix [operator] and the [rhs] expression.
  */
-private fun mergePrefix(operator: SymbolType, rhs: Expression): Expression = when (operator)
+private fun mergePrefix(operator: SymbolType, rhs: AstExpression): AstExpression = when (operator)
 {
-    SymbolType.NOT   -> Operator.Not(rhs)
-    SymbolType.PLUS  -> Operator.Plus(rhs)
-    SymbolType.MINUS -> Operator.Minus(rhs)
+    SymbolType.NOT   -> AstNot(rhs)
+    SymbolType.PLUS  -> AstPlus(rhs)
+    SymbolType.MINUS -> AstMinus(rhs)
     else             -> throw IllegalStateException("Illegal operator $operator when parsing prefix operator")
 }
 
 /**
  * Joins together the [lhs] expression together with the remainder of the [terms], in a recursive manner.
  */
-private fun mergeRecursively(lhs: Expression, terms: List<Pair<SymbolType, Expression>>, index: Int = 0): Expression
+private fun mergeRecursively(lhs: AstExpression, terms: List<Pair<SymbolType, AstExpression>>, index: Int = 0): AstExpression
 {
     val (op1, mhs) = terms.getOrNull(index) ?: return lhs
     val (op2, rhs) = terms.getOrNull(index + 1) ?: return mergeInfix(lhs, op1, mhs)
@@ -91,7 +88,7 @@ private fun mergeRecursively(lhs: Expression, terms: List<Pair<SymbolType, Expre
 /**
  * Parses a single expression from the token stream.
  */
-fun expressionParserOf(): Parser<Expression> =
+fun expressionParserOf(): Parser<AstExpression> =
     ParserPattern(::expressionPatternOf, ::expressionOutcomeOf)
 
 private fun basePatternOf() = ParserAnyOf(
@@ -116,25 +113,25 @@ private fun expressionPatternOf() = ParserSequence(
     "terms" to ParserRepeating(termPatternOf()),
 )
 
-private fun expressionOutcomeOf(values: Parsers): Expression
+private fun expressionOutcomeOf(values: Parsers): AstExpression
 {
-    val base = values.get<Expression>("base")
+    val base = values.get<AstExpression>("base")
     val terms = values.get<List<Parsers>>("terms")
     val ops = terms.produce<SymbolType>("operator")
-    val rest = terms.produce<Expression>("term")
+    val rest = terms.produce<AstExpression>("term")
     return mergeRecursively(base, ops.zip(rest))
 }
 
 /**
  * Parses a variable access expression from the token stream.
  */
-private fun variableCallParserOf(): Parser<Expression> =
-    ParserPattern(::ParserName) { Access.Variable(it) }
+private fun variableCallParserOf(): Parser<AstExpression> =
+    ParserPattern(::ParserName) { AstRead(it) }
 
 /**
  * Parses a function call expression from the token stream.
  */
-internal fun functionCallParserOf(): Parser<Expression> =
+internal fun functionCallParserOf(): Parser<AstExpression> =
     ParserPattern(::functionCallPatternOf, ::functionCallOutcomeOf)
 
 private fun functionCallPatternOf() = ParserSequence(
@@ -144,13 +141,13 @@ private fun functionCallPatternOf() = ParserSequence(
     "close" to ParserSymbol(SymbolType.CLOSE_PARENTHESIS),
 )
 
-private fun functionCallOutcomeOf(outcome: Parsers): Expression =
-    Access.Function(outcome["name"], outcome["params"])
+private fun functionCallOutcomeOf(outcome: Parsers): AstExpression =
+    AstCall(outcome["name"], outcome["params"])
 
 /**
  * Parses a subscript call expression from the token stream.
  */
-private fun subscriptCallParserOf(): Parser<Expression> =
+private fun subscriptCallParserOf(): Parser<AstExpression> =
     ParserPattern(::subscriptCallPatternOf, ::subscriptCallOutcomeOf)
 
 private fun subscriptCallPatternOf() = ParserSequence(
@@ -160,13 +157,13 @@ private fun subscriptCallPatternOf() = ParserSequence(
     "close" to ParserSymbol(SymbolType.CLOSE_BRACKET),
 )
 
-private fun subscriptCallOutcomeOf(values: Parsers): Expression =
-    Access.Subscript(values["name"], values["params"])
+private fun subscriptCallOutcomeOf(values: Parsers): AstExpression =
+    AstSubscript(values["name"], values["params"])
 
 /**
  * Parses an expression from in-between parenthesis from the token stream.
  */
-private fun parenthesisParserOf(): Parser<Expression> =
+private fun parenthesisParserOf(): Parser<AstExpression> =
     ParserPattern(::parenthesisPatternOf, ::parenthesisOutcomeOf)
 
 private fun parenthesisPatternOf() = ParserSequence(
@@ -175,13 +172,13 @@ private fun parenthesisPatternOf() = ParserSequence(
     "close" to ParserSymbol(SymbolType.CLOSE_PARENTHESIS),
 )
 
-private fun parenthesisOutcomeOf(values: Parsers): Expression =
+private fun parenthesisOutcomeOf(values: Parsers): AstExpression =
     values["expr"]
 
 /**
  * Parses a unary operator from the token stream.
  */
-private fun unaryOperatorParserOf(): Parser<Expression> =
+private fun unaryOperatorParserOf(): Parser<AstExpression> =
     ParserPattern(::unaryOperatorPatternOf, ::unaryOperatorOutcomeOf)
 
 private fun unaryOperatorPatternOf() = ParserSequence(
@@ -189,13 +186,13 @@ private fun unaryOperatorPatternOf() = ParserSequence(
     "rhs" to basePatternOf(),
 )
 
-private fun unaryOperatorOutcomeOf(values: Parsers): Expression =
+private fun unaryOperatorOutcomeOf(values: Parsers): AstExpression =
     mergePrefix(values["op"], values["rhs"])
 
 /**
  * Parses a when expression from the token stream.
  */
-private fun whenParserOf(): Parser<Expression> =
+private fun whenParserOf(): Parser<AstExpression> =
     ParserPattern(::whenPatternOf, ::whenOutcomeOf)
 
 private fun whenPatternOf() = ParserSequence(
@@ -206,19 +203,19 @@ private fun whenPatternOf() = ParserSequence(
     "else" to ParserOptional(ParserSequence("else" to ParserSymbol(SymbolType.ELSE), "expr" to expressionParserOf())),
 )
 
-private fun whenOutcomeOf(values: Parsers): Expression
+private fun whenOutcomeOf(values: Parsers): AstExpression
 {
-    val expression = values.get<Expression>("expression")
-    val default = values.get<Parsers?>("else")?.get<Expression>("expr")
-    val first = listOf(values.get<Pair<Expression, Expression>>("first"))
-    val branches = values.get<List<Pair<Expression, Expression>>>("remainder")
-    return When(expression, first + branches, default)
+    val expression = values.get<AstExpression>("expression")
+    val default = values.get<Parsers?>("else")?.get<AstExpression>("expr")
+    val first = listOf(values.get<Pair<AstExpression, AstExpression>>("first"))
+    val branches = values.get<List<Pair<AstExpression, AstExpression>>>("remainder")
+    return AstWhen(expression, first + branches, default)
 }
 
 /**
  * Parses a when expression branch from the token stream.
  */
-private fun whenBranchParserOf(): Parser<Pair<Expression, Expression>> =
+private fun whenBranchParserOf(): Parser<Pair<AstExpression, AstExpression>> =
     ParserPattern(::whenBranchPatternOf, ::whenBranchOutcomeOf)
 
 private fun whenBranchPatternOf() = ParserSequence(
@@ -227,9 +224,9 @@ private fun whenBranchPatternOf() = ParserSequence(
     "expression" to expressionParserOf(),
 )
 
-private fun whenBranchOutcomeOf(values: Parsers): Pair<Expression, Expression>
+private fun whenBranchOutcomeOf(values: Parsers): Pair<AstExpression, AstExpression>
 {
-    val cond = values.get<Expression>("condition")
-    val expr = values.get<Expression>("expression")
+    val cond = values.get<AstExpression>("condition")
+    val expr = values.get<AstExpression>("expression")
     return cond to expr
 }

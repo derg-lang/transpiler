@@ -1,8 +1,6 @@
-package com.github.derg.transpiler.source.hir
+package com.github.derg.transpiler.source.thir
 
-import com.github.derg.transpiler.source.Id
-import com.github.derg.transpiler.source.Name
-import com.github.derg.transpiler.source.Visibility
+import com.github.derg.transpiler.source.*
 
 /**
  * Registers all builtin types, functions, variables, everything required to implement any sort of transpiler or

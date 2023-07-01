@@ -93,6 +93,11 @@ enum class Assignability
      * instead.
      */
     REFERENCE,
+    
+    /**
+     * The variable is a pointer type, which may or may not be pointing at a valid object in memory.
+     */
+    POINTER,
 }
 
 /**

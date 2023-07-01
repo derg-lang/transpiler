@@ -1,4 +1,4 @@
-package com.github.derg.transpiler.source.hir
+package com.github.derg.transpiler.source.thir
 
 import com.github.derg.transpiler.source.*
 

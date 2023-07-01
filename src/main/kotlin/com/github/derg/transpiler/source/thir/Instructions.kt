@@ -1,4 +1,4 @@
-package com.github.derg.transpiler.source.hir
+package com.github.derg.transpiler.source.thir
 
 /**
  * Executable parts of the program are represented as instructions. Every instruction performs exactly one task,

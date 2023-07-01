@@ -1,11 +1,9 @@
 package com.github.derg.transpiler.phases.resolver
 
-import com.github.derg.transpiler.source.Id
-import com.github.derg.transpiler.source.IdProviderSystem
-import com.github.derg.transpiler.source.Name
+import com.github.derg.transpiler.source.*
 import com.github.derg.transpiler.source.ast.*
-import com.github.derg.transpiler.source.hir.*
-import com.github.derg.transpiler.source.hir.Function
+import com.github.derg.transpiler.source.thir.*
+import com.github.derg.transpiler.source.thir.Function
 import com.github.derg.transpiler.util.*
 
 /**
@@ -13,7 +11,7 @@ import com.github.derg.transpiler.util.*
  * symbols are properly linked together, converting all identifiers into an unambiguous id representing the symbol
  * itself. This phase ensures the source code is valid from a type safety perspective.
  */
-fun resolve(name: Name, segments: List<Segment>): Package =
+fun resolve(name: Name, segments: List<AstSegment>): Package =
     Resolver(Builtin.SYMBOLS).resolve(name, segments).valueOr { throw IllegalStateException("Failed resolving: $it") }
 
 /**
@@ -77,7 +75,7 @@ class Resolver(private val symbols: SymbolTable)
      * Constructs a package with the given [name] from the collection of [segments]. Every segment may refer to zero or
      * one module; all modules will be compiled in the appropriate order.
      */
-    fun resolve(name: Name, segments: List<Segment>): Result<Package, ResolveError>
+    fun resolve(name: Name, segments: List<AstSegment>): Result<Package, ResolveError>
     {
         // May now proceed with figuring out how to structure the package!
         val `package` = Package(Id.randomUUID(), name, SymbolTable(symbols))
@@ -123,7 +121,7 @@ internal fun SymbolTable.resolveOptionalType(name: Name?): Result<Type, ResolveE
  * Converts the given [expression] into a value which represents the same expression. If no expression was provided, an
  * empty value is returned instead.
  */
-internal fun SymbolTable.resolveOptionalValue(expression: Expression?): Result<Value?, ResolveError> =
+internal fun SymbolTable.resolveOptionalValue(expression: AstExpression?): Result<Value?, ResolveError> =
     if (expression == null) successOf(null) else resolveRequiredValue(expression)
 
 /**
@@ -150,48 +148,48 @@ private fun Function.isCompatibleWith(parameters: List<Type>): Boolean
 /**
  * Converts the given [statement] into an instruction which when executed performs the statement action.
  */
-internal fun SymbolTable.resolveStatement(statement: Statement): Result<Instruction, ResolveError> = when (statement)
+internal fun SymbolTable.resolveStatement(statement: AstStatement): Result<Instruction, ResolveError> = when (statement)
 {
-    is Assignment.Assign   -> ConverterAssign(this)(statement)
-    is Control.Branch      -> ConverterBranch(this)(statement)
-    is Control.Invoke      -> TODO()
-    is Control.Raise       -> ConverterRaise(this)(statement)
-    is Control.Return      -> ConverterReturn(this)(statement)
-    is Definition.Variable -> ConverterAssign(this)(Assignment.Assign(statement.name, statement.value))
+    is AstAssign      -> ConverterAssign(this)(statement)
+    is AstBranch      -> ConverterBranch(this)(statement)
+    is AstEnter       -> TODO()
+    is AstReturnError -> ConverterRaise(this)(statement)
+    is AstReturnValue -> ConverterReturn(this)(statement)
+    is AstVariable    -> ConverterAssign(this)(AstAssign(statement.name, statement.value))
 }
 
 /**
  * Converts the given [expression] into a value which represents the same expression.
  */
-internal fun SymbolTable.resolveRequiredValue(expression: Expression): Result<Value, ResolveError> = when (expression)
+internal fun SymbolTable.resolveRequiredValue(expression: AstExpression): Result<Value, ResolveError> = when (expression)
 {
-    is Access.Function       -> ConverterInvoke(this)(expression)
-    is Access.Subscript      -> TODO()
-    is Access.Variable       -> ConverterRead(this)(expression)
-    is Constant.Bool         -> ConverterBool(expression)
-    is Constant.Real         -> ConverterReal(this)(expression)
-    is Constant.Text         -> ConverterText(this)(expression)
-    is Operator.Add          -> ConverterAdd(this)(expression)
-    is Operator.And          -> ConverterAnd(this)(expression)
-    is Operator.Catch        -> TODO()
-    is Operator.Divide       -> ConverterDivide(this)(expression)
-    is Operator.Equal        -> ConverterEqual(this)(expression)
-    is Operator.Greater      -> ConverterGreater(this)(expression)
-    is Operator.GreaterEqual -> ConverterGreaterEqual(this)(expression)
-    is Operator.Less         -> ConverterLess(this)(expression)
-    is Operator.LessEqual    -> ConverterLessEqual(this)(expression)
-    is Operator.Minus        -> ConverterUnaryMinus(this)(expression)
-    is Operator.Modulo       -> ConverterModulo(this)(expression)
-    is Operator.Multiply     -> ConverterMultiply(this)(expression)
-    is Operator.Not          -> ConverterNot(this)(expression)
-    is Operator.NotEqual     -> ConverterNotEqual(this)(expression)
-    is Operator.Or           -> ConverterOr(this)(expression)
-    is Operator.Plus         -> ConverterUnaryPlus(this)(expression)
-    is Operator.Raise        -> TODO()
-    is Operator.Subtract     -> ConverterSubtract(this)(expression)
-    is Operator.ThreeWay     -> TODO()
-    is Operator.Xor          -> ConverterXor(this)(expression)
-    is When                  -> TODO()
+    is AstAdd          -> ConverterAdd(this)(expression)
+    is AstAnd          -> ConverterAnd(this)(expression)
+    is AstBool         -> ConverterBool(expression)
+    is AstCall         -> ConverterCall(this)(expression)
+    is AstCatch        -> TODO()
+    is AstDivide       -> ConverterDivide(this)(expression)
+    is AstEqual        -> ConverterEqual(this)(expression)
+    is AstGreater      -> ConverterGreater(this)(expression)
+    is AstGreaterEqual -> ConverterGreaterEqual(this)(expression)
+    is AstLess         -> ConverterLess(this)(expression)
+    is AstLessEqual    -> ConverterLessEqual(this)(expression)
+    is AstMinus        -> ConverterUnaryMinus(this)(expression)
+    is AstModulo       -> ConverterModulo(this)(expression)
+    is AstMultiply     -> ConverterMultiply(this)(expression)
+    is AstNot          -> ConverterNot(this)(expression)
+    is AstNotEqual     -> ConverterNotEqual(this)(expression)
+    is AstOr           -> ConverterOr(this)(expression)
+    is AstPlus         -> ConverterUnaryPlus(this)(expression)
+    is AstRaise        -> TODO()
+    is AstReal         -> ConverterReal(this)(expression)
+    is AstRead         -> ConverterRead(this)(expression)
+    is AstSubscript    -> TODO()
+    is AstSubtract     -> ConverterSubtract(this)(expression)
+    is AstText         -> ConverterText(this)(expression)
+    is AstThreeWay     -> TODO()
+    is AstXor          -> ConverterXor(this)(expression)
+    is AstWhen         -> TODO()
 }
 
 /**
@@ -207,7 +205,7 @@ internal fun SymbolTable.resolveRequiredVariable(name: Name): Result<Variable, R
 /**
  * Converts all the provided [definitions] into instructions, baked into a new scope.
  */
-internal fun SymbolTable.registerSymbols(definitions: List<Definition>): Result<Unit, ResolveError>
+internal fun SymbolTable.registerSymbols(definitions: List<AstDefinition>): Result<Unit, ResolveError>
 {
     // In order to perform type checking, all statements must be declared up-front. Once the declaration has taken
     // place, we may define the symbols and use them where appropriate.
@@ -224,11 +222,11 @@ internal fun SymbolTable.registerSymbols(definitions: List<Definition>): Result<
 /**
  * Converts all the provided [statements] into instructions, baked into a new scope.
  */
-internal fun SymbolTable.resolveScope(statements: List<Statement>): Result<Scope, ResolveError>
+internal fun SymbolTable.resolveScope(statements: List<AstStatement>): Result<Scope, ResolveError>
 {
     val inner = SymbolTable(this)
     
-    inner.registerSymbols(statements.filterIsInstance<Definition>()).onFailure { return failureOf(it) }
+    inner.registerSymbols(statements.filterIsInstance<AstDefinition>()).onFailure { return failureOf(it) }
     
     val instructions = statements.fold { inner.resolveStatement(it) }.valueOr { return failureOf(it) }
     return Scope(instructions, inner).toSuccess()

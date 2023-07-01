@@ -1,8 +1,7 @@
 package com.github.derg.transpiler.phases.parser
 
-import com.github.derg.transpiler.source.lexeme.EndOfFile
-import com.github.derg.transpiler.source.lexeme.SymbolType
-import org.junit.jupiter.api.Test
+import com.github.derg.transpiler.source.lexeme.*
+import org.junit.jupiter.api.*
 
 class TestParserName
 {

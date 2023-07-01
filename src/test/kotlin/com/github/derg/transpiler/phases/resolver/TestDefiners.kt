@@ -1,13 +1,9 @@
 package com.github.derg.transpiler.phases.resolver
 
-import com.github.derg.transpiler.source.hir.Builtin
-import com.github.derg.transpiler.source.hir.SymbolTable
-import com.github.derg.transpiler.source.hir.hirFunOf
-import com.github.derg.transpiler.source.hir.hirParOf
-import com.github.derg.transpiler.util.successOf
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertNotNull
-import org.junit.jupiter.api.Test
+import com.github.derg.transpiler.source.thir.*
+import com.github.derg.transpiler.util.*
+import org.junit.jupiter.api.*
+import org.junit.jupiter.api.Assertions.*
 
 class TestDefinerFunction
 {
@@ -17,7 +13,7 @@ class TestDefinerFunction
     @Test
     fun `Given valid function, when defining, then defined`()
     {
-        val function = hirFunOf("fun")
+        val function = thirFunOf("fun")
         
         assertEquals(successOf(), definer(function, emptyList()))
         assertNotNull(function.scope)
@@ -26,8 +22,8 @@ class TestDefinerFunction
     @Test
     fun `Given parameters, when defining, then parameters registered`()
     {
-        val param = hirParOf("foo", Builtin.BOOL)
-        val function = hirFunOf("fun", params = listOf(param))
+        val param = thirParOf("foo", Builtin.BOOL)
+        val function = thirFunOf("fun", params = listOf(param))
         
         assertEquals(successOf(), definer(function, emptyList()))
         assertEquals(listOf(param), function.scope.symbols.find(param.name))

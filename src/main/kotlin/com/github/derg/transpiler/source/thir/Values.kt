@@ -1,4 +1,4 @@
-package com.github.derg.transpiler.source.hir
+package com.github.derg.transpiler.source.thir
 
 /**
  * All values the source code operates on, are represented as expressions. Expressions may be constant values provided
