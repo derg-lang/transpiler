@@ -7,11 +7,11 @@ import org.junit.jupiter.api.Assertions.*
 /**
  * Helper function for binding a new arbitrary id under the given [name].
  */
-private fun SymbolTable.register(name: String): Symbol = register(thirTypeOf(name))
+private fun ThirSymbolTable.register(name: String): ThirSymbol = register(thirTypeOf(name))
 
 class TestSymbolTable
 {
-    private val table = SymbolTable()
+    private val table = ThirSymbolTable()
     
     @Test
     fun `When binding identifier, then bound`()
@@ -41,7 +41,7 @@ class TestSymbolTable
     @Test
     fun `Given parent, when finding identifier, then correct outcome`()
     {
-        val child = SymbolTable(table)
+        val child = ThirSymbolTable(table)
         val symbolsFoo = listOf(table.register("foo"))
         val symbolsBar = listOf(child.register("bar"), table.register("bar"))
         

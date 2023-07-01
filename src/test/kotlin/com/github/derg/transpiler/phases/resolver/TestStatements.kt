@@ -8,7 +8,7 @@ import org.junit.jupiter.api.Assertions.*
 
 class TestConverterAssign
 {
-    private val symbols = SymbolTable(Builtin.SYMBOLS)
+    private val symbols = ThirSymbolTable(Builtin.SYMBOLS)
     private val converter = ConverterAssign(symbols)
     
     private val variable = thirVarOf("foo", type = Builtin.INT32).also { symbols.register(it) }
@@ -16,7 +16,7 @@ class TestConverterAssign
     @Test
     fun `Given valid value, when resolving, then correct outcome`()
     {
-        assertEquals(Assign(variable, 1.thir).toSuccess(), converter(AstAssign(variable.name, 1.ast)))
+        assertEquals(ThirAssign(variable, 1.thir).toSuccess(), converter(AstAssign(variable.name, 1.ast)))
     }
     
     @Test
@@ -38,7 +38,7 @@ class TestConverterAssign
 
 class TestConverterBranch
 {
-    private val symbols = SymbolTable(Builtin.SYMBOLS)
+    private val symbols = ThirSymbolTable(Builtin.SYMBOLS)
     private val converter = ConverterBranch(symbols)
     
     /**
@@ -54,10 +54,10 @@ class TestConverterBranch
      * Small helper for generating the expected outcome from resolving a branch statement.
      */
     private fun expectedOf(
-        predicate: ValueBool,
-        success: List<Instruction> = emptyList(),
-        failure: List<Instruction> = emptyList(),
-    ) = Condition(predicate, success = Scope(success, symbols), failure = Scope(failure, symbols))
+        predicate: ThirValueBool,
+        success: List<ThirInstruction> = emptyList(),
+        failure: List<ThirInstruction> = emptyList(),
+    ) = ThirCondition(predicate, success = ThirScope(success, symbols), failure = ThirScope(failure, symbols))
     
     @Test
     fun `Given valid predicate, when resolving, then correct outcome`()
@@ -76,7 +76,7 @@ class TestConverterBranch
     @Test
     fun `Given success, when resolving, then correct outcome`()
     {
-        val expected = expectedOf(BoolConst(true), success = listOf(Exit))
+        val expected = expectedOf(BoolConst(true), success = listOf(ThirReturn))
         
         assertEquals(expected.toSuccess(), converter(inputOf(true.ast, success = listOf(AstReturnValue(null)))))
     }
@@ -84,7 +84,7 @@ class TestConverterBranch
     @Test
     fun `Given failure, when resolving, then correct outcome`()
     {
-        val expected = expectedOf(BoolConst(true), failure = listOf(Exit))
+        val expected = expectedOf(BoolConst(true), failure = listOf(ThirReturn))
         
         assertEquals(expected.toSuccess(), converter(inputOf(true.ast, failure = listOf(AstReturnValue(null)))))
     }
@@ -93,41 +93,41 @@ class TestConverterBranch
     fun `When resolving, then branches have independent scopes`()
     {
         val input = inputOf(true.ast, success = listOf(astVarOf("a", 1.ast)), failure = listOf(astVarOf("b", 1.ast)))
-        val actual = converter(input).valueOrDie() as Condition
+        val actual = converter(input).valueOrDie() as ThirCondition
         
-        assertNotEquals(emptyList<Symbol>(), actual.success.symbols.find("a"))
-        assertEquals(emptyList<Symbol>(), actual.success.symbols.find("b"))
-        assertEquals(emptyList<Symbol>(), actual.failure.symbols.find("a"))
-        assertNotEquals(emptyList<Symbol>(), actual.failure.symbols.find("b"))
+        assertNotEquals(emptyList<ThirSymbol>(), actual.success.symbols.find("a"))
+        assertEquals(emptyList<ThirSymbol>(), actual.success.symbols.find("b"))
+        assertEquals(emptyList<ThirSymbol>(), actual.failure.symbols.find("a"))
+        assertNotEquals(emptyList<ThirSymbol>(), actual.failure.symbols.find("b"))
     }
 }
 
 class TestConverterRaise
 {
-    private val symbols = SymbolTable(Builtin.SYMBOLS)
-    private val converter = ConverterRaise(symbols)
+    private val symbols = ThirSymbolTable(Builtin.SYMBOLS)
+    private val converter = ConverterReturnError(symbols)
     
     @Test
     fun `Given valid value, when resolving, then correct outcome`()
     {
-        assertEquals(Raise(1.thir).toSuccess(), converter(AstReturnError(1.ast)))
+        assertEquals(ThirReturnError(1.thir).toSuccess(), converter(AstReturnError(1.ast)))
     }
 }
 
 class TestConverterReturn
 {
-    private val symbols = SymbolTable(Builtin.SYMBOLS)
-    private val converter = ConverterReturn(symbols)
+    private val symbols = ThirSymbolTable(Builtin.SYMBOLS)
+    private val converter = ConverterReturnValue(symbols)
     
     @Test
     fun `Given no value, when resolving, then correct outcome`()
     {
-        assertEquals(Exit.toSuccess(), converter(AstReturnValue(null)))
+        assertEquals(ThirReturn.toSuccess(), converter(AstReturnValue(null)))
     }
     
     @Test
     fun `Given valid value, when resolving, then correct outcome`()
     {
-        assertEquals(Return(1.thir).toSuccess(), converter(AstReturnValue(1.ast)))
+        assertEquals(ThirReturnValue(1.thir).toSuccess(), converter(AstReturnValue(1.ast)))
     }
 }

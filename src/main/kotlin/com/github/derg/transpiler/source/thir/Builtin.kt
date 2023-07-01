@@ -8,7 +8,7 @@ import com.github.derg.transpiler.source.*
  */
 object Builtin
 {
-    val SYMBOLS = SymbolTable()
+    val SYMBOLS = ThirSymbolTable()
     
     val BOOL = SYMBOLS.register(typeOf("__builtin_bool", size = 1))
     val INT32 = SYMBOLS.register(typeOf("__builtin_int32", size = 4))
@@ -22,7 +22,7 @@ object Builtin
 /**
  * Generates a new type, with the given [size] in bytes and a specific [name].
  */
-private fun typeOf(name: Name, size: Int) = Type(
+private fun typeOf(name: Name, size: Int) = ThirType(
     id = Id.randomUUID(),
     name = name,
     visibility = Visibility.EXPORTED,

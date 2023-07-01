@@ -3,19 +3,19 @@ package com.github.derg.transpiler.source.thir
 import com.github.derg.transpiler.source.*
 
 // Helper literals for generating an expression node from a primitive value
-val Boolean.thir: ValueBool get() = BoolConst(this)
-val Int.thir: ValueInt32 get() = Int32Const(this)
-val Long.thir: ValueInt64 get() = Int64Const(this)
+val Boolean.thir: ThirValueBool get() = BoolConst(this)
+val Int.thir: ThirValueInt32 get() = Int32Const(this)
+val Long.thir: ThirValueInt64 get() = Int64Const(this)
 
 /**
  * Generates a function from the provided input parameters.
  */
 fun thirFunOf(
     name: Name,
-    valueType: Type = Builtin.VOID,
-    errorType: Type = Builtin.VOID,
-    params: List<Function.Parameter> = emptyList(),
-) = Function(
+    valueType: ThirType = Builtin.VOID,
+    errorType: ThirType = Builtin.VOID,
+    params: List<ThirParameter> = emptyList(),
+) = ThirFunction(
     id = IdProviderNil.random(),
     name = name,
     value = valueType,
@@ -29,9 +29,9 @@ fun thirFunOf(
  */
 fun thirParOf(
     name: Name,
-    type: Type,
-    value: Value? = null,
-) = Function.Parameter(
+    type: ThirType,
+    value: ThirValue? = null,
+) = ThirParameter(
     id = IdProviderNil.random(),
     name = name,
     type = type,
@@ -44,7 +44,7 @@ fun thirParOf(
  */
 fun thirTypeOf(
     name: Name,
-) = Type(
+) = ThirType(
     id = IdProviderNil.random(),
     name = name,
     visibility = Visibility.PRIVATE,
@@ -55,8 +55,8 @@ fun thirTypeOf(
  */
 fun thirVarOf(
     name: Name,
-    type: Type,
-) = Variable(
+    type: ThirType,
+) = ThirVariable(
     id = IdProviderNil.random(),
     name = name,
     type = type,

@@ -11,7 +11,7 @@ import kotlin.test.*
 
 class TestConverterAnd
 {
-    private val symbols = SymbolTable(Builtin.SYMBOLS)
+    private val symbols = ThirSymbolTable(Builtin.SYMBOLS)
     private val converter = ConverterAnd(symbols)
     
     @Test
@@ -31,7 +31,7 @@ class TestConverterAnd
 
 class TestConverterAdd
 {
-    private val symbols = SymbolTable(Builtin.SYMBOLS)
+    private val symbols = ThirSymbolTable(Builtin.SYMBOLS)
     private val converter = ConverterAdd(symbols)
     
     private val function = thirFunOf(
@@ -75,7 +75,7 @@ class TestConverterBool
 
 class TestConverterCall
 {
-    private val symbols = SymbolTable(Builtin.SYMBOLS)
+    private val symbols = ThirSymbolTable(Builtin.SYMBOLS)
     private val converter = ConverterCall(symbols)
     
     private val bool = thirFunOf(name = "bool", valueType = Builtin.BOOL).also { symbols.register(it) }
@@ -124,7 +124,7 @@ class TestConverterCall
 
 class TestConverterDivide
 {
-    private val symbols = SymbolTable(Builtin.SYMBOLS)
+    private val symbols = ThirSymbolTable(Builtin.SYMBOLS)
     private val converter = ConverterDivide(symbols)
     
     private val function = thirFunOf(
@@ -157,7 +157,7 @@ class TestConverterDivide
 
 class TestConverterEqual
 {
-    private val symbols = SymbolTable(Builtin.SYMBOLS)
+    private val symbols = ThirSymbolTable(Builtin.SYMBOLS)
     private val converter = ConverterEqual(symbols)
     
     private val function = thirFunOf(
@@ -191,7 +191,7 @@ class TestConverterEqual
 
 class TestConverterGreater
 {
-    private val symbols = SymbolTable(Builtin.SYMBOLS)
+    private val symbols = ThirSymbolTable(Builtin.SYMBOLS)
     private val converter = ConverterGreater(symbols)
     
     private val function = thirFunOf(
@@ -224,7 +224,7 @@ class TestConverterGreater
 
 class TestConverterGreaterEqual
 {
-    private val symbols = SymbolTable(Builtin.SYMBOLS)
+    private val symbols = ThirSymbolTable(Builtin.SYMBOLS)
     private val converter = ConverterGreaterEqual(symbols)
     
     private val function = thirFunOf(
@@ -257,7 +257,7 @@ class TestConverterGreaterEqual
 
 class TestConverterLess
 {
-    private val symbols = SymbolTable(Builtin.SYMBOLS)
+    private val symbols = ThirSymbolTable(Builtin.SYMBOLS)
     private val converter = ConverterLess(symbols)
     
     private val function = thirFunOf(
@@ -290,7 +290,7 @@ class TestConverterLess
 
 class TestConverterLessEqual
 {
-    private val symbols = SymbolTable(Builtin.SYMBOLS)
+    private val symbols = ThirSymbolTable(Builtin.SYMBOLS)
     private val converter = ConverterLessEqual(symbols)
     
     private val function = thirFunOf(
@@ -323,7 +323,7 @@ class TestConverterLessEqual
 
 class TestConverterModulo
 {
-    private val symbols = SymbolTable(Builtin.SYMBOLS)
+    private val symbols = ThirSymbolTable(Builtin.SYMBOLS)
     private val converter = ConverterModulo(symbols)
     
     private val function = thirFunOf(
@@ -356,7 +356,7 @@ class TestConverterModulo
 
 class TestConverterMultiply
 {
-    private val symbols = SymbolTable(Builtin.SYMBOLS)
+    private val symbols = ThirSymbolTable(Builtin.SYMBOLS)
     private val converter = ConverterMultiply(symbols)
     
     private val function = thirFunOf(
@@ -389,7 +389,7 @@ class TestConverterMultiply
 
 class TestConverterNot
 {
-    private val symbols = SymbolTable(Builtin.SYMBOLS)
+    private val symbols = ThirSymbolTable(Builtin.SYMBOLS)
     private val converter = ConverterNot(symbols)
     
     @Test
@@ -409,7 +409,7 @@ class TestConverterNot
 
 class TestConverterNotEqual
 {
-    private val symbols = SymbolTable(Builtin.SYMBOLS)
+    private val symbols = ThirSymbolTable(Builtin.SYMBOLS)
     private val converter = ConverterNotEqual(symbols)
     
     private val function = thirFunOf(
@@ -443,7 +443,7 @@ class TestConverterNotEqual
 
 class TestConverterOr
 {
-    private val symbols = SymbolTable(Builtin.SYMBOLS)
+    private val symbols = ThirSymbolTable(Builtin.SYMBOLS)
     private val converter = ConverterOr(symbols)
     
     @Test
@@ -463,7 +463,7 @@ class TestConverterOr
 
 class TestConverterRead
 {
-    private val symbols = SymbolTable(Builtin.SYMBOLS)
+    private val symbols = ThirSymbolTable(Builtin.SYMBOLS)
     private val converter = ConverterRead(symbols)
     
     private val bool = thirVarOf(name = "bool", type = Builtin.BOOL).also { symbols.register(it) }
@@ -489,7 +489,7 @@ class TestConverterRead
 
 class TestConverterReal
 {
-    private val symbols = SymbolTable(Builtin.SYMBOLS)
+    private val symbols = ThirSymbolTable(Builtin.SYMBOLS)
     private val converter = ConverterReal(symbols)
     
     @Test
@@ -517,7 +517,7 @@ class TestConverterReal
 
 class TestConverterSubtract
 {
-    private val symbols = SymbolTable(Builtin.SYMBOLS)
+    private val symbols = ThirSymbolTable(Builtin.SYMBOLS)
     private val converter = ConverterSubtract(symbols)
     
     private val function = thirFunOf(
@@ -550,7 +550,7 @@ class TestConverterSubtract
 
 class TestConverterText
 {
-    private val symbols = SymbolTable(Builtin.SYMBOLS)
+    private val symbols = ThirSymbolTable(Builtin.SYMBOLS)
     private val converter = ConverterText(symbols)
     
     @Test
@@ -576,7 +576,7 @@ class TestConverterText
 
 class TestConverterUnaryMinus
 {
-    private val symbols = SymbolTable(Builtin.SYMBOLS)
+    private val symbols = ThirSymbolTable(Builtin.SYMBOLS)
     private val converter = ConverterUnaryMinus(symbols)
     
     private val function = thirFunOf(
@@ -609,7 +609,7 @@ class TestConverterUnaryMinus
 
 class TestConverterUnaryPlus
 {
-    private val symbols = SymbolTable(Builtin.SYMBOLS)
+    private val symbols = ThirSymbolTable(Builtin.SYMBOLS)
     private val converter = ConverterUnaryPlus(symbols)
     
     private val function = thirFunOf(
@@ -642,7 +642,7 @@ class TestConverterUnaryPlus
 
 class TestConverterXor
 {
-    private val symbols = SymbolTable(Builtin.SYMBOLS)
+    private val symbols = ThirSymbolTable(Builtin.SYMBOLS)
     private val converter = ConverterXor(symbols)
     
     @Test

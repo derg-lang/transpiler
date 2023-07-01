@@ -6,7 +6,7 @@ import com.github.derg.transpiler.source.*
  * Objects which may be identified in source code are known as symbols. The symbols are typically located within a scope
  * and may be resolved based on name or id.
  */
-sealed interface Symbol
+sealed interface ThirSymbol
 {
     val id: Id
     val name: Name
@@ -17,25 +17,25 @@ sealed interface Symbol
  * joined together in an arbitrary manner. The modules within the package are permitted circular dependencies, under the
  * condition that all symbols may be resolved in an unambiguous manner.
  */
-data class Package(
+data class ThirPackage(
     override val id: Id,
     override val name: Name,
-    val symbols: SymbolTable,
-) : Symbol
+    val symbols: ThirSymbolTable,
+) : ThirSymbol
 
 /**
  * The module represents a collection of symbols which are logically grouped into a cohesive unit. Every module should
  * contain symbols which together form a unit within the software.
  */
-data class Module(
+data class ThirModule(
     override val id: Id,
     override val name: Name,
-) : Symbol
+) : ThirSymbol
 {
     /**
      * The symbols associated with the module will be assigned when the module is defined.
      */
-    val symbols = SymbolTable()
+    val symbols = ThirSymbolTable()
 }
 
 /**
@@ -43,11 +43,11 @@ data class Module(
  * which is used to allocate instances of the type on the heap or the stack. Types may be instantiated as variables or
  * parameters, which may be accessed or modified as needed.
  */
-data class Type(
+data class ThirType(
     override val id: Id,
     override val name: Name,
     val visibility: Visibility,
-) : Symbol
+) : ThirSymbol
 {
     /**
      * The size of the type in number of bytes, all nested properties included.
@@ -60,43 +60,46 @@ data class Type(
  * any number of input parameters, and may terminate processing by returning nothing, returning a value, or by raising
  * and error.
  */
-data class Function(
+data class ThirFunction(
     override val id: Id,
     override val name: Name,
-    val value: Type,
-    val error: Type,
-    val params: List<Parameter>,
+    val value: ThirType,
+    val error: ThirType,
+    val params: List<ThirParameter>,
     val visibility: Visibility,
-) : Symbol
+) : ThirSymbol
 {
-    // TODO: Move this out of the function and into the root level of this file
-    data class Parameter(
-        override val id: Id,
-        override val name: Name,
-        val type: Type,
-        val value: Value?,
-        val passability: Passability,
-    ) : Symbol
-    
     /**
      * The symbols and instructions associated with the function will be assigned when the function is defined. The
      * scope will hold all such information.
      */
-    lateinit var scope: Scope
+    lateinit var scope: ThirScope
 }
+
+/**
+ * Some functions may require additional input in order to adequately perform their functionality. This additional input
+ * is modeled as parameters.
+ */
+data class ThirParameter(
+    override val id: Id,
+    override val name: Name,
+    val type: ThirType,
+    val value: ThirValue?,
+    val passability: Passability,
+) : ThirSymbol
 
 /**
  * Variables holds values stored in memory at some arbitrary location. Variables may hold aa variety of different types
  * of data, such as raw values, references to other variables or functions, locations in memory, and so on.
  */
-data class Variable(
+data class ThirVariable(
     override val id: Id,
     override val name: Name,
-    val type: Type,
+    val type: ThirType,
     val visibility: Visibility,
     val mutability: Mutability,
     val assignability: Assignability,
-) : Symbol
+) : ThirSymbol
 
 /**
  * All symbols within a single source program must be uniquely identifiable in some manner. A symbol does not
@@ -112,15 +115,15 @@ data class Variable(
  *
  * @property parent The parent scope symbol table, containing all inherited names from the outer scope.
  */
-class SymbolTable(private val parent: SymbolTable? = null)
+class ThirSymbolTable(private val parent: ThirSymbolTable? = null)
 {
-    private val identifiers = mutableMapOf<Name, MutableList<Symbol>>()
+    private val identifiers = mutableMapOf<Name, MutableList<ThirSymbol>>()
     
     /**
      * Registers a new [symbol], allowing the symbol to be retrieved by id or name at this scope when desired. When
      * multiple symbols are bound by the same name, the earlier bound names will be shadowed by the last bound name.
      */
-    fun <Type : Symbol> register(symbol: Type): Type
+    fun <Type : ThirSymbol> register(symbol: Type): Type
     {
         identifiers.getOrPut(symbol.name) { mutableListOf() }.add(symbol)
         return symbol
@@ -132,7 +135,7 @@ class SymbolTable(private val parent: SymbolTable? = null)
      * the same scope, the symbol declared last is placed first.
      */
     // TODO: Rename method to `resolve` or something similar
-    fun find(name: Name): List<Symbol>
+    fun find(name: Name): List<ThirSymbol>
     {
         val inner = identifiers[name] ?: emptyList()
         val outer = parent?.find(name) ?: emptyList()
@@ -145,8 +148,8 @@ class SymbolTable(private val parent: SymbolTable? = null)
     override fun hashCode(): Int = identifiers.hashCode()
     override fun equals(other: Any?): Boolean = when (other)
     {
-        is SymbolTable -> identifiers == other.identifiers
-        else           -> false
+        is ThirSymbolTable -> identifiers == other.identifiers
+        else               -> false
     }
 }
 
@@ -155,13 +158,13 @@ class SymbolTable(private val parent: SymbolTable? = null)
  * objects from parent scopes; the scope may read all symbols defined in the [symbols] table. The scope contains a set
  * of executable [instructions].
  */
-class Scope(val instructions: List<Instruction>, val symbols: SymbolTable)
+class ThirScope(val instructions: List<ThirInstruction>, val symbols: ThirSymbolTable)
 {
     override fun toString(): String = "{instructions=$instructions, symbols=$symbols}"
     override fun hashCode(): Int = instructions.hashCode()
     override fun equals(other: Any?): Boolean = when (other)
     {
-        is Scope -> instructions == other.instructions && symbols == other.symbols
-        else     -> false
+        is ThirScope -> instructions == other.instructions && symbols == other.symbols
+        else         -> false
     }
 }

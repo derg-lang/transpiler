@@ -7,7 +7,7 @@ import org.junit.jupiter.api.Assertions.*
 
 class TestDefinerFunction
 {
-    private val symbols = SymbolTable(Builtin.SYMBOLS)
+    private val symbols = ThirSymbolTable(Builtin.SYMBOLS)
     private val definer = DefinerFunction(symbols)
     
     @Test
@@ -32,6 +32,6 @@ class TestDefinerFunction
 
 class TestDefinerType
 {
-    private val symbols = SymbolTable(Builtin.SYMBOLS)
+    private val symbols = ThirSymbolTable(Builtin.SYMBOLS)
     private val definer = DefinerType(symbols)
 }

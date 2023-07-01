@@ -9,7 +9,7 @@ import org.junit.jupiter.api.Assertions.*
 
 class TestDeclarator
 {
-    private val symbols = SymbolTable(Builtin.SYMBOLS)
+    private val symbols = ThirSymbolTable(Builtin.SYMBOLS)
     private val declarator = Declarator(symbols, IdProviderNil)
     
     @Test
@@ -42,7 +42,7 @@ class TestDeclarator
 
 class TestDeclaratorFunction
 {
-    private val symbols = SymbolTable(Builtin.SYMBOLS)
+    private val symbols = ThirSymbolTable(Builtin.SYMBOLS)
     private val declarator = DeclaratorFunction(symbols, IdProviderNil)
     
     @Test
@@ -102,7 +102,7 @@ class TestDeclaratorFunction
 
 class TestDeclaratorParameter
 {
-    private val symbols = SymbolTable(Builtin.SYMBOLS)
+    private val symbols = ThirSymbolTable(Builtin.SYMBOLS)
     private val declarator = DeclaratorParameter(symbols, IdProviderNil)
     
     @Test
@@ -153,7 +153,7 @@ class TestDeclaratorParameter
 
 class TestDeclaratorType
 {
-    private val symbols = SymbolTable(Builtin.SYMBOLS)
+    private val symbols = ThirSymbolTable(Builtin.SYMBOLS)
     private val declarator = DeclaratorType(symbols, IdProviderNil)
     
     @Test
@@ -168,7 +168,7 @@ class TestDeclaratorType
 
 class TestDeclaratorVariable
 {
-    private val symbols = SymbolTable(Builtin.SYMBOLS)
+    private val symbols = ThirSymbolTable(Builtin.SYMBOLS)
     private val declarator = DeclaratorVariable(symbols, IdProviderNil)
     
     @Test
