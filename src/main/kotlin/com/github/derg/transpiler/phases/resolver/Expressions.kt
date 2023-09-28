@@ -37,7 +37,6 @@ internal class ConverterExpression(private val symbols: ThirSymbolTable)
         is AstText         -> parse(node.value, node.literal)
         is AstCatch        -> TODO()
         is AstRaise        -> TODO()
-        is AstSubscript    -> TODO()
         is AstThreeWay     -> TODO()
         is AstWhen         -> TODO()
     }
