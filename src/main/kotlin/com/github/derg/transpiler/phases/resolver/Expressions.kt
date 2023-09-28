@@ -1,381 +1,148 @@
 package com.github.derg.transpiler.phases.resolver
 
-import com.github.derg.transpiler.source.ast.Access
-import com.github.derg.transpiler.source.ast.Constant
-import com.github.derg.transpiler.source.ast.Operator
-import com.github.derg.transpiler.source.hir.*
-import com.github.derg.transpiler.source.hir.Function
-import com.github.derg.transpiler.source.lexeme.SymbolType
-import com.github.derg.transpiler.util.*
+import com.github.derg.transpiler.source.ast.*
+import com.github.derg.transpiler.source.lexeme.*
+import com.github.derg.transpiler.source.thir.*
+import com.github.derg.transpiler.utils.*
 
 /**
- * Generates a value from an invocation of the [function], using the provided values as [parameters].
+ * The expression converter works on a whole expression at a time, converting it into a single value representing the
+ * initial expression. All conversion takes place at the scope defined by the [symbols] table.
  */
-private fun valueOf(function: Function, parameters: List<Value>): Value = when (function.value.id)
+internal class ConverterExpression(private val symbols: ThirSymbolTable)
 {
-    Builtin.BOOL.id  -> BoolCall(function, parameters)
-    Builtin.INT32.id -> Int32Call(function, parameters)
-    Builtin.INT64.id -> Int64Call(function, parameters)
-    else             -> UserDefinedCall(function, parameters)
-}
-
-/**
- * Generates a value from a memory read of the [variable].
- */
-private fun valueOf(variable: Variable): Value = when (variable.type.id)
-{
-    Builtin.BOOL.id  -> BoolRead(variable)
-    Builtin.INT32.id -> Int32Read(variable)
-    Builtin.INT64.id -> Int64Read(variable)
-    else             -> UserDefinedRead(variable)
-}
-
-internal class ConverterAnd(private val symbols: SymbolTable)
-{
-    operator fun invoke(node: Operator.And): Result<Value, ResolveError>
+    operator fun invoke(node: AstExpression): Result<ThirValue, ResolveError> = when (node)
     {
-        val lhs = symbols.resolveRequiredValue(node.lhs).valueOr { return failureOf(it) }
-        val rhs = symbols.resolveRequiredValue(node.rhs).valueOr { return failureOf(it) }
-        
-        if (lhs is ValueBool && rhs is ValueBool)
-            return BoolAnd(lhs, rhs).toSuccess()
-        
-        return ResolveError.MismatchedFunctionTypes(SymbolType.AND.symbol, listOf(lhs.type, rhs.type)).toFailure()
+        is AstAdd          -> resolve(SymbolType.PLUS, node.lhs, node.rhs)
+        is AstAnd          -> resolve(SymbolType.AND, node.lhs, node.rhs)
+        is AstDivide       -> resolve(SymbolType.DIVIDE, node.lhs, node.rhs)
+        is AstEqual        -> resolve(SymbolType.EQUAL, node.lhs, node.rhs)
+        is AstGreater      -> resolve(SymbolType.GREATER, node.lhs, node.rhs)
+        is AstGreaterEqual -> resolve(SymbolType.GREATER_EQUAL, node.lhs, node.rhs)
+        is AstLess         -> resolve(SymbolType.LESS, node.lhs, node.rhs)
+        is AstLessEqual    -> resolve(SymbolType.LESS_EQUAL, node.lhs, node.rhs)
+        is AstMinus        -> resolve(SymbolType.MINUS, node.expression)
+        is AstModulo       -> resolve(SymbolType.MODULO, node.lhs, node.rhs)
+        is AstMultiply     -> resolve(SymbolType.MULTIPLY, node.lhs, node.rhs)
+        is AstNot          -> resolve(SymbolType.NOT, node.expression)
+        is AstNotEqual     -> resolve(SymbolType.NOT_EQUAL, node.lhs, node.rhs)
+        is AstOr           -> resolve(SymbolType.OR, node.lhs, node.rhs)
+        is AstPlus         -> resolve(SymbolType.PLUS, node.expression)
+        is AstSubtract     -> resolve(SymbolType.MINUS, node.lhs, node.rhs)
+        is AstXor          -> resolve(SymbolType.XOR, node.lhs, node.rhs)
+        is AstCall         -> resolveFun(node.name, node.valArgs)
+        is AstRead         -> resolveVar(node.name)
+        is AstBool         -> parse(node.value)
+        is AstReal         -> parse(node.value, node.literal)
+        is AstText         -> parse(node.value, node.literal)
+        is AstCatch        -> TODO()
+        is AstRaise        -> TODO()
+        is AstSubscript    -> TODO()
+        is AstThreeWay     -> TODO()
+        is AstWhen         -> TODO()
     }
-}
-
-internal class ConverterAdd(private val symbols: SymbolTable)
-{
-    operator fun invoke(node: Operator.Add): Result<Value, ResolveError>
+    
+    /**
+     * Resolves a function for the given [operator], which accepts the provided [arguments]. The arguments must be in
+     * the same order as they are expected by the operator function.
+     */
+    private fun resolve(operator: SymbolType, vararg arguments: AstExpression): Result<ThirValue, ResolveError> =
+        resolveFun(operator.symbol, arguments.map { AstArgument(null, it) })
+    
+    /**
+     * Resolves a variable read for the memory access bound by [name]. The read may be against a variable, parameter,
+     * property, or similar named locations in memory.
+     */
+    private fun resolveVar(name: String): Result<ThirValue, ResolveError>
     {
-        val lhs = symbols.resolveRequiredValue(node.lhs).valueOr { return failureOf(it) }
-        val rhs = symbols.resolveRequiredValue(node.rhs).valueOr { return failureOf(it) }
+        val candidates = symbols[name].filter { it is ThirVariable || it is ThirParameter }
+        val candidate = candidates.firstOrNull() ?: return ResolveError.UnknownVariable(name).toFailure()
         
-        if (lhs is ValueInt32 && rhs is ValueInt32)
-            return Int32Add(lhs, rhs).toSuccess()
-        if (lhs is ValueInt64 && rhs is ValueInt64)
-            return Int64Add(lhs, rhs).toSuccess()
-        
-        val function = symbols.resolveRequiredFunction(SymbolType.PLUS.symbol, listOf(lhs.type, rhs.type))
-            .valueOr { return failureOf(it) }
-        return valueOf(function, listOf(lhs, rhs)).toSuccess()
+        val type = when (candidate)
+        {
+            is ThirVariable  -> candidate.type
+            is ThirParameter -> candidate.type
+            else             -> Builtin.VOID.id
+        }
+        return ThirVariableRead(type, candidate.id).toSuccess()
     }
-}
-
-internal object ConverterBool
-{
-    operator fun invoke(node: Constant.Bool): Result<Value, ResolveError> =
-        BoolConst(node.value).toSuccess()
-}
-
-internal class ConverterDivide(private val symbols: SymbolTable)
-{
-    operator fun invoke(node: Operator.Divide): Result<Value, ResolveError>
+    
+    /**
+     * Resolves a function call for the function with the given [name], given the input [arguments]. The arguments may
+     * be in any order if they are named.
+     */
+    private fun resolveFun(name: String, arguments: List<AstArgument>): Result<ThirValue, ResolveError>
     {
-        val lhs = symbols.resolveRequiredValue(node.lhs).valueOr { return failureOf(it) }
-        val rhs = symbols.resolveRequiredValue(node.rhs).valueOr { return failureOf(it) }
+        val values = arguments.fold { convert(it) }.valueOr { return it.toFailure() }
         
-        if (lhs is ValueInt32 && rhs is ValueInt32)
-            return Int32Div(lhs, rhs).toSuccess()
-        if (lhs is ValueInt64 && rhs is ValueInt64)
-            return Int64Div(lhs, rhs).toSuccess()
+        // Deny unnamed arguments appearing after named arguments
+        val firstNamed = arguments.withIndex().firstOrNull { it.value.name != null }
+        val lastUnnamed = arguments.withIndex().lastOrNull { it.value.name == null }
+        if (firstNamed != null && lastUnnamed != null && lastUnnamed.index > firstNamed.index)
+            return ResolveError.ArgumentMisnamed(name, values).toFailure()
         
-        val function = symbols.resolveRequiredFunction(SymbolType.DIVIDE.symbol, listOf(lhs.type, rhs.type))
-            .valueOr { return failureOf(it) }
-        return valueOf(function, listOf(lhs, rhs)).toSuccess()
+        // May now figure out which functions are valid candidates
+        val functions = symbols[name].filterIsInstance<ThirFunction>()
+        if (functions.isEmpty())
+            return ResolveError.UnknownFunction(name).toFailure()
+        
+        val (candidates, _) = functions.map { convert(it, values) }.partition()
+        return when (candidates.size)
+        {
+            1    -> candidates[0].toBuiltin().toSuccess()
+            0    -> ResolveError.ArgumentMismatch(name, values).toFailure()
+            else -> ResolveError.ArgumentAmbiguous(name, values).toFailure()
+        }
     }
-}
-
-internal class ConverterEqual(private val symbols: SymbolTable)
-{
-    operator fun invoke(node: Operator.Equal): Result<Value, ResolveError>
+    
+    private fun convert(argument: AstArgument): Result<ThirArgument, ResolveError> =
+        ThirArgument(argument.name, invoke(argument.expression).valueOr { return it.toFailure() }).toSuccess()
+    
+    private fun convert(function: ThirFunction, arguments: List<ThirArgument>): Result<ThirFunctionCall, ThirFunction>
     {
-        val lhs = symbols.resolveRequiredValue(node.lhs).valueOr { return failureOf(it) }
-        val rhs = symbols.resolveRequiredValue(node.rhs).valueOr { return failureOf(it) }
+        // TODO: Support variadic arguments
+        if (function.params.size != arguments.size)
+            return function.toFailure()
         
-        if (lhs is ValueBool && rhs is ValueBool)
-            return BoolEq(lhs, rhs).toSuccess()
-        if (lhs is ValueInt32 && rhs is ValueInt32)
-            return Int32Eq(lhs, rhs).toSuccess()
-        if (lhs is ValueInt64 && rhs is ValueInt64)
-            return Int64Eq(lhs, rhs).toSuccess()
+        // Reject function if parameter types do not match function signature
+        val nameToIndex = function.params.withIndex().associate { it.value.name to it.index }
+        val ordered = arguments.withIndex().sortedBy { nameToIndex[it.value.name] ?: it.index }
+        if (function.params.zip(ordered).any { it.first.type != it.second.value.value.valType })
+            return function.toFailure()
         
-        val function = symbols.resolveRequiredFunction(SymbolType.EQUAL.symbol, listOf(lhs.type, rhs.type))
-            .valueOr { return failureOf(it) }
-        return valueOf(function, listOf(lhs, rhs)).toSuccess()
+        return ThirFunctionCall(function.valType, function.errType, function.id, ordered.map { it.value }).toSuccess()
     }
-}
-
-internal class ConverterGreater(private val symbols: SymbolTable)
-{
-    operator fun invoke(node: Operator.Greater): Result<Value, ResolveError>
-    {
-        val lhs = symbols.resolveRequiredValue(node.lhs).valueOr { return failureOf(it) }
-        val rhs = symbols.resolveRequiredValue(node.rhs).valueOr { return failureOf(it) }
-        
-        if (lhs is ValueInt32 && rhs is ValueInt32)
-            return Int32Gt(lhs, rhs).toSuccess()
-        if (lhs is ValueInt64 && rhs is ValueInt64)
-            return Int64Gt(lhs, rhs).toSuccess()
-        
-        val function = symbols.resolveRequiredFunction(SymbolType.GREATER.symbol, listOf(lhs.type, rhs.type))
-            .valueOr { return failureOf(it) }
-        return valueOf(function, listOf(lhs, rhs)).toSuccess()
-    }
-}
-
-internal class ConverterGreaterEqual(private val symbols: SymbolTable)
-{
-    operator fun invoke(node: Operator.GreaterEqual): Result<Value, ResolveError>
-    {
-        val lhs = symbols.resolveRequiredValue(node.lhs).valueOr { return failureOf(it) }
-        val rhs = symbols.resolveRequiredValue(node.rhs).valueOr { return failureOf(it) }
-        
-        if (lhs is ValueInt32 && rhs is ValueInt32)
-            return Int32Ge(lhs, rhs).toSuccess()
-        if (lhs is ValueInt64 && rhs is ValueInt64)
-            return Int64Ge(lhs, rhs).toSuccess()
-        
-        val function = symbols.resolveRequiredFunction(SymbolType.GREATER_EQUAL.symbol, listOf(lhs.type, rhs.type))
-            .valueOr { return failureOf(it) }
-        return valueOf(function, listOf(lhs, rhs)).toSuccess()
-    }
-}
-
-internal class ConverterInvoke(private val symbols: SymbolTable)
-{
-    operator fun invoke(node: Access.Function): Result<Value, ResolveError>
-    {
-        // TODO: Determine parameter ordering based on names as well - just position alone is not enough
-        val values = node.arguments
-            .fold { symbols.resolveRequiredValue(it.expression) }
-            .valueOr { return failureOf(it) }
-        
-        val function = symbols
-            .resolveRequiredFunction(node.name, values.map { it.type })
-            .valueOr { return failureOf(it) }
-        return valueOf(function, values).toSuccess()
-    }
-}
-
-internal class ConverterLess(private val symbols: SymbolTable)
-{
-    operator fun invoke(node: Operator.Less): Result<Value, ResolveError>
-    {
-        val lhs = symbols.resolveRequiredValue(node.lhs).valueOr { return failureOf(it) }
-        val rhs = symbols.resolveRequiredValue(node.rhs).valueOr { return failureOf(it) }
-        
-        if (lhs is ValueInt32 && rhs is ValueInt32)
-            return Int32Lt(lhs, rhs).toSuccess()
-        if (lhs is ValueInt64 && rhs is ValueInt64)
-            return Int64Lt(lhs, rhs).toSuccess()
-        
-        val function = symbols.resolveRequiredFunction(SymbolType.LESS.symbol, listOf(lhs.type, rhs.type))
-            .valueOr { return failureOf(it) }
-        return valueOf(function, listOf(lhs, rhs)).toSuccess()
-    }
-}
-
-internal class ConverterLessEqual(private val symbols: SymbolTable)
-{
-    operator fun invoke(node: Operator.LessEqual): Result<Value, ResolveError>
-    {
-        val lhs = symbols.resolveRequiredValue(node.lhs).valueOr { return failureOf(it) }
-        val rhs = symbols.resolveRequiredValue(node.rhs).valueOr { return failureOf(it) }
-        
-        if (lhs is ValueInt32 && rhs is ValueInt32)
-            return Int32Le(lhs, rhs).toSuccess()
-        if (lhs is ValueInt64 && rhs is ValueInt64)
-            return Int64Le(lhs, rhs).toSuccess()
-        
-        val function = symbols.resolveRequiredFunction(SymbolType.LESS_EQUAL.symbol, listOf(lhs.type, rhs.type))
-            .valueOr { return failureOf(it) }
-        return valueOf(function, listOf(lhs, rhs)).toSuccess()
-    }
-}
-
-internal class ConverterModulo(private val symbols: SymbolTable)
-{
-    operator fun invoke(node: Operator.Modulo): Result<Value, ResolveError>
-    {
-        val lhs = symbols.resolveRequiredValue(node.lhs).valueOr { return failureOf(it) }
-        val rhs = symbols.resolveRequiredValue(node.rhs).valueOr { return failureOf(it) }
-        
-        if (lhs is ValueInt32 && rhs is ValueInt32)
-            return Int32Mod(lhs, rhs).toSuccess()
-        if (lhs is ValueInt64 && rhs is ValueInt64)
-            return Int64Mod(lhs, rhs).toSuccess()
-        
-        val function = symbols.resolveRequiredFunction(SymbolType.MODULO.symbol, listOf(lhs.type, rhs.type))
-            .valueOr { return failureOf(it) }
-        return valueOf(function, listOf(lhs, rhs)).toSuccess()
-    }
-}
-
-internal class ConverterMultiply(private val symbols: SymbolTable)
-{
-    operator fun invoke(node: Operator.Multiply): Result<Value, ResolveError>
-    {
-        val lhs = symbols.resolveRequiredValue(node.lhs).valueOr { return failureOf(it) }
-        val rhs = symbols.resolveRequiredValue(node.rhs).valueOr { return failureOf(it) }
-        
-        if (lhs is ValueInt32 && rhs is ValueInt32)
-            return Int32Mul(lhs, rhs).toSuccess()
-        if (lhs is ValueInt64 && rhs is ValueInt64)
-            return Int64Mul(lhs, rhs).toSuccess()
-        
-        val function = symbols.resolveRequiredFunction(SymbolType.MULTIPLY.symbol, listOf(lhs.type, rhs.type))
-            .valueOr { return failureOf(it) }
-        return valueOf(function, listOf(lhs, rhs)).toSuccess()
-    }
-}
-
-internal class ConverterNot(private val symbols: SymbolTable)
-{
-    operator fun invoke(node: Operator.Not): Result<Value, ResolveError>
-    {
-        val expr = symbols.resolveRequiredValue(node.expression).valueOr { return failureOf(it) }
-        
-        if (expr is ValueBool)
-            return BoolNot(expr).toSuccess()
-        
-        return ResolveError.MismatchedFunctionTypes(SymbolType.NOT.symbol, listOf(expr.type)).toFailure()
-    }
-}
-
-internal class ConverterNotEqual(private val symbols: SymbolTable)
-{
-    operator fun invoke(node: Operator.NotEqual): Result<Value, ResolveError>
-    {
-        val lhs = symbols.resolveRequiredValue(node.lhs).valueOr { return failureOf(it) }
-        val rhs = symbols.resolveRequiredValue(node.rhs).valueOr { return failureOf(it) }
-        
-        if (lhs is ValueBool && rhs is ValueBool)
-            return BoolNe(lhs, rhs).toSuccess()
-        if (lhs is ValueInt32 && rhs is ValueInt32)
-            return Int32Ne(lhs, rhs).toSuccess()
-        if (lhs is ValueInt64 && rhs is ValueInt64)
-            return Int64Ne(lhs, rhs).toSuccess()
-        
-        val function = symbols.resolveRequiredFunction(SymbolType.NOT_EQUAL.symbol, listOf(lhs.type, rhs.type))
-            .valueOr { return failureOf(it) }
-        return valueOf(function, listOf(lhs, rhs)).toSuccess()
-    }
-}
-
-internal class ConverterOr(private val symbols: SymbolTable)
-{
-    operator fun invoke(node: Operator.Or): Result<Value, ResolveError>
-    {
-        val lhs = symbols.resolveRequiredValue(node.lhs).valueOr { return failureOf(it) }
-        val rhs = symbols.resolveRequiredValue(node.rhs).valueOr { return failureOf(it) }
-        
-        if (lhs is ValueBool && rhs is ValueBool)
-            return BoolOr(lhs, rhs).toSuccess()
-        
-        return ResolveError.MismatchedFunctionTypes(SymbolType.OR.symbol, listOf(lhs.type, rhs.type)).toFailure()
-    }
-}
-
-internal class ConverterRead(private val symbols: SymbolTable)
-{
-    operator fun invoke(node: Access.Variable): Result<Value, ResolveError>
-    {
-        val variable = symbols.resolveRequiredVariable(node.name).valueOr { return failureOf(it) }
-        return valueOf(variable).toSuccess()
-    }
-}
-
-internal class ConverterReal(private val symbols: SymbolTable)
-{
-    operator fun invoke(node: Constant.Real): Result<Value, ResolveError>
+    
+    /**
+     * Extracts a boolean value from the given [value].
+     */
+    private fun parse(value: Boolean): Result<ThirValue, ResolveError> = ThirBoolConst(value).toSuccess()
+    
+    /**
+     * Extracts a numeric value from the [value], applying the [literal].
+     */
+    private fun parse(value: Number, literal: String): Result<ThirValue, ResolveError>
     {
         // TODO: Fail operation if number is too large
-        if (node.literal == Builtin.LIT_INT32 || node.literal == null)
-            return Int32Const(node.value.toInt()).toSuccess()
-        if (node.literal == Builtin.LIT_INT64)
-            return Int64Const(node.value.toLong()).toSuccess()
+        if (literal == Builtin.INT32_LIT.name)
+            return ThirInt32Const(value.toInt()).toSuccess()
+        if (literal == Builtin.INT64_LIT.name)
+            return ThirInt64Const(value.toLong()).toSuccess()
         
         // TODO: Support custom literals
-        return ResolveError.UnknownLiteral(node.literal).toFailure()
+        return ResolveError.UnknownLiteral(literal).toFailure()
     }
-}
-
-internal class ConverterSubtract(private val symbols: SymbolTable)
-{
-    operator fun invoke(node: Operator.Subtract): Result<Value, ResolveError>
+    
+    /**
+     * Extracts a text value from the [value], applying the [literal].
+     */
+    private fun parse(value: String, literal: String): Result<ThirValue, ResolveError>
     {
-        val lhs = symbols.resolveRequiredValue(node.lhs).valueOr { return failureOf(it) }
-        val rhs = symbols.resolveRequiredValue(node.rhs).valueOr { return failureOf(it) }
-        
-        if (lhs is ValueInt32 && rhs is ValueInt32)
-            return Int32Sub(lhs, rhs).toSuccess()
-        if (lhs is ValueInt64 && rhs is ValueInt64)
-            return Int64Sub(lhs, rhs).toSuccess()
-        
-        val function = symbols.resolveRequiredFunction(SymbolType.MINUS.symbol, listOf(lhs.type, rhs.type))
-            .valueOr { return failureOf(it) }
-        return valueOf(function, listOf(lhs, rhs)).toSuccess()
-    }
-}
-
-internal class ConverterText(private val symbols: SymbolTable)
-{
-    operator fun invoke(node: Constant.Text): Result<Value, ResolveError>
-    {
-        // TODO: Implement me
-        if (node.literal == null)
-            return ValueStrUnicode.toSuccess()
+        // TODO: Fail operation if string is invalid
+        if (literal == Builtin.STR_LIT.name)
+            TODO("not implemented")
         
         // TODO: Support custom literals
-        return ResolveError.UnknownLiteral(node.literal).toFailure()
-    }
-}
-
-internal class ConverterUnaryMinus(private val symbols: SymbolTable)
-{
-    operator fun invoke(node: Operator.Minus): Result<Value, ResolveError>
-    {
-        val rhs = symbols.resolveRequiredValue(node.expression).valueOr { return failureOf(it) }
-        
-        if (rhs is ValueInt32)
-            return Int32Neg(rhs).toSuccess()
-        if (rhs is ValueInt64)
-            return Int64Neg(rhs).toSuccess()
-        
-        val function = symbols.resolveRequiredFunction(SymbolType.MINUS.symbol, listOf(rhs.type))
-            .valueOr { return failureOf(it) }
-        return valueOf(function, listOf(rhs)).toSuccess()
-    }
-}
-
-internal class ConverterUnaryPlus(private val symbols: SymbolTable)
-{
-    operator fun invoke(node: Operator.Plus): Result<Value, ResolveError>
-    {
-        val rhs = symbols.resolveRequiredValue(node.expression).valueOr { return failureOf(it) }
-        
-        if (rhs is ValueInt32)
-            return rhs.toSuccess()
-        if (rhs is ValueInt64)
-            return rhs.toSuccess()
-        
-        val function = symbols.resolveRequiredFunction(SymbolType.PLUS.symbol, listOf(rhs.type))
-            .valueOr { return failureOf(it) }
-        return valueOf(function, listOf(rhs)).toSuccess()
-    }
-}
-
-internal class ConverterXor(private val symbols: SymbolTable)
-{
-    operator fun invoke(node: Operator.Xor): Result<Value, ResolveError>
-    {
-        val lhs = symbols.resolveRequiredValue(node.lhs).valueOr { return failureOf(it) }
-        val rhs = symbols.resolveRequiredValue(node.rhs).valueOr { return failureOf(it) }
-        
-        if (lhs is ValueBool && rhs is ValueBool)
-            return BoolXor(lhs, rhs).toSuccess()
-        
-        return ResolveError.MismatchedFunctionTypes(SymbolType.XOR.symbol, listOf(lhs.type, rhs.type)).toFailure()
+        return ResolveError.UnknownLiteral(literal).toFailure()
     }
 }

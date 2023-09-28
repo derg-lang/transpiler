@@ -1,11 +1,8 @@
 package com.github.derg.transpiler.phases.lexer
 
-import com.github.derg.transpiler.core.Localized
-import com.github.derg.transpiler.core.Location
+import com.github.derg.transpiler.core.*
 import com.github.derg.transpiler.source.lexeme.*
-import com.github.derg.transpiler.util.indexOfFirstOrNull
-import com.github.derg.transpiler.util.indexOfOrNull
-import com.github.derg.transpiler.util.substringFrom
+import com.github.derg.transpiler.utils.*
 
 /**
  * Accepts a source code [input] string, and converts it into a sequence of tokens.

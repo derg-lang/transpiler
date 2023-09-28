@@ -2,7 +2,7 @@ package com.github.derg.transpiler.phases.parser
 
 import com.github.derg.transpiler.source.*
 import com.github.derg.transpiler.source.ast.*
-import com.github.derg.transpiler.source.lexeme.SymbolType
+import com.github.derg.transpiler.source.lexeme.*
 
 /**
  * Determines the visibility from the provided [symbol].
@@ -56,7 +56,7 @@ fun assignabilityOf(symbol: SymbolType?): Assignability = when (symbol)
  * to provide an optional name after a specific [symbol]. The output of the parser will always be the name of the found
  * identifier.
  */
-fun nameParserOf(symbol: SymbolType): Parser<Name> =
+fun nameParserOf(symbol: SymbolType): Parser<String> =
     ParserPattern({ namePatternOf(symbol) }, { it["name"] })
 
 private fun namePatternOf(symbol: SymbolType) =
@@ -65,7 +65,7 @@ private fun namePatternOf(symbol: SymbolType) =
 /**
  * Parses a symbol followed by an expression.
  */
-fun valueParserOf(symbol: SymbolType): Parser<Expression> =
+fun valueParserOf(symbol: SymbolType): Parser<AstExpression> =
     ParserPattern({ valuePatternOf(symbol) }, { it["expression"] })
 
 private fun valuePatternOf(symbol: SymbolType) =
@@ -110,7 +110,7 @@ private fun assignabilityPatternOf() =
 /**
  * Parses a function call argument from the token stream.
  */
-fun argumentParserOf(): Parser<Argument> =
+fun argumentParserOf(): Parser<AstArgument> =
     ParserPattern(::argumentPatternOf, ::argumentOutcomeOf)
 
 private fun argumentPatternOf() = ParserAnyOf(
@@ -118,13 +118,13 @@ private fun argumentPatternOf() = ParserAnyOf(
     ParserSequence("name" to ParserName(), "sym" to ParserSymbol(SymbolType.ASSIGN), "expr" to expressionParserOf()),
 )
 
-private fun argumentOutcomeOf(values: Parsers): Argument =
-    Argument(values["name"], values["expr"])
+private fun argumentOutcomeOf(values: Parsers): AstArgument =
+    AstArgument(values["name"], values["expr"])
 
 /**
  * Parses a function parameter definition from the token stream.
  */
-fun parameterParserOf(): Parser<Parameter> =
+fun parameterParserOf(): Parser<AstParameter> =
     ParserPattern(::parameterPatternOf, ::parameterOutcomeOf)
 
 private fun parameterPatternOf() = ParserSequence(
@@ -135,7 +135,7 @@ private fun parameterPatternOf() = ParserSequence(
     "value" to ParserOptional(valueParserOf(SymbolType.ASSIGN)),
 )
 
-private fun parameterOutcomeOf(values: Parsers) = Parameter(
+private fun parameterOutcomeOf(values: Parsers) = AstParameter(
     name = values["name"],
     type = values["type"],
     value = values["value"],
@@ -146,7 +146,7 @@ private fun parameterOutcomeOf(values: Parsers) = Parameter(
 /**
  * Parses a type property definition from the token stream.
  */
-fun propertyParserOf(): Parser<Property> =
+fun propertyParserOf(): Parser<AstProperty> =
     ParserPattern(::propertyPatternOf, ::propertyOutcomeOf)
 
 private fun propertyPatternOf() = ParserSequence(
@@ -154,11 +154,11 @@ private fun propertyPatternOf() = ParserSequence(
     "assignability" to assignabilityParserOf(),
     "mutability" to mutabilityParserOf(),
     "name" to ParserName(),
-    "type" to ParserOptional(nameParserOf(SymbolType.COLON)),
+    "type" to nameParserOf(SymbolType.COLON),
     "value" to ParserOptional(valueParserOf(SymbolType.ASSIGN)),
 )
 
-private fun propertyOutcomeOf(values: Parsers) = Property(
+private fun propertyOutcomeOf(values: Parsers) = AstProperty(
     name = values["name"],
     type = values["type"],
     value = values["value"],
@@ -170,7 +170,7 @@ private fun propertyOutcomeOf(values: Parsers) = Property(
 /**
  * Parses a single scope from the token stream.
  */
-fun scopeParserOf(): Parser<List<Statement>> =
+fun scopeParserOf(): Parser<List<AstStatement>> =
     ParserPattern(::scopePatternOf, ::scopeOutcomeOf)
 
 private fun scopePatternOf() = ParserAnyOf(
@@ -182,10 +182,10 @@ private fun scopePatternOf() = ParserAnyOf(
     )
 )
 
-private fun scopeOutcomeOf(values: Parsers): List<Statement>
+private fun scopeOutcomeOf(values: Parsers): List<AstStatement>
 {
-    val statement = values.get<Statement?>("single")
-    val statements = values.get<List<Statement>?>("multiple")
+    val statement = values.get<AstStatement?>("single")
+    val statements = values.get<List<AstStatement>?>("multiple")
     
     return when
     {
@@ -198,7 +198,7 @@ private fun scopeOutcomeOf(values: Parsers): List<Statement>
 /**
  * Parses a segment definition from the token stream.
  */
-fun segmentParserOf(): Parser<Segment> =
+fun segmentParserOf(): Parser<AstSegment> =
     ParserPattern(::segmentPatternOf, ::segmentOutcomeOf)
 
 // TODO: Use statements should allow modules to be imported into namespaces
@@ -208,7 +208,7 @@ private fun segmentPatternOf() = ParserSequence(
     "definitions" to ParserRepeating(definitionParserOf()),
 )
 
-private fun segmentOutcomeOf(values: Parsers) = Segment(
+private fun segmentOutcomeOf(values: Parsers) = AstSegment(
     module = values["module"],
     imports = values["imports"],
     definitions = values["definitions"],

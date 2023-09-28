@@ -1,18 +1,15 @@
 package com.github.derg.transpiler.phases.parser
 
-import com.github.derg.transpiler.phases.lexer.tokenize
-import com.github.derg.transpiler.source.ast.Segment
-import com.github.derg.transpiler.source.lexeme.EndOfFile
-import com.github.derg.transpiler.source.lexeme.Token
-import com.github.derg.transpiler.util.Result
-import com.github.derg.transpiler.util.fold
-import com.github.derg.transpiler.util.valueOr
+import com.github.derg.transpiler.phases.lexer.*
+import com.github.derg.transpiler.source.ast.*
+import com.github.derg.transpiler.source.lexeme.*
+import com.github.derg.transpiler.utils.*
 
 /**
  * Parses the [input] string into a single segment, forming a part of the overall program. The total collection of all
  * segments makes up the program.
  */
-fun parse(input: String): Segment
+fun parse(input: String): AstSegment
 {
     val parser = segmentParserOf()
     val tokens = tokenize(input).map { it.data } + EndOfFile

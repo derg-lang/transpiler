@@ -1,7 +1,7 @@
 package com.github.derg.transpiler.phases.parser
 
-import com.github.derg.transpiler.source.lexeme.Token
-import com.github.derg.transpiler.util.*
+import com.github.derg.transpiler.source.lexeme.*
+import com.github.derg.transpiler.utils.*
 
 /**
  * Certain parsers cannot output a single item to represent the products of all parsers involved. Deeply nested parsers
@@ -42,20 +42,20 @@ class ParserAnyOf<Type>(vararg parsers: Parser<Type>) : Parser<Type>
     override fun parse(token: Token): Result<ParseOk, ParseError>
     {
         outcomes.clear()
-        parsers.ifEmpty { return successOf(ParseOk.Finished) }
+        parsers.ifEmpty { return ParseOk.Finished.toSuccess() }
         parsers.filter { it.first !in disqualified }.map { parse(token, it.first, it.second) }
         
         val candidates = parsers.filter { it.first !in disqualified }
         val (finished, unfinished) = candidates.partition { outcomes[it.first] == ParseOk.Finished }
         
-        candidates.ifEmpty { return failureOf(ParseError.UnexpectedToken(token)) }
-        unfinished.ifEmpty { return successOf(ParseOk.Finished) } // TODO: Ties must be considered errors here
+        candidates.ifEmpty { return ParseError.UnexpectedToken(token).toFailure() }
+        unfinished.ifEmpty { return ParseOk.Finished.toSuccess() } // TODO: Ties must be considered errors here
         finished.forEach { disqualified.add(it.first) }
         
         return if (unfinished.any { outcomes[it.first] == ParseOk.Complete })
-            successOf(ParseOk.Complete)
+            ParseOk.Complete.toSuccess()
         else
-            successOf(ParseOk.Incomplete)
+            ParseOk.Incomplete.toSuccess()
     }
     
     private fun parse(token: Token, index: Int, parser: Parser<Type>): Result<ParseOk, ParseError> =
@@ -83,13 +83,13 @@ class ParserAllOf(vararg parsers: Pair<String, Parser<*>>) : Parser<Parsers>
     
     override fun parse(token: Token): Result<ParseOk, ParseError>
     {
-        val remaining = parsers.filter { it.first !in finished }.ifEmpty { return successOf(ParseOk.Finished) }
+        val remaining = parsers.filter { it.first !in finished }.ifEmpty { return ParseOk.Finished.toSuccess() }
         val outcomes = remaining.filter { it.first !in disqualified }.associate { it.first to it.second.parse(token) }
         
         val (successes, failures) = outcomes.partition { it.value.isSuccess }
         val (finished, unfinished) = successes.partition { it.value.valueOrNull() == ParseOk.Finished }
         
-        successes.ifEmpty { return failureOf(ParseError.UnexpectedToken(token)) }
+        successes.ifEmpty { return ParseError.UnexpectedToken(token).toFailure() }
         failures.forEach { disqualified.add(it.key) }
         
         if (unfinished.isNotEmpty())
@@ -98,11 +98,11 @@ class ParserAllOf(vararg parsers: Pair<String, Parser<*>>) : Parser<Parsers>
             
             val skipable = remaining.filter { it.first !in unfinished }.all { it.second.skipable() }
             val isIncomplete = !skipable || unfinished.any { it.value.valueOrNull() == ParseOk.Incomplete }
-            return if (isIncomplete) successOf(ParseOk.Incomplete) else successOf(ParseOk.Complete)
+            return if (isIncomplete) ParseOk.Incomplete.toSuccess() else ParseOk.Complete.toSuccess()
         }
         
         val survivor = remaining.singleOrNull { it.first in finished }
-            ?: return failureOf(ParseError.UnexpectedToken(token))
+            ?: return ParseError.UnexpectedToken(token).toFailure()
         
         parsers.filter { it.first in disqualified }.forEach { it.second.reset() }
         disqualified.clear()
@@ -132,14 +132,14 @@ class ParserSequence(vararg parsers: Pair<String, Parser<*>>) : Parser<Parsers>
     
     override fun parse(token: Token): Result<ParseOk, ParseError>
     {
-        val current = parsers.getOrNull(index)?.second ?: return successOf(ParseOk.Finished)
-        val outcome = current.parse(token).valueOr { return failureOf(it) }
+        val current = parsers.getOrNull(index)?.second ?: return ParseOk.Finished.toSuccess()
+        val outcome = current.parse(token).valueOr { return it.toFailure() }
         if (outcome == ParseOk.Finished)
-            return if (++index >= parsers.size) successOf(ParseOk.Finished) else parse(token)
+            return if (++index >= parsers.size) ParseOk.Finished.toSuccess() else parse(token)
         
         val skipable = (index + 1 until parsers.size).all { parsers[it].second.skipable() }
         val isIncomplete = !skipable || outcome == ParseOk.Incomplete
-        return if (isIncomplete) successOf(ParseOk.Incomplete) else successOf(ParseOk.Complete)
+        return if (isIncomplete) ParseOk.Incomplete.toSuccess() else ParseOk.Complete.toSuccess()
     }
     
     override fun reset()
@@ -168,12 +168,12 @@ class ParserRepeating<Type>(private val parser: Parser<Type>, private val separa
     {
         val current = if (isSeparator && separator != null) separator else parser
         val outcome = current.parse(token)
-            .valueOr { return if (isIncomplete) failureOf(it) else successOf(ParseOk.Finished) }
+            .valueOr { return if (isIncomplete) it.toFailure() else ParseOk.Finished.toSuccess() }
         if (outcome == ParseOk.Finished)
             return swapAndParse(token, current)
         
         isIncomplete = outcome == ParseOk.Incomplete
-        return if (isIncomplete) successOf(ParseOk.Incomplete) else successOf(ParseOk.Complete)
+        return if (isIncomplete) ParseOk.Incomplete.toSuccess() else ParseOk.Complete.toSuccess()
     }
     
     private fun swapAndParse(token: Token, current: Parser<*>): Result<ParseOk, ParseError>
@@ -217,9 +217,9 @@ class ParserOptional<Type>(private val parser: Parser<Type>, private val default
     {
         isParsing = true
         val outcome = parser.parse(token)
-            .valueOr { return if (isOngoing) failureOf(it) else successOf(ParseOk.Finished) }
+            .valueOr { return if (isOngoing) it.toFailure() else ParseOk.Finished.toSuccess() }
         isOngoing = true
-        return successOf(outcome)
+        return outcome.toSuccess()
     }
     
     override fun reset()

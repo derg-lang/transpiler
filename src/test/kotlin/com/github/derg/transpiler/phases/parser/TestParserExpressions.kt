@@ -1,7 +1,13 @@
 package com.github.derg.transpiler.phases.parser
 
-import com.github.derg.transpiler.source.lexeme.EndOfFile
-import org.junit.jupiter.api.Test
+import com.github.derg.transpiler.source.ast.*
+import com.github.derg.transpiler.source.lexeme.*
+import org.junit.jupiter.api.*
+
+@Deprecated("Remove when subscript is removed", ReplaceWith("nothing, kill it"))
+private fun String.toSub(vararg arguments: AstArgument) = AstSubscript(this, arguments.toList())
+@Deprecated("Remove when subscript is removed", ReplaceWith("nothing, kill it"))
+private fun Any.toArg(name: String? = null) = AstArgument(name, ast)
 
 /**
  * Determines whether the current token stream is parsed correctly. The expectation is that there will be [preOkCount]
@@ -19,20 +25,21 @@ class TestParserExpression
     fun `Given valid token, when parsing, then correct expression`()
     {
         // Literal values
-        tester.parse("true").isChain(1).isValue(true.toExp()).resets()
-        tester.parse("false").isChain(1).isValue(false.toExp()).resets()
-        tester.parse("42").isChain(1).isValue(42.toExp()).resets()
-        tester.parse("42f").isChain(1).isValue(42.toExp("f")).resets()
-        tester.parse("\"foo\"").isChain(1).isValue("foo".toExp()).resets()
-        tester.parse("\"bar\"f").isChain(1).isValue("bar".toExp("f")).resets()
+        tester.parse("true").isChain(1).isValue(true.ast).resets()
+        tester.parse("false").isChain(1).isValue(false.ast).resets()
+        tester.parse("42").isChain(1).isValue(42.ast).resets()
+        tester.parse("42i32").isChain(1).isValue(42.ast).resets()
+        tester.parse("42i64").isChain(1).isValue(42L.ast).resets()
+        tester.parse("\"foo\"").isChain(1).isValue("foo".ast).resets()
+        tester.parse("\"bar\"s").isChain(1).isValue("bar".ast).resets()
         
         // Accesses
-        tester.parse("whatever").isChain(1).isValue("whatever".toVar()).resets()
-        tester.parse("f()").isChain(1, 1, 1).isValue("f".toFun()).resets()
-        tester.parse("f(1)").isChain(1, 2, 1).isValue("f".toFun(1.toArg())).resets()
-        tester.parse("f(1,)").isChain(1, 3, 1).isValue("f".toFun(1.toArg())).resets()
-        tester.parse("f(1,2)").isChain(1, 4, 1).isValue("f".toFun(1.toArg(), 2.toArg())).resets()
-        tester.parse("f(bar = 1)").isChain(1, 4, 1).isValue("f".toFun(1.toArg("bar"))).resets()
+        tester.parse("whatever").isChain(1).isValue("whatever".astRead).resets()
+        tester.parse("f()").isChain(1, 1, 1).isValue("f".astCall()).resets()
+        tester.parse("f(1)").isChain(1, 2, 1).isValue("f".astCall(1)).resets()
+        tester.parse("f(1,)").isChain(1, 3, 1).isValue("f".astCall(1)).resets()
+        tester.parse("f(1,2)").isChain(1, 4, 1).isValue("f".astCall(1, 2)).resets()
+        tester.parse("f(bar = 1)").isChain(1, 4, 1).isValue("f".astCall("bar" to 1)).resets()
         tester.parse("f[]").isChain(1, 1, 1).isValue("f".toSub()).resets()
         tester.parse("f[1]").isChain(1, 2, 1).isValue("f".toSub(1.toArg())).resets()
         tester.parse("f[1,]").isChain(1, 3, 1).isValue("f".toSub(1.toArg())).resets()
@@ -40,62 +47,62 @@ class TestParserExpression
         tester.parse("f[bar = 1]").isChain(1, 4, 1).isValue("f".toSub(1.toArg("bar"))).resets()
         
         // Structural
-        tester.parse("(1)").isChain(0, 2, 1).isValue(1.toExp()).resets()
-        tester.parse("(((1)))").isChain(0, 6, 1).isValue(1.toExp()).resets()
+        tester.parse("(1)").isChain(0, 2, 1).isValue(1.ast).resets()
+        tester.parse("(((1)))").isChain(0, 6, 1).isValue(1.ast).resets()
         
         // Operators
-        tester.parse("1 + 2").isChain(1, 1, 1).isValue(1 opAdd 2).resets()
-        tester.parse("1 - 2").isChain(1, 1, 1).isValue(1 opSub 2).resets()
-        tester.parse("1 * 2").isChain(1, 1, 1).isValue(1 opMul 2).resets()
-        tester.parse("1 / 2").isChain(1, 1, 1).isValue(1 opDiv 2).resets()
-        tester.parse("1 % 2").isChain(1, 1, 1).isValue(1 opMod 2).resets()
-        tester.parse("1 && 2").isChain(1, 1, 1).isValue(1 opAnd 2).resets()
-        tester.parse("1 || 2").isChain(1, 1, 1).isValue(1 opOr 2).resets()
-        tester.parse("1 ^^ 2").isChain(1, 1, 1).isValue(1 opXor 2).resets()
-        tester.parse("1 == 2").isChain(1, 1, 1).isValue(1 opEq 2).resets()
-        tester.parse("1 ~= 2").isChain(1, 1, 1).isValue(1 opNe 2).resets()
-        tester.parse("1 < 2").isChain(1, 1, 1).isValue(1 opLt 2).resets()
-        tester.parse("1 <= 2").isChain(1, 1, 1).isValue(1 opLe 2).resets()
-        tester.parse("1 > 2").isChain(1, 1, 1).isValue(1 opGt 2).resets()
-        tester.parse("1 >= 2").isChain(1, 1, 1).isValue(1 opGe 2).resets()
-        tester.parse("1 <=> 2").isChain(1, 1, 1).isValue(1 opTw 2).resets()
+        tester.parse("1 + 2").isChain(1, 1, 1).isValue(1 astAdd 2).resets()
+        tester.parse("1 - 2").isChain(1, 1, 1).isValue(1 astSub 2).resets()
+        tester.parse("1 * 2").isChain(1, 1, 1).isValue(1 astMul 2).resets()
+        tester.parse("1 / 2").isChain(1, 1, 1).isValue(1 astDiv 2).resets()
+        tester.parse("1 % 2").isChain(1, 1, 1).isValue(1 astMod 2).resets()
+        tester.parse("1 && 2").isChain(1, 1, 1).isValue(1 astAnd 2).resets()
+        tester.parse("1 || 2").isChain(1, 1, 1).isValue(1 astOr 2).resets()
+        tester.parse("1 ^^ 2").isChain(1, 1, 1).isValue(1 astXor 2).resets()
+        tester.parse("1 == 2").isChain(1, 1, 1).isValue(1 astEq 2).resets()
+        tester.parse("1 ~= 2").isChain(1, 1, 1).isValue(1 astNe 2).resets()
+        tester.parse("1 < 2").isChain(1, 1, 1).isValue(1 astLt 2).resets()
+        tester.parse("1 <= 2").isChain(1, 1, 1).isValue(1 astLe 2).resets()
+        tester.parse("1 > 2").isChain(1, 1, 1).isValue(1 astGt 2).resets()
+        tester.parse("1 >= 2").isChain(1, 1, 1).isValue(1 astGe 2).resets()
+        tester.parse("1 <=> 2").isChain(1, 1, 1).isValue(1 astTw 2).resets()
         
         // Unary
-        tester.parse("~1").isChain(0, 1, 1).isValue(opNot(1))
-        tester.parse("+1").isChain(0, 1, 1).isValue(opPlus(1))
-        tester.parse("-1").isChain(0, 1, 1).isValue(opMinus(1))
+        tester.parse("~1").isChain(0, 1, 1).isValue(1.astNot)
+        tester.parse("+1").isChain(0, 1, 1).isValue(1.astPlus)
+        tester.parse("-1").isChain(0, 1, 1).isValue(1.astMinus)
         
         // Error
-        tester.parse("1 ! 2").isChain(1, 1, 1).isValue(1 opRaise 2)
-        tester.parse("1 ? 2").isChain(1, 1, 1).isValue(1 opCatch 2)
+        tester.parse("1 ! 2").isChain(1, 1, 1).isValue(1 astRaise 2)
+        tester.parse("1 ? 2").isChain(1, 1, 1).isValue(1 astCatch 2)
         
         // When
-        tester.parse("when 1 2 -> 3").isChain(0, 4, 1).isValue(whenOf(1, 2 to 3))
-        tester.parse("when 1 2 -> 3 4 -> 5").isWip(4).isChain(1, 2, 1).isValue(whenOf(1, 2 to 3, 4 to 5))
-        tester.parse("when 1 2 -> 3 else 4").isWip(4).isChain(1, 1, 1).isValue(whenOf(1, 2 to 3, default = 4))
+        tester.parse("when 1 2 -> 3").isChain(0, 4, 1).isValue(astWhenOf(1, 2 to 3))
+        tester.parse("when 1 2 -> 3 4 -> 5").isWip(4).isChain(1, 2, 1).isValue(astWhenOf(1, 2 to 3, 4 to 5))
+        tester.parse("when 1 2 -> 3 else 4").isWip(4).isChain(1, 1, 1).isValue(astWhenOf(1, 2 to 3, default = 4))
     }
     
     @Test
     fun `Given valid token, when parsing, then correct precedence`()
     {
         // Operators
-        tester.parse("1 + 2 - 3").step(5).isDone().isValue((1 opAdd 2) opSub 3)
-        tester.parse("1 + 2 * 3").step(5).isDone().isValue(1 opAdd (2 opMul 3))
-        tester.parse("1 - 2 < 6 / 3").step(7).isDone().isValue((1 opSub 2) opLt (6 opDiv 3))
-        tester.parse("1 && 2 || 3 && 4").step(7).isDone().isValue((1 opAnd 2) opOr (3 opAnd 4))
-        tester.parse("1 == 2 && 3").step(5).isDone().isValue((1 opEq 2) opAnd 3)
-        tester.parse("1 == (2 && 3)").step(7).isDone().isValue(1 opEq (2 opAnd 3))
+        tester.parse("1 + 2 - 3").step(5).isDone().isValue((1 astAdd 2) astSub 3)
+        tester.parse("1 + 2 * 3").step(5).isDone().isValue(1 astAdd (2 astMul 3))
+        tester.parse("1 - 2 < 6 / 3").step(7).isDone().isValue((1 astSub 2) astLt (6 astDiv 3))
+        tester.parse("1 && 2 || 3 && 4").step(7).isDone().isValue((1 astAnd 2) astOr (3 astAnd 4))
+        tester.parse("1 == 2 && 3").step(5).isDone().isValue((1 astEq 2) astAnd 3)
+        tester.parse("1 == (2 && 3)").step(7).isDone().isValue(1 astEq (2 astAnd 3))
         
         // Unary
-        tester.parse("~~1").step(3).isDone().isValue(opNot(opNot(1)))
-        tester.parse("+-1").step(3).isDone().isValue(opPlus(opMinus(1)))
+        tester.parse("~~1").step(3).isDone().isValue(1.astNot.astNot)
+        tester.parse("+-1").step(3).isDone().isValue(1.astMinus.astPlus)
         
         // Mixed
-        tester.parse("1 ++ 2").step(4).isDone().isValue(1 opAdd opPlus(2))
-        tester.parse("~1 * -2").step(5).isDone().isValue(opNot(1) opMul opMinus(2))
-        tester.parse("-(1 * 2)").step(6).isDone().isValue(opMinus(1 opMul 2))
-        tester.parse("1 ! 2 + 3").step(5).isDone().isValue(1 opRaise (2 opAdd 3))
-        tester.parse("1 ? 2 + 3").step(5).isDone().isValue(1 opCatch (2 opAdd 3))
+        tester.parse("1 ++ 2").step(4).isDone().isValue(1 astAdd 2.astPlus)
+        tester.parse("~1 * -2").step(5).isDone().isValue(1.astNot astMul 2.astMinus)
+        tester.parse("-(1 * 2)").step(6).isDone().isValue((1 astMul 2).astMinus)
+        tester.parse("1 ! 2 + 3").step(5).isDone().isValue(1 astRaise (2 astAdd 3))
+        tester.parse("1 ? 2 + 3").step(5).isDone().isValue(1 astCatch (2 astAdd 3))
     }
     
     @Test
