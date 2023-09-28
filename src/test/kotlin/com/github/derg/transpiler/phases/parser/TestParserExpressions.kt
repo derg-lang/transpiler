@@ -4,11 +4,6 @@ import com.github.derg.transpiler.source.ast.*
 import com.github.derg.transpiler.source.lexeme.*
 import org.junit.jupiter.api.*
 
-@Deprecated("Remove when subscript is removed", ReplaceWith("nothing, kill it"))
-private fun String.toSub(vararg arguments: AstArgument) = AstSubscript(this, arguments.toList())
-@Deprecated("Remove when subscript is removed", ReplaceWith("nothing, kill it"))
-private fun Any.toArg(name: String? = null) = AstArgument(name, ast)
-
 /**
  * Determines whether the current token stream is parsed correctly. The expectation is that there will be [preOkCount]
  * number of tokens resulting in [ParseOk.Complete], followed by [wipCount] [ParseOk.Incomplete], then followed by
@@ -40,11 +35,6 @@ class TestParserExpression
         tester.parse("f(1,)").isChain(1, 3, 1).isValue("f".astCall(1)).resets()
         tester.parse("f(1,2)").isChain(1, 4, 1).isValue("f".astCall(1, 2)).resets()
         tester.parse("f(bar = 1)").isChain(1, 4, 1).isValue("f".astCall("bar" to 1)).resets()
-        tester.parse("f[]").isChain(1, 1, 1).isValue("f".toSub()).resets()
-        tester.parse("f[1]").isChain(1, 2, 1).isValue("f".toSub(1.toArg())).resets()
-        tester.parse("f[1,]").isChain(1, 3, 1).isValue("f".toSub(1.toArg())).resets()
-        tester.parse("f[1,2]").isChain(1, 4, 1).isValue("f".toSub(1.toArg(), 2.toArg())).resets()
-        tester.parse("f[bar = 1]").isChain(1, 4, 1).isValue("f".toSub(1.toArg("bar"))).resets()
         
         // Structural
         tester.parse("(1)").isChain(0, 2, 1).isValue(1.ast).resets()

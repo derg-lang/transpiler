@@ -71,17 +71,17 @@ private fun mergePrefix(operator: SymbolType, rhs: AstExpression): AstExpression
 /**
  * Joins together the [lhs] expression together with the remainder of the [terms], in a recursive manner.
  */
-private fun mergeRecursively(lhs: AstExpression, terms: List<Pair<SymbolType, AstExpression>>, index: Int = 0): AstExpression
+private fun mergeTerms(lhs: AstExpression, terms: List<Pair<SymbolType, AstExpression>>, index: Int = 0): AstExpression
 {
     val (op1, mhs) = terms.getOrNull(index) ?: return lhs
     val (op2, rhs) = terms.getOrNull(index + 1) ?: return mergeInfix(lhs, op1, mhs)
     
     // If next operator has higher precedence, parse left-hand of tree first
     if (PRECEDENCE[op1]!! <= PRECEDENCE[op2]!!)
-        return mergeRecursively(mergeInfix(lhs, op1, mhs), terms, index + 1)
+        return mergeTerms(mergeInfix(lhs, op1, mhs), terms, index + 1)
     
     // Otherwise, the remainder right-hand side must be parsed recursively
-    val rest = mergeRecursively(rhs, terms, index + 2)
+    val rest = mergeTerms(rhs, terms, index + 2)
     return mergeInfix(lhs, op1, mergeInfix(mhs, op2, rest))
 }
 
@@ -97,7 +97,6 @@ private fun basePatternOf() = ParserAnyOf(
     ParserText(),
     variableCallParserOf(),
     functionCallParserOf(),
-    subscriptCallParserOf(),
     parenthesisParserOf(),
     unaryOperatorParserOf(),
     whenParserOf(),
@@ -119,7 +118,7 @@ private fun expressionOutcomeOf(values: Parsers): AstExpression
     val terms = values.get<List<Parsers>>("terms")
     val ops = terms.produce<SymbolType>("operator")
     val rest = terms.produce<AstExpression>("term")
-    return mergeRecursively(base, ops zip rest)
+    return mergeTerms(base, ops zip rest)
 }
 
 /**
@@ -143,22 +142,6 @@ private fun functionCallPatternOf() = ParserSequence(
 
 private fun functionCallOutcomeOf(outcome: Parsers): AstExpression =
     AstCall(outcome["name"], emptyList(), outcome["params"])
-
-/**
- * Parses a subscript call expression from the token stream.
- */
-private fun subscriptCallParserOf(): Parser<AstExpression> =
-    ParserPattern(::subscriptCallPatternOf, ::subscriptCallOutcomeOf)
-
-private fun subscriptCallPatternOf() = ParserSequence(
-    "name" to ParserName(),
-    "open" to ParserSymbol(SymbolType.OPEN_BRACKET),
-    "params" to ParserOptional(ParserRepeating(argumentParserOf(), ParserSymbol(SymbolType.COMMA))),
-    "close" to ParserSymbol(SymbolType.CLOSE_BRACKET),
-)
-
-private fun subscriptCallOutcomeOf(values: Parsers): AstExpression =
-    AstSubscript(values["name"], values["params"])
 
 /**
  * Parses an expression from in-between parenthesis from the token stream.

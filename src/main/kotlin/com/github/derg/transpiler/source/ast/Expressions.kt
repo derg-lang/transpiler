@@ -18,13 +18,6 @@ data class AstRead(val name: String) : AstAccess
  */
 data class AstCall(val name: String, val temArgs: List<AstArgument>, val valArgs: List<AstArgument>) : AstAccess
 
-/**
- * All subscript calls refers to the subscript operator being invoked on an instance with the given [name]. Every
- * subscript call is permitted an arbitrary number of [arguments].
- */
-@Deprecated("To be removed, see https://github.com/derg-lang/transpiler/issues/83")
-data class AstSubscript(val name: String, val arguments: List<AstArgument>) : AstAccess
-
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Constants
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
