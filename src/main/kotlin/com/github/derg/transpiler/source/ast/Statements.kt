@@ -1,7 +1,5 @@
 package com.github.derg.transpiler.source.ast
 
-import com.github.derg.transpiler.source.*
-
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Assignment
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -9,7 +7,7 @@ import com.github.derg.transpiler.source.*
 /**
  * Assigns the given [expression] to [name], returning the new value of [name].
  */
-data class AstAssign(val name: Name, val expression: AstExpression) : AstAssignment
+data class AstAssign(val name: String, val expression: AstExpression) : AstAssignment
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Control flow
@@ -26,14 +24,13 @@ data class AstBranch(val predicate: AstExpression, val success: List<AstStatemen
  * under certain circumstances. The [expression] is not permitted to resolve down to any value, it must resolve to
  * something which does not have a type, and does not raise any error.
  */
-data class AstEnter(val expression: AstExpression) : AstControl
+data class AstEvaluate(val expression: AstExpression) : AstControl
 
 /**
  * Specifies that the execution flow should exit the current function, returning control flow back to the caller. Note
  * that the function cannot be exited in this manner if the function expects a return value.
  */
-// TODO: Add exit statement
-// object AstReturn : Control
+ object AstReturn : AstControl
 
 /**
  * Specifies that a function should raise a specific [expression]. The raise statement functions similarly to the return
@@ -48,4 +45,4 @@ data class AstReturnError(val expression: AstExpression) : AstControl
  * execution is resumed to the caller of the function, executing nothing else in the body of the function. Returning a
  * value from a function indicates usually that the function has succeeded in producing a usable value.
  */
-data class AstReturnValue(val expression: AstExpression?) : AstControl
+data class AstReturnValue(val expression: AstExpression) : AstControl

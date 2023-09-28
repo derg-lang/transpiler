@@ -12,9 +12,9 @@ import com.github.derg.transpiler.source.*
  * @param statements The executable code which defines the function body.
  */
 data class AstFunction(
-    val name: Name,
-    val valueType: Name?,
-    val errorType: Name?,
+    override val name: String,
+    val valueType: String?,
+    val errorType: String?,
     val parameters: List<AstParameter>,
     val visibility: Visibility,
     val statements: List<AstStatement>,
@@ -28,7 +28,7 @@ data class AstFunction(
  * @param visibility The visibility of the type, to whom it is possible to access.
  */
 data class AstType(
-    val name: Name,
+    override val name: String,
     val visibility: Visibility,
     val properties: List<AstProperty>,
 ) : AstDefinition
@@ -42,8 +42,8 @@ data class AstType(
  * @param mutability The kind of the variable, to which degree it is mutable.
  */
 data class AstVariable(
-    val name: Name,
-    val type: Name?,
+    override val name: String,
+    val type: String?,
     val value: AstExpression,
     val visibility: Visibility,
     val mutability: Mutability,

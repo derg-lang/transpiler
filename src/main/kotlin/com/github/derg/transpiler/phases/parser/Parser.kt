@@ -3,7 +3,7 @@ package com.github.derg.transpiler.phases.parser
 import com.github.derg.transpiler.phases.lexer.*
 import com.github.derg.transpiler.source.ast.*
 import com.github.derg.transpiler.source.lexeme.*
-import com.github.derg.transpiler.util.*
+import com.github.derg.transpiler.utils.*
 
 /**
  * Parses the [input] string into a single segment, forming a part of the overall program. The total collection of all

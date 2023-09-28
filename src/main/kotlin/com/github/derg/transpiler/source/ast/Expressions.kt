@@ -1,7 +1,5 @@
 package com.github.derg.transpiler.source.ast
 
-import com.github.derg.transpiler.source.*
-
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Access
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -11,21 +9,21 @@ import com.github.derg.transpiler.source.*
  * given a unique [name] within every scope, allowing the analyzer to resolve which variable is being referenced. Any
  * type property will be represented as a variable in the abstract syntax tree.
  */
-data class AstRead(val name: Name) : AstAccess
+data class AstRead(val name: String) : AstAccess
 
 /**
  * All procedure calls may either refer to a function with the specified [name] being invoked, or the function operator
  * being invoked on an instance with the given [name]. Every procedure call is permitted an arbitrary number of
- * [arguments].
+ * [value arguments][valArgs] and [template arguments][temArgs].
  */
-data class AstCall(val name: Name, val arguments: List<AstArgument>) : AstAccess
+data class AstCall(val name: String, val temArgs: List<AstArgument>, val valArgs: List<AstArgument>) : AstAccess
 
 /**
  * All subscript calls refers to the subscript operator being invoked on an instance with the given [name]. Every
  * subscript call is permitted an arbitrary number of [arguments].
  */
 @Deprecated("To be removed, see https://github.com/derg-lang/transpiler/issues/83")
-data class AstSubscript(val name: Name, val arguments: List<AstArgument>) : AstAccess
+data class AstSubscript(val name: String, val arguments: List<AstArgument>) : AstAccess
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Constants
@@ -42,14 +40,14 @@ data class AstBool(val value: Boolean) : AstConstant
  * hardware. All numbers may have an optional [literal] associated with them, indicating which user-defined literal
  * should be used to interpret the value.
  */
-data class AstReal(val value: Number, val literal: Name?) : AstConstant
+data class AstReal(val value: Number, val literal: String) : AstConstant
 
 /**
  * All strings may be represented in [value]. All types of text are permitted, although limitations may be imposed by
  * the target language and hardware. All strings may have an optional [literal] associated with them, indicating which
  * user-defined literal should be used to interpret the value.
  */
-data class AstText(val value: String, val literal: Name?) : AstConstant
+data class AstText(val value: String, val literal: String) : AstConstant
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Operators

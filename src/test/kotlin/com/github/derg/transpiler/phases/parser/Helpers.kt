@@ -1,32 +1,9 @@
 package com.github.derg.transpiler.phases.parser
 
 import com.github.derg.transpiler.phases.lexer.*
-import com.github.derg.transpiler.source.*
-import com.github.derg.transpiler.source.ast.*
 import com.github.derg.transpiler.source.lexeme.*
-import com.github.derg.transpiler.util.*
+import com.github.derg.transpiler.utils.*
 import org.junit.jupiter.api.Assertions.*
-
-/**
- * Converts [this] value into a literal expression if possible. The expression can only be generated from numeric,
- * boolean, and string values.
- */
-fun Any.toExp(type: Name? = null): AstExpression = when (this)
-{
-    is Boolean       -> AstBool(this)
-    is Double        -> AstReal(toBigDecimal(), type)
-    is Float         -> AstReal(toBigDecimal(), type)
-    is Int           -> AstReal(toBigDecimal(), type)
-    is String        -> AstText(this, type)
-    is AstExpression -> this
-    else             -> throw IllegalStateException("Cannot convert '$this' to an expression")
-}
-
-// Various primitive conversion functions
-fun Name.toVar() = AstRead(this)
-fun Name.toFun(vararg arguments: AstArgument) = AstCall(this, arguments.toList())
-fun Name.toSub(vararg arguments: AstArgument) = AstSubscript(this, arguments.toList())
-fun Any.toArg(name: Name? = null) = AstArgument(name, toExp())
 
 /**
  * To simplify testing of the parsing of source code for any particular pattern factory, a helper class is provided.
@@ -69,7 +46,7 @@ class Tester<Type>(factory: () -> Parser<Type>)
      */
     fun isWip(count: Int): Tester<Type>
     {
-        repeat(count) { assertEquals(successOf(ParseOk.Incomplete), parser.parse(next()), "iteration ${it + 1}") }
+        repeat(count) { assertSuccess(ParseOk.Incomplete, parser.parse(next()), "iteration ${it + 1}") }
         return this
     }
     
@@ -78,7 +55,7 @@ class Tester<Type>(factory: () -> Parser<Type>)
      */
     fun isOk(count: Int): Tester<Type>
     {
-        repeat(count) { assertEquals(successOf(ParseOk.Complete), parser.parse(next()), "iteration ${it + 1}") }
+        repeat(count) { assertSuccess(ParseOk.Complete, parser.parse(next()), "iteration ${it + 1}") }
         return this
     }
     
@@ -97,7 +74,7 @@ class Tester<Type>(factory: () -> Parser<Type>)
      */
     fun isDone(): Tester<Type>
     {
-        assertEquals(successOf(ParseOk.Finished), parser.parse(EndOfFile))
+        assertSuccess(ParseOk.Finished, parser.parse(EndOfFile))
         return this
     }
     
@@ -106,7 +83,7 @@ class Tester<Type>(factory: () -> Parser<Type>)
      */
     fun isBad(function: (List<Token>) -> ParseError): Tester<Type>
     {
-        assertEquals(failureOf(function(tokens)), parser.parse(next()))
+        assertFailure(function(tokens), parser.parse(next()))
         return this
     }
     

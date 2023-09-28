@@ -1,13 +1,12 @@
 package com.github.derg.transpiler.phases.parser
 
-import com.github.derg.transpiler.source.*
 import com.github.derg.transpiler.source.ast.*
 import com.github.derg.transpiler.source.lexeme.*
 
 /**
  * Joins together the [name] with the [operator] and the [rhs] expression.
  */
-private fun merge(name: Name, operator: SymbolType, rhs: AstExpression): AstAssignment = when (operator)
+private fun merge(name: String, operator: SymbolType, rhs: AstExpression): AstAssignment = when (operator)
 {
     SymbolType.ASSIGN          -> AstAssign(name, rhs)
     SymbolType.ASSIGN_PLUS     -> AstAssign(name, AstAdd(AstRead(name), rhs))
@@ -99,11 +98,11 @@ private fun returnPatternOf() = ParserSequence(
     "expression" to expressionParserOf(),
 )
 
-private fun returnOutcomeOf(values: Parsers): AstReturnValue
+private fun returnOutcomeOf(values: Parsers): AstStatement
 {
     val expression = values.get<AstExpression>("expression")
     // TODO: The magic string `_` should not be used. Use the type-information of the function to remove it
-    return if (expression == AstRead("_")) AstReturnValue(null) else AstReturnValue(expression)
+    return if (expression == AstRead("_")) AstReturn else AstReturnValue(expression)
 }
 
 /**
@@ -112,4 +111,4 @@ private fun returnOutcomeOf(values: Parsers): AstReturnValue
  */
 // TODO: Not a correct implementation of the parser - must also function with error handling
 private fun invokeParserOf(): Parser<AstStatement> =
-    ParserPattern(::functionCallParserOf) { AstEnter(it) }
+    ParserPattern(::functionCallParserOf) { AstEvaluate(it) }

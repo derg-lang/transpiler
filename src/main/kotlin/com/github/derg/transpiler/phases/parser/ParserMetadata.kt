@@ -56,7 +56,7 @@ fun assignabilityOf(symbol: SymbolType?): Assignability = when (symbol)
  * to provide an optional name after a specific [symbol]. The output of the parser will always be the name of the found
  * identifier.
  */
-fun nameParserOf(symbol: SymbolType): Parser<Name> =
+fun nameParserOf(symbol: SymbolType): Parser<String> =
     ParserPattern({ namePatternOf(symbol) }, { it["name"] })
 
 private fun namePatternOf(symbol: SymbolType) =
@@ -154,7 +154,7 @@ private fun propertyPatternOf() = ParserSequence(
     "assignability" to assignabilityParserOf(),
     "mutability" to mutabilityParserOf(),
     "name" to ParserName(),
-    "type" to ParserOptional(nameParserOf(SymbolType.COLON)),
+    "type" to nameParserOf(SymbolType.COLON),
     "value" to ParserOptional(valueParserOf(SymbolType.ASSIGN)),
 )
 

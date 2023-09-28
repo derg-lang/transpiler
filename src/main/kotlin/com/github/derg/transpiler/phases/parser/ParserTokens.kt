@@ -1,27 +1,27 @@
 package com.github.derg.transpiler.phases.parser
 
-import com.github.derg.transpiler.source.*
 import com.github.derg.transpiler.source.ast.*
 import com.github.derg.transpiler.source.lexeme.*
-import com.github.derg.transpiler.util.*
+import com.github.derg.transpiler.source.thir.*
+import com.github.derg.transpiler.utils.*
 
 /**
  * Parses a single identifier from the token stream.
  */
-class ParserName : Parser<Name>
+class ParserName : Parser<String>
 {
-    private var name: Name? = null
+    private var name: String? = null
     
     override fun skipable(): Boolean = false
-    override fun produce(): Name = name ?: throw IllegalStateException("No name has been parsed")
+    override fun produce(): String = name ?: throw IllegalStateException("No name has been parsed")
     override fun parse(token: Token): Result<ParseOk, ParseError>
     {
         if (name != null)
-            return successOf(ParseOk.Finished)
+            return ParseOk.Finished.toSuccess()
         
-        val identifier = token as? Identifier ?: return failureOf(ParseError.UnexpectedToken(token))
+        val identifier = token as? Identifier ?: return ParseError.UnexpectedToken(token).toFailure()
         name = identifier.name
-        return successOf(ParseOk.Complete)
+        return ParseOk.Complete.toSuccess()
     }
     
     override fun reset()
@@ -44,11 +44,11 @@ class ParserSymbol(vararg symbols: SymbolType) : Parser<SymbolType>
     override fun parse(token: Token): Result<ParseOk, ParseError>
     {
         if (type != null)
-            return successOf(ParseOk.Finished)
+            return ParseOk.Finished.toSuccess()
         
-        val symbol = token as? Symbol ?: return failureOf(ParseError.UnexpectedToken(token))
-        type = if (symbol.type in whitelist) symbol.type else return failureOf(ParseError.UnexpectedToken(token))
-        return successOf(ParseOk.Complete)
+        val symbol = token as? Symbol ?: return ParseError.UnexpectedToken(token).toFailure()
+        type = if (symbol.type in whitelist) symbol.type else return ParseError.UnexpectedToken(token).toFailure()
+        return ParseOk.Complete.toSuccess()
     }
     
     override fun reset()
@@ -67,16 +67,16 @@ class ParserBool : Parser<AstExpression>
     override fun parse(token: Token): Result<ParseOk, ParseError>
     {
         if (expression != null)
-            return successOf(ParseOk.Finished)
+            return ParseOk.Finished.toSuccess()
         
-        val symbol = token as? Symbol ?: return failureOf(ParseError.UnexpectedToken(token))
+        val symbol = token as? Symbol ?: return ParseError.UnexpectedToken(token).toFailure()
         expression = when (symbol.type)
         {
             SymbolType.TRUE  -> AstBool(true)
             SymbolType.FALSE -> AstBool(false)
-            else             -> return failureOf(ParseError.UnexpectedToken(token))
+            else             -> return ParseError.UnexpectedToken(token).toFailure()
         }
-        return successOf(ParseOk.Complete)
+        return ParseOk.Complete.toSuccess()
     }
     
     override fun skipable(): Boolean = false
@@ -97,11 +97,11 @@ class ParserReal : Parser<AstExpression>
     override fun parse(token: Token): Result<ParseOk, ParseError>
     {
         if (expression != null)
-            return successOf(ParseOk.Finished)
+            return ParseOk.Finished.toSuccess()
         
-        val number = token as? Numeric ?: return failureOf(ParseError.UnexpectedToken(token))
-        expression = AstReal(number.value, number.type)
-        return successOf(ParseOk.Complete)
+        val number = token as? Numeric ?: return ParseError.UnexpectedToken(token).toFailure()
+        expression = AstReal(number.value, number.type ?: Builtin.INT32_LIT.name)
+        return ParseOk.Complete.toSuccess()
     }
     
     override fun skipable(): Boolean = false
@@ -122,11 +122,11 @@ class ParserText : Parser<AstExpression>
     override fun parse(token: Token): Result<ParseOk, ParseError>
     {
         if (expression != null)
-            return successOf(ParseOk.Finished)
+            return ParseOk.Finished.toSuccess()
         
-        val string = token as? Textual ?: return failureOf(ParseError.UnexpectedToken(token))
-        expression = AstText(string.value, string.type)
-        return successOf(ParseOk.Complete)
+        val string = token as? Textual ?: return ParseError.UnexpectedToken(token).toFailure()
+        expression = AstText(string.value, string.type ?: Builtin.STR_LIT.name)
+        return ParseOk.Complete.toSuccess()
     }
     
     override fun skipable(): Boolean = false

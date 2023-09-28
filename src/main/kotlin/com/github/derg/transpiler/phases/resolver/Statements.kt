@@ -2,52 +2,62 @@ package com.github.derg.transpiler.phases.resolver
 
 import com.github.derg.transpiler.source.ast.*
 import com.github.derg.transpiler.source.thir.*
-import com.github.derg.transpiler.util.*
+import com.github.derg.transpiler.utils.*
 
-internal class ConverterAssign(private val symbols: ThirSymbolTable)
+/**
+ * The statement converter operates on one statement at a time, converting it into an instruction which represents the
+ * initial statement.
+ */
+internal class ConverterStatements(private val symbols: ThirSymbolTable)
 {
-    operator fun invoke(node: AstAssign): Result<ThirInstruction, ResolveError>
+    private val expressions = ConverterExpression(symbols)
+    
+    operator fun invoke(node: AstStatement): Result<ThirInstruction, ResolveError> = when (node)
     {
-        val variable = symbols.resolveVariable(node.name).valueOr { return failureOf(it) }
-        val value = symbols.resolveValue(node.expression).valueOr { return failureOf(it) }
+        is AstAssign      -> convert(node)
+        is AstBranch      -> convert(node)
+        is AstEvaluate    -> convert(node)
+        is AstReturn      -> ThirReturn.toSuccess()
+        is AstReturnError -> expressions(node.expression).mapValue { ThirReturnError(it) }
+        is AstReturnValue -> expressions(node.expression).mapValue { ThirReturnValue(it) }
+        is AstVariable    -> convert(AstAssign(node.name, node.value))
+    }
+    
+    private fun convert(node: AstAssign): Result<ThirInstruction, ResolveError>
+    {
+        val symbol = resolveVariable(symbols, node.name).valueOr { return it.toFailure() }
+        val value = expressions(node.expression).valueOr { return it.toFailure() }
         
-        // TODO: Reject updates to constant and/or immutable variables
-        if (variable.type.id != value.type.id)
-            return ResolveError.MismatchedVariableType(expected = variable.type, actual = value.type).toFailure()
-        return ThirAssign(variable, value).toSuccess()
-    }
-}
-
-internal class ConverterBranch(private val symbols: ThirSymbolTable)
-{
-    operator fun invoke(node: AstBranch): Result<ThirInstruction, ResolveError>
-    {
-        val predicate = symbols.resolveValue(node.predicate).valueOr { return failureOf(it) }
-        if (predicate.type.id != Builtin.BOOL.id)
-            return ResolveError.InvalidPredicateType(predicate.type).toFailure()
+        // TODO: Reject constant and/or immutable variable assignment
+        // TODO: Reject assignments to function parameters
         
-        return ThirCondition(
-            predicate = predicate,
-            success = symbols.resolveScope(node.success).valueOr { return failureOf(it) },
-            failure = symbols.resolveScope(node.failure).valueOr { return failureOf(it) },
-        ).toSuccess()
+        if (symbol.type != value.valType)
+            return ResolveError.MismatchedVariableType(expected = symbol.type, actual = value.valType).toFailure()
+        return ThirAssign(symbol.id, value).toSuccess()
     }
-}
-
-internal class ConverterReturnError(private val symbols: ThirSymbolTable)
-{
-    operator fun invoke(node: AstReturnError): Result<ThirInstruction, ResolveError>
+    
+    private fun convert(node: AstEvaluate): Result<ThirInstruction, ResolveError>
     {
-        val value = symbols.resolveValue(node.expression).valueOr { return failureOf(it) }
-        return ThirReturnError(value).toSuccess()
+        val expression = expressions(node.expression).valueOr { return it.toFailure() }
+        if (expression.valType != Builtin.VOID.id)
+            return ResolveError.MismatchedEvaluationType(Builtin.VOID.id, expression.valType).toFailure()
+        if (expression.errType != Builtin.VOID.id)
+            return ResolveError.MismatchedEvaluationType(Builtin.VOID.id, expression.errType).toFailure()
+        return ThirEvaluate(expression).toSuccess()
     }
-}
-
-internal class ConverterReturnValue(private val symbols: ThirSymbolTable)
-{
-    operator fun invoke(node: AstReturnValue): Result<ThirInstruction, ResolveError>
+    
+    private fun convert(node: AstBranch): Result<ThirInstruction, ResolveError>
     {
-        val value = symbols.resolveOptionalValue(node.expression).valueOr { return failureOf(it) }
-        return if (value == null) ThirReturn.toSuccess() else ThirReturnValue(value).toSuccess()
+        val predicate = expressions(node.predicate).valueOr { return it.toFailure() }
+        if (predicate.valType != Builtin.BOOL.id)
+            return ResolveError.MismatchedPredicateType(Builtin.BOOL.id, predicate.valType).toFailure()
+        if (predicate.errType != Builtin.VOID.id)
+            return ResolveError.MismatchedPredicateType(Builtin.VOID.id, predicate.valType).toFailure()
+        
+        // Actually resolve the success and failure branches
+        val instruction = ThirBranch(predicate, ThirScope(symbols), ThirScope(symbols))
+        resolveScope(instruction.success, node.success).onFailure { return it.toFailure() }
+        resolveScope(instruction.failure, node.failure).onFailure { return it.toFailure() }
+        return instruction.toSuccess()
     }
 }

@@ -1,4 +1,4 @@
-package com.github.derg.transpiler.util
+package com.github.derg.transpiler.utils
 
 /**
  * Retrieves the substring spanning from [startIndex] to [endIndex], or if the [endIndex] is beyond the end of the

@@ -1,9 +1,10 @@
 package com.github.derg.transpiler.phases.parser
 
+import com.github.derg.transpiler.source.ast.*
 import com.github.derg.transpiler.source.lexeme.*
 import org.junit.jupiter.api.*
 
-class TestParserName
+class TestParserIdentifier
 {
     private val tester = Tester { ParserName() }
     
@@ -46,8 +47,8 @@ class TestParserBool
     @Test
     fun `Given valid token, when parsing, then correct product`()
     {
-        tester.parse("true").isOk(1).isDone().isValue(true.toExp()).resets()
-        tester.parse("false").isOk(1).isDone().isValue(false.toExp()).resets()
+        tester.parse("true").isOk(1).isDone().isValue(true.ast).resets()
+        tester.parse("false").isOk(1).isDone().isValue(false.ast).resets()
     }
     
     @Test
@@ -66,7 +67,7 @@ class TestParserReal
     @Test
     fun `Given valid token, when parsing, then correct product`()
     {
-        tester.parse("4").isOk(1).isDone().isValue(4.toExp()).resets()
+        tester.parse("4").isOk(1).isDone().isValue(4.ast).resets()
     }
     
     @Test
@@ -84,8 +85,8 @@ class TestParserText
     @Test
     fun `Given valid token, when parsing, then correct product`()
     {
-        tester.parse("\"\"").isOk(1).isDone().isValue("".toExp()).resets()
-        tester.parse("\"foo\"").isOk(1).isDone().isValue("foo".toExp()).resets()
+        tester.parse("\"\"").isOk(1).isDone().isValue("".ast).resets()
+        tester.parse("\"foo\"").isOk(1).isDone().isValue("foo".ast).resets()
     }
     
     @Test

@@ -119,7 +119,7 @@ private fun expressionOutcomeOf(values: Parsers): AstExpression
     val terms = values.get<List<Parsers>>("terms")
     val ops = terms.produce<SymbolType>("operator")
     val rest = terms.produce<AstExpression>("term")
-    return mergeRecursively(base, ops.zip(rest))
+    return mergeRecursively(base, ops zip rest)
 }
 
 /**
@@ -142,7 +142,7 @@ private fun functionCallPatternOf() = ParserSequence(
 )
 
 private fun functionCallOutcomeOf(outcome: Parsers): AstExpression =
-    AstCall(outcome["name"], outcome["params"])
+    AstCall(outcome["name"], emptyList(), outcome["params"])
 
 /**
  * Parses a subscript call expression from the token stream.

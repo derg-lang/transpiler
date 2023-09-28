@@ -44,6 +44,12 @@ sealed interface AstConstant : AstExpression
  * definition of the object varies from object to object.
  */
 sealed interface AstDefinition : AstNode
+{
+    /**
+     * The name of the symbol.
+     */
+    val name: String
+}
 
 /**
  * Expressions are computable bits of code which resolves down to a single value and type. These code elements cannot be

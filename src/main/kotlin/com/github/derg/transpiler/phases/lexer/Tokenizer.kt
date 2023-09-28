@@ -2,7 +2,7 @@ package com.github.derg.transpiler.phases.lexer
 
 import com.github.derg.transpiler.core.*
 import com.github.derg.transpiler.source.lexeme.*
-import com.github.derg.transpiler.util.*
+import com.github.derg.transpiler.utils.*
 
 /**
  * Accepts a source code [input] string, and converts it into a sequence of tokens.

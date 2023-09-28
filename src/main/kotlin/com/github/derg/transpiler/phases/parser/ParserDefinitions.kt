@@ -73,6 +73,7 @@ private fun variablePatternOf() = ParserSequence(
     "assignability" to assignabilityParserOf(),
     "mutability" to mutabilityParserOf(),
     "name" to ParserName(),
+    "type" to ParserOptional(nameParserOf(SymbolType.COLON)),
     "op" to ParserSymbol(SymbolType.ASSIGN),
     "value" to expressionParserOf(),
 )

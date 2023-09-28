@@ -34,12 +34,12 @@ class TestParserStatement
         tester.parse("if 1 {} else a = 2").isWip(3).isOk(1).isWip(3).isOk(1).isDone()
             .isValue(astIfOf(1, success = emptyList(), failure = listOf("a" astAssign 2)))
         
-        tester.parse("raise 1").isChain(1, 1).isValue(astRaiseOf(1))
-        tester.parse("return 1").isChain(1, 1).isValue(astReturnOf(1))
-        tester.parse("return _").isChain(1, 1).isValue(astReturnOf())
+        tester.parse("raise 1").isChain(1, 1).isValue(1.astReturnError)
+        tester.parse("return 1").isChain(1, 1).isValue(1.astReturnValue)
+        tester.parse("return _").isChain(1, 1).isValue(AstReturn)
         
         // Function call
-        tester.parse("a()").isChain(2, 1).isValue(astInvokeOf("a".toFun()))
+        tester.parse("a()").isChain(2, 1).isValue(astInvokeOf("a".astCall()))
     }
     
     @Test

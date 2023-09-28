@@ -1,4 +1,4 @@
-package com.github.derg.transpiler.util
+package com.github.derg.transpiler.utils
 
 /**
  * Splits the original collection into a pair of lists, where first list contains elements for which predicate yielded

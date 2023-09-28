@@ -50,8 +50,6 @@ class TestParserFunction
             .isValue(astFunOf("foo", params = listOf(astParOf("a", type = "Foo"), astParOf("b", type = "Bar"))))
         
         // Default values for parameters must be supported
-        tester.parse("fun foo(a = 1) {}").isChain(8, 1)
-            .isValue(astFunOf("foo", params = listOf(astParOf("a", value = 1))))
         tester.parse("fun foo(a: Foo = 1) {}").isChain(10, 1)
             .isValue(astFunOf("foo", params = listOf(astParOf("a", type = "Foo", value = 1))))
         
@@ -67,9 +65,9 @@ class TestParserFunction
     fun `Given return statement, when parsing, then correctly parsed`()
     {
         tester.parse("fun f() { return _ }").isChain(7, 1)
-            .isValue(astFunOf("f", valType = null, statements = listOf(astReturnOf())))
+            .isValue(astFunOf("f", valType = null, statements = listOf(AstReturn)))
         tester.parse("fun f() -> Int { return 0 }").isChain(9, 1)
-            .isValue(astFunOf("f", valType = "Int", statements = listOf(astReturnOf(0))))
+            .isValue(astFunOf("f", valType = "Int", statements = listOf(0.astReturnValue)))
     }
     
     @Test
@@ -123,12 +121,12 @@ class TestParserType
         tester.parse("type Foo {           val a: Bar }").isChain(7, 1)
             .isValue(astTypeOf("Foo", props = listOf(astPropOf("a", type = "Bar", vis = Visibility.PRIVATE))))
         
-        tester.parse("type Foo { val a: Foo val b: Bar }").isChain(11, 1)
-            .isValue(astTypeOf("Foo", props = listOf(astPropOf("a", type = "Foo"), astPropOf("b", type = "Bar"))))
+        tester.parse("type Foo { val a: Bar val b: Baz }").isChain(11, 1)
+            .isValue(astTypeOf("Foo", props = listOf(astPropOf("a", type = "Bar"), astPropOf("b", type = "Baz"))))
         
         // Default values for properties must be supported
-        tester.parse("type Foo { val a = 1 }").isChain(7, 1)
-            .isValue(astTypeOf("Foo", props = listOf(astPropOf("a", value = 1))))
+        tester.parse("type Foo { val a: Bar = 1 }").isChain(9, 1)
+            .isValue(astTypeOf("Foo", props = listOf(astPropOf("a", type = "Bar", value = 1))))
         
         // Visibility must be correctly parsed
         tester.parse("exported  type Foo {}").isChain(4, 1).isValue(astTypeOf("Foo", vis = Visibility.EXPORTED))

@@ -9,7 +9,7 @@ import com.github.derg.transpiler.source.*
  * arguments are named instead.
  */
 data class AstArgument(
-    val name: Name?,
+    val name: String?,
     val expression: AstExpression,
 )
 
@@ -18,8 +18,8 @@ data class AstArgument(
  * optional default [value]. Parameters must contain a [passability] and [assignability] specifier.
  */
 data class AstParameter(
-    val name: Name,
-    val type: Name?,
+    val name: String,
+    val type: String,
     val value: AstExpression?,
     val passability: Passability,
     val assignability: Assignability,
@@ -34,8 +34,8 @@ data class AstParameter(
  * @param assignability The assignability of the variable, how values are assigned to it.
  */
 data class AstProperty(
-    val name: Name,
-    val type: Name?,
+    val name: String,
+    val type: String,
     val value: AstExpression?,
     val visibility: Visibility,
     val mutability: Mutability,
@@ -52,7 +52,7 @@ data class AstProperty(
  * @param definitions All components which are injected into the module by this segment.
  */
 data class AstSegment(
-    val module: Name?,
-    val imports: List<Name>,
+    val module: String?,
+    val imports: List<String>,
     val definitions: List<AstDefinition>,
 )
