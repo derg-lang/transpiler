@@ -1,8 +1,9 @@
 package com.github.derg.transpiler.phases.parser
 
 import com.github.derg.transpiler.source.ast.*
+import com.github.derg.transpiler.source.lexeme.*
+import com.github.derg.transpiler.utils.*
 import org.junit.jupiter.api.*
-import org.junit.jupiter.api.Assertions.*
 
 class TestParser
 {
@@ -11,7 +12,7 @@ class TestParser
     {
         val expected = astSegmentOf(module = null, imports = emptyList(), statements = emptyList())
         
-        assertEquals(expected, parse(""))
+        assertSuccess(expected, parse(""))
     }
     
     @Test
@@ -20,6 +21,14 @@ class TestParser
         val variable = astVarOf("foo", 42)
         val expected = astSegmentOf(module = null, imports = emptyList(), statements = listOf(variable))
         
-        assertEquals(expected, parse("val foo = 42"))
+        assertSuccess(expected, parse("val foo = 42"))
+    }
+    
+    @Test
+    fun `Given syntax error, when parsing, then correct error`()
+    {
+        val expected = ParseError.UnexpectedToken(Symbol(SymbolType.COMMA))
+        
+        assertFailure(expected, parse("use foo,"))
     }
 }

@@ -206,6 +206,7 @@ private fun segmentPatternOf() = ParserSequence(
     "module" to ParserOptional(nameParserOf(SymbolType.MODULE)),
     "imports" to ParserRepeating(nameParserOf(SymbolType.USE)),
     "definitions" to ParserRepeating(definitionParserOf()),
+    "end" to ParserEnd,
 )
 
 private fun segmentOutcomeOf(values: Parsers) = AstSegment(

@@ -9,12 +9,12 @@ import com.github.derg.transpiler.utils.*
  * Parses the [input] string into a single segment, forming a part of the overall program. The total collection of all
  * segments makes up the program.
  */
-fun parse(input: String): AstSegment
+fun parse(input: String): Result<AstSegment, ParseError>
 {
     val parser = segmentParserOf()
     val tokens = tokenize(input).map { it.data } + EndOfFile
-    tokens.fold { parser.parse(it) }.valueOr { throw IllegalStateException("Failed parsing token: $it") }
-    return parser.produce()
+    tokens.fold { parser.parse(it) }.valueOr { return it.toFailure() }
+    return parser.produce().toSuccess()
 }
 
 /**

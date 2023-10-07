@@ -96,3 +96,20 @@ class TestParserText
         tester.parse("bah").isBad { ParseError.UnexpectedToken(it[0]) }
     }
 }
+
+class TestParserEnd
+{
+    private val tester = Tester { ParserEnd }
+    
+    @Test
+    fun `Given valid token, when parsing, then correct product`()
+    {
+        tester.parse("").isDone()
+    }
+    
+    @Test
+    fun `Given invalid token, when parsing, then correct error`()
+    {
+        tester.parse("bah").isBad { ParseError.UnexpectedToken(it[0]) }
+    }
+}

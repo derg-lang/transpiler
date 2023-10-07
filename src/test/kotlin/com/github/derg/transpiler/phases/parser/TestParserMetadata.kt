@@ -41,11 +41,11 @@ class TestParserSegment
     @Test
     fun `Given valid segment, when parsing, then correctly parsed`()
     {
-        tester.parse("").isChain().isValue(astSegmentOf())
-        tester.parse("module foo").isChain(1, 1).isValue(astSegmentOf(module = "foo"))
-        tester.parse("use foo").isChain(1, 1).isValue(astSegmentOf(imports = listOf("foo")))
-        tester.parse("val foo = 0").isChain(3, 1).isValue(astSegmentOf(statements = listOf(astVarOf("foo", 0))))
-        tester.parse("fun foo() {}").isChain(5, 1).isValue(astSegmentOf(statements = listOf(astFunOf("foo"))))
+        tester.parse("").isDone().isValue(astSegmentOf())
+        tester.parse("module foo").isWip(2).isDone().isValue(astSegmentOf(module = "foo"))
+        tester.parse("use foo").isWip(2).isDone().isValue(astSegmentOf(imports = listOf("foo")))
+        tester.parse("val foo = 0").isWip(4).isDone().isValue(astSegmentOf(statements = listOf(astVarOf("foo", 0))))
+        tester.parse("fun foo() {}").isWip(6).isDone().isValue(astSegmentOf(statements = listOf(astFunOf("foo"))))
     }
     
     @Test

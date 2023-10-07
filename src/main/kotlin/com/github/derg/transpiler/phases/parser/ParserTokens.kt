@@ -136,3 +136,22 @@ class ParserText : Parser<AstExpression>
         expression = null
     }
 }
+
+/**
+ * Parses the end of the token stream. Can only be used to represent the end of the token stream.
+ */
+object ParserEnd : Parser<Unit>
+{
+    override fun parse(token: Token): Result<ParseOk, ParseError>
+    {
+        if (token !is EndOfFile)
+            return ParseError.UnexpectedToken(token).toFailure()
+        return ParseOk.Finished.toSuccess()
+    }
+    
+    override fun skipable(): Boolean = false
+    override fun produce() = Unit
+    override fun reset()
+    {
+    }
+}
