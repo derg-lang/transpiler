@@ -55,25 +55,25 @@ interface Parser<out Type>
  * revealed by the parse outcome. Some parsers will require an infinite stream of additional tokens, whereas some tokens
  * are satisfied by a finite number of tokens.
  */
-sealed class ParseOk
+sealed interface ParseOk
 {
     /**
      * The parser is currently in process of assembling additional data, and thus will require more tokens.
      */
-    object Incomplete : ParseOk()
+    data object Incomplete : ParseOk
     
     /**
      * The parser has received enough tokens to complete assembling its data. It may potentially require more tokens to
      * further assemble additional data, but is currently in an indeterminate state - another token must be provided to
      * determine the final state.
      */
-    object Complete : ParseOk()
+    data object Complete : ParseOk
     
     /**
      * The parser has received enough tokens to finish its data, and will not need additional tokens. The parser has
      * rejected the provided token. The token should be provided to the next candidate parser instead.
      */
-    object Finished : ParseOk()
+    data object Finished : ParseOk
 }
 
 /**
@@ -81,10 +81,10 @@ sealed class ParseOk
  * taking place. This is always the case if the source code ends abruptly or otherwise does not respect the grammar of
  * the programming language.
  */
-sealed class ParseError
+sealed interface ParseError
 {
     /**
      * The parser expected a specific token, but instead received an unexpected [token].
      */
-    data class UnexpectedToken(val token: Token) : ParseError()
+    data class UnexpectedToken(val token: Token) : ParseError
 }

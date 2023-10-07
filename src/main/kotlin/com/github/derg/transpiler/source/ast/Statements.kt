@@ -30,7 +30,7 @@ data class AstEvaluate(val expression: AstExpression) : AstControl
  * Specifies that the execution flow should exit the current function, returning control flow back to the caller. Note
  * that the function cannot be exited in this manner if the function expects a return value.
  */
- object AstReturn : AstControl
+data object AstReturn : AstControl
 
 /**
  * Specifies that a function should raise a specific [expression]. The raise statement functions similarly to the return
