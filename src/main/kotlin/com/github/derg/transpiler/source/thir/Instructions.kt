@@ -26,7 +26,7 @@ data class ThirEvaluate(val value: ThirValue) : ThirInstruction
 /**
  * Exist the current function call, returning control flow to whoever called the function in the first place.
  */
-object ThirReturn : ThirInstruction
+data object ThirReturn : ThirInstruction
 
 /**
  * Exits the current function call, returning control flow to whoever called the function in the first place. The

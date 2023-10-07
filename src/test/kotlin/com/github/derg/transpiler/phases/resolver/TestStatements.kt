@@ -5,7 +5,6 @@ import com.github.derg.transpiler.source.thir.*
 import com.github.derg.transpiler.utils.*
 import org.junit.jupiter.api.*
 import org.junit.jupiter.api.Assertions.*
-import kotlin.test.Test
 
 class TestConverterStatements
 {
