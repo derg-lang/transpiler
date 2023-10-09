@@ -27,7 +27,7 @@ internal class ConverterDefinitions(private val symbols: ThirSymbolTable)
         {
             val symbol = when (node)
             {
-                is AstType     -> TODO()
+                is AstType     -> declare(node)
                 is AstFunction -> declare(node)
                 is AstVariable -> declare(node)
             }.valueOr { return it.toFailure() }
@@ -42,6 +42,7 @@ internal class ConverterDefinitions(private val symbols: ThirSymbolTable)
             when (symbol)
             {
                 is ThirFunction -> define(symbol).onFailure { return it.toFailure() }
+                is ThirType     -> define(symbol).onFailure { return it.toFailure() }
                 is ThirVariable -> define(symbol).onFailure { return it.toFailure() }
                 else            -> continue
             }
@@ -54,6 +55,14 @@ internal class ConverterDefinitions(private val symbols: ThirSymbolTable)
         // TODO: Verify that there exists no conflicting symbols in the same scope
         val symbol = convert(node)
         symbol.params.onEach(symbol.scope.symbols::register)
+        return symbol.toSuccess()
+    }
+    
+    private fun declare(node: AstType): Result<ThirSymbol, ResolveError>
+    {
+        // TODO: Verify that there exists no conflicting symbols in the same scope
+        val symbol = convert(node)
+        symbol.properties.onEach(symbol.scope.symbols::register)
         return symbol.toSuccess()
     }
     
@@ -109,6 +118,26 @@ internal class ConverterDefinitions(private val symbols: ThirSymbolTable)
         return Unit.toSuccess()
     }
     
+    private fun define(symbol: ThirType): Result<Unit, ResolveError>
+    {
+        val node = definitions[symbol.id] as AstType
+        val expressions = ConverterExpression(symbol.scope.symbols)
+    
+        // Resolve all property types
+        for ((i, prop) in node.properties.withIndex())
+        {
+            val value = prop.value?.let { expressions(it) }?.valueOr { return it.toFailure() }
+            val type = resolveType(symbols, prop.type).valueOr { return it.toFailure() }
+        
+            if (type.id != value?.valType && value != null)
+                return ResolveError.MismatchedParameterType(type.id, value.valType).toFailure()
+        
+            symbol.properties[i].type.resolve(type.id)
+        }
+        
+        return Unit.toSuccess()
+    }
+    
     private fun define(symbol: ThirVariable): Result<Unit, ResolveError>
     {
         val node = definitions[symbol.id] as AstVariable
@@ -149,6 +178,17 @@ internal class ConverterDefinitions(private val symbols: ThirSymbolTable)
         id = ThirId.Static(),
         name = node.name,
         visibility = node.visibility,
+        properties = node.properties.map { convert(it) },
+        scope = ThirScope(symbols),
+    )
+    
+    private fun convert(node: AstProperty) = ThirProperty(
+        id = ThirId.Static(),
+        name = node.name,
+        type = ThirId.Resolvable(),
+        visibility = node.visibility,
+        mutability = node.mutability,
+        assignability = node.assignability,
     )
     
     private fun convert(node: AstVariable) = ThirVariable(

@@ -89,7 +89,7 @@ fun astSegmentOf(
  * Generates type definition from the provided input parameters.
  */
 fun astTypeOf(
-    name: String,
+    name: String = UUID.randomUUID().toString(),
     vis: Visibility = Visibility.PRIVATE,
     props: List<AstProperty> = emptyList(),
 ) = AstType(
@@ -102,7 +102,7 @@ fun astTypeOf(
  * Generates type property definition from the provided input parameters.
  */
 fun astPropOf(
-    name: String,
+    name: String = UUID.randomUUID().toString(),
     type: String,
     value: Any? = null,
     vis: Visibility = Visibility.PRIVATE,

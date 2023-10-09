@@ -81,7 +81,7 @@ data class ThirParameter(
 data class ThirProperty(
     override val id: ThirId.Static,
     override val name: String,
-    val type: ThirId,
+    val type: ThirId.Resolvable,
     val visibility: Visibility,
     val mutability: Mutability,
     val assignability: Assignability,
@@ -96,6 +96,8 @@ data class ThirType(
     override val id: ThirId.Static,
     override val name: String,
     val visibility: Visibility,
+    val properties: List<ThirProperty>,
+    val scope: ThirScope,
 ) : ThirSymbol
 
 /**

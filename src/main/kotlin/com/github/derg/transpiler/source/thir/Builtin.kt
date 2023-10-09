@@ -124,4 +124,6 @@ private fun typeOf(name: String) = ThirType(
     id = ThirId.Static(),
     name = name,
     visibility = Visibility.EXPORTED,
+    properties = listOf(),
+    scope = ThirScope(Builtin.SYMBOLS),
 )
