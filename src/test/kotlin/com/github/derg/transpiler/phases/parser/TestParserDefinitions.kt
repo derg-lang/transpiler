@@ -167,6 +167,9 @@ class TestParserVariable
         tester.parse("protected val foo = 0").isChain(4, 1).isValue(astVarOf("foo", 0, vis = Visibility.PROTECTED))
         tester.parse("private   val foo = 0").isChain(4, 1).isValue(astVarOf("foo", 0, vis = Visibility.PRIVATE))
         tester.parse("          val foo = 0").isChain(3, 1).isValue(astVarOf("foo", 0, vis = Visibility.PRIVATE))
+        
+        // Types must be correctly parsed
+        tester.parse("val foo: Bar = 0").isChain(5, 1).isValue(astVarOf("foo", 0, type = "Bar"))
     }
     
     @Test
