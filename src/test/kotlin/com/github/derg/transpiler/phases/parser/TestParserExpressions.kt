@@ -80,6 +80,7 @@ class TestParserExpression
         tester.parse("1 + 2 * 3").step(5).isDone().isValue(1 astAdd (2 astMul 3))
         tester.parse("1 - 2 < 6 / 3").step(7).isDone().isValue((1 astSub 2) astLt (6 astDiv 3))
         tester.parse("1 && 2 || 3 && 4").step(7).isDone().isValue((1 astAnd 2) astOr (3 astAnd 4))
+        tester.parse("1 || 2 && 3 || 4").step(7).isDone().isValue(1 astOr ((2 astAnd 3) astOr 4))
         tester.parse("1 == 2 && 3").step(5).isDone().isValue((1 astEq 2) astAnd 3)
         tester.parse("1 == (2 && 3)").step(7).isDone().isValue(1 astEq (2 astAnd 3))
         

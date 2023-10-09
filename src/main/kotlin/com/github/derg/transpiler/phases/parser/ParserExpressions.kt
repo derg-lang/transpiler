@@ -81,8 +81,8 @@ private fun mergeTerms(lhs: AstExpression, terms: List<Pair<SymbolType, AstExpre
         return mergeTerms(mergeInfix(lhs, op1, mhs), terms, index + 1)
     
     // Otherwise, the remainder right-hand side must be parsed recursively
-    val rest = mergeTerms(rhs, terms, index + 2)
-    return mergeInfix(lhs, op1, mergeInfix(mhs, op2, rest))
+    val rest = mergeTerms(mergeInfix(mhs, op2, rhs), terms, index + 2)
+    return mergeInfix(lhs, op1, rest)
 }
 
 /**
