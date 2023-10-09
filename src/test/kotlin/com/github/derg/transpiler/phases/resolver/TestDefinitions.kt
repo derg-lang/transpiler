@@ -43,15 +43,6 @@ class TestConverterDefinitions
         }
         
         @Test
-        fun `Given parameter with invalid type, when declaring, then correct error`()
-        {
-            val node = astFunOf(params = listOf(astParOf("a", Builtin.INT32.name, value = true)))
-            val expected = ResolveError.MismatchedParameterType(Builtin.INT32.id, Builtin.BOOL.id)
-            
-            assertFailure(expected, converter(listOf(node)))
-        }
-        
-        @Test
         fun `Given parameter with unknown type, when declaring, then correct error`()
         {
             val node = astFunOf(params = listOf(astParOf("a", "unknown")))
@@ -61,13 +52,12 @@ class TestConverterDefinitions
         }
         
         @Test
-        fun `Given parameter with invalid type, when declaring, then correct outcome`()
+        fun `Given parameter with invalid type, when declaring, then correct error`()
         {
-            val param = astParOf("a", Builtin.INT32.name)
-            val symbol = convert<ThirFunction>(astFunOf(params = listOf(param)))
+            val node = astFunOf(params = listOf(astParOf("a", Builtin.INT32.name, value = true)))
+            val expected = ResolveError.MismatchedParameterType(Builtin.INT32.id, Builtin.BOOL.id)
             
-            assertEquals(0, symbols[param.name].size)
-            assertEquals(1, symbol.scope.symbols[param.name].size)
+            assertFailure(expected, converter(listOf(node)))
         }
         
         @Test
@@ -183,6 +173,56 @@ class TestConverterDefinitions
                 .also { it.scope.instructions.add(ThirReturnValue(0.thir)) }
             
             assertEquals(expected, actual)
+        }
+    }
+    
+    @Nested
+    inner class Types
+    {
+        @Test
+        fun `Given symbol, when declaring, then symbol is registered`()
+        {
+            val node = astTypeOf()
+            
+            assertSuccess(Unit, converter(listOf(node)))
+            assertEquals(1, symbols[node.name].size)
+        }
+        
+        @Test
+        fun `Given no properties, when resolving, then correct outcome`()
+        {
+            val actual = convert<ThirType>(astTypeOf())
+            val expected = thirTypeOf().copy(id = actual.id, name = actual.name)
+            
+            assertEquals(expected, actual)
+        }
+        
+        @Test
+        fun `Given property with valid type, when declaring, then property is registered in type's symbol table`()
+        {
+            val param = astPropOf(type = Builtin.INT32.name)
+            val symbol = convert<ThirType>(astTypeOf(props = listOf(param)))
+            
+            assertEquals(0, symbols[param.name].size)
+            assertEquals(1, symbol.scope.symbols[param.name].size)
+        }
+        
+        @Test
+        fun `Given property with unknown type, when declaring, then correct error`()
+        {
+            val node = astTypeOf(props = listOf(astPropOf(type = "unknown")))
+            val expected = ResolveError.UnknownType("unknown")
+            
+            assertFailure(expected, converter(listOf(node)))
+        }
+        
+        @Test
+        fun `Given property with invalid type, when declaring, then correct error`()
+        {
+            val node = astTypeOf(props = listOf(astPropOf(type = Builtin.INT32.name, value = true)))
+            val expected = ResolveError.MismatchedParameterType(Builtin.INT32.id, Builtin.BOOL.id)
+            
+            assertFailure(expected, converter(listOf(node)))
         }
     }
     

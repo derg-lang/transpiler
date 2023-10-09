@@ -80,7 +80,7 @@ private fun variablePatternOf() = ParserSequence(
 
 private fun variableOutcomeOf(values: Parsers) = AstVariable(
     name = values["name"],
-    type = null,
+    type = values["type"],
     value = values["value"],
     visibility = values["visibility"],
     mutability = values["mutability"],

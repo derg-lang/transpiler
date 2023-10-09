@@ -111,10 +111,31 @@ fun thirParOf(
  */
 fun thirTypeOf(
     name: String = UUID.randomUUID().toString(),
+    properties: List<ThirProperty> = listOf(),
 ) = ThirType(
     id = ThirId.Static(),
     name = name,
     visibility = Visibility.PRIVATE,
+    properties = properties,
+    scope = ThirScope(ThirSymbolTable()),
+)
+
+/**
+ * Generates type property definition from the provided input parameters.
+ */
+fun thirPropOf(
+    type: ThirType,
+    name: String = UUID.randomUUID().toString(),
+    vis: Visibility = Visibility.PRIVATE,
+    mut: Mutability = Mutability.IMMUTABLE,
+    ass: Assignability = Assignability.CONSTANT,
+) = ThirProperty(
+    id = ThirId.Static(),
+    type = ThirId.Resolvable().apply { resolve(type.id) },
+    name = name,
+    visibility = vis,
+    mutability = mut,
+    assignability = ass,
 )
 
 /**
