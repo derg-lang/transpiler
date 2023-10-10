@@ -142,6 +142,7 @@ internal fun AstValue.toHir(): HirValue = when (this)
 {
     is AstCall         -> HirCall(instance.toHir(), parameters.map { (name, value) -> name to value.toHir() })
     is AstLoad         -> HirLoad(name, parameters.map { (name, value) -> name to value.toHir() })
+    is AstMember       -> TODO()
     is AstBool         -> HirBool(value)
     is AstInteger      -> HirInteger(value, literal)
     is AstDecimal      -> HirDecimal(value, literal)

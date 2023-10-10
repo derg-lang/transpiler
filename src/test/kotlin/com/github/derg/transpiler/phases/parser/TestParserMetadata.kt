@@ -6,12 +6,12 @@ import com.github.derg.transpiler.source.lexeme.*
 import org.junit.jupiter.api.*
 
 /**
- * Determines whether the current token stream is parsed correctly. The expectation is that there will be [wipCount]
- * number of tokens resulting in [ParseOk.Incomplete], followed by [postOkCount] [ParseOk.Complete], before finally
- * resulting in [ParseOk.Finished].
+ * Determines whether the current token stream is parsed correctly. The expectation is that there will be [preOkCount]
+ * number of tokens resulting in [ParseOk.Complete], followed by [wipCount] [ParseOk.Incomplete], then followed by
+ * [postOkCount] [ParseOk.Complete] again, before finally resulting in [ParseOk.Finished].
  */
-private fun <Type> Tester<Type>.isChain(wipCount: Int = 0, postOkCount: Int = 0): Tester<Type> =
-    isWip(wipCount).isOk(postOkCount).isDone()
+private fun <Type> Tester<Type>.isChain(preOkCount: Int = 0, wipCount: Int = 0, postOkCount: Int = 0): Tester<Type> =
+    isOk(preOkCount).isWip(wipCount).isOk(postOkCount).isDone()
 
 class TestParserScope
 {
@@ -20,17 +20,17 @@ class TestParserScope
     @Test
     fun `Given valid token, when parsing, then correct scope`()
     {
-        tester.parse("{}").isChain(1, 1).isValue(emptyList())
-        tester.parse("a = 1").isChain(2, 1).isValue(listOf("a" astAssign 1))
-        tester.parse("{ a = 1 }").isChain(4, 1).isValue(listOf("a" astAssign 1))
-        tester.parse("{ a = 1 b = 2 }").isChain(7, 1).isValue(listOf("a" astAssign 1, "b" astAssign 2))
+        tester.parse("{}").isChain(0, 1, 1).isValue(emptyList())
+        tester.parse("a = 1").isChain(1, 1, 1).isValue(listOf("a" astAssign 1))
+        tester.parse("{ a = 1 }").isChain(0, 4, 1).isValue(listOf("a" astAssign 1))
+        tester.parse("{ a = 1 b = 2 }").isChain(0, 7, 1).isValue(listOf("a" astAssign 1, "b" astAssign 2))
     }
     
     @Test
     fun `Given invalid token, when parsing, then correct error`()
     {
         tester.parse("").isBad { ParseError.UnexpectedToken(EndOfFile) }
-        tester.parse("a").isWip(1).isBad { ParseError.UnexpectedToken(EndOfFile) }
+        tester.parse("~").isWip(1).isBad { ParseError.UnexpectedToken(EndOfFile) }
         tester.parse("{").isWip(1).isBad { ParseError.UnexpectedToken(EndOfFile) }
     }
 }

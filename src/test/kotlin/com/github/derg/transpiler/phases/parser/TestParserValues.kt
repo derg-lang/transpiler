@@ -14,7 +14,7 @@ private fun <Type> Tester<Type>.isChain(preOkCount: Int = 0, wipCount: Int = 0, 
 
 class TestParserExpression
 {
-    private val tester = Tester { expressionParserOf() }
+    private val tester = Tester { ParserExpression() }
     
     @Test
     fun `Given valid token, when parsing, then correct expression`()
@@ -25,8 +25,12 @@ class TestParserExpression
         tester.parse("42").isChain(1).isValue(42.ast).resets()
         tester.parse("42i32").isChain(1).isValue(42.ast).resets()
         tester.parse("42i64").isChain(1).isValue(42L.ast).resets()
+        // tester.parse("3.14").isChain(1).isValue(3.14.ast).resets() // TODO: Floating-point numbers are not supported
         tester.parse("\"foo\"").isChain(1).isValue("foo".ast).resets()
         tester.parse("\"bar\"s").isChain(1).isValue("bar".ast).resets()
+        
+        // Fields
+        tester.parse("a.b").isChain(1, 1, 1).isValue("a".astLoad().astMember("b"))
         
         // Loads
         tester.parse("v").isChain(1).isValue("v".astLoad()).resets()
@@ -94,6 +98,7 @@ class TestParserExpression
         // Unary
         tester.parse("~~1").step(3).isDone().isValue(1.astNot.astNot)
         tester.parse("+-1").step(3).isDone().isValue(1.astMinus.astPlus)
+        tester.parse("-f()").step(4).isDone().isValue("f".astLoad().astCall().astMinus)
         
         // Mixed
         tester.parse("1 ++ 2").step(4).isDone().isValue(1 astAdd 2.astPlus)
@@ -101,6 +106,14 @@ class TestParserExpression
         tester.parse("-(1 * 2)").step(6).isDone().isValue((1 astMul 2).astMinus)
         tester.parse("1 ! 2 + 3").step(5).isDone().isValue(1 astCatchRaise (2 astAdd 3))
         tester.parse("1 ? 2 + 3").step(5).isDone().isValue(1 astCatchReturn (2 astAdd 3))
+        
+        // Accesses
+        tester.parse("(f)()").step(5).isDone().isValue("f".astLoad().astCall()).resets()
+        tester.parse("f()()").step(5).isDone().isValue("f".astLoad().astCall().astCall()).resets()
+        tester.parse("f().b").step(5).isDone().isValue("f".astLoad().astCall().astMember("b"))
+        tester.parse("f[1]()").step(6).isDone().isValue("f".astLoad(1.ast).astCall()).resets()
+        tester.parse("a.f()").step(5).isDone().isValue("a".astLoad().astMember("f").astCall())
+        tester.parse("a.b.c").step(5).isDone().isValue("a".astLoad().astMember("b").astMember("c"))
     }
     
     @Test

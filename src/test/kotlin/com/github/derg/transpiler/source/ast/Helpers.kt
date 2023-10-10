@@ -66,6 +66,7 @@ infix fun Any.astCatchHandle(that: Any) = AstCatch(this.ast, that.ast, Capture.H
 
 fun String.astLoad(vararg parameters: Any) = AstLoad(this, parameters.map { it.astArg })
 fun AstValue.astCall(vararg parameters: Any) = AstCall(this, parameters.map { it.astArg })
+fun AstValue.astMember(field: String) = AstMember(this, field.astLoad())
 
 val Any.astArg: NamedMaybe<AstValue>
     get() = if (this is Pair<*, *>) (first as String) to (second as Any).ast else null to ast

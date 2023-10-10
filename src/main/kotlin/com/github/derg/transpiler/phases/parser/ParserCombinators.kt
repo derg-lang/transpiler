@@ -235,8 +235,7 @@ class ParserOptional<Type>(private val parser: Parser<Type>, private val default
  * parser is also satisfied and may use the [mapper] to produce the final output. This parser may be used recursively as
  * well, i.e. allowing an expression parser to parse another expression while in the middle of parsing.
  */
-class ParserPattern<Type, Out>(private val factory: () -> Parser<Out>, private val mapper: (Out) -> Type) :
-    Parser<Type>
+class ParserPattern<Type, Out>(private val factory: () -> Parser<Out>, private val mapper: (Out) -> Type) : Parser<Type>
 {
     private var parser: Parser<Out>? = null
     
