@@ -1,6 +1,7 @@
 package com.github.derg.transpiler.phases.lexer
 
 import com.github.derg.transpiler.core.*
+import com.github.derg.transpiler.source.*
 import com.github.derg.transpiler.source.lexeme.*
 import com.github.derg.transpiler.utils.*
 

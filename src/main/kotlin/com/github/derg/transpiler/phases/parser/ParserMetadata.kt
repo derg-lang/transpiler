@@ -2,7 +2,6 @@ package com.github.derg.transpiler.phases.parser
 
 import com.github.derg.transpiler.source.*
 import com.github.derg.transpiler.source.ast.*
-import com.github.derg.transpiler.source.lexeme.*
 
 /**
  * Determines the visibility from the provided [symbol].

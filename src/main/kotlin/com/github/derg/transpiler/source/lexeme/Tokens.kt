@@ -1,5 +1,7 @@
 package com.github.derg.transpiler.source.lexeme
 
+import com.github.derg.transpiler.source.*
+
 /**
  * A single token represents a single lexeme in the source code. Tokens may be extracted from the source code in various
  * manners depending on each type of lexeme, although the overall result may be summarized as a single token type.
@@ -34,83 +36,3 @@ data class Textual(val value: String, val type: String?) : Token
  * symbol.
  */
 data class Keyword(val type: Symbol) : Token
-
-/**
- * The various types of symbols which are valid tokens.
- */
-enum class Symbol(val symbol: String)
-{
-    // Keywords
-    AUTO("auto"),
-    DEFAULT("default"),
-    ELSE("else"),
-    EXPORTED("exported"),
-    FALSE("false"),
-    FOR("for"),
-    FUN("fun"),
-    IF("if"),
-    IN("in"),
-    INOUT("inout"),
-    MODULE("module"),
-    MUTABLE("mut"),
-    MOVE("move"),
-    OUT("out"),
-    PRIVATE("private"),
-    PROTECTED("protected"),
-    PUBLIC("public"),
-    REFERENCE("ref"),
-    RETURN("return"),
-    RAISE("raise"),
-    TRUE("true"),
-    TYPE("type"),
-    USE("use"),
-    VALUE("val"),
-    VARYING("var"),
-    WHEN("when"),
-    WHILE("while"),
-    
-    // Structural components
-    ARROW("->"),
-    CLOSE_BRACE("}"),
-    CLOSE_BRACKET("]"),
-    CLOSE_PARENTHESIS(")"),
-    COLON(":"),
-    COMMA(","),
-    EXCLAMATION("!"),
-    OPEN_BRACE("{"),
-    OPEN_BRACKET("["),
-    OPEN_PARENTHESIS("("),
-    PERIOD("."),
-    QUESTION("?"),
-    SEMICOLON(";"),
-    
-    // Assignment operators
-    ASSIGN("="),
-    ASSIGN_DIVIDE("/="),
-    ASSIGN_MINUS("-="),
-    ASSIGN_MODULO("%="),
-    ASSIGN_MULTIPLY("*="),
-    ASSIGN_PLUS("+="),
-    
-    // Arithmetic operators
-    DIVIDE("/"),
-    MINUS("-"),
-    MULTIPLY("*"),
-    PLUS("+"),
-    MODULO("%"),
-    
-    // Comparison operators
-    EQUAL("=="),
-    GREATER(">"),
-    GREATER_EQUAL(">="),
-    LESS("<"),
-    LESS_EQUAL("<="),
-    NOT_EQUAL("~="),
-    THREE_WAY("<=>"),
-    
-    // Logical operators
-    AND("&&"),
-    NOT("~"),
-    OR("||"),
-    XOR("^^"),
-}

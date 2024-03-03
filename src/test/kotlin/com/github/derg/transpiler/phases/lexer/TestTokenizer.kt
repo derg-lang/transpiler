@@ -1,8 +1,9 @@
 package com.github.derg.transpiler.phases.lexer
 
 import com.github.derg.transpiler.core.*
+import com.github.derg.transpiler.source.*
+import com.github.derg.transpiler.source.Symbol.*
 import com.github.derg.transpiler.source.lexeme.*
-import com.github.derg.transpiler.source.lexeme.Symbol.*
 import org.junit.jupiter.api.*
 import org.junit.jupiter.api.Assertions.*
 

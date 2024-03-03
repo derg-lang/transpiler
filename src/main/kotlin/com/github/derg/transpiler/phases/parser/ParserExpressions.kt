@@ -1,7 +1,7 @@
 package com.github.derg.transpiler.phases.parser
 
+import com.github.derg.transpiler.source.*
 import com.github.derg.transpiler.source.ast.*
-import com.github.derg.transpiler.source.lexeme.*
 
 /**
  * Operators have a specific precedence associated with them. The higher the precedence, the later they are evaluated in

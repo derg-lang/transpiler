@@ -139,26 +139,84 @@ enum class Passability
     MOVE,
 }
 
-// TODO: Consider the following code, how will destroying variables work?
-/*
-fun read_data(out rows list<data>): error -> bool
+/**
+ * The various symbols which are considered builtin. When parsing source code, these are the character sequences which
+ * have special meanings. Commonly for all of them is that identifiers cannot be the same as the [symbol] string itself.
+ * These values are typically considered reserved.
+ */
+enum class Symbol(val symbol: String)
 {
-    // Implementation omitted
+    // Keywords
+    AUTO("auto"),
+    DEFAULT("default"),
+    ELSE("else"),
+    EXPORTED("exported"),
+    FALSE("false"),
+    FOR("for"),
+    FUN("fun"),
+    IF("if"),
+    IN("in"),
+    INOUT("inout"),
+    MODULE("module"),
+    MUTABLE("mut"),
+    MOVE("move"),
+    OUT("out"),
+    PRIVATE("private"),
+    PROTECTED("protected"),
+    PUBLIC("public"),
+    REFERENCE("ref"),
+    RETURN("return"),
+    RAISE("raise"),
+    TRUE("true"),
+    TYPE("type"),
+    USE("use"),
+    VALUE("val"),
+    VARYING("var"),
+    WHEN("when"),
+    WHILE("while"),
+    
+    // Structural components
+    ARROW("->"),
+    CLOSE_BRACE("}"),
+    CLOSE_BRACKET("]"),
+    CLOSE_PARENTHESIS(")"),
+    COLON(":"),
+    COMMA(","),
+    EXCLAMATION("!"),
+    OPEN_BRACE("{"),
+    OPEN_BRACKET("["),
+    OPEN_PARENTHESIS("("),
+    PERIOD("."),
+    QUESTION("?"),
+    SEMICOLON(";"),
+    
+    // Assignment operators
+    ASSIGN("="),
+    ASSIGN_DIVIDE("/="),
+    ASSIGN_MINUS("-="),
+    ASSIGN_MODULO("%="),
+    ASSIGN_MULTIPLY("*="),
+    ASSIGN_PLUS("+="),
+    
+    // Arithmetic operators
+    DIVIDE("/"),
+    MINUS("-"),
+    MULTIPLY("*"),
+    PLUS("+"),
+    MODULO("%"),
+    
+    // Comparison operators
+    EQUAL("=="),
+    GREATER(">"),
+    GREATER_EQUAL(">="),
+    LESS("<"),
+    LESS_EQUAL("<="),
+    NOT_EQUAL("~="),
+    THREE_WAY("<=>"),
+    
+    // Logical operators
+    AND("&&"),
+    NOT("~"),
+    OR("||"),
+    XOR("^^"),
 }
-
-fun do_work(): error
-{
-    val mut list<data> rows
-    while read_data(rows) ! // How will `rows` be destroyed when an error occurs?
-        process_data(rows)
-}
-
-An approach of solving this issue is to default-construct the value when it is left hanging in an uninitialized state.
-This means the object will always be *valid* albeit not populated with meaningful data until it is either initialized by
-an `out` parameter function call, or initialized explicitly.
-
-The caller will always run the destructor, cleaning up the local instance. The callee will only clean up its instance if
-it has actually moved anything into the `out` variable, passing the fresh one to the caller for cleanup. This means that
-if an error occurs before the second instance is made, the caller cleans up the mess - otherwise, the callee cleans up
-one instance, and the caller the other.
-*/

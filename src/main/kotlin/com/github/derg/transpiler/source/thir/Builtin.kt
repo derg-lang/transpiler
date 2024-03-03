@@ -1,7 +1,6 @@
 package com.github.derg.transpiler.source.thir
 
 import com.github.derg.transpiler.source.*
-import com.github.derg.transpiler.source.lexeme.*
 
 /**
  * Registers all builtin types, functions, variables, everything required to implement any sort of transpiler or

@@ -1,8 +1,8 @@
 package com.github.derg.transpiler.phases.resolver
 
 import com.github.derg.transpiler.phases.resolver.ResolveError.*
+import com.github.derg.transpiler.source.*
 import com.github.derg.transpiler.source.ast.*
-import com.github.derg.transpiler.source.lexeme.*
 import com.github.derg.transpiler.source.thir.*
 import com.github.derg.transpiler.utils.*
 import org.junit.jupiter.api.*

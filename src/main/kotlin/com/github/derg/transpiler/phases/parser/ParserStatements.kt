@@ -1,7 +1,7 @@
 package com.github.derg.transpiler.phases.parser
 
+import com.github.derg.transpiler.source.*
 import com.github.derg.transpiler.source.ast.*
-import com.github.derg.transpiler.source.lexeme.*
 
 /**
  * Joins together the [name] with the [operator] and the [rhs] expression.
