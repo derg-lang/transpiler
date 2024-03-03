@@ -8,15 +8,15 @@ import java.util.*
 // Literal helpers //
 /////////////////////
 
-val Any.ast: AstExpression
+val Any.ast: AstValue
     get() = when (this)
     {
-        is AstExpression -> this
-        is Boolean       -> AstBool(this)
-        is Int           -> AstInteger(toBigInteger(), Builtin.INT32_LIT.name)
-        is Long          -> AstInteger(toBigInteger(), Builtin.INT64_LIT.name)
-        is String        -> AstText(this, Builtin.STR_LIT.name)
-        else             -> throw IllegalArgumentException("Value $this does not represent a valid ast value")
+        is AstValue -> this
+        is Boolean  -> AstBool(this)
+        is Int      -> AstInteger(toBigInteger(), Builtin.INT32_LIT.name)
+        is Long     -> AstInteger(toBigInteger(), Builtin.INT64_LIT.name)
+        is String   -> AstText(this, Builtin.STR_LIT.name)
+        else        -> throw IllegalArgumentException("Value $this does not represent a valid ast value")
     }
 
 ////////////////////////
@@ -64,7 +64,7 @@ infix fun String.astAssignDiv(that: Any) = AstAssign(this, AstDivide(AstRead(thi
 
 val Any.astReturnError get() = AstReturnError(ast)
 val Any.astReturnValue get() = AstReturnValue(ast)
-val AstExpression.astEval get() = AstEvaluate(this)
+val AstValue.astEval get() = AstEvaluate(this)
 
 fun astInvokeOf(expression: Any) = AstEvaluate(expression.ast)
 
@@ -78,7 +78,7 @@ fun astInvokeOf(expression: Any) = AstEvaluate(expression.ast)
 fun astSegmentOf(
     module: String? = null,
     imports: List<String> = emptyList(),
-    statements: List<AstDefinition> = emptyList(),
+    statements: List<AstSymbol> = emptyList(),
 ) = AstSegment(
     module = module,
     imports = imports,
@@ -145,7 +145,7 @@ fun astFunOf(
     errType: String? = null,
     vis: Visibility = Visibility.PRIVATE,
     params: List<AstParameter> = emptyList(),
-    statements: List<AstStatement> = emptyList(),
+    statements: List<AstInstruction> = emptyList(),
 ) = AstFunction(
     name = name,
     valueType = valType,
@@ -175,7 +175,7 @@ fun astParOf(
 /**
  * Generates a branch statement from the provided input parameters.
  */
-fun astIfOf(predicate: Any, success: List<AstStatement>, failure: List<AstStatement> = emptyList()) =
+fun astIfOf(predicate: Any, success: List<AstInstruction>, failure: List<AstInstruction> = emptyList()) =
     AstBranch(predicate.ast, success, failure)
 
 /**

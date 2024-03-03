@@ -12,7 +12,7 @@ internal class ConverterStatements(private val symbols: ThirSymbolTable)
 {
     private val expressions = ConverterExpression(symbols)
     
-    operator fun invoke(node: AstStatement): Result<ThirInstruction, ResolveError> = when (node)
+    operator fun invoke(node: AstInstruction): Result<ThirInstruction, ResolveError> = when (node)
     {
         is AstAssign      -> convert(node)
         is AstBranch      -> convert(node)

@@ -116,7 +116,7 @@ internal fun AstVariable.toHirVariable() = HirVariable(
  * Converts [this] expression from AST to HIR. The data structure will be encoded with appropriate default information
  * where information is missing in the AST.
  */
-internal fun AstExpression.toHir(): HirValue = when (this)
+internal fun AstValue.toHir(): HirValue = when (this)
 {
     is AstCall         -> TODO()
     is AstRead         -> HirLoad(name, emptyList())
@@ -151,7 +151,7 @@ internal fun AstExpression.toHir(): HirValue = when (this)
  * Converts [this] statement from AST to HIR. The data structure will be encoded with appropriate default information
  * where information is missing in the AST.
  */
-internal fun AstStatement.toHir(): HirInstruction = when (this)
+internal fun AstInstruction.toHir(): HirInstruction = when (this)
 {
     is AstAssign      -> HirAssign(HirLoad(name, emptyList()), expression.toHir())
     is AstBranch      -> HirBranch(predicate.toHir(), success.map { it.toHir() }, failure.map { it.toHir() })

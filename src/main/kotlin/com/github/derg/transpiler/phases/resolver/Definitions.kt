@@ -13,13 +13,13 @@ internal class ConverterDefinitions(private val symbols: ThirSymbolTable)
      * Links a registered symbol to the node which defines the symbol. The node has not yet been defined when it is at
      * first registered in this collection.
      */
-    private val definitions = mutableMapOf<ThirId.Static, AstDefinition>()
+    private val definitions = mutableMapOf<ThirId.Static, AstSymbol>()
     
     /**
      * Converts the [nodes] and all other definitions found inside the nodes into a typed high-intermediary
      * representation of the abstract syntax tree.
      */
-    operator fun invoke(nodes: List<AstDefinition>): Result<Unit, ResolveError>
+    operator fun invoke(nodes: List<AstSymbol>): Result<Unit, ResolveError>
     {
         // All symbols must be declared, before any can be defined. This is because symbols may refer to each other, on
         // the same scope level.

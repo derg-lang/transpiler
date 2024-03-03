@@ -35,7 +35,7 @@ private val PRECEDENCE = mapOf(
 /**
  * Joins together the [lhs] and [rhs] expression using the specified [operator].
  */
-private fun mergeInfix(lhs: AstExpression, operator: Symbol, rhs: AstExpression): AstExpression = when (operator)
+private fun mergeInfix(lhs: AstValue, operator: Symbol, rhs: AstValue): AstValue = when (operator)
 {
     Symbol.AND           -> AstAnd(lhs, rhs)
     Symbol.DIVIDE        -> AstDivide(lhs, rhs)
@@ -60,7 +60,7 @@ private fun mergeInfix(lhs: AstExpression, operator: Symbol, rhs: AstExpression)
 /**
  * Joins together the prefix [operator] and the [rhs] expression.
  */
-private fun mergePrefix(operator: Symbol, rhs: AstExpression): AstExpression = when (operator)
+private fun mergePrefix(operator: Symbol, rhs: AstValue): AstValue = when (operator)
 {
     Symbol.NOT   -> AstNot(rhs)
     Symbol.PLUS  -> AstPlus(rhs)
@@ -71,7 +71,7 @@ private fun mergePrefix(operator: Symbol, rhs: AstExpression): AstExpression = w
 /**
  * Joins together the [lhs] expression together with the remainder of the [terms], in a recursive manner.
  */
-private fun mergeTerms(lhs: AstExpression, terms: List<Pair<Symbol, AstExpression>>, index: Int = 0): AstExpression
+private fun mergeTerms(lhs: AstValue, terms: List<Pair<Symbol, AstValue>>, index: Int = 0): AstValue
 {
     val (op1, mhs) = terms.getOrNull(index) ?: return lhs
     val (op2, rhs) = terms.getOrNull(index + 1) ?: return mergeInfix(lhs, op1, mhs)
@@ -88,7 +88,7 @@ private fun mergeTerms(lhs: AstExpression, terms: List<Pair<Symbol, AstExpressio
 /**
  * Parses a single expression from the token stream.
  */
-fun expressionParserOf(): Parser<AstExpression> =
+fun expressionParserOf(): Parser<AstValue> =
     ParserPattern(::expressionPatternOf, ::expressionOutcomeOf)
 
 private fun basePatternOf() = ParserAnyOf(
@@ -112,25 +112,25 @@ private fun expressionPatternOf() = ParserSequence(
     "terms" to ParserRepeating(termPatternOf()),
 )
 
-private fun expressionOutcomeOf(values: Parsers): AstExpression
+private fun expressionOutcomeOf(values: Parsers): AstValue
 {
-    val base = values.get<AstExpression>("base")
+    val base = values.get<AstValue>("base")
     val terms = values.get<List<Parsers>>("terms")
     val ops = terms.produce<Symbol>("operator")
-    val rest = terms.produce<AstExpression>("term")
+    val rest = terms.produce<AstValue>("term")
     return mergeTerms(base, ops zip rest)
 }
 
 /**
  * Parses a variable access expression from the token stream.
  */
-private fun variableCallParserOf(): Parser<AstExpression> =
+private fun variableCallParserOf(): Parser<AstValue> =
     ParserPattern(::ParserName) { AstRead(it) }
 
 /**
  * Parses a function call expression from the token stream.
  */
-internal fun functionCallParserOf(): Parser<AstExpression> =
+internal fun functionCallParserOf(): Parser<AstValue> =
     ParserPattern(::functionCallPatternOf, ::functionCallOutcomeOf)
 
 private fun functionCallPatternOf() = ParserSequence(
@@ -140,13 +140,13 @@ private fun functionCallPatternOf() = ParserSequence(
     "close" to ParserSymbol(Symbol.CLOSE_PARENTHESIS),
 )
 
-private fun functionCallOutcomeOf(outcome: Parsers): AstExpression =
+private fun functionCallOutcomeOf(outcome: Parsers): AstValue =
     AstCall(outcome["name"], emptyList(), outcome["params"])
 
 /**
  * Parses an expression from in-between parenthesis from the token stream.
  */
-private fun parenthesisParserOf(): Parser<AstExpression> =
+private fun parenthesisParserOf(): Parser<AstValue> =
     ParserPattern(::parenthesisPatternOf, ::parenthesisOutcomeOf)
 
 private fun parenthesisPatternOf() = ParserSequence(
@@ -155,13 +155,13 @@ private fun parenthesisPatternOf() = ParserSequence(
     "close" to ParserSymbol(Symbol.CLOSE_PARENTHESIS),
 )
 
-private fun parenthesisOutcomeOf(values: Parsers): AstExpression =
+private fun parenthesisOutcomeOf(values: Parsers): AstValue =
     values["expr"]
 
 /**
  * Parses a unary operator from the token stream.
  */
-private fun unaryOperatorParserOf(): Parser<AstExpression> =
+private fun unaryOperatorParserOf(): Parser<AstValue> =
     ParserPattern(::unaryOperatorPatternOf, ::unaryOperatorOutcomeOf)
 
 private fun unaryOperatorPatternOf() = ParserSequence(
@@ -169,13 +169,13 @@ private fun unaryOperatorPatternOf() = ParserSequence(
     "rhs" to basePatternOf(),
 )
 
-private fun unaryOperatorOutcomeOf(values: Parsers): AstExpression =
+private fun unaryOperatorOutcomeOf(values: Parsers): AstValue =
     mergePrefix(values["op"], values["rhs"])
 
 /**
  * Parses a when expression from the token stream.
  */
-private fun whenParserOf(): Parser<AstExpression> =
+private fun whenParserOf(): Parser<AstValue> =
     ParserPattern(::whenPatternOf, ::whenOutcomeOf)
 
 private fun whenPatternOf() = ParserSequence(
@@ -186,19 +186,19 @@ private fun whenPatternOf() = ParserSequence(
     "else" to ParserOptional(ParserSequence("else" to ParserSymbol(Symbol.ELSE), "expr" to expressionParserOf())),
 )
 
-private fun whenOutcomeOf(values: Parsers): AstExpression
+private fun whenOutcomeOf(values: Parsers): AstValue
 {
-    val expression = values.get<AstExpression>("expression")
-    val default = values.get<Parsers?>("else")?.get<AstExpression>("expr")
-    val first = listOf(values.get<Pair<AstExpression, AstExpression>>("first"))
-    val branches = values.get<List<Pair<AstExpression, AstExpression>>>("remainder")
+    val expression = values.get<AstValue>("expression")
+    val default = values.get<Parsers?>("else")?.get<AstValue>("expr")
+    val first = listOf(values.get<Pair<AstValue, AstValue>>("first"))
+    val branches = values.get<List<Pair<AstValue, AstValue>>>("remainder")
     return AstWhen(expression, first + branches, default)
 }
 
 /**
  * Parses a when expression branch from the token stream.
  */
-private fun whenBranchParserOf(): Parser<Pair<AstExpression, AstExpression>> =
+private fun whenBranchParserOf(): Parser<Pair<AstValue, AstValue>> =
     ParserPattern(::whenBranchPatternOf, ::whenBranchOutcomeOf)
 
 private fun whenBranchPatternOf() = ParserSequence(
@@ -207,9 +207,9 @@ private fun whenBranchPatternOf() = ParserSequence(
     "expression" to expressionParserOf(),
 )
 
-private fun whenBranchOutcomeOf(values: Parsers): Pair<AstExpression, AstExpression>
+private fun whenBranchOutcomeOf(values: Parsers): Pair<AstValue, AstValue>
 {
-    val cond = values.get<AstExpression>("condition")
-    val expr = values.get<AstExpression>("expression")
+    val cond = values.get<AstValue>("condition")
+    val expr = values.get<AstValue>("expression")
     return cond to expr
 }

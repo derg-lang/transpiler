@@ -61,9 +61,9 @@ class ParserSymbol(vararg symbols: Symbol) : Parser<Symbol>
 /**
  * Parses a single boolean value from the token stream.
  */
-class ParserBool : Parser<AstExpression>
+class ParserBool : Parser<AstValue>
 {
-    private var expression: AstExpression? = null
+    private var expression: AstValue? = null
     
     override fun parse(token: Token): Result<ParseOk, ParseError>
     {
@@ -81,7 +81,7 @@ class ParserBool : Parser<AstExpression>
     }
     
     override fun skipable(): Boolean = false
-    override fun produce(): AstExpression = expression ?: throw IllegalStateException("No expression has been parsed")
+    override fun produce(): AstValue = expression ?: throw IllegalStateException("No expression has been parsed")
     override fun reset()
     {
         expression = null
@@ -91,9 +91,9 @@ class ParserBool : Parser<AstExpression>
 /**
  * Parses a single numeric value from the token stream.
  */
-class ParserInteger : Parser<AstExpression>
+class ParserInteger : Parser<AstValue>
 {
-    private var expression: AstExpression? = null
+    private var expression: AstValue? = null
     
     override fun parse(token: Token): Result<ParseOk, ParseError>
     {
@@ -106,7 +106,7 @@ class ParserInteger : Parser<AstExpression>
     }
     
     override fun skipable(): Boolean = false
-    override fun produce(): AstExpression = expression ?: throw IllegalStateException("No expression has been parsed")
+    override fun produce(): AstValue = expression ?: throw IllegalStateException("No expression has been parsed")
     override fun reset()
     {
         expression = null
@@ -116,9 +116,9 @@ class ParserInteger : Parser<AstExpression>
 /**
  * Parses a single string value from the token stream.
  */
-class ParserText : Parser<AstExpression>
+class ParserText : Parser<AstValue>
 {
-    private var expression: AstExpression? = null
+    private var expression: AstValue? = null
     
     override fun parse(token: Token): Result<ParseOk, ParseError>
     {
@@ -131,7 +131,7 @@ class ParserText : Parser<AstExpression>
     }
     
     override fun skipable(): Boolean = false
-    override fun produce(): AstExpression = expression ?: throw IllegalStateException("No expression has been parsed")
+    override fun produce(): AstValue = expression ?: throw IllegalStateException("No expression has been parsed")
     override fun reset()
     {
         expression = null

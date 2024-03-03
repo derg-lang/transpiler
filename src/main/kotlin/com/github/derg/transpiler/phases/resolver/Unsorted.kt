@@ -34,7 +34,7 @@ internal fun resolveVariable(symbols: ThirSymbolTable, name: String): Result<Thi
  * Converts all [statements] from ast to thir, registering the new symbols in the provided [scope]. All instructions
  * which were resolved are added to the [scope]'s instruction set.
  */
-internal fun resolveScope(scope: ThirScope, statements: List<AstStatement>): Result<Unit, ResolveError>
+internal fun resolveScope(scope: ThirScope, statements: List<AstInstruction>): Result<Unit, ResolveError>
 {
     val definitionConverter = ConverterDefinitions(scope.symbols)
     val statementConverter = ConverterStatements(scope.symbols)

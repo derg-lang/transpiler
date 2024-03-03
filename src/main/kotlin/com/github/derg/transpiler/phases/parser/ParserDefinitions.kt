@@ -6,7 +6,7 @@ import com.github.derg.transpiler.source.ast.*
 /**
  * Parses a single statement from the token stream.
  */
-fun definitionParserOf(): Parser<AstDefinition> = ParserAnyOf(
+fun definitionParserOf(): Parser<AstSymbol> = ParserAnyOf(
     functionParserOf(),
     typeParserOf(),
     variableParserOf(),

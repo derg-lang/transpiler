@@ -64,7 +64,7 @@ private fun namePatternOf(symbol: Symbol) =
 /**
  * Parses a symbol followed by an expression.
  */
-fun valueParserOf(symbol: Symbol): Parser<AstExpression> =
+fun valueParserOf(symbol: Symbol): Parser<AstValue> =
     ParserPattern({ valuePatternOf(symbol) }, { it["expression"] })
 
 private fun valuePatternOf(symbol: Symbol) =
@@ -169,7 +169,7 @@ private fun propertyOutcomeOf(values: Parsers) = AstProperty(
 /**
  * Parses a single scope from the token stream.
  */
-fun scopeParserOf(): Parser<List<AstStatement>> =
+fun scopeParserOf(): Parser<List<AstInstruction>> =
     ParserPattern(::scopePatternOf, ::scopeOutcomeOf)
 
 private fun scopePatternOf() = ParserAnyOf(
@@ -181,10 +181,10 @@ private fun scopePatternOf() = ParserAnyOf(
     )
 )
 
-private fun scopeOutcomeOf(values: Parsers): List<AstStatement>
+private fun scopeOutcomeOf(values: Parsers): List<AstInstruction>
 {
-    val statement = values.get<AstStatement?>("single")
-    val statements = values.get<List<AstStatement>?>("multiple")
+    val statement = values.get<AstInstruction?>("single")
+    val statements = values.get<List<AstInstruction>?>("multiple")
     
     return when
     {

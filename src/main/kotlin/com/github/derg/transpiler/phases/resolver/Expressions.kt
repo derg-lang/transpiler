@@ -11,7 +11,7 @@ import com.github.derg.transpiler.utils.*
  */
 internal class ConverterExpression(private val symbols: ThirSymbolTable)
 {
-    operator fun invoke(node: AstExpression): Result<ThirValue, ResolveError> = when (node)
+    operator fun invoke(node: AstValue): Result<ThirValue, ResolveError> = when (node)
     {
         is AstAdd          -> resolve(Symbol.PLUS, node.lhs, node.rhs)
         is AstAnd          -> resolve(Symbol.AND, node.lhs, node.rhs)
@@ -46,7 +46,7 @@ internal class ConverterExpression(private val symbols: ThirSymbolTable)
      * Resolves a function for the given [operator], which accepts the provided [arguments]. The arguments must be in
      * the same order as they are expected by the operator function.
      */
-    private fun resolve(operator: Symbol, vararg arguments: AstExpression): Result<ThirValue, ResolveError> =
+    private fun resolve(operator: Symbol, vararg arguments: AstValue): Result<ThirValue, ResolveError> =
         resolveFun(operator.symbol, arguments.map { AstArgument(null, it) })
     
     /**

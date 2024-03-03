@@ -14,7 +14,7 @@ class TestConverterDefinitions
     /**
      * Helper function for converting the given ast [node] into a specific thir symbol [Type].
      */
-    private inline fun <reified Type : ThirSymbol> convert(node: AstDefinition): Type
+    private inline fun <reified Type : ThirSymbol> convert(node: AstSymbol): Type
     {
         assertSuccess(Unit, converter(listOf(node)))
         return symbols[node.name].filterIsInstance<Type>().single()
