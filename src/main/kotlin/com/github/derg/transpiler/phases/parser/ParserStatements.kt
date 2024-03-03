@@ -6,7 +6,7 @@ import com.github.derg.transpiler.source.ast.*
 /**
  * Joins together the [name] with the [operator] and the [rhs] expression.
  */
-private fun merge(name: String, operator: Symbol, rhs: AstExpression): AstAssignment = when (operator)
+private fun merge(name: String, operator: Symbol, rhs: AstValue): AstInstruction = when (operator)
 {
     Symbol.ASSIGN          -> AstAssign(name, rhs)
     Symbol.ASSIGN_PLUS     -> AstAssign(name, AstAdd(AstRead(name), rhs))
@@ -20,7 +20,7 @@ private fun merge(name: String, operator: Symbol, rhs: AstExpression): AstAssign
 /**
  * Parses a single statement from the token stream.
  */
-fun statementParserOf(): Parser<AstStatement> = ParserAnyOf(
+fun statementParserOf(): Parser<AstInstruction> = ParserAnyOf(
     variableParserOf(),
     assignmentParserOf(),
     branchParserOf(),
@@ -32,7 +32,7 @@ fun statementParserOf(): Parser<AstStatement> = ParserAnyOf(
 /**
  * Parses a single assignment from the token stream.
  */
-private fun assignmentParserOf(): Parser<AstStatement> =
+private fun assignmentParserOf(): Parser<AstInstruction> =
     ParserPattern(::assignmentPatternOf, ::assignmentOutcomeOf)
 
 private fun assignmentPatternOf() = ParserSequence(
@@ -48,13 +48,13 @@ private fun assignmentPatternOf() = ParserSequence(
     "rhs" to expressionParserOf(),
 )
 
-private fun assignmentOutcomeOf(values: Parsers): AstAssignment =
+private fun assignmentOutcomeOf(values: Parsers): AstInstruction =
     merge(values["name"], values["op"], values["rhs"])
 
 /**
  * Parses a single branch control from the token stream.
  */
-private fun branchParserOf(): Parser<AstStatement> =
+private fun branchParserOf(): Parser<AstInstruction> =
     ParserPattern(::branchPatternOf, ::branchOutcomeOf)
 
 private fun branchPatternOf() = ParserSequence(
@@ -70,13 +70,13 @@ private fun branchOutcomeOf(values: Parsers): AstBranch =
 private fun branchElsePatternOf() =
     ParserSequence("symbol" to ParserSymbol(Symbol.ELSE), "scope" to scopeParserOf())
 
-private fun branchElseOutcomeOf(values: Parsers): List<AstStatement> =
+private fun branchElseOutcomeOf(values: Parsers): List<AstInstruction> =
     values["scope"]
 
 /**
  * Parses a single raise control flow from the token stream.
  */
-private fun raiseParserOf(): Parser<AstStatement> =
+private fun raiseParserOf(): Parser<AstInstruction> =
     ParserPattern(::raisePatternOf, ::raiseOutcomeOf)
 
 private fun raisePatternOf() = ParserSequence(
@@ -90,7 +90,7 @@ private fun raiseOutcomeOf(values: Parsers): AstReturnError =
 /**
  * Parses a single return control flow from the token stream.
  */
-private fun returnParserOf(): Parser<AstStatement> =
+private fun returnParserOf(): Parser<AstInstruction> =
     ParserPattern(::returnPatternOf, ::returnOutcomeOf)
 
 private fun returnPatternOf() = ParserSequence(
@@ -98,9 +98,9 @@ private fun returnPatternOf() = ParserSequence(
     "expression" to expressionParserOf(),
 )
 
-private fun returnOutcomeOf(values: Parsers): AstStatement
+private fun returnOutcomeOf(values: Parsers): AstInstruction
 {
-    val expression = values.get<AstExpression>("expression")
+    val expression = values.get<AstValue>("expression")
     // TODO: The magic string `_` should not be used. Use the type-information of the function to remove it
     return if (expression == AstRead("_")) AstReturn else AstReturnValue(expression)
 }
@@ -110,5 +110,5 @@ private fun returnOutcomeOf(values: Parsers): AstStatement
  * determine whether the expression has any value or error types.
  */
 // TODO: Not a correct implementation of the parser - must also function with error handling
-private fun invokeParserOf(): Parser<AstStatement> =
+private fun invokeParserOf(): Parser<AstInstruction> =
     ParserPattern(::functionCallParserOf) { AstEvaluate(it) }

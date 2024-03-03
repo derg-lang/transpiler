@@ -10,7 +10,7 @@ import com.github.derg.transpiler.source.*
  */
 data class AstArgument(
     val name: String?,
-    val expression: AstExpression,
+    val expression: AstValue,
 )
 
 /**
@@ -20,7 +20,7 @@ data class AstArgument(
 data class AstParameter(
     val name: String,
     val type: String,
-    val value: AstExpression?,
+    val value: AstValue?,
     val passability: Passability,
     val assignability: Assignability,
 )
@@ -36,7 +36,7 @@ data class AstParameter(
 data class AstProperty(
     val name: String,
     val type: String,
-    val value: AstExpression?,
+    val value: AstValue?,
     val visibility: Visibility,
     val mutability: Mutability,
     val assignability: Assignability,
@@ -54,5 +54,5 @@ data class AstProperty(
 data class AstSegment(
     val module: String?,
     val imports: List<String>,
-    val definitions: List<AstDefinition>,
+    val definitions: List<AstSymbol>,
 )

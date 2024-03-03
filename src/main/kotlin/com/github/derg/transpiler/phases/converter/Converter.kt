@@ -82,7 +82,7 @@ internal fun AstSegment.toHir() = HirSegment(
     id = UUID.randomUUID(),
     name = "TODO - segment name",
     imports = imports.toSet(),
-    structs = definitions.filterIsInstance<AstType>().map { it.toHir() },
+    structs = definitions.filterIsInstance<AstStruct>().map { it.toHir() },
     concepts = emptyList(),
     constants = definitions.filterIsInstance<AstVariable>().map { it.toHirConstant() },
     functions = definitions.filterIsInstance<AstFunction>().map { it.toHir() },
@@ -91,7 +91,7 @@ internal fun AstSegment.toHir() = HirSegment(
 /**
  *
  */
-internal fun AstType.toHir() = HirStruct(
+internal fun AstStruct.toHir() = HirStruct(
     id = UUID.randomUUID(),
     name = name,
     visibility = visibility,
@@ -116,7 +116,7 @@ internal fun AstVariable.toHirVariable() = HirVariable(
  * Converts [this] expression from AST to HIR. The data structure will be encoded with appropriate default information
  * where information is missing in the AST.
  */
-internal fun AstExpression.toHir(): HirValue = when (this)
+internal fun AstValue.toHir(): HirValue = when (this)
 {
     is AstCall         -> TODO()
     is AstRead         -> HirLoad(name, emptyList())
@@ -151,7 +151,7 @@ internal fun AstExpression.toHir(): HirValue = when (this)
  * Converts [this] statement from AST to HIR. The data structure will be encoded with appropriate default information
  * where information is missing in the AST.
  */
-internal fun AstStatement.toHir(): HirInstruction = when (this)
+internal fun AstInstruction.toHir(): HirInstruction = when (this)
 {
     is AstAssign      -> HirAssign(HirLoad(name, emptyList()), expression.toHir())
     is AstBranch      -> HirBranch(predicate.toHir(), success.map { it.toHir() }, failure.map { it.toHir() })

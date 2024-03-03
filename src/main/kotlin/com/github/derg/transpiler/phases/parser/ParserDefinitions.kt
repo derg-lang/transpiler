@@ -6,9 +6,9 @@ import com.github.derg.transpiler.source.ast.*
 /**
  * Parses a single statement from the token stream.
  */
-fun definitionParserOf(): Parser<AstDefinition> = ParserAnyOf(
+fun definitionParserOf(): Parser<AstSymbol> = ParserAnyOf(
     functionParserOf(),
-    typeParserOf(),
+    structParserOf(),
     variableParserOf(),
 )
 
@@ -42,12 +42,12 @@ private fun functionOutcomeOf(values: Parsers) = AstFunction(
 )
 
 /**
- * Parses a type definition from the token stream.
+ * Parses a struct definition from the token stream.
  */
-fun typeParserOf(): Parser<AstType> =
-    ParserPattern(::typePatternOf, ::typeOutcomeOf)
+fun structParserOf(): Parser<AstStruct> =
+    ParserPattern(::structPatternOf, ::structOutcomeOf)
 
-private fun typePatternOf() = ParserSequence(
+private fun structPatternOf() = ParserSequence(
     "visibility" to visibilityParserOf(),
     "type" to ParserSymbol(Symbol.TYPE),
     "name" to ParserName(),
@@ -56,7 +56,7 @@ private fun typePatternOf() = ParserSequence(
     "close_brace" to ParserSymbol(Symbol.CLOSE_BRACE),
 )
 
-private fun typeOutcomeOf(values: Parsers) = AstType(
+private fun structOutcomeOf(values: Parsers) = AstStruct(
     name = values["name"],
     visibility = values["visibility"],
     properties = values["properties"],

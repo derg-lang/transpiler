@@ -47,9 +47,9 @@ class TestConverterStatements
          * Small helper for generating the actual input for resolving a branch statement.
          */
         private fun inputOf(
-            predicate: AstExpression = true.ast,
-            success: List<AstStatement> = emptyList(),
-            failure: List<AstStatement> = emptyList(),
+            predicate: AstValue = true.ast,
+            success: List<AstInstruction> = emptyList(),
+            failure: List<AstInstruction> = emptyList(),
         ) = AstBranch(predicate, success = success, failure = failure)
         
         /**

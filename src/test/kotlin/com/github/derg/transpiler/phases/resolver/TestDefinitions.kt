@@ -14,7 +14,7 @@ class TestConverterDefinitions
     /**
      * Helper function for converting the given ast [node] into a specific thir symbol [Type].
      */
-    private inline fun <reified Type : ThirSymbol> convert(node: AstDefinition): Type
+    private inline fun <reified Type : ThirSymbol> convert(node: AstSymbol): Type
     {
         assertSuccess(Unit, converter(listOf(node)))
         return symbols[node.name].filterIsInstance<Type>().single()
@@ -182,7 +182,7 @@ class TestConverterDefinitions
         @Test
         fun `Given symbol, when declaring, then symbol is registered`()
         {
-            val node = astTypeOf()
+            val node = astStructOf()
             
             assertSuccess(Unit, converter(listOf(node)))
             assertEquals(1, symbols[node.name].size)
@@ -191,7 +191,7 @@ class TestConverterDefinitions
         @Test
         fun `Given no properties, when resolving, then correct outcome`()
         {
-            val actual = convert<ThirType>(astTypeOf())
+            val actual = convert<ThirType>(astStructOf())
             val expected = thirTypeOf().copy(id = actual.id, name = actual.name)
             
             assertEquals(expected, actual)
@@ -201,7 +201,7 @@ class TestConverterDefinitions
         fun `Given property with valid type, when declaring, then property is registered in type's symbol table`()
         {
             val param = astPropOf(type = Builtin.INT32.name)
-            val symbol = convert<ThirType>(astTypeOf(props = listOf(param)))
+            val symbol = convert<ThirType>(astStructOf(props = listOf(param)))
             
             assertEquals(0, symbols[param.name].size)
             assertEquals(1, symbol.scope.symbols[param.name].size)
@@ -210,7 +210,7 @@ class TestConverterDefinitions
         @Test
         fun `Given property with unknown type, when declaring, then correct error`()
         {
-            val node = astTypeOf(props = listOf(astPropOf(type = "unknown")))
+            val node = astStructOf(props = listOf(astPropOf(type = "unknown")))
             val expected = ResolveError.UnknownType("unknown")
             
             assertFailure(expected, converter(listOf(node)))
@@ -219,7 +219,7 @@ class TestConverterDefinitions
         @Test
         fun `Given property with invalid type, when declaring, then correct error`()
         {
-            val node = astTypeOf(props = listOf(astPropOf(type = Builtin.INT32.name, value = true)))
+            val node = astStructOf(props = listOf(astPropOf(type = Builtin.INT32.name, value = true)))
             val expected = ResolveError.MismatchedParameterType(Builtin.INT32.id, Builtin.BOOL.id)
             
             assertFailure(expected, converter(listOf(node)))

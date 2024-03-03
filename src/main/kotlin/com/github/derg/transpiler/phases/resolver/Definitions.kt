@@ -13,13 +13,13 @@ internal class ConverterDefinitions(private val symbols: ThirSymbolTable)
      * Links a registered symbol to the node which defines the symbol. The node has not yet been defined when it is at
      * first registered in this collection.
      */
-    private val definitions = mutableMapOf<ThirId.Static, AstDefinition>()
+    private val definitions = mutableMapOf<ThirId.Static, AstSymbol>()
     
     /**
      * Converts the [nodes] and all other definitions found inside the nodes into a typed high-intermediary
      * representation of the abstract syntax tree.
      */
-    operator fun invoke(nodes: List<AstDefinition>): Result<Unit, ResolveError>
+    operator fun invoke(nodes: List<AstSymbol>): Result<Unit, ResolveError>
     {
         // All symbols must be declared, before any can be defined. This is because symbols may refer to each other, on
         // the same scope level.
@@ -27,7 +27,7 @@ internal class ConverterDefinitions(private val symbols: ThirSymbolTable)
         {
             val symbol = when (node)
             {
-                is AstType     -> declare(node)
+                is AstStruct   -> declare(node)
                 is AstFunction -> declare(node)
                 is AstVariable -> declare(node)
             }.valueOr { return it.toFailure() }
@@ -58,7 +58,7 @@ internal class ConverterDefinitions(private val symbols: ThirSymbolTable)
         return symbol.toSuccess()
     }
     
-    private fun declare(node: AstType): Result<ThirSymbol, ResolveError>
+    private fun declare(node: AstStruct): Result<ThirSymbol, ResolveError>
     {
         // TODO: Verify that there exists no conflicting symbols in the same scope
         val symbol = convert(node)
@@ -120,7 +120,7 @@ internal class ConverterDefinitions(private val symbols: ThirSymbolTable)
     
     private fun define(symbol: ThirType): Result<Unit, ResolveError>
     {
-        val node = definitions[symbol.id] as AstType
+        val node = definitions[symbol.id] as AstStruct
         val expressions = ConverterExpression(symbol.scope.symbols)
     
         // Resolve all property types
@@ -174,7 +174,7 @@ internal class ConverterDefinitions(private val symbols: ThirSymbolTable)
         defaultValue = null,
     )
     
-    private fun convert(node: AstType) = ThirType(
+    private fun convert(node: AstStruct) = ThirType(
         id = ThirId.Static(),
         name = node.name,
         visibility = node.visibility,
