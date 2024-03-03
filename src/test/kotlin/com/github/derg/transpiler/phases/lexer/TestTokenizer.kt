@@ -6,6 +6,7 @@ import com.github.derg.transpiler.source.Symbol.*
 import com.github.derg.transpiler.source.lexeme.*
 import org.junit.jupiter.api.*
 import org.junit.jupiter.api.Assertions.*
+import java.math.*
 
 /**
  * Generates a new localized token.
@@ -45,13 +46,11 @@ class TestTokenizer
         }
         
         @Test
-        fun `Given numeric literal, when tokenizing, then correct number`()
+        fun `Given integer literal, when tokenizing, then correct number`()
         {
-            assertEquals(localisedOfAsList(0, 1, Numeric(0.toBigDecimal(), null)), tokenize("0"))
-            assertEquals(localisedOfAsList(0, 1, Numeric(1.toBigDecimal(), null)), tokenize("1"))
-            assertEquals(localisedOfAsList(0, 4, Numeric(3.14.toBigDecimal(), null)), tokenize("3.14"))
-            assertEquals(localisedOfAsList(0, 2, Numeric(0.5.toBigDecimal(), null)), tokenize(".5"))
-            assertEquals(localisedOfAsList(0, 2, Numeric(0.toBigDecimal(), "s")), tokenize("0s"))
+            assertEquals(localisedOfAsList(0, 1, Numeric(BigInteger.ZERO, null)), tokenize("0"))
+            assertEquals(localisedOfAsList(0, 1, Numeric(BigInteger.ONE, null)), tokenize("1"))
+            assertEquals(localisedOfAsList(0, 2, Numeric(BigInteger.ZERO, "s")), tokenize("0s"))
         }
         
         @Test
@@ -96,7 +95,7 @@ class TestTokenizer
         fun `Given simple literal expression, when tokenizing, then correct sequence`()
         {
             val expected = listOf(
-                localizedOf(0, 1, Numeric(0.toBigDecimal(), null)),
+                localizedOf(0, 1, Numeric(BigInteger.ZERO, null)),
                 localizedOf(1, 1, Keyword(SEMICOLON)),
             )
             
@@ -108,7 +107,7 @@ class TestTokenizer
         {
             val expected = listOf(
                 localizedOf(0, 1, Keyword(MINUS)),
-                localizedOf(1, 1, Numeric(5.toBigDecimal(), null)),
+                localizedOf(1, 1, Numeric(5.toBigInteger(), null)),
                 localizedOf(2, 1, Keyword(SEMICOLON)),
             )
             
@@ -202,7 +201,7 @@ class TestTokenizer
                     localizedOf(0, 3, Keyword(VALUE)),
                     localizedOf(4, 8, Identifier("variable")),
                     localizedOf(13, 1, Keyword(ASSIGN)),
-                    localizedOf(15, 2, Numeric(42.toBigDecimal(), null)),
+                    localizedOf(15, 2, Numeric(42.toBigInteger(), null)),
                     localizedOf(17, 1, Keyword(SEMICOLON)),
                 )
                 

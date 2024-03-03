@@ -93,7 +93,7 @@ fun expressionParserOf(): Parser<AstExpression> =
 
 private fun basePatternOf() = ParserAnyOf(
     ParserBool(),
-    ParserReal(),
+    ParserInteger(),
     ParserText(),
     variableCallParserOf(),
     functionCallParserOf(),

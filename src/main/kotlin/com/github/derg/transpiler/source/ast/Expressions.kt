@@ -1,5 +1,7 @@
 package com.github.derg.transpiler.source.ast
 
+import java.math.*
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Access
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -29,11 +31,18 @@ data class AstCall(val name: String, val temArgs: List<AstArgument>, val valArgs
 data class AstBool(val value: Boolean) : AstConstant
 
 /**
- * Any real number may be represented in [value]. The precision of the number is limited by the target language and
- * hardware. All numbers may have an optional [literal] associated with them, indicating which user-defined literal
- * should be used to interpret the value.
+ * Any real integral value may be represented in [value]. The precision of the number is limited by the target language
+ * and hardware. All integers may have an optional [literal] associated with them, indicating which user-defined literal
+ * should be used to interpret the integer.
  */
-data class AstReal(val value: Number, val literal: String) : AstConstant
+data class AstInteger(val value: BigInteger, val literal: String) : AstConstant
+
+/**
+ * Any real numeric value may be represented in [value]. The precision of the number is limited by the target language
+ * and hardware. All numbers may have an optional [literal] associated with them, indicating which user-defined literal
+ * should be used to interpret the number.
+ */
+data class AstDecimal(val value: BigDecimal, val literal: String) : AstConstant
 
 /**
  * All strings may be represented in [value]. All types of text are permitted, although limitations may be imposed by

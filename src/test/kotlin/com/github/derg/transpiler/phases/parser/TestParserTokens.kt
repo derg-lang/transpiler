@@ -61,9 +61,9 @@ class TestParserBool
     }
 }
 
-class TestParserReal
+class TestParserInteger
 {
-    private val tester = Tester { ParserReal() }
+    private val tester = Tester { ParserInteger() }
     
     @Test
     fun `Given valid token, when parsing, then correct product`()

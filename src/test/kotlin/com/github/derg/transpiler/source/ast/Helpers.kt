@@ -13,8 +13,8 @@ val Any.ast: AstExpression
     {
         is AstExpression -> this
         is Boolean       -> AstBool(this)
-        is Int           -> AstReal(toBigDecimal(), Builtin.INT32_LIT.name)
-        is Long          -> AstReal(toBigDecimal(), Builtin.INT64_LIT.name)
+        is Int           -> AstInteger(toBigInteger(), Builtin.INT32_LIT.name)
+        is Long          -> AstInteger(toBigInteger(), Builtin.INT64_LIT.name)
         is String        -> AstText(this, Builtin.STR_LIT.name)
         else             -> throw IllegalArgumentException("Value $this does not represent a valid ast value")
     }
