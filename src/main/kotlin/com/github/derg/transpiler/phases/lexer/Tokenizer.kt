@@ -65,10 +65,10 @@ private fun extractToken(input: String, cursor: Int): Pair<Token, IntRange>?
  */
 private fun extractSymbol(input: String, cursor: Int): Pair<Token, IntRange>?
 {
-    val value = SymbolType.values()
+    val value = Symbol.values()
         .filter { it.symbol == input.substringFrom(cursor, cursor + it.symbol.length) }
         .maxByOrNull { it.symbol.length } ?: return null
-    return Symbol(value) to IntRange(cursor, cursor + value.symbol.length)
+    return Keyword(value) to IntRange(cursor, cursor + value.symbol.length)
 }
 
 /**

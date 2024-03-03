@@ -33,12 +33,12 @@ data class Textual(val value: String, val type: String?) : Token
  * are, how the logic of the program flows, and which operations are to be performed. The token represents the [type] of
  * symbol.
  */
-data class Symbol(val type: SymbolType) : Token
+data class Keyword(val type: Symbol) : Token
 
 /**
  * The various types of symbols which are valid tokens.
  */
-enum class SymbolType(val symbol: String)
+enum class Symbol(val symbol: String)
 {
     // Keywords
     AUTO("auto"),

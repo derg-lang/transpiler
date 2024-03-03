@@ -20,16 +20,16 @@ fun functionParserOf(): Parser<AstFunction> =
 
 private fun functionPatternOf() = ParserSequence(
     "visibility" to visibilityParserOf(),
-    "fun" to ParserSymbol(SymbolType.FUN),
+    "fun" to ParserSymbol(Symbol.FUN),
     "name" to ParserName(),
-    "open_parenthesis" to ParserSymbol(SymbolType.OPEN_PARENTHESIS),
-    "parameters" to ParserRepeating(parameterParserOf(), ParserSymbol(SymbolType.COMMA)),
-    "close_parenthesis" to ParserSymbol(SymbolType.CLOSE_PARENTHESIS),
-    "error" to ParserOptional(nameParserOf(SymbolType.COLON)),
-    "value" to ParserOptional(nameParserOf(SymbolType.ARROW)),
-    "open_brace" to ParserSymbol(SymbolType.OPEN_BRACE),
+    "open_parenthesis" to ParserSymbol(Symbol.OPEN_PARENTHESIS),
+    "parameters" to ParserRepeating(parameterParserOf(), ParserSymbol(Symbol.COMMA)),
+    "close_parenthesis" to ParserSymbol(Symbol.CLOSE_PARENTHESIS),
+    "error" to ParserOptional(nameParserOf(Symbol.COLON)),
+    "value" to ParserOptional(nameParserOf(Symbol.ARROW)),
+    "open_brace" to ParserSymbol(Symbol.OPEN_BRACE),
     "statements" to ParserRepeating(statementParserOf()),
-    "close_brace" to ParserSymbol(SymbolType.CLOSE_BRACE),
+    "close_brace" to ParserSymbol(Symbol.CLOSE_BRACE),
 )
 
 private fun functionOutcomeOf(values: Parsers) = AstFunction(
@@ -49,11 +49,11 @@ fun typeParserOf(): Parser<AstType> =
 
 private fun typePatternOf() = ParserSequence(
     "visibility" to visibilityParserOf(),
-    "type" to ParserSymbol(SymbolType.TYPE),
+    "type" to ParserSymbol(Symbol.TYPE),
     "name" to ParserName(),
-    "open_brace" to ParserSymbol(SymbolType.OPEN_BRACE),
+    "open_brace" to ParserSymbol(Symbol.OPEN_BRACE),
     "properties" to ParserRepeating(propertyParserOf()),
-    "close_brace" to ParserSymbol(SymbolType.CLOSE_BRACE),
+    "close_brace" to ParserSymbol(Symbol.CLOSE_BRACE),
 )
 
 private fun typeOutcomeOf(values: Parsers) = AstType(
@@ -73,8 +73,8 @@ private fun variablePatternOf() = ParserSequence(
     "assignability" to assignabilityParserOf(),
     "mutability" to mutabilityParserOf(),
     "name" to ParserName(),
-    "type" to ParserOptional(nameParserOf(SymbolType.COLON)),
-    "op" to ParserSymbol(SymbolType.ASSIGN),
+    "type" to ParserOptional(nameParserOf(Symbol.COLON)),
+    "op" to ParserSymbol(Symbol.ASSIGN),
     "value" to expressionParserOf(),
 )
 

@@ -34,7 +34,7 @@ class TestConverterExpression
         @Test
         fun `Given unknown overload, when resolving, then correct error`()
         {
-            val expected = ArgumentMismatch(SymbolType.AND.symbol, listOf(false.thirArg, 0.thirArg))
+            val expected = ArgumentMismatch(Symbol.AND.symbol, listOf(false.thirArg, 0.thirArg))
             
             assertFailure(expected, converter(false astAnd 0))
         }
@@ -53,7 +53,7 @@ class TestConverterExpression
         @Test
         fun `Given known overload, when resolving, then correct outcome`()
         {
-            val function = boolFunctionOf(symbols, SymbolType.PLUS.symbol, Builtin.INT32, Builtin.INT64)
+            val function = boolFunctionOf(symbols, Symbol.PLUS.symbol, Builtin.INT32, Builtin.INT64)
             
             assertSuccess(function.thirCall(1, 2L), converter(1 astAdd 2L))
         }
@@ -61,7 +61,7 @@ class TestConverterExpression
         @Test
         fun `Given unknown overload, when resolving, then correct error`()
         {
-            val expected = ArgumentMismatch(SymbolType.PLUS.symbol, listOf(true.thirArg, false.thirArg))
+            val expected = ArgumentMismatch(Symbol.PLUS.symbol, listOf(true.thirArg, false.thirArg))
             
             assertFailure(expected, converter(true astAdd false))
         }
@@ -151,7 +151,7 @@ class TestConverterExpression
         @Test
         fun `Given known overload, when resolving, then correct outcome`()
         {
-            val function = boolFunctionOf(symbols, SymbolType.DIVIDE.symbol, Builtin.INT32, Builtin.INT64)
+            val function = boolFunctionOf(symbols, Symbol.DIVIDE.symbol, Builtin.INT32, Builtin.INT64)
             
             assertSuccess(function.thirCall(1, 2L), converter(1 astDiv 2L))
         }
@@ -159,7 +159,7 @@ class TestConverterExpression
         @Test
         fun `Given unknown overload, when resolving, then correct error`()
         {
-            val expected = ArgumentMismatch(SymbolType.DIVIDE.symbol, listOf(true.thirArg, false.thirArg))
+            val expected = ArgumentMismatch(Symbol.DIVIDE.symbol, listOf(true.thirArg, false.thirArg))
             
             assertFailure(expected, converter(true astDiv false))
         }
@@ -179,7 +179,7 @@ class TestConverterExpression
         @Test
         fun `Given known overload, when resolving, then correct outcome`()
         {
-            val function = boolFunctionOf(symbols, SymbolType.EQUAL.symbol, Builtin.INT32, Builtin.INT64)
+            val function = boolFunctionOf(symbols, Symbol.EQUAL.symbol, Builtin.INT32, Builtin.INT64)
             
             assertSuccess(function.thirCall(1, 2L), converter(1 astEq 2L))
         }
@@ -187,7 +187,7 @@ class TestConverterExpression
         @Test
         fun `Given unknown overload, when resolving, then correct error`()
         {
-            val expected = ArgumentMismatch(SymbolType.EQUAL.symbol, listOf(true.thirArg, 1.thirArg))
+            val expected = ArgumentMismatch(Symbol.EQUAL.symbol, listOf(true.thirArg, 1.thirArg))
             
             assertFailure(expected, converter(true astEq 1))
         }
@@ -206,7 +206,7 @@ class TestConverterExpression
         @Test
         fun `Given known overload, when resolving, then correct outcome`()
         {
-            val function = boolFunctionOf(symbols, SymbolType.GREATER.symbol, Builtin.INT32, Builtin.INT64)
+            val function = boolFunctionOf(symbols, Symbol.GREATER.symbol, Builtin.INT32, Builtin.INT64)
             
             assertSuccess(function.thirCall(1, 2L), converter(1.ast astGt 2L.ast))
         }
@@ -214,7 +214,7 @@ class TestConverterExpression
         @Test
         fun `Given unknown overload, when resolving, then correct error`()
         {
-            val expected = ArgumentMismatch(SymbolType.GREATER.symbol, listOf(true.thirArg, false.thirArg))
+            val expected = ArgumentMismatch(Symbol.GREATER.symbol, listOf(true.thirArg, false.thirArg))
             
             assertFailure(expected, converter(AstGreater(true.ast, false.ast)))
         }
@@ -233,7 +233,7 @@ class TestConverterExpression
         @Test
         fun `Given known overload, when resolving, then correct outcome`()
         {
-            val function = boolFunctionOf(symbols, SymbolType.GREATER_EQUAL.symbol, Builtin.INT32, Builtin.INT64)
+            val function = boolFunctionOf(symbols, Symbol.GREATER_EQUAL.symbol, Builtin.INT32, Builtin.INT64)
             
             assertSuccess(function.thirCall(1, 2L), converter(1 astGe 2L))
         }
@@ -241,7 +241,7 @@ class TestConverterExpression
         @Test
         fun `Given unknown overload, when resolving, then correct error`()
         {
-            val expected = ArgumentMismatch(SymbolType.GREATER_EQUAL.symbol, listOf(true.thirArg, false.thirArg))
+            val expected = ArgumentMismatch(Symbol.GREATER_EQUAL.symbol, listOf(true.thirArg, false.thirArg))
             
             assertFailure(expected, converter(true astGe false))
         }
@@ -260,7 +260,7 @@ class TestConverterExpression
         @Test
         fun `Given known overload, when resolving, then correct outcome`()
         {
-            val function = boolFunctionOf(symbols, SymbolType.LESS.symbol, Builtin.INT32, Builtin.INT64)
+            val function = boolFunctionOf(symbols, Symbol.LESS.symbol, Builtin.INT32, Builtin.INT64)
             
             assertSuccess(function.thirCall(1, 2L), converter(1 astLt 2L))
         }
@@ -268,7 +268,7 @@ class TestConverterExpression
         @Test
         fun `Given unknown overload, when resolving, then correct error`()
         {
-            val expected = ArgumentMismatch(SymbolType.LESS.symbol, listOf(true.thirArg, false.thirArg))
+            val expected = ArgumentMismatch(Symbol.LESS.symbol, listOf(true.thirArg, false.thirArg))
             
             assertFailure(expected, converter(true astLt false))
         }
@@ -287,7 +287,7 @@ class TestConverterExpression
         @Test
         fun `Given known overload, when resolving, then correct outcome`()
         {
-            val function = boolFunctionOf(symbols, SymbolType.LESS_EQUAL.symbol, Builtin.INT32, Builtin.INT64)
+            val function = boolFunctionOf(symbols, Symbol.LESS_EQUAL.symbol, Builtin.INT32, Builtin.INT64)
             
             assertSuccess(function.thirCall(1, 2L), converter(1 astLe 2L))
         }
@@ -295,7 +295,7 @@ class TestConverterExpression
         @Test
         fun `Given unknown overload, when resolving, then correct error`()
         {
-            val expected = ArgumentMismatch(SymbolType.LESS_EQUAL.symbol, listOf(true.thirArg, false.thirArg))
+            val expected = ArgumentMismatch(Symbol.LESS_EQUAL.symbol, listOf(true.thirArg, false.thirArg))
             
             assertFailure(expected, converter(true astLe false))
         }
@@ -314,7 +314,7 @@ class TestConverterExpression
         @Test
         fun `Given known overload, when resolving, then correct outcome`()
         {
-            val function = boolFunctionOf(symbols, SymbolType.MODULO.symbol, Builtin.INT32, Builtin.INT64)
+            val function = boolFunctionOf(symbols, Symbol.MODULO.symbol, Builtin.INT32, Builtin.INT64)
             
             assertSuccess(function.thirCall(1, 2L), converter(1 astMod 2L))
         }
@@ -322,7 +322,7 @@ class TestConverterExpression
         @Test
         fun `Given unknown overload, when resolving, then correct error`()
         {
-            val expected = ArgumentMismatch(SymbolType.MODULO.symbol, listOf(true.thirArg, false.thirArg))
+            val expected = ArgumentMismatch(Symbol.MODULO.symbol, listOf(true.thirArg, false.thirArg))
             
             assertFailure(expected, converter(true astMod false))
         }
@@ -341,7 +341,7 @@ class TestConverterExpression
         @Test
         fun `Given known overload, when resolving, then correct outcome`()
         {
-            val function = boolFunctionOf(symbols, SymbolType.MULTIPLY.symbol, Builtin.INT32, Builtin.INT64)
+            val function = boolFunctionOf(symbols, Symbol.MULTIPLY.symbol, Builtin.INT32, Builtin.INT64)
             
             assertSuccess(function.thirCall(1, 2L), converter(1 astMul 2L))
         }
@@ -349,7 +349,7 @@ class TestConverterExpression
         @Test
         fun `Given unknown overload, when resolving, then correct error`()
         {
-            val expected = ArgumentMismatch(SymbolType.MULTIPLY.symbol, listOf(true.thirArg, false.thirArg))
+            val expected = ArgumentMismatch(Symbol.MULTIPLY.symbol, listOf(true.thirArg, false.thirArg))
             
             assertFailure(expected, converter(true astMul false))
         }
@@ -367,7 +367,7 @@ class TestConverterExpression
         @Test
         fun `Given unknown overload, when resolving, then correct error`()
         {
-            val expected = ArgumentMismatch(SymbolType.NOT.symbol, listOf(0.thirArg))
+            val expected = ArgumentMismatch(Symbol.NOT.symbol, listOf(0.thirArg))
             
             assertFailure(expected, converter(0.astNot))
         }
@@ -387,7 +387,7 @@ class TestConverterExpression
         @Test
         fun `Given known overload, when resolving, then correct outcome`()
         {
-            val function = boolFunctionOf(symbols, SymbolType.NOT_EQUAL.symbol, Builtin.INT32, Builtin.INT64)
+            val function = boolFunctionOf(symbols, Symbol.NOT_EQUAL.symbol, Builtin.INT32, Builtin.INT64)
             
             assertSuccess(function.thirCall(1, 2L), converter(1 astNe 2L))
         }
@@ -395,7 +395,7 @@ class TestConverterExpression
         @Test
         fun `Given unknown overload, when resolving, then correct error`()
         {
-            val expected = ArgumentMismatch(SymbolType.NOT_EQUAL.symbol, listOf(true.thirArg, 1.thirArg))
+            val expected = ArgumentMismatch(Symbol.NOT_EQUAL.symbol, listOf(true.thirArg, 1.thirArg))
             
             assertFailure(expected, converter(true astNe 1))
         }
@@ -413,7 +413,7 @@ class TestConverterExpression
         @Test
         fun `Given unknown overload, when resolving, then correct error`()
         {
-            val expected = ArgumentMismatch(SymbolType.OR.symbol, listOf(true.thirArg, 0.thirArg))
+            val expected = ArgumentMismatch(Symbol.OR.symbol, listOf(true.thirArg, 0.thirArg))
             
             assertFailure(expected, converter(true astOr 0))
         }
@@ -498,7 +498,7 @@ class TestConverterExpression
         @Test
         fun `Given known overload, when resolving, then correct outcome`()
         {
-            val function = boolFunctionOf(symbols, SymbolType.MINUS.symbol, Builtin.INT32, Builtin.INT64)
+            val function = boolFunctionOf(symbols, Symbol.MINUS.symbol, Builtin.INT32, Builtin.INT64)
             
             assertSuccess(function.thirCall(1, 2L), converter(1 astSub 2L))
         }
@@ -506,7 +506,7 @@ class TestConverterExpression
         @Test
         fun `Given unknown overload, when resolving, then correct error`()
         {
-            val expected = ArgumentMismatch(SymbolType.MINUS.symbol, listOf(true.thirArg, false.thirArg))
+            val expected = ArgumentMismatch(Symbol.MINUS.symbol, listOf(true.thirArg, false.thirArg))
             
             assertFailure(expected, converter(true astSub false))
         }
@@ -549,7 +549,7 @@ class TestConverterExpression
         @Test
         fun `Given known overload, when resolving, then correct outcome`()
         {
-            val function = boolFunctionOf(symbols, SymbolType.MINUS.symbol, Builtin.BOOL)
+            val function = boolFunctionOf(symbols, Symbol.MINUS.symbol, Builtin.BOOL)
             
             assertSuccess(function.thirCall(true), converter(true.astMinus))
         }
@@ -557,7 +557,7 @@ class TestConverterExpression
         @Test
         fun `Given unknown overload, when resolving, then correct error`()
         {
-            val expected = ArgumentMismatch(SymbolType.MINUS.symbol, listOf(true.thirArg))
+            val expected = ArgumentMismatch(Symbol.MINUS.symbol, listOf(true.thirArg))
             
             assertFailure(expected, converter(true.astMinus))
         }
@@ -576,7 +576,7 @@ class TestConverterExpression
         @Test
         fun `Given known overload, when resolving, then correct outcome`()
         {
-            val function = boolFunctionOf(symbols, SymbolType.PLUS.symbol, Builtin.BOOL)
+            val function = boolFunctionOf(symbols, Symbol.PLUS.symbol, Builtin.BOOL)
             
             assertSuccess(function.thirCall(true), converter(true.astPlus))
         }
@@ -584,7 +584,7 @@ class TestConverterExpression
         @Test
         fun `Given unknown overload, when resolving, then correct error`()
         {
-            val expected = ArgumentMismatch(SymbolType.PLUS.symbol, listOf(true.thirArg))
+            val expected = ArgumentMismatch(Symbol.PLUS.symbol, listOf(true.thirArg))
             
             assertFailure(expected, converter(true.astPlus))
         }
@@ -602,7 +602,7 @@ class TestConverterExpression
         @Test
         fun `Given unknown overload, when resolving, then correct error`()
         {
-            val expected = ArgumentMismatch(SymbolType.XOR.symbol, listOf(false.thirArg, 0.thirArg))
+            val expected = ArgumentMismatch(Symbol.XOR.symbol, listOf(false.thirArg, 0.thirArg))
             
             assertFailure(expected, converter(false astXor 0))
         }

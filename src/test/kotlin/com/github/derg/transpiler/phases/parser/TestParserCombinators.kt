@@ -168,7 +168,7 @@ class TestParserRepeating
     @Test
     fun `Given valid token, when parsing simple, then value produced`()
     {
-        val tester = Tester { ParserRepeating(ParserReal(), ParserSymbol(SymbolType.COMMA)) }
+        val tester = Tester { ParserRepeating(ParserReal(), ParserSymbol(Symbol.COMMA)) }
         
         tester.parse("").isDone().isValue(emptyList())
         tester.parse("1").isOk(1).isDone().isValue(listOf(1.ast)).resets()
@@ -184,7 +184,7 @@ class TestParserRepeating
         {
             ParserRepeating(
                 ParserSequence(REAL to ParserReal(), BOOL to ParserBool()),
-                ParserSymbol(SymbolType.COMMA),
+                ParserSymbol(Symbol.COMMA),
             )
         }
         
@@ -216,7 +216,7 @@ class TestParserRepeating
         {
             ParserRepeating(
                 ParserSequence(REAL to ParserReal(), BOOL to ParserBool()),
-                ParserSymbol(SymbolType.COMMA),
+                ParserSymbol(Symbol.COMMA),
             )
         }
         

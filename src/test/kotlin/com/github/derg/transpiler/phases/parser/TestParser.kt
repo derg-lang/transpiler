@@ -27,7 +27,7 @@ class TestParser
     @Test
     fun `Given syntax error, when parsing, then correct error`()
     {
-        val expected = ParseError.UnexpectedToken(Symbol(SymbolType.COMMA))
+        val expected = ParseError.UnexpectedToken(Keyword(Symbol.COMMA))
         
         assertFailure(expected, parse("use foo,"))
     }

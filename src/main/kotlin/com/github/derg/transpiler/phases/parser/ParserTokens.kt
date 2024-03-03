@@ -34,20 +34,20 @@ class ParserName : Parser<String>
  * Parses a single symbol from the token stream. The parser will only accept one of the symbols present in the
  * [whitelist] when parsing. Any symbol not found in the whitelist is treated as an unexpected token.
  */
-class ParserSymbol(vararg symbols: SymbolType) : Parser<SymbolType>
+class ParserSymbol(vararg symbols: Symbol) : Parser<Symbol>
 {
     private val whitelist = symbols.toSet()
-    private var type: SymbolType? = null
+    private var type: Symbol? = null
     
     override fun skipable(): Boolean = false
-    override fun produce(): SymbolType = type ?: throw IllegalStateException("No symbol has been parsed")
+    override fun produce(): Symbol = type ?: throw IllegalStateException("No symbol has been parsed")
     override fun parse(token: Token): Result<ParseOk, ParseError>
     {
         if (type != null)
             return ParseOk.Finished.toSuccess()
         
-        val symbol = token as? Symbol ?: return ParseError.UnexpectedToken(token).toFailure()
-        type = if (symbol.type in whitelist) symbol.type else return ParseError.UnexpectedToken(token).toFailure()
+        val keyword = token as? Keyword ?: return ParseError.UnexpectedToken(token).toFailure()
+        type = if (keyword.type in whitelist) keyword.type else return ParseError.UnexpectedToken(token).toFailure()
         return ParseOk.Complete.toSuccess()
     }
     
@@ -69,12 +69,12 @@ class ParserBool : Parser<AstExpression>
         if (expression != null)
             return ParseOk.Finished.toSuccess()
         
-        val symbol = token as? Symbol ?: return ParseError.UnexpectedToken(token).toFailure()
-        expression = when (symbol.type)
+        val keyword = token as? Keyword ?: return ParseError.UnexpectedToken(token).toFailure()
+        expression = when (keyword.type)
         {
-            SymbolType.TRUE  -> AstBool(true)
-            SymbolType.FALSE -> AstBool(false)
-            else             -> return ParseError.UnexpectedToken(token).toFailure()
+            Symbol.TRUE  -> AstBool(true)
+            Symbol.FALSE -> AstBool(false)
+            else         -> return ParseError.UnexpectedToken(token).toFailure()
         }
         return ParseOk.Complete.toSuccess()
     }

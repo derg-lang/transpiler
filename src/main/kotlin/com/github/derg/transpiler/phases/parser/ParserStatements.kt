@@ -6,15 +6,15 @@ import com.github.derg.transpiler.source.lexeme.*
 /**
  * Joins together the [name] with the [operator] and the [rhs] expression.
  */
-private fun merge(name: String, operator: SymbolType, rhs: AstExpression): AstAssignment = when (operator)
+private fun merge(name: String, operator: Symbol, rhs: AstExpression): AstAssignment = when (operator)
 {
-    SymbolType.ASSIGN          -> AstAssign(name, rhs)
-    SymbolType.ASSIGN_PLUS     -> AstAssign(name, AstAdd(AstRead(name), rhs))
-    SymbolType.ASSIGN_MINUS    -> AstAssign(name, AstSubtract(AstRead(name), rhs))
-    SymbolType.ASSIGN_MULTIPLY -> AstAssign(name, AstMultiply(AstRead(name), rhs))
-    SymbolType.ASSIGN_MODULO   -> AstAssign(name, AstModulo(AstRead(name), rhs))
-    SymbolType.ASSIGN_DIVIDE   -> AstAssign(name, AstDivide(AstRead(name), rhs))
-    else                       -> throw IllegalStateException("Illegal operator $operator when parsing assignment")
+    Symbol.ASSIGN          -> AstAssign(name, rhs)
+    Symbol.ASSIGN_PLUS     -> AstAssign(name, AstAdd(AstRead(name), rhs))
+    Symbol.ASSIGN_MINUS    -> AstAssign(name, AstSubtract(AstRead(name), rhs))
+    Symbol.ASSIGN_MULTIPLY -> AstAssign(name, AstMultiply(AstRead(name), rhs))
+    Symbol.ASSIGN_MODULO   -> AstAssign(name, AstModulo(AstRead(name), rhs))
+    Symbol.ASSIGN_DIVIDE   -> AstAssign(name, AstDivide(AstRead(name), rhs))
+    else                   -> throw IllegalStateException("Illegal operator $operator when parsing assignment")
 }
 
 /**
@@ -38,12 +38,12 @@ private fun assignmentParserOf(): Parser<AstStatement> =
 private fun assignmentPatternOf() = ParserSequence(
     "name" to ParserName(),
     "op" to ParserSymbol(
-        SymbolType.ASSIGN,
-        SymbolType.ASSIGN_PLUS,
-        SymbolType.ASSIGN_MINUS,
-        SymbolType.ASSIGN_MULTIPLY,
-        SymbolType.ASSIGN_DIVIDE,
-        SymbolType.ASSIGN_MODULO,
+        Symbol.ASSIGN,
+        Symbol.ASSIGN_PLUS,
+        Symbol.ASSIGN_MINUS,
+        Symbol.ASSIGN_MULTIPLY,
+        Symbol.ASSIGN_DIVIDE,
+        Symbol.ASSIGN_MODULO,
     ),
     "rhs" to expressionParserOf(),
 )
@@ -58,7 +58,7 @@ private fun branchParserOf(): Parser<AstStatement> =
     ParserPattern(::branchPatternOf, ::branchOutcomeOf)
 
 private fun branchPatternOf() = ParserSequence(
-    "if" to ParserSymbol(SymbolType.IF),
+    "if" to ParserSymbol(Symbol.IF),
     "predicate" to expressionParserOf(),
     "success" to scopeParserOf(),
     "failure" to ParserOptional(ParserPattern(::branchElsePatternOf, ::branchElseOutcomeOf), emptyList()),
@@ -68,7 +68,7 @@ private fun branchOutcomeOf(values: Parsers): AstBranch =
     AstBranch(values["predicate"], values["success"], values["failure"])
 
 private fun branchElsePatternOf() =
-    ParserSequence("symbol" to ParserSymbol(SymbolType.ELSE), "scope" to scopeParserOf())
+    ParserSequence("symbol" to ParserSymbol(Symbol.ELSE), "scope" to scopeParserOf())
 
 private fun branchElseOutcomeOf(values: Parsers): List<AstStatement> =
     values["scope"]
@@ -80,7 +80,7 @@ private fun raiseParserOf(): Parser<AstStatement> =
     ParserPattern(::raisePatternOf, ::raiseOutcomeOf)
 
 private fun raisePatternOf() = ParserSequence(
-    "symbol" to ParserSymbol(SymbolType.RAISE),
+    "symbol" to ParserSymbol(Symbol.RAISE),
     "expression" to expressionParserOf(),
 )
 
@@ -94,7 +94,7 @@ private fun returnParserOf(): Parser<AstStatement> =
     ParserPattern(::returnPatternOf, ::returnOutcomeOf)
 
 private fun returnPatternOf() = ParserSequence(
-    "symbol" to ParserSymbol(SymbolType.RETURN),
+    "symbol" to ParserSymbol(Symbol.RETURN),
     "expression" to expressionParserOf(),
 )
 
