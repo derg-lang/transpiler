@@ -1,5 +1,6 @@
 package com.github.derg.transpiler.phases.parser
 
+import com.github.derg.transpiler.source.*
 import com.github.derg.transpiler.source.ast.*
 import com.github.derg.transpiler.source.lexeme.*
 import com.github.derg.transpiler.utils.*
@@ -27,7 +28,7 @@ class TestParser
     @Test
     fun `Given syntax error, when parsing, then correct error`()
     {
-        val expected = ParseError.UnexpectedToken(Symbol(SymbolType.COMMA))
+        val expected = ParseError.UnexpectedToken(Keyword(Symbol.COMMA))
         
         assertFailure(expected, parse("use foo,"))
     }

@@ -2,53 +2,52 @@ package com.github.derg.transpiler.phases.parser
 
 import com.github.derg.transpiler.source.*
 import com.github.derg.transpiler.source.ast.*
-import com.github.derg.transpiler.source.lexeme.*
 
 /**
  * Determines the visibility from the provided [symbol].
  */
-fun visibilityOf(symbol: SymbolType?): Visibility = when (symbol)
+fun visibilityOf(symbol: Symbol?): Visibility = when (symbol)
 {
-    SymbolType.EXPORTED  -> Visibility.EXPORTED
-    SymbolType.PRIVATE   -> Visibility.PRIVATE
-    SymbolType.PROTECTED -> Visibility.PROTECTED
-    SymbolType.PUBLIC    -> Visibility.PUBLIC
-    null                 -> Visibility.PRIVATE
-    else                 -> throw IllegalStateException("Illegal symbol $symbol when parsing visibility")
+    Symbol.EXPORTED  -> Visibility.EXPORTED
+    Symbol.PRIVATE   -> Visibility.PRIVATE
+    Symbol.PROTECTED -> Visibility.PROTECTED
+    Symbol.PUBLIC    -> Visibility.PUBLIC
+    null             -> Visibility.PRIVATE
+    else             -> throw IllegalStateException("Illegal symbol $symbol when parsing visibility")
 }
 
 /**
  * Determines the mutability from the provided [symbol].
  */
-fun mutabilityOf(symbol: SymbolType): Mutability = when (symbol)
+fun mutabilityOf(symbol: Symbol): Mutability = when (symbol)
 {
-    SymbolType.VALUE   -> Mutability.IMMUTABLE
-    SymbolType.VARYING -> Mutability.MUTABLE
-    else               -> throw IllegalStateException("Illegal symbol $symbol when parsing mutability")
+    Symbol.VALUE   -> Mutability.IMMUTABLE
+    Symbol.VARYING -> Mutability.MUTABLE
+    else           -> throw IllegalStateException("Illegal symbol $symbol when parsing mutability")
 }
 
 /**
  * Determines the passability from the provided [symbol].
  */
-fun passabilityOf(symbol: SymbolType?): Passability = when (symbol)
+fun passabilityOf(symbol: Symbol?): Passability = when (symbol)
 {
-    SymbolType.IN    -> Passability.IN
-    SymbolType.INOUT -> Passability.INOUT
-    SymbolType.OUT   -> Passability.OUT
-    SymbolType.MOVE  -> Passability.MOVE
-    null             -> Passability.IN
-    else             -> throw IllegalStateException("Illegal symbol $symbol when parsing passability")
+    Symbol.IN    -> Passability.IN
+    Symbol.INOUT -> Passability.INOUT
+    Symbol.OUT   -> Passability.OUT
+    Symbol.MOVE  -> Passability.MOVE
+    null         -> Passability.IN
+    else         -> throw IllegalStateException("Illegal symbol $symbol when parsing passability")
 }
 
 /**
  * Determines the assignability from the provided [symbol].
  */
-fun assignabilityOf(symbol: SymbolType?): Assignability = when (symbol)
+fun assignabilityOf(symbol: Symbol?): Assignability = when (symbol)
 {
-    SymbolType.MUTABLE   -> Assignability.ASSIGNABLE
-    SymbolType.REFERENCE -> Assignability.REFERENCE
-    null                 -> Assignability.CONSTANT
-    else                 -> throw IllegalStateException("Illegal symbol $symbol when parsing assignability")
+    Symbol.MUTABLE   -> Assignability.ASSIGNABLE
+    Symbol.REFERENCE -> Assignability.REFERENCE
+    null             -> Assignability.CONSTANT
+    else             -> throw IllegalStateException("Illegal symbol $symbol when parsing assignability")
 }
 
 /**
@@ -56,19 +55,19 @@ fun assignabilityOf(symbol: SymbolType?): Assignability = when (symbol)
  * to provide an optional name after a specific [symbol]. The output of the parser will always be the name of the found
  * identifier.
  */
-fun nameParserOf(symbol: SymbolType): Parser<String> =
+fun nameParserOf(symbol: Symbol): Parser<String> =
     ParserPattern({ namePatternOf(symbol) }, { it["name"] })
 
-private fun namePatternOf(symbol: SymbolType) =
+private fun namePatternOf(symbol: Symbol) =
     ParserSequence("symbol" to ParserSymbol(symbol), "name" to ParserName())
 
 /**
  * Parses a symbol followed by an expression.
  */
-fun valueParserOf(symbol: SymbolType): Parser<AstExpression> =
+fun valueParserOf(symbol: Symbol): Parser<AstExpression> =
     ParserPattern({ valuePatternOf(symbol) }, { it["expression"] })
 
-private fun valuePatternOf(symbol: SymbolType) =
+private fun valuePatternOf(symbol: Symbol) =
     ParserSequence("symbol" to ParserSymbol(symbol), "expression" to expressionParserOf())
 
 /**
@@ -78,7 +77,7 @@ fun visibilityParserOf(): Parser<Visibility> =
     ParserPattern(::visibilityPatternOf, ::visibilityOf)
 
 private fun visibilityPatternOf() =
-    ParserOptional(ParserSymbol(SymbolType.EXPORTED, SymbolType.PRIVATE, SymbolType.PROTECTED, SymbolType.PUBLIC))
+    ParserOptional(ParserSymbol(Symbol.EXPORTED, Symbol.PRIVATE, Symbol.PROTECTED, Symbol.PUBLIC))
 
 /**
  * Parses a mutability from the token stream.
@@ -87,7 +86,7 @@ fun mutabilityParserOf(): Parser<Mutability> =
     ParserPattern(::mutabilityPatternOf, ::mutabilityOf)
 
 private fun mutabilityPatternOf() =
-    ParserSymbol(SymbolType.VALUE, SymbolType.VARYING)
+    ParserSymbol(Symbol.VALUE, Symbol.VARYING)
 
 /**
  * Parses a passability from the token stream.
@@ -96,7 +95,7 @@ fun passabilityParserOf(): Parser<Passability> =
     ParserPattern(::passabilityPatternOf, ::passabilityOf)
 
 private fun passabilityPatternOf() =
-    ParserOptional(ParserSymbol(SymbolType.IN, SymbolType.INOUT, SymbolType.OUT, SymbolType.MOVE))
+    ParserOptional(ParserSymbol(Symbol.IN, Symbol.INOUT, Symbol.OUT, Symbol.MOVE))
 
 /**
  * Parses an assignability from the token stream.
@@ -105,7 +104,7 @@ fun assignabilityParserOf(): Parser<Assignability> =
     ParserPattern(::assignabilityPatternOf, ::assignabilityOf)
 
 private fun assignabilityPatternOf() =
-    ParserOptional(ParserSymbol(SymbolType.MUTABLE, SymbolType.REFERENCE))
+    ParserOptional(ParserSymbol(Symbol.MUTABLE, Symbol.REFERENCE))
 
 /**
  * Parses a function call argument from the token stream.
@@ -115,7 +114,7 @@ fun argumentParserOf(): Parser<AstArgument> =
 
 private fun argumentPatternOf() = ParserAnyOf(
     ParserSequence("expr" to expressionParserOf()),
-    ParserSequence("name" to ParserName(), "sym" to ParserSymbol(SymbolType.ASSIGN), "expr" to expressionParserOf()),
+    ParserSequence("name" to ParserName(), "sym" to ParserSymbol(Symbol.ASSIGN), "expr" to expressionParserOf()),
 )
 
 private fun argumentOutcomeOf(values: Parsers): AstArgument =
@@ -131,8 +130,8 @@ private fun parameterPatternOf() = ParserSequence(
     "passability" to passabilityParserOf(),
     "assignability" to assignabilityParserOf(),
     "name" to ParserName(),
-    "type" to ParserOptional(nameParserOf(SymbolType.COLON)),
-    "value" to ParserOptional(valueParserOf(SymbolType.ASSIGN)),
+    "type" to ParserOptional(nameParserOf(Symbol.COLON)),
+    "value" to ParserOptional(valueParserOf(Symbol.ASSIGN)),
 )
 
 private fun parameterOutcomeOf(values: Parsers) = AstParameter(
@@ -154,8 +153,8 @@ private fun propertyPatternOf() = ParserSequence(
     "assignability" to assignabilityParserOf(),
     "mutability" to mutabilityParserOf(),
     "name" to ParserName(),
-    "type" to nameParserOf(SymbolType.COLON),
-    "value" to ParserOptional(valueParserOf(SymbolType.ASSIGN)),
+    "type" to nameParserOf(Symbol.COLON),
+    "value" to ParserOptional(valueParserOf(Symbol.ASSIGN)),
 )
 
 private fun propertyOutcomeOf(values: Parsers) = AstProperty(
@@ -176,9 +175,9 @@ fun scopeParserOf(): Parser<List<AstStatement>> =
 private fun scopePatternOf() = ParserAnyOf(
     ParserSequence("single" to statementParserOf()),
     ParserSequence(
-        "open" to ParserSymbol(SymbolType.OPEN_BRACE),
+        "open" to ParserSymbol(Symbol.OPEN_BRACE),
         "multiple" to ParserRepeating(statementParserOf()),
-        "close" to ParserSymbol(SymbolType.CLOSE_BRACE),
+        "close" to ParserSymbol(Symbol.CLOSE_BRACE),
     )
 )
 
@@ -203,8 +202,8 @@ fun segmentParserOf(): Parser<AstSegment> =
 
 // TODO: Use statements should allow modules to be imported into namespaces
 private fun segmentPatternOf() = ParserSequence(
-    "module" to ParserOptional(nameParserOf(SymbolType.MODULE)),
-    "imports" to ParserRepeating(nameParserOf(SymbolType.USE)),
+    "module" to ParserOptional(nameParserOf(Symbol.MODULE)),
+    "imports" to ParserRepeating(nameParserOf(Symbol.USE)),
     "definitions" to ParserRepeating(definitionParserOf()),
     "end" to ParserEnd,
 )

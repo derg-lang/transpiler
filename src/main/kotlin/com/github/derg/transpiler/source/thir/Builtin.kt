@@ -1,7 +1,6 @@
 package com.github.derg.transpiler.source.thir
 
 import com.github.derg.transpiler.source.*
-import com.github.derg.transpiler.source.lexeme.*
 
 /**
  * Registers all builtin types, functions, variables, everything required to implement any sort of transpiler or
@@ -30,44 +29,44 @@ object Builtin
     ///////////////////
     
     val BOOL = typeOf("__builtin_bool").register(SYMBOLS)
-    val BOOL_AND = infixOperatorOf(BOOL, BOOL, SymbolType.AND).register(SYMBOLS)
-    val BOOL_EQ = infixOperatorOf(BOOL, BOOL, SymbolType.EQUAL).register(SYMBOLS)
-    val BOOL_NE = infixOperatorOf(BOOL, BOOL, SymbolType.NOT_EQUAL).register(SYMBOLS)
-    val BOOL_NOT = prefixOperatorOf(BOOL, BOOL, SymbolType.NOT).register(SYMBOLS)
-    val BOOL_OR = infixOperatorOf(BOOL, BOOL, SymbolType.OR).register(SYMBOLS)
-    val BOOL_XOR = infixOperatorOf(BOOL, BOOL, SymbolType.XOR).register(SYMBOLS)
+    val BOOL_AND = infixOperatorOf(BOOL, BOOL, Symbol.AND).register(SYMBOLS)
+    val BOOL_EQ = infixOperatorOf(BOOL, BOOL, Symbol.EQUAL).register(SYMBOLS)
+    val BOOL_NE = infixOperatorOf(BOOL, BOOL, Symbol.NOT_EQUAL).register(SYMBOLS)
+    val BOOL_NOT = prefixOperatorOf(BOOL, BOOL, Symbol.NOT).register(SYMBOLS)
+    val BOOL_OR = infixOperatorOf(BOOL, BOOL, Symbol.OR).register(SYMBOLS)
+    val BOOL_XOR = infixOperatorOf(BOOL, BOOL, Symbol.XOR).register(SYMBOLS)
     
     val INT32 = typeOf("__builtin_int32").register(SYMBOLS)
     val INT32_LIT = literalOf("i32", INT32).register(SYMBOLS)
-    val INT32_EQ = infixOperatorOf(BOOL, INT32, SymbolType.EQUAL).register(SYMBOLS)
-    val INT32_GE = infixOperatorOf(BOOL, INT32, SymbolType.GREATER_EQUAL).register(SYMBOLS)
-    val INT32_GT = infixOperatorOf(BOOL, INT32, SymbolType.GREATER).register(SYMBOLS)
-    val INT32_LE = infixOperatorOf(BOOL, INT32, SymbolType.LESS_EQUAL).register(SYMBOLS)
-    val INT32_LT = infixOperatorOf(BOOL, INT32, SymbolType.LESS).register(SYMBOLS)
-    val INT32_NE = infixOperatorOf(BOOL, INT32, SymbolType.NOT_EQUAL).register(SYMBOLS)
-    val INT32_ADD = infixOperatorOf(INT32, INT32, SymbolType.PLUS).register(SYMBOLS)
-    val INT32_DIV = infixOperatorOf(INT32, INT32, SymbolType.DIVIDE).register(SYMBOLS)
-    val INT32_MOD = infixOperatorOf(INT32, INT32, SymbolType.MODULO).register(SYMBOLS)
-    val INT32_MUL = infixOperatorOf(INT32, INT32, SymbolType.MULTIPLY).register(SYMBOLS)
-    val INT32_NEG = prefixOperatorOf(INT32, INT32, SymbolType.MINUS).register(SYMBOLS)
-    val INT32_POS = prefixOperatorOf(INT32, INT32, SymbolType.PLUS).register(SYMBOLS)
-    val INT32_SUB = infixOperatorOf(INT32, INT32, SymbolType.MINUS).register(SYMBOLS)
+    val INT32_EQ = infixOperatorOf(BOOL, INT32, Symbol.EQUAL).register(SYMBOLS)
+    val INT32_GE = infixOperatorOf(BOOL, INT32, Symbol.GREATER_EQUAL).register(SYMBOLS)
+    val INT32_GT = infixOperatorOf(BOOL, INT32, Symbol.GREATER).register(SYMBOLS)
+    val INT32_LE = infixOperatorOf(BOOL, INT32, Symbol.LESS_EQUAL).register(SYMBOLS)
+    val INT32_LT = infixOperatorOf(BOOL, INT32, Symbol.LESS).register(SYMBOLS)
+    val INT32_NE = infixOperatorOf(BOOL, INT32, Symbol.NOT_EQUAL).register(SYMBOLS)
+    val INT32_ADD = infixOperatorOf(INT32, INT32, Symbol.PLUS).register(SYMBOLS)
+    val INT32_DIV = infixOperatorOf(INT32, INT32, Symbol.DIVIDE).register(SYMBOLS)
+    val INT32_MOD = infixOperatorOf(INT32, INT32, Symbol.MODULO).register(SYMBOLS)
+    val INT32_MUL = infixOperatorOf(INT32, INT32, Symbol.MULTIPLY).register(SYMBOLS)
+    val INT32_NEG = prefixOperatorOf(INT32, INT32, Symbol.MINUS).register(SYMBOLS)
+    val INT32_POS = prefixOperatorOf(INT32, INT32, Symbol.PLUS).register(SYMBOLS)
+    val INT32_SUB = infixOperatorOf(INT32, INT32, Symbol.MINUS).register(SYMBOLS)
     
     val INT64 = typeOf("__builtin_int64").register(SYMBOLS)
     val INT64_LIT = literalOf("i64", INT64).register(SYMBOLS)
-    val INT64_EQ = infixOperatorOf(BOOL, INT64, SymbolType.EQUAL).register(SYMBOLS)
-    val INT64_GE = infixOperatorOf(BOOL, INT64, SymbolType.GREATER_EQUAL).register(SYMBOLS)
-    val INT64_GT = infixOperatorOf(BOOL, INT64, SymbolType.GREATER).register(SYMBOLS)
-    val INT64_LE = infixOperatorOf(BOOL, INT64, SymbolType.LESS_EQUAL).register(SYMBOLS)
-    val INT64_LT = infixOperatorOf(BOOL, INT64, SymbolType.LESS).register(SYMBOLS)
-    val INT64_NE = infixOperatorOf(BOOL, INT64, SymbolType.NOT_EQUAL).register(SYMBOLS)
-    val INT64_ADD = infixOperatorOf(INT64, INT64, SymbolType.PLUS).register(SYMBOLS)
-    val INT64_DIV = infixOperatorOf(INT64, INT64, SymbolType.DIVIDE).register(SYMBOLS)
-    val INT64_MOD = infixOperatorOf(INT64, INT64, SymbolType.MODULO).register(SYMBOLS)
-    val INT64_MUL = infixOperatorOf(INT64, INT64, SymbolType.MULTIPLY).register(SYMBOLS)
-    val INT64_NEG = prefixOperatorOf(INT64, INT64, SymbolType.MINUS).register(SYMBOLS)
-    val INT64_POS = prefixOperatorOf(INT64, INT64, SymbolType.PLUS).register(SYMBOLS)
-    val INT64_SUB = infixOperatorOf(INT64, INT64, SymbolType.MINUS).register(SYMBOLS)
+    val INT64_EQ = infixOperatorOf(BOOL, INT64, Symbol.EQUAL).register(SYMBOLS)
+    val INT64_GE = infixOperatorOf(BOOL, INT64, Symbol.GREATER_EQUAL).register(SYMBOLS)
+    val INT64_GT = infixOperatorOf(BOOL, INT64, Symbol.GREATER).register(SYMBOLS)
+    val INT64_LE = infixOperatorOf(BOOL, INT64, Symbol.LESS_EQUAL).register(SYMBOLS)
+    val INT64_LT = infixOperatorOf(BOOL, INT64, Symbol.LESS).register(SYMBOLS)
+    val INT64_NE = infixOperatorOf(BOOL, INT64, Symbol.NOT_EQUAL).register(SYMBOLS)
+    val INT64_ADD = infixOperatorOf(INT64, INT64, Symbol.PLUS).register(SYMBOLS)
+    val INT64_DIV = infixOperatorOf(INT64, INT64, Symbol.DIVIDE).register(SYMBOLS)
+    val INT64_MOD = infixOperatorOf(INT64, INT64, Symbol.MODULO).register(SYMBOLS)
+    val INT64_MUL = infixOperatorOf(INT64, INT64, Symbol.MULTIPLY).register(SYMBOLS)
+    val INT64_NEG = prefixOperatorOf(INT64, INT64, Symbol.MINUS).register(SYMBOLS)
+    val INT64_POS = prefixOperatorOf(INT64, INT64, Symbol.PLUS).register(SYMBOLS)
+    val INT64_SUB = infixOperatorOf(INT64, INT64, Symbol.MINUS).register(SYMBOLS)
     
     // TODO: Support strings somehow
     val STR_LIT = literalOf("s", VOID).register(SYMBOLS)
@@ -81,13 +80,13 @@ private fun <Type : ThirSymbol> Type.register(symbols: ThirSymbolTable): Type = 
 /**
  * Generates a new infix operator function for the given [inType], producing [outType], for the given [operator].
  */
-private fun infixOperatorOf(outType: ThirType, inType: ThirType, operator: SymbolType): ThirFunction =
+private fun infixOperatorOf(outType: ThirType, inType: ThirType, operator: Symbol): ThirFunction =
     functionOf(operator.symbol, valueType = outType, params = listOf(paramOf("lhs", inType), paramOf("rhs", inType)))
 
 /**
  * Generates a new prefix operator function for the given [inType], producing [outType], for the given [operator].
  */
-private fun prefixOperatorOf(outType: ThirType, inType: ThirType, operator: SymbolType): ThirFunction =
+private fun prefixOperatorOf(outType: ThirType, inType: ThirType, operator: Symbol): ThirFunction =
     functionOf(operator.symbol, valueType = outType, params = listOf(paramOf("rhs", inType)))
 
 private fun functionOf(

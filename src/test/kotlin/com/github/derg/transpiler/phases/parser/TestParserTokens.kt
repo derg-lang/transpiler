@@ -1,5 +1,6 @@
 package com.github.derg.transpiler.phases.parser
 
+import com.github.derg.transpiler.source.*
 import com.github.derg.transpiler.source.ast.*
 import com.github.derg.transpiler.source.lexeme.*
 import org.junit.jupiter.api.*
@@ -23,13 +24,13 @@ class TestParserIdentifier
 
 class TestParserSymbol
 {
-    private val tester = Tester { ParserSymbol(SymbolType.AND, SymbolType.OR) }
+    private val tester = Tester { ParserSymbol(Symbol.AND, Symbol.OR) }
     
     @Test
     fun `Given valid token, when parsing, then correct product`()
     {
-        tester.parse("&&").isOk(1).isDone().isValue(SymbolType.AND).resets()
-        tester.parse("||").isOk(1).isDone().isValue(SymbolType.OR).resets()
+        tester.parse("&&").isOk(1).isDone().isValue(Symbol.AND).resets()
+        tester.parse("||").isOk(1).isDone().isValue(Symbol.OR).resets()
     }
     
     @Test

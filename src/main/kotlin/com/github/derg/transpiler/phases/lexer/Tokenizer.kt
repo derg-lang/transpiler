@@ -1,6 +1,7 @@
 package com.github.derg.transpiler.phases.lexer
 
 import com.github.derg.transpiler.core.*
+import com.github.derg.transpiler.source.*
 import com.github.derg.transpiler.source.lexeme.*
 import com.github.derg.transpiler.utils.*
 
@@ -65,10 +66,10 @@ private fun extractToken(input: String, cursor: Int): Pair<Token, IntRange>?
  */
 private fun extractSymbol(input: String, cursor: Int): Pair<Token, IntRange>?
 {
-    val value = SymbolType.values()
+    val value = Symbol.values()
         .filter { it.symbol == input.substringFrom(cursor, cursor + it.symbol.length) }
         .maxByOrNull { it.symbol.length } ?: return null
-    return Symbol(value) to IntRange(cursor, cursor + value.symbol.length)
+    return Keyword(value) to IntRange(cursor, cursor + value.symbol.length)
 }
 
 /**
