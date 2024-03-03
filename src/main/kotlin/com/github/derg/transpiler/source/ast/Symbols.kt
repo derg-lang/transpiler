@@ -26,8 +26,8 @@ sealed interface AstSymbol
  */
 data class AstFunction(
     override val name: String,
-    val valueType: String?,
-    val errorType: String?,
+    val valueType: AstType?,
+    val errorType: AstType?,
     val parameters: List<AstParameter>,
     val visibility: Visibility,
     val statements: List<AstInstruction>,
@@ -52,13 +52,37 @@ data class AstStruct(
  * specified, it is inferred from [value].
  *
  * @param visibility The visibility of the variable, to whom it is possible to access.
- * @param mutability The kind of the variable, to which degree it is mutable.
  */
 data class AstVariable(
     override val name: String,
-    val type: String?,
+    val type: AstType?,
     val value: AstValue,
     val visibility: Visibility,
-    val mutability: Mutability,
     val assignability: Assignability,
 ) : AstSymbol, AstInstruction
+
+/**
+ * Every function may have any number of parameters, each with their own [name], optional [type] information, and
+ * optional default [value]. The [passability] determines how parameters must be passed into the callable.
+ */
+data class AstParameter(
+    val name: String,
+    val type: AstType,
+    val value: AstValue?,
+    val passability: Passability,
+)
+
+/**
+ * Types may contain an arbitrary number of properties, each with their own [name], optional [type] information, and
+ * optional default [value]. Either a value must be provided, and/or type information.
+ *
+ * @param visibility The visibility of the variable, to whom it is possible to access.
+ * @param assignability The assignability of the variable, how values are assigned to it.
+ */
+data class AstProperty(
+    val name: String,
+    val type: AstType,
+    val value: AstValue?,
+    val visibility: Visibility,
+    val assignability: Assignability,
+)

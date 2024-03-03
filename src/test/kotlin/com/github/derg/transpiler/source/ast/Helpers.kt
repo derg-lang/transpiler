@@ -110,10 +110,9 @@ fun astPropOf(
     ass: Assignability = Assignability.FINAL,
 ) = AstProperty(
     name = name,
-    type = type,
+    type = AstType(type, mut),
     value = value?.ast,
     visibility = vis,
-    mutability = mut,
     assignability = ass,
 )
 
@@ -129,10 +128,9 @@ fun astVarOf(
     ass: Assignability = Assignability.FINAL,
 ) = AstVariable(
     name = name,
-    type = type,
+    type = type?.let { AstType(it, mut) },
     value = value.ast,
     visibility = vis,
-    mutability = mut,
     assignability = ass,
 )
 
@@ -148,8 +146,8 @@ fun astFunOf(
     statements: List<AstInstruction> = emptyList(),
 ) = AstFunction(
     name = name,
-    valueType = valType,
-    errorType = errType,
+    valueType = valType?.let { AstType(it, Mutability.IMMUTABLE) },
+    errorType = errType?.let { AstType(it, Mutability.IMMUTABLE) },
     parameters = params,
     visibility = vis,
     statements = statements,
@@ -163,13 +161,12 @@ fun astParOf(
     type: String,
     value: Any? = null,
     pas: Passability = Passability.IN,
-    ass: Assignability = Assignability.FINAL,
+    mut: Mutability = Mutability.IMMUTABLE,
 ) = AstParameter(
     name = name,
-    type = type,
+    type = AstType(type, mut),
     value = value?.ast,
     passability = pas,
-    assignability = ass,
 )
 
 /**
