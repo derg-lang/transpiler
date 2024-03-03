@@ -142,6 +142,7 @@ enum class Symbol(val symbol: String)
 {
     // Keywords
     AUTO("auto"),
+    BORROW("borrow"),
     DEFAULT("default"),
     ELSE("else"),
     EXPORTED("exported"),
@@ -150,7 +151,6 @@ enum class Symbol(val symbol: String)
     FUN("fun"),
     IF("if"),
     IN("in"),
-    INOUT("inout"),
     MODULE("module"),
     MUTABLE("mut"),
     MOVE("move"),

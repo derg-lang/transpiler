@@ -31,12 +31,12 @@ fun mutabilityOf(symbol: Symbol): Mutability = when (symbol)
  */
 fun passabilityOf(symbol: Symbol?): Passability = when (symbol)
 {
-    Symbol.IN    -> Passability.IN
-    Symbol.INOUT -> Passability.BORROW
-    Symbol.OUT   -> Passability.OUT
-    Symbol.MOVE  -> Passability.MOVE
-    null         -> Passability.IN
-    else         -> throw IllegalStateException("Illegal symbol $symbol when parsing passability")
+    Symbol.IN     -> Passability.IN
+    Symbol.OUT    -> Passability.OUT
+    Symbol.MOVE   -> Passability.MOVE
+    Symbol.BORROW -> Passability.BORROW
+    null          -> Passability.IN
+    else          -> throw IllegalStateException("Illegal symbol $symbol when parsing passability")
 }
 
 /**
@@ -95,7 +95,7 @@ fun passabilityParserOf(): Parser<Passability> =
     ParserPattern(::passabilityPatternOf, ::passabilityOf)
 
 private fun passabilityPatternOf() =
-    ParserOptional(ParserSymbol(Symbol.IN, Symbol.INOUT, Symbol.OUT, Symbol.MOVE))
+    ParserOptional(ParserSymbol(Symbol.IN, Symbol.BORROW, Symbol.OUT, Symbol.MOVE))
 
 /**
  * Parses an assignability from the token stream.
