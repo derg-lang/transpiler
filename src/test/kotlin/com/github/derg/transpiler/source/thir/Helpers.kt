@@ -128,7 +128,7 @@ fun thirPropOf(
     name: String = UUID.randomUUID().toString(),
     vis: Visibility = Visibility.PRIVATE,
     mut: Mutability = Mutability.IMMUTABLE,
-    ass: Assignability = Assignability.CONSTANT,
+    ass: Assignability = Assignability.FINAL,
 ) = ThirProperty(
     id = ThirId.Static(),
     type = ThirId.Resolvable().apply { resolve(type.id) },
@@ -150,5 +150,5 @@ fun thirVarOf(
     type = ThirId.Resolvable().apply { resolve(type.id) },
     visibility = Visibility.PRIVATE,
     mutability = Mutability.IMMUTABLE,
-    assignability = Assignability.CONSTANT,
+    assignability = Assignability.FINAL,
 )

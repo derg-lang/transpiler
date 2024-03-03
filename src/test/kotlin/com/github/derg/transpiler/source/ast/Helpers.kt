@@ -107,7 +107,7 @@ fun astPropOf(
     value: Any? = null,
     vis: Visibility = Visibility.PRIVATE,
     mut: Mutability = Mutability.IMMUTABLE,
-    ass: Assignability = Assignability.CONSTANT,
+    ass: Assignability = Assignability.FINAL,
 ) = AstProperty(
     name = name,
     type = type,
@@ -126,7 +126,7 @@ fun astVarOf(
     type: String? = null,
     vis: Visibility = Visibility.PRIVATE,
     mut: Mutability = Mutability.IMMUTABLE,
-    ass: Assignability = Assignability.CONSTANT,
+    ass: Assignability = Assignability.FINAL,
 ) = AstVariable(
     name = name,
     type = type,
@@ -163,7 +163,7 @@ fun astParOf(
     type: String,
     value: Any? = null,
     pas: Passability = Passability.IN,
-    ass: Assignability = Assignability.CONSTANT,
+    ass: Assignability = Assignability.FINAL,
 ) = AstParameter(
     name = name,
     type = type,

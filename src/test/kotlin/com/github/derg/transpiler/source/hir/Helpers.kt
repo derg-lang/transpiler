@@ -103,7 +103,7 @@ fun hirVarOf(
     id = UUID.randomUUID(),
     name = name,
     mutability = Mutability.IMMUTABLE,
-    assignability = Assignability.CONSTANT,
+    assignability = Assignability.FINAL,
     type = type?.let { HirTypeStruct(it.name, emptyList(), Mutability.IMMUTABLE) },
     value = value.hir,
 )

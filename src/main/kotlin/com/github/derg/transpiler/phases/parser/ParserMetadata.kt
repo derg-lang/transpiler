@@ -32,7 +32,7 @@ fun mutabilityOf(symbol: Symbol): Mutability = when (symbol)
 fun passabilityOf(symbol: Symbol?): Passability = when (symbol)
 {
     Symbol.IN    -> Passability.IN
-    Symbol.INOUT -> Passability.INOUT
+    Symbol.INOUT -> Passability.BORROW
     Symbol.OUT   -> Passability.OUT
     Symbol.MOVE  -> Passability.MOVE
     null         -> Passability.IN
@@ -46,7 +46,7 @@ fun assignabilityOf(symbol: Symbol?): Assignability = when (symbol)
 {
     Symbol.MUTABLE   -> Assignability.ASSIGNABLE
     Symbol.REFERENCE -> Assignability.REFERENCE
-    null             -> Assignability.CONSTANT
+    null             -> Assignability.FINAL
     else             -> throw IllegalStateException("Illegal symbol $symbol when parsing assignability")
 }
 

@@ -33,12 +33,12 @@ class TestParserFunction
         tester.parse("fun foo(ref a: Foo) {}").isChain(9, 1)
             .isValue(astFunOf("foo", params = listOf(astParOf("a", type = "Foo", ass = Assignability.REFERENCE))))
         tester.parse("fun foo(    a: Foo) {}").isChain(8, 1)
-            .isValue(astFunOf("foo", params = listOf(astParOf("a", type = "Foo", ass = Assignability.CONSTANT))))
+            .isValue(astFunOf("foo", params = listOf(astParOf("a", type = "Foo", ass = Assignability.FINAL))))
         
         tester.parse("fun foo(in    a: Foo) {}").isChain(9, 1)
             .isValue(astFunOf("foo", params = listOf(astParOf("a", type = "Foo", pas = Passability.IN))))
         tester.parse("fun foo(inout a: Foo) {}").isChain(9, 1)
-            .isValue(astFunOf("foo", params = listOf(astParOf("a", type = "Foo", pas = Passability.INOUT))))
+            .isValue(astFunOf("foo", params = listOf(astParOf("a", type = "Foo", pas = Passability.BORROW))))
         tester.parse("fun foo(out   a: Foo) {}").isChain(9, 1)
             .isValue(astFunOf("foo", params = listOf(astParOf("a", type = "Foo", pas = Passability.OUT))))
         tester.parse("fun foo(move  a: Foo) {}").isChain(9, 1)
@@ -103,7 +103,7 @@ class TestParserStruct
         tester.parse("type Foo { ref val a: Bar }").isChain(8, 1)
             .isValue(astStructOf("Foo", props = listOf(astPropOf("a", type = "Bar", ass = Assignability.REFERENCE))))
         tester.parse("type Foo {     val a: Bar }").isChain(7, 1)
-            .isValue(astStructOf("Foo", props = listOf(astPropOf("a", type = "Bar", ass = Assignability.CONSTANT))))
+            .isValue(astStructOf("Foo", props = listOf(astPropOf("a", type = "Bar", ass = Assignability.FINAL))))
         
         tester.parse("type Foo { val a: Bar }").isChain(7, 1)
             .isValue(astStructOf("Foo", props = listOf(astPropOf("a", type = "Bar", mut = Mutability.IMMUTABLE))))
@@ -155,7 +155,7 @@ class TestParserVariable
         // Assignability must be correctly parsed
         tester.parse("mut val foo = 0").isChain(4, 1).isValue(astVarOf("foo", 0, ass = Assignability.ASSIGNABLE))
         tester.parse("ref val foo = 0").isChain(4, 1).isValue(astVarOf("foo", 0, ass = Assignability.REFERENCE))
-        tester.parse("    val foo = 0").isChain(3, 1).isValue(astVarOf("foo", 0, ass = Assignability.CONSTANT))
+        tester.parse("    val foo = 0").isChain(3, 1).isValue(astVarOf("foo", 0, ass = Assignability.FINAL))
         
         // Mutability must be correctly parsed
         tester.parse("val foo = 0").isChain(3, 1).isValue(astVarOf("foo", 0, mut = Mutability.IMMUTABLE))
