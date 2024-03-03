@@ -13,7 +13,7 @@ fun parse(input: String): Result<AstSegment, ParseError>
 {
     val parser = segmentParserOf()
     val tokens = tokenize(input).map { it.data } + EndOfFile
-    tokens.fold { parser.parse(it) }.valueOr { return it.toFailure() }
+    tokens.mapUntilError { parser.parse(it) }.valueOr { return it.toFailure() }
     return parser.produce().toSuccess()
 }
 
