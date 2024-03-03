@@ -45,7 +45,7 @@ infix fun Any.astCatch(that: Any) = AstCatch(this.ast, that.ast)
 infix fun Any.astRaise(that: Any) = AstRaise(this.ast, that.ast)
 
 val String.astRead: AstRead get() = AstRead(this)
-fun String.astCall(vararg valArgs: Any) = AstCall(this, emptyList(), valArgs.map(Any::astArg))
+fun String.astCall(vararg valArgs: Any) = AstCall(this, emptyList(), valArgs.map { it.astArg })
 
 val Any.astArg: AstArgument
     get() = if (this is Pair<*, *>) AstArgument(first as String, (second as Any).ast) else AstArgument(null, ast)

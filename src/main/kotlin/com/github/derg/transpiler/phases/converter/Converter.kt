@@ -124,7 +124,7 @@ internal fun AstVariable.toHirVariable() = HirVariable(
  */
 internal fun AstValue.toHir(): HirValue = when (this)
 {
-    is AstCall         -> TODO()
+    is AstCall         -> HirCall(HirLoad(name, emptyList()), valArgs.map { HirNamedParameter(it.name, it.expression.toHir()) })
     is AstRead         -> HirLoad(name, emptyList())
     is AstBool         -> HirBool(value)
     is AstInteger      -> HirInteger(value, literal)

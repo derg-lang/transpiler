@@ -3,19 +3,24 @@ package com.github.derg.transpiler.source.hir
 import com.github.derg.transpiler.source.*
 import java.util.*
 
-// Literals
+/////////////////////
+// Literal helpers //
+/////////////////////
 
 val Any.hir: HirValue
     get() = when (this)
     {
-        is Boolean -> HirBool(this)
-        is Int     -> HirInteger(toBigInteger(), INT32_LIT_NAME)
-        is Long    -> HirInteger(toBigInteger(), INT64_LIT_NAME)
-        is String  -> HirText(this, STR_LIT_NAME)
-        else       -> throw IllegalArgumentException("Value $this does not represent a valid hir value")
+        is HirValue -> this
+        is Boolean  -> HirBool(this)
+        is Int      -> HirInteger(toBigInteger(), INT32_LIT_NAME)
+        is Long     -> HirInteger(toBigInteger(), INT64_LIT_NAME)
+        is String   -> HirText(this, STR_LIT_NAME)
+        else        -> throw IllegalArgumentException("Value $this does not represent a valid hir value")
     }
 
-// Expressions
+////////////////////////
+// Expression helpers //
+////////////////////////
 
 infix fun Any.hirEq(that: Any): HirValue = HirEq(this.hir, that.hir)
 infix fun Any.hirNe(that: Any): HirValue = HirNe(this.hir, that.hir)
@@ -42,15 +47,37 @@ val HirSymbol.hirLoad: HirValue get() = HirLoad(name, emptyList())
 fun HirFunction.hirCall(vararg parameters: Any) = HirCall(hirLoad, parameters.map { null hirArg it })
 infix fun String?.hirArg(that: Any) = HirNamedParameter(this, that.hir)
 
-// Instructions
+///////////////////////
+// Statement helpers //
+///////////////////////
+
+infix fun HirVariable.hirAssign(that: Any) = HirAssign(hirLoad, that.hir)
 
 val HirValue.hirEval get() = HirEvaluate(this)
 val Any.hirReturnError get() = HirReturnError(hir)
 val Any.hirReturnValue get() = HirReturnValue(hir)
 
-infix fun HirVariable.hirAssign(that: Any) = HirAssign(hirLoad, that.hir)
+fun Any.hirBranch(
+    success: List<HirInstruction> = emptyList(),
+    failure: List<HirInstruction> = emptyList(),
+) = HirBranch(hir, success, failure)
 
-// Symbols
+////////////////////
+// Symbol helpers //
+////////////////////
+
+fun hirFieldOf(
+    name: String = UUID.randomUUID().toString(),
+    type: HirType = Builtin.INT32_TYPE,
+    value: HirValue? = null,
+) = HirField(
+    id = UUID.randomUUID(),
+    name = name,
+    type = type,
+    value = value,
+    visibility = Visibility.PRIVATE,
+    assignability = Assignability.FINAL,
+)
 
 fun hirFunOf(
     name: String = UUID.randomUUID().toString(),
@@ -96,6 +123,20 @@ fun hirParamOf(
     type = type,
     value = value,
     passability = Passability.IN,
+)
+
+fun hirStructOf(
+    name: String = UUID.randomUUID().toString(),
+    fields: List<HirField> = emptyList(),
+    methods: List<HirMethod> = emptyList(),
+    generics: List<HirGeneric> = emptyList(),
+) = HirStruct(
+    id = UUID.randomUUID(),
+    name = name,
+    visibility = Visibility.PRIVATE,
+    fields = fields,
+    methods = methods,
+    generics = generics,
 )
 
 fun hirVarOf(
