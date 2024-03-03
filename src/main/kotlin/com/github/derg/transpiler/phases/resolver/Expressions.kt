@@ -73,7 +73,7 @@ internal class ConverterExpression(private val symbols: ThirSymbolTable)
      */
     private fun resolveFun(name: String, arguments: List<AstArgument>): Result<ThirValue, ResolveError>
     {
-        val values = arguments.fold { convert(it) }.valueOr { return it.toFailure() }
+        val values = arguments.mapUntilError { convert(it) }.valueOr { return it.toFailure() }
         
         // Deny unnamed arguments appearing after named arguments
         val firstNamed = arguments.withIndex().firstOrNull { it.value.name != null }
@@ -86,7 +86,7 @@ internal class ConverterExpression(private val symbols: ThirSymbolTable)
         if (functions.isEmpty())
             return ResolveError.UnknownFunction(name).toFailure()
         
-        val (candidates, _) = functions.map { convert(it, values) }.partition()
+        val (candidates, _) = functions.map { convert(it, values) }.partitionOutcomes()
         return when (candidates.size)
         {
             1    -> candidates[0].toBuiltin().toSuccess()

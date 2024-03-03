@@ -5,28 +5,47 @@ package com.github.derg.transpiler.utils
  * contains the success [Value], otherwise the failure [Error] value is stored.
  */
 sealed interface Result<out Value, out Error>
-{
-    data class Success<Value>(val value: Value) : Result<Value, Nothing>
-    data class Failure<Error>(val error: Error) : Result<Nothing, Error>
-}
 
-fun <Value> Value.toSuccess() = Result.Success(this)
-fun <Error> Error.toFailure() = Result.Failure(this)
+data class Success<Value>(val value: Value) : Result<Value, Nothing>
+data class Failure<Error>(val error: Error) : Result<Nothing, Error>
 
-val <Value, Error> Result<Value, Error>.isSuccess: Boolean get() = this is Result.Success<Value>
-val <Value, Error> Result<Value, Error>.isFailure: Boolean get() = this is Result.Failure<Error>
+fun <Value> Value.toSuccess() = Success(this)
+fun <Error> Error.toFailure() = Failure(this)
 
-fun <Value, Error> Result<Value, Error>.valueOrNull(): Value? = (this as? Result.Success<Value>)?.value
-fun <Value, Error> Result<Value, Error>.errorOrNull(): Error? = (this as? Result.Failure<Error>)?.error
-fun <Value, Error> Result<Value, Error>.valueOrDie(): Value = valueOr { throw IllegalStateException(it.toString()) }
+val <Value, Error> Result<Value, Error>.isSuccess: Boolean get() = this is Success<Value>
+val <Value, Error> Result<Value, Error>.isFailure: Boolean get() = this is Failure<Error>
 
 /**
- * Folds the result value such that either the success value is returned, or a value is produced by [function].
+ * Retrieves the value of [this] result, if it is a success. Otherwise, `null` is returned.
+ */
+fun <Value, Error> Result<Value, Error>.valueOrNull(): Value? = (this as? Success<Value>)?.value
+
+/**
+ * Retrieves the value of [this] result, if it is a success. Otherwise, the outcome of the [function] is returned.
  */
 inline fun <Value, Error> Result<Value, Error>.valueOr(function: (Error) -> Value): Value = when (this)
 {
-    is Result.Success -> value
-    is Result.Failure -> function(error)
+    is Success -> value
+    is Failure -> function(error)
+}
+
+/**
+ * Retrieves the value of [this] result, if it is a success. Otherwise, an exception is raised.
+ */
+fun <Value, Error> Result<Value, Error>.valueOrDie(): Value = valueOr { throw IllegalStateException(it.toString()) }
+
+/**
+ * Retrieves the error of [this] result, if it is a failure. Otherwise, `null` is returned.
+ */
+fun <Value, Error> Result<Value, Error>.errorOrNull(): Error? = (this as? Failure<Error>)?.error
+
+/**
+ * Retrieves the error of [this] result, if it is a failure. Otherwise, the outcome of the [function] is returned.
+ */
+inline fun <Value, Error> Result<Value, Error>.errorOr(function: (Value) -> Error): Error = when (this)
+{
+    is Success -> function(value)
+    is Failure -> error
 }
 
 /**
@@ -34,7 +53,7 @@ inline fun <Value, Error> Result<Value, Error>.valueOr(function: (Error) -> Valu
  */
 inline fun <Value, Error> Result<Value, Error>.onSuccess(function: (Value) -> Unit): Result<Value, Error>
 {
-    if (this is Result.Success) function(value)
+    if (this is Success<Value>) function(value)
     return this
 }
 
@@ -43,8 +62,17 @@ inline fun <Value, Error> Result<Value, Error>.onSuccess(function: (Value) -> Un
  */
 inline fun <Value, Error> Result<Value, Error>.onFailure(function: (Error) -> Unit): Result<Value, Error>
 {
-    if (this is Result.Failure) function(error)
+    if (this is Failure<Error>) function(error)
     return this
+}
+
+/**
+ * Transforms the result using either the [success] or [failure] transformations, depending on the result outcome.
+ */
+fun <Value, Error, T> Result<Value, Error>.map(success: (Value) -> T, failure: (Error) -> T): T = when (this)
+{
+    is Success<Value> -> success(value)
+    is Failure<Error> -> failure(error)
 }
 
 /**
@@ -52,8 +80,8 @@ inline fun <Value, Error> Result<Value, Error>.onFailure(function: (Error) -> Un
  */
 fun <Value, Error, T> Result<Value, Error>.mapValue(transformation: (Value) -> T): Result<T, Error> = when (this)
 {
-    is Result.Success -> transformation(value).toSuccess()
-    is Result.Failure -> this
+    is Success<Value> -> transformation(value).toSuccess()
+    is Failure<Error> -> this
 }
 
 /**
@@ -61,8 +89,8 @@ fun <Value, Error, T> Result<Value, Error>.mapValue(transformation: (Value) -> T
  */
 fun <Value, Error, T> Result<Value, Error>.mapError(transformation: (Error) -> T): Result<Value, T> = when (this)
 {
-    is Result.Success -> this
-    is Result.Failure -> transformation(error).toFailure()
+    is Success<Value> -> this
+    is Failure<Error> -> transformation(error).toFailure()
 }
 
 /**
@@ -71,29 +99,30 @@ fun <Value, Error, T> Result<Value, Error>.mapError(transformation: (Error) -> T
 fun <Value, Error, T> Result<Value, Error>.flatMapValue(transformation: (Value) -> Result<T, Error>): Result<T, Error> =
     when (this)
     {
-        is Result.Success -> transformation(value)
-        is Result.Failure -> this
+        is Success<Value> -> transformation(value)
+        is Failure<Error> -> this
     }
 
 /**
- * Transforms the result using either the [success] or [failure] transformations, depending on the result outcome.
+ * Transforms the result into a different result type only when this result represents a success.
  */
-fun <Value, Error, T> Result<Value, Error>.fold(success: (Value) -> T, failure: (Error) -> T): T = when (this)
-{
-    is Result.Success -> success(value)
-    is Result.Failure -> failure(error)
-}
+fun <Value, Error, T> Result<Value, Error>.flatMapError(transformation: (Error) -> Result<Value, T>): Result<Value, T> =
+    when (this)
+    {
+        is Success<Value> -> this
+        is Failure<Error> -> transformation(error)
+    }
 
 /**
  * Transforms the collection of failable operations into either all successes, or the first failure case. Each element
  * is transformed using the [transformation] function.
  */
-fun <Value, Error, T> Iterable<T>.fold(transformation: (T) -> Result<Value, Error>): Result<List<Value>, Error> =
+fun <Value, Error, T> Iterable<T>.mapUntilError(transformation: (T) -> Result<Value, Error>): Result<List<Value>, Error> =
     map { result -> transformation(result).valueOr { return it.toFailure() } }.toSuccess()
 
 /**
  * Transforms the collection of failable operations into two lists, one containing all the success cases and the other
  * containing all the failure cases.
  */
-fun <Value, Error> Iterable<Result<Value, Error>>.partition(): Pair<List<Value>, List<Error>> =
+fun <Value, Error> Iterable<Result<Value, Error>>.partitionOutcomes(): Pair<List<Value>, List<Error>> =
     mapNotNull { it.valueOrNull() } to mapNotNull { it.errorOrNull() }
