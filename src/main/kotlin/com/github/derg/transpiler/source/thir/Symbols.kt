@@ -83,7 +83,6 @@ data class ThirProperty(
     override val name: String,
     val type: ThirId.Resolvable,
     val visibility: Visibility,
-    val mutability: Mutability,
     val assignability: Assignability,
 ) : ThirSymbol
 
@@ -110,7 +109,6 @@ data class ThirVariable(
     override val name: String,
     val type: ThirId.Resolvable,
     val visibility: Visibility,
-    val mutability: Mutability,
     val assignability: Assignability,
 ) : ThirSymbol
 

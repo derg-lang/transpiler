@@ -36,54 +36,53 @@ enum class Visibility
 }
 
 /**
- * The kind of mutability determines what is permitted regarding the data the variable holds. The kind specifies the
- * variable mutability level, restricting the variable from never-changing, to fully mutable.
+ * Mutability determines whether a type can be internally modified or not. If a type is considered immutable, then in
+ * the context it is used, it cannot be changed by a developer. If a list is passed in an immutable context, the
+ * developer cannot. for example, append new elements to it - this would only be possible if the list was passed in a
+ * mutable context.
+ *
+ * Note that immutable does not mean that a type will never change, but merely indicates that the type cannot be changed
+ * in the current context. Some types such as integers, booleans, and other builtin types are naturally immutable. Their
+ * inner state cannot be changed.
+ *
+ * Mutability only applies to a type, not the container holding a value. This means a variable might store an immutable
+ * value, but the variable itself can be assigned another immutable value.
  */
 enum class Mutability
 {
     /**
-     * The variable is considered a constant. The value can never change, and the properties associated with the value
-     * cannot change either. The variable is considered deeply immutable, and the user is guaranteed that its memory
-     * space will remain unchanged.
-     *
-     * All forms of mutable operations on immutable objects is strictly forbidden. Only non-mutation operations may be
-     * performed on such objects. Most builtin types (i.e. integers, booleans) are immutable. Any properties explicitly
-     * marked as mutable may be mutated, however.
-     *
-     * All variables which are immutable and contains no explicitly mutable properties may be inlined, or statically
-     * computed to other values at compile time, wherever possible.
-     */
-    IMMUTABLE,
-    
-    /**
-     * The variable may be mutated by invoking mutating functions or writing different values to the variable
-     * properties.
-     *
-     * The variable itself may be subject to other constraints preventing assigning new values to it, however. see
-     * [Assignability] for more information.
+     * The type is mutable in the current context, and may be mutated by either directly assigning values to its fields
+     * or invoking its mutating methods. The type may be deeply mutable, if the fields are declared mutable. Any mutable
+     * field may be mutated, either through its fields or mutating methods.
      */
     MUTABLE,
+    
+    /**
+     * The type is immutable in the current context; the developer is not permitted to write any values to its fields,
+     * nor invoke any mutating methods on it. The value is deeply immutable as well; none of the fields may be mutated
+     * either.
+     */
+    IMMUTABLE,
 }
 
 /**
- * Variables may be re-assigned a different value in certain cases, for example during the assignment statement. In many
- * cases, variables cannot be re-assigned due to their mutability constraints, or their special properties. The
- * assignability property determines how assigning new values to a variable behaves, or whether it is legal in the first
- * place.
+ * Variables and fields are commonly assigned new values, although in some conditions this is not permitted. The
+ * assignability determines in which contexts the binding may be assigned a new value, and how it should be done. In
+ * some situations, the binding itself will point to a new value. For references, an indirection takes place, where
+ * another binding may be reassigned instead.
  */
 enum class Assignability
 {
     /**
-     * The variable is marked as a constant and cannot be re-assigned for any purpose. It may still be mutated, if it is
-     * marked as mutable. Phrased differently, a constant is a variable which can never be re-assigned after creation;
-     * it will always point to the same instance as it was created with.
+     * The variable or field is marked as final, meaning it can never be reassigned another value. Once the object has
+     * been granted a value, that value can never be replaced with another value. If the type of the object allows it,
+     * however, the value itself may be mutated.
      */
-    CONSTANT,
+    FINAL,
     
     /**
-     * The variable may be re-assigned as desired. The implementation of re-assignment determines how the memory is
-     * updated. For trivial types, the entire memory region is overwritten, although certain types may define a more
-     * complicated assignment scheme, where memory is not fully overwritten.
+     * The variable or field may be reassigned as desired by the developer. Type restrictions still applies, meaning
+     * that a developer may only assign compatible types to the object.
      */
     ASSIGNABLE,
     
@@ -93,50 +92,45 @@ enum class Assignability
      * instead.
      */
     REFERENCE,
-    
-    /**
-     * The variable is a pointer type, which may or may not be pointing at a valid object in memory.
-     */
-    POINTER,
 }
 
 /**
- * Defines the properties a value is expected to have when passed into a function as a parameter. Depending on how the
- * value is expected to be used, certain attributes and requirements will be imposed on the value.
- *
- * See https://github.com/hsutter/708 for further information.
+ * Parameters for functions, methods, or other callable objects represent a value from outside the object. This value
+ * may only be passed into the function in specific manners, represented with the passing category. This property
+ * specifies the intent of the developer, detailing how the parameter is intended to be used, rather than how it is
+ * passed into the object.
  */
 enum class Passability
 {
     /**
-     * Marks the value as an input-only value. Within a function, the variable cannot be modified in any way, shape, or
-     * form. The value is considered immutable within the function. The value must be initialized before it can be
-     * passed into the function, and may be a rvalue.
+     * Marks the parameter as a read-only value. The value cannot be modified in any way within the callable object. All
+     * in parameters must be fully immutable; mutating an in parameter is strictly forbidden. There are no restrictions
+     * on what values may be passed as an in parameter, provided the type of the value matches the type expected by the
+     * parameter.
      */
     IN,
     
     /**
-     * The value must be mutated in some manner within a function using it. At least one path within the function must
-     * have a non-const usage of the variable. The value must be a non-const lvalue.
-     */
-    INOUT,
-    
-    /**
-     * Marks the value as an output-only value. The value must be initialized or assigned to within the function, and
-     * cannot be read from before it has been provided a value. The value must be non-const variable, and cannot be a
-     * rvalue.
-     *
-     * Within the function using the parameter, the variable is considered mutable. Outside the function, the variable
-     * is assigned either mutable or immutable, and will be treated as such.
+     * Marks the parameter as a read-write value. The value must be granted a value at least once within the callable
+     * object. The value must be assigned to the parameter before the parameter is used in any way, and the callable is
+     * not permitted to return or raise an error before the parameter has been granted a value. The value will not be
+     * destroyed when leaving the callable object scope.
      */
     OUT,
     
     /**
-     * Consumes the provided value, meaning it cannot be accessed anymore. Any value passed into a function call using
-     * this option makes the value lost on the outside of the function. Effectively, this is a way to pass ownership of
-     * any value into and out of a function.
+     * Marks the parameter as an owned value, transferring the ownership from outside the callable object, to the object
+     * itself. The callable will be responsible for cleaning up the resources used by the value once it leaves the
+     * callable object scope.
      */
     MOVE,
+    
+    /**
+     * Marks the parameter as a borrowed value. The value cannot be reassigned from within the callable object, but it
+     * may be mutated if the type of the value permits that. Values which are borrowed are not destroyed when they leave
+     * the callable object scope, and ownership of them cannot be granted either.
+     */
+    BORROW,
 }
 
 /**
@@ -148,6 +142,7 @@ enum class Symbol(val symbol: String)
 {
     // Keywords
     AUTO("auto"),
+    BORROW("borrow"),
     DEFAULT("default"),
     ELSE("else"),
     EXPORTED("exported"),
@@ -156,7 +151,6 @@ enum class Symbol(val symbol: String)
     FUN("fun"),
     IF("if"),
     IN("in"),
-    INOUT("inout"),
     MODULE("module"),
     MUTABLE("mut"),
     MOVE("move"),

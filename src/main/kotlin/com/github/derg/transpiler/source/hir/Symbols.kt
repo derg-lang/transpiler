@@ -176,7 +176,6 @@ data class HirField(
     override val id: UUID,
     override val name: String,
     val visibility: Visibility,
-    val mutability: Mutability,
     val assignability: Assignability,
     val type: HirType,
     val value: HirValue?,
@@ -211,7 +210,6 @@ data class HirParameter(
 data class HirVariable(
     override val id: UUID,
     override val name: String,
-    val mutability: Mutability,
     val assignability: Assignability,
     val type: HirType?,
     val value: HirValue,

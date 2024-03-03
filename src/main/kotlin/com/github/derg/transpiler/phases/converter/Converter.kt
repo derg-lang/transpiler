@@ -1,6 +1,5 @@
 package com.github.derg.transpiler.phases.converter
 
-import com.github.derg.transpiler.source.*
 import com.github.derg.transpiler.source.ast.*
 import com.github.derg.transpiler.source.hir.*
 import java.util.*
@@ -25,6 +24,12 @@ private fun module(name: String, segments: List<AstSegment>) = HirModule(
 // Implementation details
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+private fun AstType.toHir() = HirTypeStruct(
+    name = name,
+    generics = emptyList(),
+    mutability = mutability,
+)
+
 /**
  *
  */
@@ -32,7 +37,7 @@ internal fun AstVariable.toHirConstant() = HirConstant(
     id = UUID.randomUUID(),
     name = name,
     visibility = visibility,
-    type = type?.let { HirTypeStruct(it, emptyList(), Mutability.IMMUTABLE) },
+    type = type?.toHir(),
     value = value.toHir(),
 )
 
@@ -43,8 +48,8 @@ internal fun AstFunction.toHir() = HirFunction(
     id = UUID.randomUUID(),
     name = name,
     visibility = visibility,
-    value = valueType?.let { HirTypeStruct(it, emptyList(), Mutability.IMMUTABLE) },
-    error = errorType?.let { HirTypeStruct(it, emptyList(), Mutability.IMMUTABLE) },
+    value = valueType?.toHir(),
+    error = errorType?.toHir(),
     instructions = statements.map { it.toHir() },
     generics = emptyList(),
     variables = statements.filterIsInstance<AstVariable>().map { it.toHirVariable() },
@@ -58,7 +63,7 @@ internal fun AstParameter.toHir() = HirParameter(
     id = UUID.randomUUID(),
     name = name,
     passability = passability,
-    type = HirTypeStruct(type, emptyList(), Mutability.IMMUTABLE),
+    type = type.toHir(),
     value = value?.toHir(),
 )
 
@@ -69,9 +74,8 @@ internal fun AstProperty.toHir() = HirField(
     id = UUID.randomUUID(),
     name = name,
     visibility = visibility,
-    mutability = mutability,
     assignability = assignability,
-    type = HirTypeStruct(type, emptyList(), Mutability.IMMUTABLE),
+    type = type.toHir(),
     value = value?.toHir(),
 )
 
@@ -106,9 +110,8 @@ internal fun AstStruct.toHir() = HirStruct(
 internal fun AstVariable.toHirVariable() = HirVariable(
     id = UUID.randomUUID(),
     name = name,
-    mutability = mutability,
     assignability = assignability,
-    type = type?.let { HirTypeStruct(it, emptyList(), Mutability.IMMUTABLE) },
+    type = type?.toHir(),
     value = value.toHir(),
 )
 

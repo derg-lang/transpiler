@@ -81,7 +81,7 @@ internal class ConverterDefinitions(private val symbols: ThirSymbolTable)
         for ((i, param) in node.parameters.withIndex())
         {
             val value = param.value?.let { expressions(it) }?.valueOr { return it.toFailure() }
-            val type = resolveType(symbols, param.type).valueOr { return it.toFailure() }
+            val type = resolveType(symbols, param.type.name).valueOr { return it.toFailure() }
             
             if (type.id != value?.valType && value != null)
                 return ResolveError.MismatchedParameterType(type.id, value.valType).toFailure()
@@ -93,12 +93,12 @@ internal class ConverterDefinitions(private val symbols: ThirSymbolTable)
         val valueType = when (node.valueType)
         {
             null -> Builtin.VOID
-            else -> resolveType(symbols, node.valueType).valueOr { return it.toFailure() }
+            else -> resolveType(symbols, node.valueType.name).valueOr { return it.toFailure() }
         }
         val errorType = when (node.errorType)
         {
             null -> Builtin.VOID
-            else -> resolveType(symbols, node.errorType).valueOr { return it.toFailure() }
+            else -> resolveType(symbols, node.errorType.name).valueOr { return it.toFailure() }
         }
         symbol.valType.resolve(valueType.id)
         symbol.errType.resolve(errorType.id)
@@ -127,7 +127,7 @@ internal class ConverterDefinitions(private val symbols: ThirSymbolTable)
         for ((i, prop) in node.properties.withIndex())
         {
             val value = prop.value?.let { expressions(it) }?.valueOr { return it.toFailure() }
-            val type = resolveType(symbols, prop.type).valueOr { return it.toFailure() }
+            val type = resolveType(symbols, prop.type.name).valueOr { return it.toFailure() }
         
             if (type.id != value?.valType && value != null)
                 return ResolveError.MismatchedParameterType(type.id, value.valType).toFailure()
@@ -145,7 +145,7 @@ internal class ConverterDefinitions(private val symbols: ThirSymbolTable)
         
         // Resolve the variable type and ensure the value type matches the defined type of the variable, if any.
         val value = converter(node.value).valueOr { return it.toFailure() }
-        val type = node.type?.let { resolveType(symbols, it) }?.valueOr { return it.toFailure() }
+        val type = node.type?.let { resolveType(symbols, it.name) }?.valueOr { return it.toFailure() }
         
         if (value.valType != type?.id && type != null)
             return ResolveError.MismatchedVariableType(type.id, value.valType).toFailure()
@@ -187,7 +187,6 @@ internal class ConverterDefinitions(private val symbols: ThirSymbolTable)
         name = node.name,
         type = ThirId.Resolvable(),
         visibility = node.visibility,
-        mutability = node.mutability,
         assignability = node.assignability,
     )
     
@@ -196,7 +195,6 @@ internal class ConverterDefinitions(private val symbols: ThirSymbolTable)
         name = node.name,
         type = ThirId.Resolvable(),
         visibility = node.visibility,
-        mutability = node.mutability,
         assignability = node.assignability,
     )
 }

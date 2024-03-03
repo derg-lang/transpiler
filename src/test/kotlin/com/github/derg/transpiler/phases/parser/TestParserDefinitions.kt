@@ -28,22 +28,20 @@ class TestParserFunction
             .isValue(astFunOf("foo", valType = "Bar", errType = "Foo"))
         
         // Parameters must be correctly parsed
-        tester.parse("fun foo(mut a: Foo) {}").isChain(9, 1)
-            .isValue(astFunOf("foo", params = listOf(astParOf("a", type = "Foo", ass = Assignability.ASSIGNABLE))))
-        tester.parse("fun foo(ref a: Foo) {}").isChain(9, 1)
-            .isValue(astFunOf("foo", params = listOf(astParOf("a", type = "Foo", ass = Assignability.REFERENCE))))
-        tester.parse("fun foo(    a: Foo) {}").isChain(8, 1)
-            .isValue(astFunOf("foo", params = listOf(astParOf("a", type = "Foo", ass = Assignability.CONSTANT))))
+        tester.parse("fun foo(a: mut Foo) {}").isChain(9, 1)
+            .isValue(astFunOf("foo", params = listOf(astParOf("a", type = "Foo", mut = Mutability.MUTABLE))))
+        tester.parse("fun foo(a:     Foo) {}").isChain(8, 1)
+            .isValue(astFunOf("foo", params = listOf(astParOf("a", type = "Foo", mut = Mutability.IMMUTABLE))))
         
-        tester.parse("fun foo(in    a: Foo) {}").isChain(9, 1)
+        tester.parse("fun foo(in     a: Foo) {}").isChain(9, 1)
             .isValue(astFunOf("foo", params = listOf(astParOf("a", type = "Foo", pas = Passability.IN))))
-        tester.parse("fun foo(inout a: Foo) {}").isChain(9, 1)
-            .isValue(astFunOf("foo", params = listOf(astParOf("a", type = "Foo", pas = Passability.INOUT))))
-        tester.parse("fun foo(out   a: Foo) {}").isChain(9, 1)
+        tester.parse("fun foo(out    a: Foo) {}").isChain(9, 1)
             .isValue(astFunOf("foo", params = listOf(astParOf("a", type = "Foo", pas = Passability.OUT))))
-        tester.parse("fun foo(move  a: Foo) {}").isChain(9, 1)
+        tester.parse("fun foo(move   a: Foo) {}").isChain(9, 1)
             .isValue(astFunOf("foo", params = listOf(astParOf("a", type = "Foo", pas = Passability.MOVE))))
-        tester.parse("fun foo(      a: Foo) {}").isChain(8, 1)
+        tester.parse("fun foo(borrow a: Foo) {}").isChain(9, 1)
+            .isValue(astFunOf("foo", params = listOf(astParOf("a", type = "Foo", pas = Passability.BORROW))))
+        tester.parse("fun foo(       a: Foo) {}").isChain(8, 1)
             .isValue(astFunOf("foo", params = listOf(astParOf("a", type = "Foo", pas = Passability.IN))))
         
         tester.parse("fun foo(a: Foo, b: Bar) {}").isChain(12, 1)
@@ -98,17 +96,17 @@ class TestParserStruct
         tester.parse("type Foo {}").isChain(3, 1).isValue(astStructOf("Foo"))
         
         // Properties must be correctly parsed
-        tester.parse("type Foo { mut val a: Bar }").isChain(8, 1)
-            .isValue(astStructOf("Foo", props = listOf(astPropOf("a", type = "Bar", ass = Assignability.ASSIGNABLE))))
-        tester.parse("type Foo { ref val a: Bar }").isChain(8, 1)
-            .isValue(astStructOf("Foo", props = listOf(astPropOf("a", type = "Bar", ass = Assignability.REFERENCE))))
-        tester.parse("type Foo {     val a: Bar }").isChain(7, 1)
-            .isValue(astStructOf("Foo", props = listOf(astPropOf("a", type = "Bar", ass = Assignability.CONSTANT))))
-        
         tester.parse("type Foo { val a: Bar }").isChain(7, 1)
-            .isValue(astStructOf("Foo", props = listOf(astPropOf("a", type = "Bar", mut = Mutability.IMMUTABLE))))
+            .isValue(astStructOf("Foo", props = listOf(astPropOf("a", type = "Bar", ass = Assignability.FINAL))))
         tester.parse("type Foo { var a: Bar }").isChain(7, 1)
+            .isValue(astStructOf("Foo", props = listOf(astPropOf("a", type = "Bar", ass = Assignability.ASSIGNABLE))))
+        tester.parse("type Foo { ref a: Bar }").isChain(7, 1)
+            .isValue(astStructOf("Foo", props = listOf(astPropOf("a", type = "Bar", ass = Assignability.REFERENCE))))
+        
+        tester.parse("type Foo { val a: mut Bar }").isChain(8, 1)
             .isValue(astStructOf("Foo", props = listOf(astPropOf("a", type = "Bar", mut = Mutability.MUTABLE))))
+        tester.parse("type Foo { val a:     Bar }").isChain(7, 1)
+            .isValue(astStructOf("Foo", props = listOf(astPropOf("a", type = "Bar", mut = Mutability.IMMUTABLE))))
         
         tester.parse("type Foo { exported  val a: Bar }").isChain(8, 1)
             .isValue(astStructOf("Foo", props = listOf(astPropOf("a", type = "Bar", vis = Visibility.EXPORTED))))
@@ -153,13 +151,13 @@ class TestParserVariable
     fun `Given valid token, when parsing, then correctly parsed`()
     {
         // Assignability must be correctly parsed
-        tester.parse("mut val foo = 0").isChain(4, 1).isValue(astVarOf("foo", 0, ass = Assignability.ASSIGNABLE))
-        tester.parse("ref val foo = 0").isChain(4, 1).isValue(astVarOf("foo", 0, ass = Assignability.REFERENCE))
-        tester.parse("    val foo = 0").isChain(3, 1).isValue(astVarOf("foo", 0, ass = Assignability.CONSTANT))
+        tester.parse("val foo = 0").isChain(3, 1).isValue(astVarOf("foo", 0, ass = Assignability.FINAL))
+        tester.parse("var foo = 0").isChain(3, 1).isValue(astVarOf("foo", 0, ass = Assignability.ASSIGNABLE))
+        tester.parse("ref foo = 0").isChain(3, 1).isValue(astVarOf("foo", 0, ass = Assignability.REFERENCE))
         
         // Mutability must be correctly parsed
-        tester.parse("val foo = 0").isChain(3, 1).isValue(astVarOf("foo", 0, mut = Mutability.IMMUTABLE))
-        tester.parse("var foo = 0").isChain(3, 1).isValue(astVarOf("foo", 0, mut = Mutability.MUTABLE))
+        tester.parse("val foo: mut Int = 0").isChain(6, 1).isValue(astVarOf("foo", 0, type = "Int", mut = Mutability.MUTABLE))
+        tester.parse("val foo:     Int = 0").isChain(5, 1).isValue(astVarOf("foo", 0, type = "Int", mut = Mutability.IMMUTABLE))
         
         // Visibility must be correctly parsed
         tester.parse("exported  val foo = 0").isChain(4, 1).isValue(astVarOf("foo", 0, vis = Visibility.EXPORTED))

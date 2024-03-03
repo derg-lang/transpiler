@@ -25,8 +25,8 @@ private fun functionPatternOf() = ParserSequence(
     "open_parenthesis" to ParserSymbol(Symbol.OPEN_PARENTHESIS),
     "parameters" to ParserRepeating(parameterParserOf(), ParserSymbol(Symbol.COMMA)),
     "close_parenthesis" to ParserSymbol(Symbol.CLOSE_PARENTHESIS),
-    "error" to ParserOptional(nameParserOf(Symbol.COLON)),
-    "value" to ParserOptional(nameParserOf(Symbol.ARROW)),
+    "error" to ParserOptional(typeParserOf(Symbol.COLON)),
+    "value" to ParserOptional(typeParserOf(Symbol.ARROW)),
     "open_brace" to ParserSymbol(Symbol.OPEN_BRACE),
     "statements" to ParserRepeating(statementParserOf()),
     "close_brace" to ParserSymbol(Symbol.CLOSE_BRACE),
@@ -71,9 +71,8 @@ fun variableParserOf(): Parser<AstVariable> =
 private fun variablePatternOf() = ParserSequence(
     "visibility" to visibilityParserOf(),
     "assignability" to assignabilityParserOf(),
-    "mutability" to mutabilityParserOf(),
     "name" to ParserName(),
-    "type" to ParserOptional(nameParserOf(Symbol.COLON)),
+    "type" to ParserOptional(typeParserOf(Symbol.COLON)),
     "op" to ParserSymbol(Symbol.ASSIGN),
     "value" to expressionParserOf(),
 )
@@ -83,6 +82,5 @@ private fun variableOutcomeOf(values: Parsers) = AstVariable(
     type = values["type"],
     value = values["value"],
     visibility = values["visibility"],
-    mutability = values["mutability"],
     assignability = values["assignability"],
 )
