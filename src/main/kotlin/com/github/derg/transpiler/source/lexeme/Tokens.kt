@@ -1,6 +1,7 @@
 package com.github.derg.transpiler.source.lexeme
 
 import com.github.derg.transpiler.source.*
+import java.math.*
 
 /**
  * A single token represents a single lexeme in the source code. Tokens may be extracted from the source code in various
@@ -23,7 +24,7 @@ data class Identifier(val name: String) : Token
 /**
  * The token holds a raw numerical literal of a specific [value] and optional [type].
  */
-data class Numeric(val value: Number, val type: String?) : Token
+data class Numeric(val value: BigInteger, val type: String?) : Token
 
 /**
  * The token holds a raw textual literal of a specific [value] and optional [type].

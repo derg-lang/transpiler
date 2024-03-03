@@ -91,7 +91,7 @@ class ParserBool : Parser<AstExpression>
 /**
  * Parses a single numeric value from the token stream.
  */
-class ParserReal : Parser<AstExpression>
+class ParserInteger : Parser<AstExpression>
 {
     private var expression: AstExpression? = null
     
@@ -101,7 +101,7 @@ class ParserReal : Parser<AstExpression>
             return ParseOk.Finished.toSuccess()
         
         val number = token as? Numeric ?: return ParseError.UnexpectedToken(token).toFailure()
-        expression = AstReal(number.value, number.type ?: Builtin.INT32_LIT.name)
+        expression = AstInteger(number.value, number.type ?: Builtin.INT32_LIT.name)
         return ParseOk.Complete.toSuccess()
     }
     

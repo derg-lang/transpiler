@@ -6,6 +6,7 @@ import com.github.derg.transpiler.source.ast.*
 import com.github.derg.transpiler.source.thir.*
 import com.github.derg.transpiler.utils.*
 import org.junit.jupiter.api.*
+import java.math.*
 
 /**
  * Helper function for generating an infix operator function, which returns a bool and takes in any number of type
@@ -248,6 +249,31 @@ class TestConverterExpression
     }
     
     @Nested
+    inner class Integer
+    {
+        @Test
+        fun `Given builtin types, when resolving, then correct outcome`()
+        {
+            assertSuccess(1.thir, converter(AstInteger(BigInteger.ONE, Builtin.INT32_LIT.name)))
+            assertSuccess(2L.thir, converter(AstInteger(BigInteger.TWO, Builtin.INT64_LIT.name)))
+        }
+        
+        @Test
+        fun `Given known overload, when resolving, then correct outcome`()
+        {
+            // TODO: Implement me
+        }
+        
+        @Test
+        fun `Given unknown overload, when resolving, then correct error`()
+        {
+            val expected = UnknownLiteral("unknown")
+            
+            assertFailure(expected, converter(AstInteger(BigInteger.ONE, "unknown")))
+        }
+    }
+    
+    @Nested
     inner class Less
     {
         @Test
@@ -457,31 +483,6 @@ class TestConverterExpression
             val shadow = thirVarOf(name = first.name, type = Builtin.INT32).also(symbols::register)
             
             assertSuccess(shadow.thirRead, converter(first.name.astRead))
-        }
-    }
-    
-    @Nested
-    inner class Real
-    {
-        @Test
-        fun `Given builtin types, when resolving, then correct outcome`()
-        {
-            assertSuccess(1.thir, converter(AstReal(1, Builtin.INT32_LIT.name)))
-            assertSuccess(2L.thir, converter(AstReal(2, Builtin.INT64_LIT.name)))
-        }
-        
-        @Test
-        fun `Given known overload, when resolving, then correct outcome`()
-        {
-            // TODO: Implement me
-        }
-        
-        @Test
-        fun `Given unknown overload, when resolving, then correct error`()
-        {
-            val expected = UnknownLiteral("unknown")
-            
-            assertFailure(expected, converter(AstReal(1, "unknown")))
         }
     }
     

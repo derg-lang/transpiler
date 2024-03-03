@@ -124,7 +124,7 @@ private fun extractNumber(input: String, cursor: Int): Pair<Token, IntRange>?
     val typeIndex = input.indexOfFirstOrNull(cursor) { !isLegalInNumber(it) } ?: input.length
     val endIndex = input.indexOfFirstOrNull(typeIndex) { !isLegalInIdentifier(it) } ?: input.length
     
-    val value = input.substringFrom(cursor, typeIndex).toBigDecimalOrNull() ?: return null
+    val value = input.substringFrom(cursor, typeIndex).toBigIntegerOrNull() ?: return null
     val type = input.substringFrom(typeIndex, endIndex).ifBlank { null }
     return Numeric(value, type) to IntRange(cursor, endIndex)
 }
