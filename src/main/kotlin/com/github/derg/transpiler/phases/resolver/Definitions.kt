@@ -27,7 +27,7 @@ internal class ConverterDefinitions(private val symbols: ThirSymbolTable)
         {
             val symbol = when (node)
             {
-                is AstType     -> declare(node)
+                is AstStruct   -> declare(node)
                 is AstFunction -> declare(node)
                 is AstVariable -> declare(node)
             }.valueOr { return it.toFailure() }
@@ -58,7 +58,7 @@ internal class ConverterDefinitions(private val symbols: ThirSymbolTable)
         return symbol.toSuccess()
     }
     
-    private fun declare(node: AstType): Result<ThirSymbol, ResolveError>
+    private fun declare(node: AstStruct): Result<ThirSymbol, ResolveError>
     {
         // TODO: Verify that there exists no conflicting symbols in the same scope
         val symbol = convert(node)
@@ -120,7 +120,7 @@ internal class ConverterDefinitions(private val symbols: ThirSymbolTable)
     
     private fun define(symbol: ThirType): Result<Unit, ResolveError>
     {
-        val node = definitions[symbol.id] as AstType
+        val node = definitions[symbol.id] as AstStruct
         val expressions = ConverterExpression(symbol.scope.symbols)
     
         // Resolve all property types
@@ -174,7 +174,7 @@ internal class ConverterDefinitions(private val symbols: ThirSymbolTable)
         defaultValue = null,
     )
     
-    private fun convert(node: AstType) = ThirType(
+    private fun convert(node: AstStruct) = ThirType(
         id = ThirId.Static(),
         name = node.name,
         visibility = node.visibility,

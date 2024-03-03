@@ -40,7 +40,7 @@ data class AstFunction(
  *
  * @param visibility The visibility of the type, to whom it is possible to access.
  */
-data class AstType(
+data class AstStruct(
     override val name: String,
     val visibility: Visibility,
     val properties: List<AstProperty>,

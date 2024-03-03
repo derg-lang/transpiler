@@ -87,53 +87,53 @@ class TestParserFunction
     }
 }
 
-class TestParserType
+class TestParserStruct
 {
-    private val tester = Tester { typeParserOf() }
+    private val tester = Tester { structParserOf() }
     
     @Test
     fun `Given valid segment, when parsing, then correctly parsed`()
     {
         // Basic structure must be correctly parsed
-        tester.parse("type Foo {}").isChain(3, 1).isValue(astTypeOf("Foo"))
+        tester.parse("type Foo {}").isChain(3, 1).isValue(astStructOf("Foo"))
         
         // Properties must be correctly parsed
         tester.parse("type Foo { mut val a: Bar }").isChain(8, 1)
-            .isValue(astTypeOf("Foo", props = listOf(astPropOf("a", type = "Bar", ass = Assignability.ASSIGNABLE))))
+            .isValue(astStructOf("Foo", props = listOf(astPropOf("a", type = "Bar", ass = Assignability.ASSIGNABLE))))
         tester.parse("type Foo { ref val a: Bar }").isChain(8, 1)
-            .isValue(astTypeOf("Foo", props = listOf(astPropOf("a", type = "Bar", ass = Assignability.REFERENCE))))
+            .isValue(astStructOf("Foo", props = listOf(astPropOf("a", type = "Bar", ass = Assignability.REFERENCE))))
         tester.parse("type Foo {     val a: Bar }").isChain(7, 1)
-            .isValue(astTypeOf("Foo", props = listOf(astPropOf("a", type = "Bar", ass = Assignability.CONSTANT))))
+            .isValue(astStructOf("Foo", props = listOf(astPropOf("a", type = "Bar", ass = Assignability.CONSTANT))))
         
         tester.parse("type Foo { val a: Bar }").isChain(7, 1)
-            .isValue(astTypeOf("Foo", props = listOf(astPropOf("a", type = "Bar", mut = Mutability.IMMUTABLE))))
+            .isValue(astStructOf("Foo", props = listOf(astPropOf("a", type = "Bar", mut = Mutability.IMMUTABLE))))
         tester.parse("type Foo { var a: Bar }").isChain(7, 1)
-            .isValue(astTypeOf("Foo", props = listOf(astPropOf("a", type = "Bar", mut = Mutability.MUTABLE))))
+            .isValue(astStructOf("Foo", props = listOf(astPropOf("a", type = "Bar", mut = Mutability.MUTABLE))))
         
         tester.parse("type Foo { exported  val a: Bar }").isChain(8, 1)
-            .isValue(astTypeOf("Foo", props = listOf(astPropOf("a", type = "Bar", vis = Visibility.EXPORTED))))
+            .isValue(astStructOf("Foo", props = listOf(astPropOf("a", type = "Bar", vis = Visibility.EXPORTED))))
         tester.parse("type Foo { public    val a: Bar }").isChain(8, 1)
-            .isValue(astTypeOf("Foo", props = listOf(astPropOf("a", type = "Bar", vis = Visibility.PUBLIC))))
+            .isValue(astStructOf("Foo", props = listOf(astPropOf("a", type = "Bar", vis = Visibility.PUBLIC))))
         tester.parse("type Foo { protected val a: Bar }").isChain(8, 1)
-            .isValue(astTypeOf("Foo", props = listOf(astPropOf("a", type = "Bar", vis = Visibility.PROTECTED))))
+            .isValue(astStructOf("Foo", props = listOf(astPropOf("a", type = "Bar", vis = Visibility.PROTECTED))))
         tester.parse("type Foo { private   val a: Bar }").isChain(8, 1)
-            .isValue(astTypeOf("Foo", props = listOf(astPropOf("a", type = "Bar", vis = Visibility.PRIVATE))))
+            .isValue(astStructOf("Foo", props = listOf(astPropOf("a", type = "Bar", vis = Visibility.PRIVATE))))
         tester.parse("type Foo {           val a: Bar }").isChain(7, 1)
-            .isValue(astTypeOf("Foo", props = listOf(astPropOf("a", type = "Bar", vis = Visibility.PRIVATE))))
+            .isValue(astStructOf("Foo", props = listOf(astPropOf("a", type = "Bar", vis = Visibility.PRIVATE))))
         
         tester.parse("type Foo { val a: Bar val b: Baz }").isChain(11, 1)
-            .isValue(astTypeOf("Foo", props = listOf(astPropOf("a", type = "Bar"), astPropOf("b", type = "Baz"))))
+            .isValue(astStructOf("Foo", props = listOf(astPropOf("a", type = "Bar"), astPropOf("b", type = "Baz"))))
         
         // Default values for properties must be supported
         tester.parse("type Foo { val a: Bar = 1 }").isChain(9, 1)
-            .isValue(astTypeOf("Foo", props = listOf(astPropOf("a", type = "Bar", value = 1))))
+            .isValue(astStructOf("Foo", props = listOf(astPropOf("a", type = "Bar", value = 1))))
         
         // Visibility must be correctly parsed
-        tester.parse("exported  type Foo {}").isChain(4, 1).isValue(astTypeOf("Foo", vis = Visibility.EXPORTED))
-        tester.parse("public    type Foo {}").isChain(4, 1).isValue(astTypeOf("Foo", vis = Visibility.PUBLIC))
-        tester.parse("protected type Foo {}").isChain(4, 1).isValue(astTypeOf("Foo", vis = Visibility.PROTECTED))
-        tester.parse("private   type Foo {}").isChain(4, 1).isValue(astTypeOf("Foo", vis = Visibility.PRIVATE))
-        tester.parse("          type Foo {}").isChain(3, 1).isValue(astTypeOf("Foo", vis = Visibility.PRIVATE))
+        tester.parse("exported  type Foo {}").isChain(4, 1).isValue(astStructOf("Foo", vis = Visibility.EXPORTED))
+        tester.parse("public    type Foo {}").isChain(4, 1).isValue(astStructOf("Foo", vis = Visibility.PUBLIC))
+        tester.parse("protected type Foo {}").isChain(4, 1).isValue(astStructOf("Foo", vis = Visibility.PROTECTED))
+        tester.parse("private   type Foo {}").isChain(4, 1).isValue(astStructOf("Foo", vis = Visibility.PRIVATE))
+        tester.parse("          type Foo {}").isChain(3, 1).isValue(astStructOf("Foo", vis = Visibility.PRIVATE))
     }
     
     @Test

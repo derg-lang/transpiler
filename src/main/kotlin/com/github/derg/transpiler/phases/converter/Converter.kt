@@ -82,7 +82,7 @@ internal fun AstSegment.toHir() = HirSegment(
     id = UUID.randomUUID(),
     name = "TODO - segment name",
     imports = imports.toSet(),
-    structs = definitions.filterIsInstance<AstType>().map { it.toHir() },
+    structs = definitions.filterIsInstance<AstStruct>().map { it.toHir() },
     concepts = emptyList(),
     constants = definitions.filterIsInstance<AstVariable>().map { it.toHirConstant() },
     functions = definitions.filterIsInstance<AstFunction>().map { it.toHir() },
@@ -91,7 +91,7 @@ internal fun AstSegment.toHir() = HirSegment(
 /**
  *
  */
-internal fun AstType.toHir() = HirStruct(
+internal fun AstStruct.toHir() = HirStruct(
     id = UUID.randomUUID(),
     name = name,
     visibility = visibility,
