@@ -254,8 +254,8 @@ class TestConverterExpression
         @Test
         fun `Given builtin types, when resolving, then correct outcome`()
         {
-            assertSuccess(1.thir, converter(AstInteger(BigInteger.ONE, Builtin.INT32_LIT.name)))
-            assertSuccess(2L.thir, converter(AstInteger(BigInteger.TWO, Builtin.INT64_LIT.name)))
+            assertSuccess(1.thir, converter(AstInteger(BigInteger.ONE, LIT_NAME_I32)))
+            assertSuccess(2L.thir, converter(AstInteger(BigInteger.TWO, LIT_NAME_I64)))
         }
         
         @Test
