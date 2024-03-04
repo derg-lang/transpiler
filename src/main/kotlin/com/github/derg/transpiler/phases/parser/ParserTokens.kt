@@ -3,7 +3,6 @@ package com.github.derg.transpiler.phases.parser
 import com.github.derg.transpiler.source.*
 import com.github.derg.transpiler.source.ast.*
 import com.github.derg.transpiler.source.lexeme.*
-import com.github.derg.transpiler.source.thir.*
 import com.github.derg.transpiler.utils.*
 
 /**
@@ -101,7 +100,7 @@ class ParserInteger : Parser<AstValue>
             return ParseOk.Finished.toSuccess()
         
         val number = token as? Numeric ?: return ParseError.UnexpectedToken(token).toFailure()
-        expression = AstInteger(number.value, number.type ?: Builtin.INT32_LIT.name)
+        expression = AstInteger(number.value, number.type ?: LIT_NAME_I32)
         return ParseOk.Complete.toSuccess()
     }
     
@@ -126,7 +125,7 @@ class ParserText : Parser<AstValue>
             return ParseOk.Finished.toSuccess()
         
         val string = token as? Textual ?: return ParseError.UnexpectedToken(token).toFailure()
-        expression = AstText(string.value, string.type ?: Builtin.STR_LIT.name)
+        expression = AstText(string.value, string.type ?: LIT_NAME_STR)
         return ParseOk.Complete.toSuccess()
     }
     

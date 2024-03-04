@@ -1,7 +1,6 @@
 package com.github.derg.transpiler.source.ast
 
 import com.github.derg.transpiler.source.*
-import com.github.derg.transpiler.source.thir.*
 import java.util.*
 
 /////////////////////
@@ -13,9 +12,9 @@ val Any.ast: AstValue
     {
         is AstValue -> this
         is Boolean  -> AstBool(this)
-        is Int      -> AstInteger(toBigInteger(), Builtin.INT32_LIT.name)
-        is Long     -> AstInteger(toBigInteger(), Builtin.INT64_LIT.name)
-        is String   -> AstText(this, Builtin.STR_LIT.name)
+        is Int      -> AstInteger(toBigInteger(), LIT_NAME_I32)
+        is Long     -> AstInteger(toBigInteger(), LIT_NAME_I64)
+        is String   -> AstText(this, LIT_NAME_STR)
         else        -> throw IllegalArgumentException("Value $this does not represent a valid ast value")
     }
 
