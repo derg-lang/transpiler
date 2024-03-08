@@ -60,9 +60,9 @@ fun hirFunOf(
 ) = HirFunction(
     id = UUID.randomUUID(),
     name = name,
-    visibility = Visibility.PRIVATE,
     value = value?.let { HirTypeStruct(it.name, emptyList(), Mutability.IMMUTABLE) },
     error = error?.let { HirTypeStruct(it.name, emptyList(), Mutability.IMMUTABLE) },
+    visibility = Visibility.PRIVATE,
     instructions = emptyList(),
     generics = emptyList(),
     variables = emptyList(),
@@ -76,8 +76,8 @@ fun hirLitOf(
 ) = HirLiteral(
     id = UUID.randomUUID(),
     name = name,
-    visibility = Visibility.PRIVATE,
     value = HirTypeStruct(value.name, emptyList(), Mutability.IMMUTABLE),
+    visibility = Visibility.PRIVATE,
     instructions = emptyList(),
     variables = emptyList(),
     parameter = param,
@@ -90,9 +90,9 @@ fun hirParamOf(
 ) = HirParameter(
     id = UUID.randomUUID(),
     name = name,
-    passability = Passability.IN,
     type = HirTypeStruct(type.name, emptyList(), Mutability.IMMUTABLE),
     value = value,
+    passability = Passability.IN,
 )
 
 fun hirVarOf(
@@ -102,7 +102,7 @@ fun hirVarOf(
 ) = HirVariable(
     id = UUID.randomUUID(),
     name = name,
-    assignability = Assignability.FINAL,
     type = type?.let { HirTypeStruct(it.name, emptyList(), Mutability.IMMUTABLE) },
     value = value.hir,
+    assignability = Assignability.FINAL,
 )
