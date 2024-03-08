@@ -78,9 +78,9 @@ data class HirConcept(
 data class HirFunction(
     override val id: UUID,
     override val name: String,
-    val visibility: Visibility,
     val value: HirType?,
     val error: HirType?,
+    val visibility: Visibility,
     val instructions: List<HirInstruction>,
     
     // Symbols present within the object
@@ -96,10 +96,10 @@ data class HirFunction(
 data class HirMethod(
     override val id: UUID,
     override val name: String,
-    val visibility: Visibility,
     val type: HirType,
     val value: HirType?,
     val error: HirType?,
+    val visibility: Visibility,
     val instructions: List<HirInstruction>,
     
     // Symbols present within the object
@@ -115,8 +115,8 @@ data class HirMethod(
 data class HirLiteral(
     override val id: UUID,
     override val name: String,
-    val visibility: Visibility,
     val value: HirType,
+    val visibility: Visibility,
     val instructions: List<HirInstruction>,
     
     // Symbols present within the object
@@ -164,9 +164,9 @@ data class HirStruct(
 data class HirConstant(
     override val id: UUID,
     override val name: String,
-    val visibility: Visibility,
     val type: HirType?,
     val value: HirValue,
+    val visibility: Visibility,
 ) : HirSymbol
 
 /**
@@ -175,10 +175,10 @@ data class HirConstant(
 data class HirField(
     override val id: UUID,
     override val name: String,
-    val visibility: Visibility,
-    val assignability: Assignability,
     val type: HirType,
     val value: HirValue?,
+    val visibility: Visibility,
+    val assignability: Assignability,
 ) : HirSymbol
 
 /**
@@ -199,9 +199,9 @@ data class HirGeneric(
 data class HirParameter(
     override val id: UUID,
     override val name: String,
-    val passability: Passability,
     val type: HirType,
     val value: HirValue?,
+    val passability: Passability,
 ) : HirSymbol
 
 /**
@@ -210,7 +210,7 @@ data class HirParameter(
 data class HirVariable(
     override val id: UUID,
     override val name: String,
-    val assignability: Assignability,
     val type: HirType?,
     val value: HirValue,
+    val assignability: Assignability,
 ) : HirSymbol

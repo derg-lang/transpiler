@@ -36,9 +36,9 @@ private fun AstType.toHir() = HirTypeStruct(
 internal fun AstVariable.toHirConstant() = HirConstant(
     id = UUID.randomUUID(),
     name = name,
-    visibility = visibility,
     type = type?.toHir(),
     value = value.toHir(),
+    visibility = visibility,
 )
 
 /**
@@ -47,9 +47,9 @@ internal fun AstVariable.toHirConstant() = HirConstant(
 internal fun AstFunction.toHir() = HirFunction(
     id = UUID.randomUUID(),
     name = name,
-    visibility = visibility,
     value = valueType?.toHir(),
     error = errorType?.toHir(),
+    visibility = visibility,
     instructions = statements.map { it.toHir() },
     generics = emptyList(),
     variables = statements.filterIsInstance<AstVariable>().map { it.toHirVariable() },
@@ -62,9 +62,9 @@ internal fun AstFunction.toHir() = HirFunction(
 internal fun AstParameter.toHir() = HirParameter(
     id = UUID.randomUUID(),
     name = name,
-    passability = passability,
     type = type.toHir(),
     value = value?.toHir(),
+    passability = passability,
 )
 
 /**
@@ -73,10 +73,10 @@ internal fun AstParameter.toHir() = HirParameter(
 internal fun AstProperty.toHir() = HirField(
     id = UUID.randomUUID(),
     name = name,
-    visibility = visibility,
-    assignability = assignability,
     type = type.toHir(),
     value = value?.toHir(),
+    visibility = visibility,
+    assignability = assignability,
 )
 
 /**
@@ -110,9 +110,9 @@ internal fun AstStruct.toHir() = HirStruct(
 internal fun AstVariable.toHirVariable() = HirVariable(
     id = UUID.randomUUID(),
     name = name,
-    assignability = assignability,
     type = type?.toHir(),
     value = value.toHir(),
+    assignability = assignability,
 )
 
 /**
