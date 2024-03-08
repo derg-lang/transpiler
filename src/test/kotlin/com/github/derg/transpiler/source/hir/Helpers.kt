@@ -9,9 +9,9 @@ val Any.hir: HirValue
     get() = when (this)
     {
         is Boolean -> HirBool(this)
-        is Int     -> HirInteger(toBigInteger(), LIT_NAME_I32)
-        is Long    -> HirInteger(toBigInteger(), LIT_NAME_I64)
-        is String  -> HirText(this, LIT_NAME_STR)
+        is Int     -> HirInteger(toBigInteger(), INT32_LIT_NAME)
+        is Long    -> HirInteger(toBigInteger(), INT64_LIT_NAME)
+        is String  -> HirText(this, STR_LIT_NAME)
         else       -> throw IllegalArgumentException("Value $this does not represent a valid hir value")
     }
 

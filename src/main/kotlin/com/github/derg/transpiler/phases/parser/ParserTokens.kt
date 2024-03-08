@@ -100,7 +100,7 @@ class ParserInteger : Parser<AstValue>
             return ParseOk.Finished.toSuccess()
         
         val number = token as? Numeric ?: return ParseError.UnexpectedToken(token).toFailure()
-        expression = AstInteger(number.value, number.type ?: LIT_NAME_I32)
+        expression = AstInteger(number.value, number.type ?: INT32_LIT_NAME)
         return ParseOk.Complete.toSuccess()
     }
     
@@ -125,7 +125,7 @@ class ParserText : Parser<AstValue>
             return ParseOk.Finished.toSuccess()
         
         val string = token as? Textual ?: return ParseError.UnexpectedToken(token).toFailure()
-        expression = AstText(string.value, string.type ?: LIT_NAME_STR)
+        expression = AstText(string.value, string.type ?: STR_LIT_NAME)
         return ParseOk.Complete.toSuccess()
     }
     

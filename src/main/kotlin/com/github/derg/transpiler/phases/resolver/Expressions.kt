@@ -124,9 +124,9 @@ internal class ConverterExpression(private val symbols: ThirSymbolTable)
     private fun parse(value: Number, literal: String): Result<ThirValue, ResolveError>
     {
         // TODO: Fail operation if number is too large
-        if (literal == LIT_NAME_I32)
+        if (literal == INT32_LIT_NAME)
             return ThirInt32Const(value.toInt()).toSuccess()
-        if (literal == LIT_NAME_I64)
+        if (literal == INT64_LIT_NAME)
             return ThirInt64Const(value.toLong()).toSuccess()
         
         // TODO: Support custom literals
@@ -139,7 +139,7 @@ internal class ConverterExpression(private val symbols: ThirSymbolTable)
     private fun parse(value: String, literal: String): Result<ThirValue, ResolveError>
     {
         // TODO: Fail operation if string is invalid
-        if (literal == LIT_NAME_STR)
+        if (literal == STR_LIT_NAME)
             TODO("not implemented")
         
         // TODO: Support custom literals

@@ -22,9 +22,9 @@ object Builtin
      * value, where a value would normally be expected. This is commonly used to model functions which has no return
      * value or error, and to capture errors where an expression is used as statements.
      */
-    val VOID = registerType(TYPE_VOID)
+    val VOID = registerType(VOID_TYPE_NAME)
     
-    val BOOL = registerType(TYPE_BOOL)
+    val BOOL = registerType(BOOL_TYPE_NAME)
     val BOOL_AND = registerInfixOp(Symbol.AND.symbol, BOOL, BOOL, null)
     val BOOL_EQ = registerInfixOp(Symbol.EQUAL.symbol, BOOL, BOOL, null)
     val BOOL_NE = registerInfixOp(Symbol.NOT_EQUAL.symbol, BOOL, BOOL, null)
@@ -32,8 +32,8 @@ object Builtin
     val BOOL_OR = registerInfixOp(Symbol.OR.symbol, BOOL, BOOL, null)
     val BOOL_XOR = registerInfixOp(Symbol.XOR.symbol, BOOL, BOOL, null)
     
-    val INT32 = registerType(TYPE_INT32)
-    val INT32_LIT = registerLiteral(LIT_NAME_I32, INT32)
+    val INT32 = registerType(INT32_TYPE_NAME)
+    val INT32_LIT = registerLiteral(INT32_LIT_NAME, INT32)
     val INT32_EQ = registerInfixOp(Symbol.EQUAL.symbol, INT32, BOOL, null)
     val INT32_GE = registerInfixOp(Symbol.GREATER_EQUAL.symbol, INT32, BOOL, null)
     val INT32_GT = registerInfixOp(Symbol.GREATER.symbol, INT32, BOOL, null)
@@ -48,8 +48,8 @@ object Builtin
     val INT32_POS = registerPrefixOp(Symbol.PLUS.symbol, INT32, INT32, VOID)
     val INT32_SUB = registerInfixOp(Symbol.MINUS.symbol, INT32, INT32, VOID)
     
-    val INT64 = registerType(TYPE_INT64)
-    val INT64_LIT = registerLiteral(LIT_NAME_I64, INT64)
+    val INT64 = registerType(INT64_TYPE_NAME)
+    val INT64_LIT = registerLiteral(INT64_LIT_NAME, INT64)
     val INT64_EQ = registerInfixOp(Symbol.EQUAL.symbol, INT64, BOOL, null)
     val INT64_GE = registerInfixOp(Symbol.GREATER_EQUAL.symbol, INT64, BOOL, null)
     val INT64_GT = registerInfixOp(Symbol.GREATER.symbol, INT64, BOOL, null)
@@ -65,8 +65,8 @@ object Builtin
     val INT64_SUB = registerInfixOp(Symbol.MINUS.symbol, INT64, INT64, VOID)
     
     // TODO: Support strings somehow
-    val STR = registerType(TYPE_STR)
-    val STR_LIT = registerLiteral(LIT_NAME_STR, VOID)
+    val STR = registerType(STR_TYPE_NAME)
+    val STR_LIT = registerLiteral(STR_LIT_NAME, VOID)
 }
 
 /**

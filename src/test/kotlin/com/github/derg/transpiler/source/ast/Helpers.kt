@@ -12,9 +12,9 @@ val Any.ast: AstValue
     {
         is AstValue -> this
         is Boolean  -> AstBool(this)
-        is Int      -> AstInteger(toBigInteger(), LIT_NAME_I32)
-        is Long     -> AstInteger(toBigInteger(), LIT_NAME_I64)
-        is String   -> AstText(this, LIT_NAME_STR)
+        is Int      -> AstInteger(toBigInteger(), INT32_LIT_NAME)
+        is Long     -> AstInteger(toBigInteger(), INT64_LIT_NAME)
+        is String   -> AstText(this, STR_LIT_NAME)
         else        -> throw IllegalArgumentException("Value $this does not represent a valid ast value")
     }
 
