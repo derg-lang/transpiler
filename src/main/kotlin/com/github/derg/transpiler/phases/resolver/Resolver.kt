@@ -1,16 +1,38 @@
 package com.github.derg.transpiler.phases.resolver
 
-import com.github.derg.transpiler.source.ast.*
+import com.github.derg.transpiler.source.hir.*
 import com.github.derg.transpiler.source.thir.*
 import com.github.derg.transpiler.utils.*
 
 /**
- * Resolves all provided [segments] into a single package with the given [name]. The resolver phase ensures that all
- * symbols are properly linked together, converting all identifiers into an unambiguous id representing the symbol
- * itself. This phase ensures the source code is valid from a type safety perspective.
+ * Converts the input [hirPackage] into a typed variable. All symbols found within the package are stored in the symbol
+ * table. All symbol references will be resolved as well, ensuring that the program is well-structured. Note that the
+ * symbols are not type-checked by this point.
  */
-fun resolve(name: String, segments: List<AstSegment>): ThirPackage =
-    Resolver(Builtin.SYMBOLS).resolve(name, segments).valueOr { throw IllegalStateException("Failed resolving: $it") }
+fun resolve(hirPackage: HirPackage): Result<SymbolTable, ResolveError>
+{
+    val engine = ResolutionEngine()
+    val outer = Builtin.GLOBAL_SCOPE
+    val inner = Scope(outer)
+    
+    // TODO: Obviously find a better way to access the contents of the package. The engine should take care of the heavy
+    //       lifting, going through the modules and segments. The order in which modules are handled does matter - we
+    //       must ensure that modules which depends on others, are resolved last.
+    val hirModule = hirPackage.modules.single()
+    val hirSegment = hirModule.segments.single()
+    
+    hirSegment.structs.forEach { inner.register(it) }
+    hirSegment.functions.forEach { inner.register(it) }
+    
+    // Make sure that all symbols present within the package are handled appropriately.
+    engine.prepare(outer).valueOr { return it.toFailure() }
+    engine.prepare(inner).valueOr { return it.toFailure() }
+    
+    outer.symbols.mapUntilError { engine.resolve(outer, it) }.onFailure { return it.toFailure() }
+    inner.symbols.mapUntilError { engine.resolve(inner, it) }.onFailure { return it.toFailure() }
+    
+    return engine.symbols.toSuccess()
+}
 
 /**
  * During the resolving phase, various types of errors may be encountered. These errors are typically related to type
@@ -32,7 +54,7 @@ sealed interface ResolveError
     /**
      * The type with the given [name] could not be found in the current or any outer scope.
      */
-    data class UnknownType(val name: String) : ResolveError
+    data class UnknownStruct(val name: String) : ResolveError
     
     /**
      * The variable with the given [name] could not be found in the current or any outer scope.
@@ -40,96 +62,169 @@ sealed interface ResolveError
     data class UnknownVariable(val name: String) : ResolveError
     
     /**
-     * During type resolution, a value was resolved to the [actual] type, but the value was required to resolve to the
-     * [expected] type instead. This error happens when a function parameter is declared with a default
-     */
-    data class MismatchedParameterType(val expected: ThirId, val actual: ThirId) : ResolveError
-    
-    /**
-     * During type resolution, a value was resolved to the [actual] type, but the value was required to resolve to the
-     * [expected] type instead.
-     */
-    data class MismatchedPredicateType(val expected: ThirId, val actual: ThirId) : ResolveError
-    
-    /**
-     * During type resolution, a return type was resolved to the [actual] type, but the return type was required to
-     * resolve to the [expected] type instead.
-     */
-    data class MismatchedReturnType(val expected: ThirId, val actual: ThirId) : ResolveError
-    
-    /**
-     * During type resolution, a value was resolved to the [actual] type, but the value was required to resolve to the
-     * [expected] type instead.
-     */
-    data class MismatchedVariableType(val expected: ThirId, val actual: ThirId) : ResolveError
-    
-    /**
-     * During type resolution, a value was resolved to the [actual] type, but the value was required to resolve to the
-     * [expected] type instead.
-     */
-    data class MismatchedEvaluationType(val expected: ThirId, val actual: ThirId) : ResolveError
-    
-    /**
-     * The function call to [name] with the given [arguments] resolved to multiple candidate functions, where none of
+     * The function call to [name] with the given [parameters] resolved to multiple candidate functions, where none of
      * the candidates could be unambiguously selected.
      */
-    data class ArgumentAmbiguous(val name: String, val arguments: List<ThirArgument>) : ResolveError
+    data class AmbiguousFunction(val name: String, val parameters: List<HirNamedParameter>) : ResolveError
+    
+    /**
+     * The function call to [name] with the given [parameter] resolved to multiple candidate literals, where none of
+     * the candidates could be unambiguously selected.
+     */
+    data class AmbiguousLiteral(val name: String, val parameter: HirValue) : ResolveError
+    
+    /**
+     * The usage of struct with the given [name] is ambiguous; the name resolved to multiple candidates which cannot be
+     * disambiguated.
+     */
+    data class AmbiguousStruct(val name: String) : ResolveError
+    
+    /**
+     * The variable assignment to [name] with the given [value] resolved to multiple candidate variables.
+     */
+    data class AmbiguousVariable(val name: String, val value: HirValue) : ResolveError
     
     /**
      * No function candidates were found for the function with the given [name], when invoked with the given
-     * [arguments].
+     * [parameters].
      */
-    data class ArgumentMismatch(val name: String, val arguments: List<ThirArgument>) : ResolveError
+    data class ArgumentMismatch(val name: String, val parameters: List<HirNamedParameter>) : ResolveError
     
     /**
-     * The function with the given [name] was attempted invoked with the [arguments], where an unnamed argument was
-     * provided after any named argument.
+     * The function call was invoked in such a way, that a parameter without name was later in the list of parameters
+     * than a named parameter.
      */
-    data class ArgumentMisnamed(val name: String, val arguments: List<ThirArgument>) : ResolveError
+    data class ArgumentMisnamed(val name: String, val parameters: List<HirNamedParameter>) : ResolveError
     
     /**
-     * The variable must be defined with a value which does not contain any error value, but when defined its assigned
-     * [value] is evaluated to an error value.
+     * The definition for the variable with the given [name] resolved to no type. The variable was defined without a
+     * type, and the [value] resolved to no valid type.
      */
-    data class VariableWithError(val value: ThirValue) : ResolveError
+    data class TypeMissing(val name: String, val value: HirValue) : ResolveError
+    
+    /**
+     * The literal with the given [name] has a parameter which is not a builtin type.
+     */
+    data class InvalidLiteralParam(val name: String) : ResolveError
+    
+    /**
+     * Used to represent an error which is not yet defined.
+     */
+    data object Placeholder : ResolveError
 }
 
 /**
- * TODO: Highly in-progress and untested code, but it will do for now! Make sure to re-visit this part of the codebase
- *       at some point not too far into the future and actually clean up whatever is going on in here.
+ * The resolution engine is responsible for resolving all symbols in such a manner that type-checking is performed in a
+ * reliable and efficient manner. The engine determines the order in which all symbols must be resolved, providing the
+ * link between symbols and the final symbol table as well.
  */
-class Resolver(private val symbols: ThirSymbolTable)
+internal class ResolutionEngine
 {
+    val symbols = SymbolTable()
+    val types = TypeTable()
+    
     /**
-     * Constructs a package with the given [name] from the collection of [segments]. Every segment may refer to zero or
-     * one module; all modules will be compiled in the appropriate order.
+     * Initializes the engine with the information present within the given [scope]. Symbols which are defined within
+     * the scope are
      */
-    fun resolve(name: String, segments: List<AstSegment>): Result<ThirPackage, ResolveError>
+    fun prepare(scope: Scope): Result<Unit, ResolveError>
     {
-        // May now proceed with figuring out how to structure the package!
-        val `package` = ThirPackage(ThirId.Static(), name, ThirSymbolTable(symbols))
-        val groups = segments.groupBy { it.module }
+        val preparer = PreparerSymbol(types, scope)
+        return scope.symbols.mapUntilError { preparer.prepare(it) }.mapValue {}
+    }
+    
+    fun resolve(scope: Scope, node: HirSymbol): Result<ThirSymbol, ResolveError> =
+        ResolverSymbol(symbols, types, scope).resolve(node)
+    
+    fun resolve(scope: Scope, node: HirValue): Result<ThirValue, ResolveError> =
+        ResolverValue(types, scope).resolve(node)
+    
+    fun resolve(scope: Scope, node: HirInstruction): Result<ThirInstruction, ResolveError> =
+        ResolverInstruction(types, scope).resolve(node)
+}
+
+/**
+ * // TODO: Write me.
+ *
+ * Note that type-checking is not performed at this phase. We only make sure that the type information is generates for
+ * all symbols which need such information.
+ */
+private class PreparerSymbol(private val table: TypeTable, private val scope: Scope)
+{
+    private val types = ResolverType(scope)
+    private val values = ResolverValue(table, scope)
+    
+    /**
+     * Prepares the type resolution for the given [symbol], including all syb-symbols included as a part of it. The
+     * preparation phase ensures that it is possible to look up the type of symbols, without requiring the entire symbol
+     * to be fully defined.
+     */
+    fun prepare(symbol: HirSymbol): Result<Unit, ResolveError> = when (symbol)
+    {
+        is HirConcept   -> TODO()
+        is HirConstant  -> TODO()
+        is HirField     -> handle(symbol)
+        is HirFunction  -> handle(symbol)
+        is HirGeneric   -> TODO()
+        is HirLiteral   -> handle(symbol)
+        is HirMethod    -> TODO()
+        is HirModule    -> TODO()
+        is HirPackage   -> TODO()
+        is HirParameter -> handle(symbol)
+        is HirSegment   -> TODO()
+        is HirStruct    -> handle(symbol)
+        is HirVariable  -> handle(symbol)
+    }
+    
+    private fun handle(symbol: HirField): Result<Unit, ResolveError>
+    {
+        table.fields[symbol.id] = types.resolve(symbol.type).valueOr { return it.toFailure() }
         
-        // The order in which modules are resolved depends on their dependency graph. Modules cannot be permitted to
-        // have circular dependencies, as they may import symbols from each other. In order to resolve a module, all its
-        // dependencies must be known ahead of time, forcing a specific evaluation order.
-        // TODO: Implement me!
-        // TODO: Introduce the names of all external dependencies when the time is right.
-        // TODO: Should all segments be ordered in any particular order?
+        return Unit.toSuccess()
+    }
+    
+    private fun handle(symbol: HirFunction): Result<Unit, ResolveError>
+    {
+        table.functions[symbol.id] = types.resolve(symbol.type).valueOr { return it.toFailure() }
+//        symbol.generics.mapUntilError { prepare(it) }.valueOr { return it.toFailure() }
+//        symbol.variables.mapUntilError { prepare(it) }.valueOr { return it.toFailure() }
+        symbol.parameters.mapUntilError { prepare(it) }.valueOr { return it.toFailure() }
         
-        // With all modules sorted in the appropriate order, they may be processed in that very same ordering
-        for ((moduleName, groupedSegments) in groups.entries)
-        {
-            // TODO: Sort all instructions in the order in which they can be initialized. How can we determine in which
-            //       order all instructions should be executed? Try to execute them and just try to find an ordering
-            //       that "just works"? Cannot allow side-effect functions to be invoked in that case.
-            // TODO: Figure out a suitable default name for modules
-            val symbols = ThirSymbolTable(`package`.symbols)
-            val definitions = groupedSegments.flatMap { it.definitions }
-            
-            ConverterDefinitions(symbols)(definitions).valueOr { return it.toFailure() }
-            ThirModule(ThirId.Static(), moduleName ?: "__main", symbols).also { `package`.symbols.register(it) }
-        }
-        return `package`.toSuccess()
+        return Unit.toSuccess()
+    }
+    
+    private fun handle(symbol: HirLiteral): Result<Unit, ResolveError>
+    {
+        table.literals[symbol.id] = types.resolve(symbol.type).valueOr { return it.toFailure() }
+//        symbol.variables.mapUntilError { prepare(it) }.valueOr { return it.toFailure() }
+        prepare(symbol.parameter).valueOr { return it.toFailure() }
+        
+        return Unit.toSuccess()
+    }
+    
+    private fun handle(symbol: HirParameter): Result<Unit, ResolveError>
+    {
+        table.parameters[symbol.id] = types.resolve(symbol.type).valueOr { return it.toFailure() }
+        
+        return Unit.toSuccess()
+    }
+    
+    private fun handle(symbol: HirStruct): Result<Unit, ResolveError>
+    {
+        symbol.fields.mapUntilError { prepare(it) }.valueOr { return it.toFailure() }
+//        symbol.methods.mapUntilError { prepare(it) }.valueOr { return it.toFailure() }
+//        symbol.generics.mapUntilError { prepare(it) }.valueOr { return it.toFailure() }
+        
+        return Unit.toSuccess()
+    }
+    
+    private fun handle(symbol: HirVariable): Result<Unit, ResolveError>
+    {
+        val type = symbol.type?.let { types.resolve(it) }?.valueOr { return it.toFailure() }
+        val value = values.resolve(symbol.value).valueOr { return it.toFailure() }
+        
+        table.variables[symbol.id] = type ?: value.value ?: return ResolveError.TypeMissing(symbol.name, symbol.value).toFailure()
+        
+        return Unit.toSuccess()
     }
 }

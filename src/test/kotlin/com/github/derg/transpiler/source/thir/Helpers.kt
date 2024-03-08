@@ -10,19 +10,16 @@ import java.util.*
 val Any.thir: ThirValue
     get() = when (this)
     {
-        is Boolean -> ThirBoolConst(this)
-        is Int     -> ThirInt32Const(this)
-        is Long    -> ThirInt64Const(this)
-        else       -> throw IllegalArgumentException("Value $this does not represent a valid thir value")
+        is ThirValue -> this
+        is Boolean   -> ThirBoolConst(this)
+        is Int       -> ThirInt32Const(this)
+        is Long      -> ThirInt64Const(this)
+        else         -> throw IllegalArgumentException("Value $this does not represent a valid thir value")
     }
 
 ////////////////////////
 // Expression helpers //
 ////////////////////////
-
-val Boolean.thirNot get() = ThirBoolNot(thir)
-val Int.thirMinus get() = ThirInt32Neg(thir)
-val Long.thirMinus get() = ThirInt64Neg(thir)
 
 infix fun Boolean.thirEq(that: Boolean) = ThirBoolEq(this.thir, that.thir)
 infix fun Int.thirEq(that: Int) = ThirInt32Eq(this.thir, that.thir)
@@ -52,12 +49,14 @@ infix fun Long.thirDiv(that: Long) = ThirInt64Div(this.thir, that.thir)
 infix fun Int.thirMod(that: Int) = ThirInt32Mod(this.thir, that.thir)
 infix fun Long.thirMod(that: Long) = ThirInt64Mod(this.thir, that.thir)
 
-val ThirVariable.thirRead: ThirValue get() = ThirVariableRead(type, id)
-val ThirParameter.thirRead: ThirValue get() = ThirVariableRead(type, id)
-fun ThirFunction.thirCall(vararg arguments: Any) = ThirFunctionCall(valType, errType, id, arguments.map(Any::thirArg))
+val Boolean.thirNot get() = ThirBoolNot(thir)
+val Int.thirMinus get() = ThirInt32Neg(thir)
+val Long.thirMinus get() = ThirInt64Neg(thir)
 
-val Any.thirArg: ThirArgument
-    get() = if (this is Pair<*, *>) ThirArgument(first as String, (second as Any).thir) else ThirArgument(null, thir)
+val ThirVariable.thirLoad: ThirValue get() = ThirLoad(type, id, emptyList())
+val ThirParameter.thirLoad: ThirValue get() = ThirLoad(type, id, emptyList())
+val ThirFunction.thirLoad: ThirValue get() = ThirLoad(type, id, emptyList())
+fun ThirFunction.thirCall(vararg parameters: Any) = ThirCall(type.value, type.error, thirLoad, parameters.map { it.thir })
 
 ///////////////////////
 // Statement helpers //
@@ -65,87 +64,85 @@ val Any.thirArg: ThirArgument
 
 infix fun ThirVariable.thirAssign(that: Any) = ThirAssign(id, that.thir)
 
+val ThirValue.thirEval get() = ThirEvaluate(this)
 val Any.thirReturnError get() = ThirReturnError(thir)
 val Any.thirReturnValue get() = ThirReturnValue(thir)
-val ThirValue.thirEval get() = ThirEvaluate(this)
+
+fun Any.thirBranch(
+    success: List<ThirInstruction> = emptyList(),
+    failure: List<ThirInstruction> = emptyList(),
+) = ThirBranch(thir, success, failure)
 
 ////////////////////
 // Symbol helpers //
 ////////////////////
 
-/**
- * Generates a function from the provided input parameters.
- */
-fun thirFunOf(
+fun thirFieldOf(
     name: String = UUID.randomUUID().toString(),
-    valType: ThirType = Builtin.VOID,
-    errType: ThirType = Builtin.VOID,
-    params: List<ThirParameter> = emptyList(),
-) = ThirFunction(
-    id = ThirId.Static(),
+    type: ThirType? = null,
+    value: ThirValue? = null,
+) = ThirField(
+    id = UUID.randomUUID(),
     name = name,
-    valType = ThirId.Resolvable().apply { resolve(valType.id) },
-    errType = ThirId.Resolvable().apply { resolve(errType.id) },
-    params = params,
+    type = type ?: value?.value ?: throw IllegalArgumentException("Either type or value must be specified"),
+    value = value,
     visibility = Visibility.PRIVATE,
-    scope = ThirScope(ThirSymbolTable()),
+    assignability = Assignability.FINAL,
 )
 
-/**
- * Generates a parameter from the provided input parameters.
- */
-fun thirParOf(
-    type: ThirType,
+fun thirFunOf(
     name: String = UUID.randomUUID().toString(),
-    def: ThirValue? = null,
-) = ThirParameter(
-    id = ThirId.Static(),
+    value: ThirType? = null,
+    error: ThirType? = null,
+    params: List<ThirParameter> = emptyList(),
+) = ThirFunction(
+    id = UUID.randomUUID(),
     name = name,
-    type = ThirId.Resolvable().apply { resolve(type.id) },
-    defaultValue = def,
+    type = ThirTypeFunction(
+        value = value,
+        error = error,
+        parameters = params.map { ThirTypedParameter(it.name, it.type) },
+    ),
+    visibility = Visibility.PRIVATE,
+    instructions = emptyList(),
+    genericIds = emptySet(),
+    variableIds = emptySet(),
+    parameterIds = params.map { it.id }.toSet(),
+)
+
+fun thirParamOf(
+    name: String = UUID.randomUUID().toString(),
+    type: ThirType? = null,
+    value: ThirValue? = null,
+) = ThirParameter(
+    id = UUID.randomUUID(),
+    name = name,
+    type = type ?: value?.value ?: throw IllegalArgumentException("Either type or value must be specified"),
+    value = value,
     passability = Passability.IN,
 )
 
-/**
- * Generates a type from the provided input parameters.
- */
-fun thirTypeOf(
+fun thirStructOf(
     name: String = UUID.randomUUID().toString(),
-    properties: List<ThirProperty> = listOf(),
-) = ThirType(
-    id = ThirId.Static(),
+    fields: Set<UUID> = emptySet(),
+    methods: Set<UUID> = emptySet(),
+    generics: Set<UUID> = emptySet(),
+) = ThirStruct(
+    id = UUID.randomUUID(),
     name = name,
     visibility = Visibility.PRIVATE,
-    properties = properties,
-    scope = ThirScope(ThirSymbolTable()),
+    fieldIds = fields,
+    methodIds = methods,
+    genericIds = generics,
 )
 
-/**
- * Generates type property definition from the provided input parameters.
- */
-fun thirPropOf(
-    type: ThirType,
-    name: String = UUID.randomUUID().toString(),
-    vis: Visibility = Visibility.PRIVATE,
-    ass: Assignability = Assignability.FINAL,
-) = ThirProperty(
-    id = ThirId.Static(),
-    type = ThirId.Resolvable().apply { resolve(type.id) },
-    name = name,
-    visibility = vis,
-    assignability = ass,
-)
-
-/**
- * Generates a variable from the provided input parameters.
- */
 fun thirVarOf(
-    type: ThirType,
     name: String = UUID.randomUUID().toString(),
+    type: ThirType? = null,
+    value: ThirValue? = null,
 ) = ThirVariable(
-    id = ThirId.Static(),
+    id = UUID.randomUUID(),
     name = name,
-    type = ThirId.Resolvable().apply { resolve(type.id) },
-    visibility = Visibility.PRIVATE,
+    type = type ?: value?.value ?: throw IllegalArgumentException("Either type or value must be specified"),
     assignability = Assignability.FINAL,
 )

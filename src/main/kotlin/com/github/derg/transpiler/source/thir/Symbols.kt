@@ -1,6 +1,7 @@
 package com.github.derg.transpiler.source.thir
 
 import com.github.derg.transpiler.source.*
+import java.util.*
 
 /**
  * Objects which may be identified in source code are known as symbols. The symbols are typically located within a scope
@@ -8,9 +9,71 @@ import com.github.derg.transpiler.source.*
  */
 sealed interface ThirSymbol
 {
-    val id: ThirId.Static
+    val id: UUID
     val name: String
 }
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Layout
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+/**
+ * The collection of a logical group of modules is known as a package, which consists of any number of source files
+ * joined together in an arbitrary manner. The modules within the package are permitted circular dependencies, under the
+ * condition that all symbols may be resolved in an unambiguous manner.
+ */
+data class ThirPackage(
+    override val id: UUID,
+    override val name: String,
+    
+    // Symbols present within the object
+    val modulesIds: Set<UUID>,
+) : ThirSymbol
+
+/**
+ * The module represents a
+ */
+data class ThirModule(
+    override val id: UUID,
+    override val name: String,
+    
+    // Symbols present within the object
+    val segmentIds: Set<UUID>,
+) : ThirSymbol
+
+/**
+ * The segment represents a collection of symbols which are logically grouped into a cohesive unit. Every segment may
+ * contain any number of functions, variables, types, and so on. Segments are not independent of each other, but have
+ * their own scope.
+ */
+data class ThirSegment(
+    override val id: UUID,
+    override val name: String,
+    
+    // Symbols present within the object
+    val structIds: Set<UUID>,
+    val conceptIds: Set<UUID>,
+    val constantIds: Set<UUID>,
+    val functionIds: Set<UUID>,
+) : ThirSymbol
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Types
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+/**
+ * Concepts represents a contract a type must satisfy. It does not provide any functionality or data.
+ */
+data class ThirConcept(
+    override val id: UUID,
+    override val name: String,
+    val visibility: Visibility,
+    
+    // Symbols present within the object
+    val fieldIds: Set<UUID>,
+    val genericIds: Set<UUID>,
+    val functionIds: Set<UUID>,
+) : ThirSymbol
 
 /**
  * Executable code is found within functions, which form a smaller executable part of the program. Functions may take
@@ -18,13 +81,16 @@ sealed interface ThirSymbol
  * and error.
  */
 data class ThirFunction(
-    override val id: ThirId.Static,
+    override val id: UUID,
     override val name: String,
-    val valType: ThirId.Resolvable,
-    val errType: ThirId.Resolvable,
-    val params: List<ThirParameter>,
+    val type: ThirTypeFunction,
     val visibility: Visibility,
-    val scope: ThirScope,
+    val instructions: List<ThirInstruction>,
+    
+    // Symbols present within the object
+    val genericIds: Set<UUID>,
+    val variableIds: Set<UUID>,
+    val parameterIds: Set<UUID>,
 ) : ThirSymbol
 
 /**
@@ -34,31 +100,78 @@ data class ThirFunction(
  * predefined set of legal types.
  */
 data class ThirLiteral(
-    override val id: ThirId.Static,
+    override val id: UUID,
     override val name: String,
-    val type: ThirId,
+    val type: ThirTypeLiteral,
+    val visibility: Visibility,
+    val instructions: List<ThirInstruction>,
+    
+    // Symbols present within the object
+    val variableIds: Set<UUID>,
+    val parameterId: UUID,
+) : ThirSymbol
+
+/**
+ * TODO: Write me
+ */
+// TODO: Add something which describes the "self" parameter, const-correctness, and such.
+data class ThirMethod(
+    override val id: UUID,
+    override val name: String,
+    val type: ThirTypeFunction,
+    val visibility: Visibility,
+    val instructions: List<ThirInstruction>,
+    
+    // Symbols present within the object
+    val genericIds: Set<UUID>,
+    val variableIds: Set<UUID>,
+    val parameterIds: Set<UUID>,
+) : ThirSymbol
+
+/**
+ * All data within a program must be represented as a type. Every type requires some amount of physical space in memory,
+ * which is used to allocate instances of the type on the heap or the stack. Types may be instantiated as variables or
+ * parameters, which may be accessed or modified as needed.
+ */
+data class ThirStruct(
+    override val id: UUID,
+    override val name: String,
+    val visibility: Visibility,
+    
+    // Symbols present within the object
+    val fieldIds: Set<UUID>,
+    val methodIds: Set<UUID>,
+    val genericIds: Set<UUID>,
+) : ThirSymbol
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Values
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+/**
+ * Constants are values which do not exist on either the stack, nor the heap. They are compile-time values, which will
+ * never mutate nor change. They cannot be re-assigned or modified in any way, shape, or form. They can always be
+ * inlined into code by the compiler.
+ */
+data class ThirConstant(
+    override val id: UUID,
+    override val name: String,
+    val type: ThirType,
+    val value: ThirValue,
     val visibility: Visibility,
 ) : ThirSymbol
 
 /**
- * The module represents a collection of symbols which are logically grouped into a cohesive unit. Every module should
- * contain symbols which together form a unit within the software.
+ * Properties holds values within a data structure of various types. Properties may hold aa variety of different types
+ * of data, such as raw values, references to other variables or functions, locations in memory, and so on.
  */
-data class ThirModule(
-    override val id: ThirId.Static,
+data class ThirField(
+    override val id: UUID,
     override val name: String,
-    val symbols: ThirSymbolTable,
-) : ThirSymbol
-
-/**
- * The collection of a logical group of modules is known as a package, which consists of any number of source files
- * joined together in an arbitrary manner. The modules within the package are permitted circular dependencies, under the
- * condition that all symbols may be resolved in an unambiguous manner.
- */
-data class ThirPackage(
-    override val id: ThirId.Static,
-    override val name: String,
-    val symbols: ThirSymbolTable,
+    val type: ThirType,
+    val value: ThirValue?,
+    val visibility: Visibility,
+    val assignability: Assignability,
 ) : ThirSymbol
 
 /**
@@ -67,36 +180,11 @@ data class ThirPackage(
  * are rather always located on the stack.
  */
 data class ThirParameter(
-    override val id: ThirId.Static,
+    override val id: UUID,
     override val name: String,
-    val type: ThirId.Resolvable,
+    val type: ThirType,
+    val value: ThirValue?,
     val passability: Passability,
-    val defaultValue: ThirValue?,
-) : ThirSymbol
-
-/**
- * Properties holds values within a data structure of various types. Properties may hold aa variety of different types
- * of data, such as raw values, references to other variables or functions, locations in memory, and so on.
- */
-data class ThirProperty(
-    override val id: ThirId.Static,
-    override val name: String,
-    val type: ThirId.Resolvable,
-    val visibility: Visibility,
-    val assignability: Assignability,
-) : ThirSymbol
-
-/**
- * All data within a program must be represented as a type. Every type requires some amount of physical space in memory,
- * which is used to allocate instances of the type on the heap or the stack. Types may be instantiated as variables or
- * parameters, which may be accessed or modified as needed.
- */
-data class ThirType(
-    override val id: ThirId.Static,
-    override val name: String,
-    val visibility: Visibility,
-    val properties: List<ThirProperty>,
-    val scope: ThirScope,
 ) : ThirSymbol
 
 /**
@@ -105,40 +193,8 @@ data class ThirType(
  * may be located either on the stack, or in the heap.
  */
 data class ThirVariable(
-    override val id: ThirId.Static,
+    override val id: UUID,
     override val name: String,
-    val type: ThirId.Resolvable,
-    val visibility: Visibility,
+    val type: ThirType,
     val assignability: Assignability,
 ) : ThirSymbol
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// Not-quite-symbols-but-close-enough
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-/**
- * Represents an argument passed into a function call. The argument may be provided with a [name], although it will
- * always be given a [value].
- */
-data class ThirArgument(val name: String?, val value: ThirValue)
-
-/**
- * Scopes defines a region of codebase independent of other scopes at the same depth. Scopes may inherit all named
- * objects from parent scopes; the scope may read all symbols defined in the [symbols] table. The scope contains a set
- * of executable [instructions].
- *
- * @param parent The symbol table which originates from the outer scope.
- */
-class ThirScope(parent: ThirSymbolTable)
-{
-    val symbols = ThirSymbolTable(parent)
-    val instructions = mutableListOf<ThirInstruction>()
-    
-    override fun toString(): String = "{instructions=$instructions, symbols=$symbols}"
-    override fun hashCode(): Int = instructions.hashCode()
-    override fun equals(other: Any?): Boolean = when (other)
-    {
-        is ThirScope -> instructions == other.instructions && symbols == other.symbols
-        else         -> false
-    }
-}
