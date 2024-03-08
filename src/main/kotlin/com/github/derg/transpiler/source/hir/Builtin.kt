@@ -22,9 +22,9 @@ object Builtin
      * value, where a value would normally be expected. This is commonly used to model functions which has no return
      * value or error, and to capture errors where an expression is used as statements.
      */
-    val VOID = registerType(VOID_TYPE_NAME)
+    val VOID = registerStruct(VOID_TYPE_NAME)
     
-    val BOOL = registerType(BOOL_TYPE_NAME)
+    val BOOL = registerStruct(BOOL_TYPE_NAME)
     val BOOL_AND = registerInfixOp(Symbol.AND, BOOL, BOOL, null)
     val BOOL_EQ = registerInfixOp(Symbol.EQUAL, BOOL, BOOL, null)
     val BOOL_NE = registerInfixOp(Symbol.NOT_EQUAL, BOOL, BOOL, null)
@@ -32,7 +32,7 @@ object Builtin
     val BOOL_OR = registerInfixOp(Symbol.OR, BOOL, BOOL, null)
     val BOOL_XOR = registerInfixOp(Symbol.XOR, BOOL, BOOL, null)
     
-    val INT32 = registerType(INT32_TYPE_NAME)
+    val INT32 = registerStruct(INT32_TYPE_NAME)
     val INT32_LIT = registerLiteral(INT32_LIT_NAME, INT32)
     val INT32_EQ = registerInfixOp(Symbol.EQUAL, INT32, BOOL, null)
     val INT32_GE = registerInfixOp(Symbol.GREATER_EQUAL, INT32, BOOL, null)
@@ -48,7 +48,7 @@ object Builtin
     val INT32_POS = registerPrefixOp(Symbol.PLUS, INT32, INT32, VOID)
     val INT32_SUB = registerInfixOp(Symbol.MINUS, INT32, INT32, VOID)
     
-    val INT64 = registerType(INT64_TYPE_NAME)
+    val INT64 = registerStruct(INT64_TYPE_NAME)
     val INT64_LIT = registerLiteral(INT64_LIT_NAME, INT64)
     val INT64_EQ = registerInfixOp(Symbol.EQUAL, INT64, BOOL, null)
     val INT64_GE = registerInfixOp(Symbol.GREATER_EQUAL, INT64, BOOL, null)
@@ -65,14 +65,14 @@ object Builtin
     val INT64_SUB = registerInfixOp(Symbol.MINUS, INT64, INT64, VOID)
     
     // TODO: Support strings somehow
-    val STR = registerType(STR_TYPE_NAME)
+    val STR = registerStruct(STR_TYPE_NAME)
     val STR_LIT = registerLiteral(STR_LIT_NAME, VOID)
 }
 
 /**
  * Registers a new type with the given [name].
  */
-private fun registerType(name: String) = HirStruct(
+private fun registerStruct(name: String) = HirStruct(
     id = UUID.randomUUID(),
     name = name,
     visibility = Visibility.EXPORTED,
