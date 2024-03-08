@@ -44,7 +44,7 @@ class TestParserSegment
         tester.parse("").isDone().isValue(astSegmentOf())
         tester.parse("module foo").isWip(2).isDone().isValue(astSegmentOf(module = "foo"))
         tester.parse("use foo").isWip(2).isDone().isValue(astSegmentOf(imports = listOf("foo")))
-        tester.parse("val foo = 0").isWip(4).isDone().isValue(astSegmentOf(statements = listOf(astVarOf("foo", 0))))
+        tester.parse("val foo: Int = 0").isWip(6).isDone().isValue(astSegmentOf(statements = listOf(astConstOf("foo", type = "Int"))))
         tester.parse("fun foo() {}").isWip(6).isDone().isValue(astSegmentOf(statements = listOf(astFunOf("foo"))))
     }
     

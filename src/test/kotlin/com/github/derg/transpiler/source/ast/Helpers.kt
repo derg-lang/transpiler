@@ -72,6 +72,21 @@ fun astInvokeOf(expression: Any) = AstEvaluate(expression.ast)
 ////////////////////
 
 /**
+ * Generates variable definition from the provided input parameters.
+ */
+fun astConstOf(
+    name: String = UUID.randomUUID().toString(),
+    type: String = INT32_TYPE_NAME,
+    value: Any = 0,
+    vis: Visibility = Visibility.PRIVATE,
+) = AstConstant(
+    name = name,
+    type = AstType(type, Mutability.IMMUTABLE),
+    value = value.ast,
+    visibility = vis,
+)
+
+/**
  * Generates segment definition from the provided input parameters.
  */
 fun astSegmentOf(

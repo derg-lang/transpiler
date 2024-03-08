@@ -13,6 +13,33 @@ import org.junit.jupiter.api.*
 private fun <Type> Tester<Type>.isChain(wipCount: Int = 0, postOkCount: Int = 0): Tester<Type> =
     isWip(wipCount).isOk(postOkCount).isDone()
 
+class TestParserConstant
+{
+    private val tester = Tester { constantParserOf() }
+    
+    @Test
+    fun `Given valid token, when parsing, then correctly parsed`()
+    {
+        // Type and value must be correctly parsed
+        tester.parse("val foo: Bar = 42").isChain(5, 1).isValue(astConstOf("foo", type = "Bar", value = 42))
+        
+        // Visibility must be correctly parsed
+        tester.parse("exported  val foo: Int = 0").isChain(6, 1).isValue(astConstOf("foo", type = "Int", vis = Visibility.EXPORTED))
+        tester.parse("public    val foo: Int = 0").isChain(6, 1).isValue(astConstOf("foo", type = "Int", vis = Visibility.PUBLIC))
+        tester.parse("protected val foo: Int = 0").isChain(6, 1).isValue(astConstOf("foo", type = "Int", vis = Visibility.PROTECTED))
+        tester.parse("private   val foo: Int = 0").isChain(6, 1).isValue(astConstOf("foo", type = "Int", vis = Visibility.PRIVATE))
+        tester.parse("          val foo: Int = 0").isChain(5, 1).isValue(astConstOf("foo", type = "Int", vis = Visibility.PRIVATE))
+    }
+    
+    @Test
+    fun `Given invalid token, when parsing, then correct error`()
+    {
+        tester.parse("").isBad { ParseError.UnexpectedToken(EndOfFile) }
+        tester.parse("val").isWip(1).isBad { ParseError.UnexpectedToken(EndOfFile) }
+        tester.parse("val foo =").isWip(2).isBad { ParseError.UnexpectedToken(Keyword(Symbol.ASSIGN)) }
+    }
+}
+
 class TestParserFunction
 {
     private val tester = Tester { functionParserOf() }

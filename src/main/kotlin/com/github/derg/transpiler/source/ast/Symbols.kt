@@ -16,6 +16,19 @@ sealed interface AstSymbol
 }
 
 /**
+ * Constants are units which hold a specific [value] and associates the value with a specific [name]. Constants must be
+ * given a [type], which is verified against the actual type of the expression.
+ *
+ * @param visibility The visibility of the variable, to whom it is possible to access.
+ */
+data class AstConstant(
+    override val name: String,
+    val type: AstType,
+    val value: AstValue,
+    val visibility: Visibility,
+) : AstSymbol
+
+/**
  * Functions are smaller subroutines of a program which can perform a specialized workload, that are given a [name].
  * Every function may return a [valueType], or raise an [errorType]. The value and error types are not required to be
  * specified. Functions accept any number of [parameters], which allows different outcomes of invoking the function to
