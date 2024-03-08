@@ -24,6 +24,9 @@ private fun module(name: String, segments: List<AstSegment>) = HirModule(
 // Implementation details
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+/**
+ *
+ */
 private fun AstType.toHir() = HirTypeStruct(
     name = name,
     generics = emptyList(),
@@ -33,10 +36,10 @@ private fun AstType.toHir() = HirTypeStruct(
 /**
  *
  */
-internal fun AstVariable.toHirConstant() = HirConstant(
+internal fun AstConstant.toHir() = HirConstant(
     id = UUID.randomUUID(),
     name = name,
-    type = type?.toHir(),
+    type = type.toHir(),
     value = value.toHir(),
     visibility = visibility,
 )
@@ -55,7 +58,7 @@ internal fun AstFunction.toHir() = HirFunction(
     visibility = visibility,
     instructions = statements.map { it.toHir() },
     generics = emptyList(),
-    variables = statements.filterIsInstance<AstVariable>().map { it.toHirVariable() },
+    variables = statements.filterIsInstance<AstVariable>().map { it.toHir() },
     parameters = parameters.map { it.toHir() },
 )
 
@@ -91,7 +94,7 @@ internal fun AstSegment.toHir() = HirSegment(
     imports = imports.toSet(),
     structs = definitions.filterIsInstance<AstStruct>().map { it.toHir() },
     concepts = emptyList(),
-    constants = definitions.filterIsInstance<AstVariable>().map { it.toHirConstant() },
+    constants = definitions.filterIsInstance<AstConstant>().map { it.toHir() },
     functions = definitions.filterIsInstance<AstFunction>().map { it.toHir() },
 )
 
@@ -110,7 +113,7 @@ internal fun AstStruct.toHir() = HirStruct(
 /**
  *
  */
-internal fun AstVariable.toHirVariable() = HirVariable(
+internal fun AstVariable.toHir() = HirVariable(
     id = UUID.randomUUID(),
     name = name,
     type = type?.toHir(),
