@@ -47,8 +47,11 @@ internal fun AstVariable.toHirConstant() = HirConstant(
 internal fun AstFunction.toHir() = HirFunction(
     id = UUID.randomUUID(),
     name = name,
-    value = valueType?.toHir(),
-    error = errorType?.toHir(),
+    type = HirTypeFunction(
+        value = valueType?.toHir(),
+        error = errorType?.toHir(),
+        parameters = parameters.map { HirTypedParameter(it.name, it.type.toHir()) },
+    ),
     visibility = visibility,
     instructions = statements.map { it.toHir() },
     generics = emptyList(),
