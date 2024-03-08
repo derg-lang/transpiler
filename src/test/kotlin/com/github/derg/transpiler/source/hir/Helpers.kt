@@ -54,14 +54,17 @@ infix fun HirVariable.hirAssign(that: Any) = HirAssign(hirLoad, that.hir)
 
 fun hirFunOf(
     name: String = UUID.randomUUID().toString(),
-    value: HirStruct? = null,
-    error: HirStruct? = null,
+    value: HirType? = null,
+    error: HirType? = null,
     params: List<HirParameter> = emptyList(),
 ) = HirFunction(
     id = UUID.randomUUID(),
     name = name,
-    value = value?.let { HirTypeStruct(it.name, emptyList(), Mutability.IMMUTABLE) },
-    error = error?.let { HirTypeStruct(it.name, emptyList(), Mutability.IMMUTABLE) },
+    type = HirTypeFunction(
+        value = value,
+        error = error,
+        parameters = params.map { HirTypedParameter(it.name, it.type) },
+    ),
     visibility = Visibility.PRIVATE,
     instructions = emptyList(),
     generics = emptyList(),
@@ -71,12 +74,12 @@ fun hirFunOf(
 
 fun hirLitOf(
     name: String = UUID.randomUUID().toString(),
-    value: HirStruct = Builtin.VOID,
-    param: HirParameter = hirParamOf(type = Builtin.INT32),
+    value: HirType = Builtin.INT32_TYPE,
+    param: HirParameter = hirParamOf(),
 ) = HirLiteral(
     id = UUID.randomUUID(),
     name = name,
-    value = HirTypeStruct(value.name, emptyList(), Mutability.IMMUTABLE),
+    type = HirTypeLiteral(value = value, parameter = param.type),
     visibility = Visibility.PRIVATE,
     instructions = emptyList(),
     variables = emptyList(),
@@ -85,24 +88,24 @@ fun hirLitOf(
 
 fun hirParamOf(
     name: String = UUID.randomUUID().toString(),
-    type: HirStruct = Builtin.VOID,
+    type: HirType = Builtin.INT32_TYPE,
     value: HirValue? = null,
 ) = HirParameter(
     id = UUID.randomUUID(),
     name = name,
-    type = HirTypeStruct(type.name, emptyList(), Mutability.IMMUTABLE),
+    type = type,
     value = value,
     passability = Passability.IN,
 )
 
 fun hirVarOf(
     name: String = UUID.randomUUID().toString(),
-    type: HirStruct? = null,
+    type: HirType? = null,
     value: Any = 0,
 ) = HirVariable(
     id = UUID.randomUUID(),
     name = name,
-    type = type?.let { HirTypeStruct(it.name, emptyList(), Mutability.IMMUTABLE) },
+    type = type,
     value = value.hir,
     assignability = Assignability.FINAL,
 )

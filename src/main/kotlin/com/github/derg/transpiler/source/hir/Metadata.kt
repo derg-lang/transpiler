@@ -12,7 +12,6 @@ sealed interface HirType
 /**
  * The struct type describes a concrete type by [name], which may be specialized with any number of [generics].
  */
-// TODO: Is this needed?
 data class HirTypeStruct(
     val name: String,
     val generics: List<HirTypedParameter>,
@@ -23,7 +22,6 @@ data class HirTypeStruct(
  * The function type describes a function returning a [value] and [error] type, with any number of [parameters]. The
  * parameters are required to have a valid value, and are not permitted to have any error type associated with them.
  */
-// TODO: Is this needed?
 data class HirTypeFunction(
     val value: HirType?,
     val error: HirType?,
@@ -37,7 +35,7 @@ data class HirTypeFunction(
 // TODO: Is this needed?
 data class HirTypeLiteral(
     val value: HirType,
-    val parameter: HirTypeStruct,
+    val parameter: HirType,
 ) : HirType
 
 /**
