@@ -161,7 +161,7 @@ data class HirStruct(
 data class HirConstant(
     override val id: UUID,
     override val name: String,
-    val type: HirType?,
+    val type: HirType,
     val value: HirValue,
     val visibility: Visibility,
 ) : HirSymbol

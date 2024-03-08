@@ -19,10 +19,10 @@ class TestParser
     @Test
     fun `Given populated segment, when parsing, then correctly parsed`()
     {
-        val variable = astVarOf("foo", 42)
+        val variable = astConstOf("foo", type = "Int", value = 42)
         val expected = astSegmentOf(module = null, imports = emptyList(), statements = listOf(variable))
         
-        assertSuccess(expected, parse("val foo = 42"))
+        assertSuccess(expected, parse("val foo: Int = 42"))
     }
     
     @Test

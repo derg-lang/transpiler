@@ -7,9 +7,31 @@ import com.github.derg.transpiler.source.ast.*
  * Parses a single statement from the token stream.
  */
 fun definitionParserOf(): Parser<AstSymbol> = ParserAnyOf(
+    constantParserOf(),
     functionParserOf(),
     structParserOf(),
-    variableParserOf(),
+)
+
+/**
+ * Parses a variable definition from the token stream.
+ */
+fun constantParserOf(): Parser<AstConstant> =
+    ParserPattern(::constantPatternOf, ::constantOutcomeOf)
+
+private fun constantPatternOf() = ParserSequence(
+    "visibility" to visibilityParserOf(),
+    "assignability" to ParserSymbol(Symbol.VALUE),
+    "name" to ParserName(),
+    "type" to typeParserOf(Symbol.COLON),
+    "op" to ParserSymbol(Symbol.ASSIGN),
+    "value" to expressionParserOf(),
+)
+
+private fun constantOutcomeOf(values: Parsers) = AstConstant(
+    name = values["name"],
+    type = values["type"],
+    value = values["value"],
+    visibility = values["visibility"],
 )
 
 /**
