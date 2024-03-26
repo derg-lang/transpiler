@@ -51,6 +51,8 @@ fun hirTypeCall(
     parameters = parameters.map { "" to it },
 )
 
+fun hirTypeUnion(vararg types: HirType) = HirTypeUnion(types.toSet())
+
 ////////////////////////
 // Expression helpers //
 ////////////////////////

@@ -21,3 +21,9 @@ data class HirTypeData(val name: String, val mutability: Mutability, val generic
  * parameters are required to have a valid value, and are not permitted to have any error type associated with them.
  */
 data class HirTypeCall(val value: HirType?, val error: HirType?, val parameters: List<Named<HirType>>) : HirType
+
+/**
+ * The union type describes a type which is exactly one of the specified [types]. Any type can be in a union with a
+ * union type, although the set of potential types is collapsed into a single set.
+ */
+data class HirTypeUnion(val types: Set<HirType>) : HirType

@@ -117,6 +117,7 @@ internal class ResolverValue(private val types: TypeTable, private val scope: Sc
         // We must have at least one symbol which can be considered a callable at this point. We need to examine every
         // single symbol that is within scope, as callables can come in many forms. Due to overload resolution, we need
         // to examine every candidate, to make sure there is no ambiguity or mismatches.
+        // TODO: Support callables which are stored in variables, parameters, etc.
         val functions = scope.resolve<HirFunction>(node.instance.name)
         if (functions.isEmpty())
             return ResolveError.UnknownFunction(node.instance.name).toFailure()
