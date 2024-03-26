@@ -40,6 +40,17 @@ data class ThirCall(
 ) : ThirValue
 
 /**
+ * Represents the outcome of capturing an error in [lhs], and replacing the error case with the value in [rhs].
+ * Depending on the [capture] mode, the resulting value is used either in the original expression in place of the
+ * success value, or raised/returned from the callable object.
+ */
+data class ThirCatch(val lhs: ThirValue, val rhs: ThirValue, val capture: Capture) : ThirValue
+{
+    override val value: ThirType get() = ThirTypeUnion(listOf(lhs.value, rhs.value).mapNotNull { it })
+    override val error: Nothing? get() = null
+}
+
+/**
  * Boolean values, `true` and `false`.
  */
 sealed interface ThirValueBool : ThirValue

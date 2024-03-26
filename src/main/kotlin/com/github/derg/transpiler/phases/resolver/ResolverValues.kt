@@ -27,12 +27,13 @@ internal class ResolverValue(private val types: TypeTable, private val scope: Sc
         is HirAnd     -> handleInfix(Symbol.AND, node.lhs, node.rhs)
         is HirBool    -> ThirBoolConst(node.value).toSuccess()
         is HirCall    -> handleCall(node)
+        is HirCatch   -> handleCatch(node)
         is HirDecimal -> TODO()
         is HirDiv     -> handleInfix(Symbol.DIVIDE, node.lhs, node.rhs)
         is HirEq      -> handleInfix(Symbol.EQUAL, node.lhs, node.rhs)
         is HirGe      -> handleInfix(Symbol.GREATER_EQUAL, node.lhs, node.rhs)
         is HirGt      -> handleInfix(Symbol.GREATER, node.lhs, node.rhs)
-        is HirInteger -> handle(node)
+        is HirInteger -> handleInteger(node)
         is HirLe      -> handleInfix(Symbol.LESS_EQUAL, node.lhs, node.rhs)
         is HirLoad    -> TODO()
         is HirLt      -> handleInfix(Symbol.LESS, node.lhs, node.rhs)
@@ -138,7 +139,15 @@ internal class ResolverValue(private val types: TypeTable, private val scope: Sc
         }
     }
     
-    private fun handle(node: HirInteger): Result<ThirValue, ResolveError>
+    private fun handleCatch(node: HirCatch): Result<ThirValue, ResolveError>
+    {
+        val lhs = resolve(node.lhs).valueOr { return it.toFailure() }
+        val rhs = resolve(node.rhs).valueOr { return it.toFailure() }
+        
+        return ThirCatch(lhs, rhs, node.capture).toSuccess()
+    }
+    
+    private fun handleInteger(node: HirInteger): Result<ThirValue, ResolveError>
     {
         // Literals cannot be overloaded on name, as the parameter provided must be a builtin type. We do not know ahead
         // of time what the raw literal should be converted to, so we require that only a single candidate exists.

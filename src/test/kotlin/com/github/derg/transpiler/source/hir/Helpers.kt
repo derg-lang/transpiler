@@ -74,6 +74,10 @@ infix fun Any.hirAnd(that: Any): HirValue = HirAnd(this.hir, that.hir)
 infix fun Any.hirOr(that: Any): HirValue = HirOr(this.hir, that.hir)
 infix fun Any.hirXor(that: Any): HirValue = HirXor(this.hir, that.hir)
 
+infix fun Any.hirCatchRaise(that: Any) = HirCatch(this.hir, that.hir, Capture.RAISE)
+infix fun Any.hirCatchReturn(that: Any) = HirCatch(this.hir, that.hir, Capture.RETURN)
+infix fun Any.hirCatchHandle(that: Any) = HirCatch(this.hir, that.hir, Capture.HANDLE)
+
 val Any.hirNot: HirValue get() = HirNot(hir)
 val Any.hirMinus: HirValue get() = HirMinus(hir)
 val Any.hirPlus: HirValue get() = HirPlus(hir)

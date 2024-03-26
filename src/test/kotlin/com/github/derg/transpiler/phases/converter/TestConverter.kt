@@ -10,11 +10,9 @@ class TestConverter
     @Test
     fun `Given expression, when converting, then correct outcome`()
     {
-        assertEquals(1 hirAdd 2, (1 astAdd 2).toHir())
-        assertEquals(1 hirDiv 2, (1 astDiv 2).toHir())
-        assertEquals(1 hirMod 2, (1 astMod 2).toHir())
-        assertEquals(1 hirMul 2, (1 astMul 2).toHir())
-        assertEquals(1 hirSub 2, (1 astSub 2).toHir())
+        assertEquals(true.hirNot, (true.astNot).toHir())
+        assertEquals(1.hirPlus, (1.astPlus).toHir())
+        assertEquals(1.hirMinus, (1.astMinus).toHir())
         
         assertEquals(1 hirEq 2, (1 astEq 2).toHir())
         assertEquals(1 hirNe 2, (1 astNe 2).toHir())
@@ -23,6 +21,12 @@ class TestConverter
         assertEquals(1 hirLe 2, (1 astLe 2).toHir())
         assertEquals(1 hirLt 2, (1 astLt 2).toHir())
         
+        assertEquals(1 hirAdd 2, (1 astAdd 2).toHir())
+        assertEquals(1 hirDiv 2, (1 astDiv 2).toHir())
+        assertEquals(1 hirMod 2, (1 astMod 2).toHir())
+        assertEquals(1 hirMul 2, (1 astMul 2).toHir())
+        assertEquals(1 hirSub 2, (1 astSub 2).toHir())
+        
         assertEquals(true hirAnd false, (true astAnd false).toHir())
         assertEquals(true hirOr false, (true astOr false).toHir())
         assertEquals(true hirXor false, (true astXor false).toHir())
@@ -30,5 +34,9 @@ class TestConverter
         assertEquals(true.hirNot, true.astNot.toHir())
         assertEquals(1.hirMinus, 1.astMinus.toHir())
         assertEquals(1.hirPlus, 1.astPlus.toHir())
+        
+        assertEquals(1 hirCatchHandle 2, (1 astCatchHandle 2).toHir())
+        assertEquals(1 hirCatchRaise 2, (1 astCatchRaise 2).toHir())
+        assertEquals(1 hirCatchReturn 2, (1 astCatchReturn 2).toHir())
     }
 }

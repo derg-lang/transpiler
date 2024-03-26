@@ -1,5 +1,6 @@
 package com.github.derg.transpiler.source.ast
 
+import com.github.derg.transpiler.source.*
 import java.math.*
 
 /**
@@ -175,9 +176,7 @@ data class AstModulo(val lhs: AstValue, val rhs: AstValue) : AstValue
 
 // ERROR OPERATORS
 
-data class AstCatch(val lhs: AstValue, val rhs: AstValue) : AstValue
-data class AstCatchRaise(val lhs: AstValue, val rhs: AstValue) : AstValue
-data class AstCatchReturn(val lhs: AstValue, val rhs: AstValue) : AstValue
+data class AstCatch(val lhs: AstValue, val rhs: AstValue, val capture: Capture) : AstValue
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Unsorted

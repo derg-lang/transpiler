@@ -134,6 +134,31 @@ enum class Passability
 }
 
 /**
+ * How a captured error should be handled, when handled inline in an expression. The captured error will be accessible
+ * as a temporary binding, allowing the developer to transform it in any way they need before the program continues.
+ */
+enum class Capture
+{
+    /**
+     * The error is transformed into a value, and used instead of the success value which would otherwise be used. The
+     * computed value is used as a default value when an error has occurred.
+     */
+    HANDLE,
+    
+    /**
+     * The error is transformed into a value, which is then returned from the callable object as an error. This
+     * operation is equivalent to capturing the error, transforming it, and then raising it.
+     */
+    RAISE,
+    
+    /**
+     * The error is transformed into a value, which is then returned from the callable object as a success. This
+     * operation is equivalent to capturing the error, transforming it, and then returning it.
+     */
+    RETURN,
+}
+
+/**
  * The various symbols which are considered builtin. When parsing source code, these are the character sequences which
  * have special meanings. Commonly for all of them is that identifiers cannot be the same as the [symbol] string itself.
  * These values are typically considered reserved.
