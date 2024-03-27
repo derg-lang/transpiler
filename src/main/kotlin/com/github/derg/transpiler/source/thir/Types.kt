@@ -21,3 +21,9 @@ data class ThirTypeData(val symbolId: UUID, val mutability: Mutability, val gene
  * parameters are required to have a valid value, and are not permitted to have any error type associated with them.
  */
 data class ThirTypeCall(val value: ThirType?, val error: ThirType?, val parameters: List<Named<ThirType>>) : ThirType
+
+/**
+ * The union type describes a type which is one of the specified [types]. Any type can be in a union with a union type,
+ * although the set of potential types is collapsed into a single set.
+ */
+data class ThirTypeUnion(val types: List<ThirType>) : ThirType

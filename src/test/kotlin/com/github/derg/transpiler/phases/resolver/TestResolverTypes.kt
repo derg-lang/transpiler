@@ -5,6 +5,8 @@ import com.github.derg.transpiler.source.*
 import com.github.derg.transpiler.source.hir.*
 import com.github.derg.transpiler.source.hir.Builtin.BOOL
 import com.github.derg.transpiler.source.hir.Builtin.BOOL_TYPE
+import com.github.derg.transpiler.source.hir.Builtin.INT32
+import com.github.derg.transpiler.source.hir.Builtin.INT32_TYPE
 import com.github.derg.transpiler.source.thir.*
 import com.github.derg.transpiler.utils.*
 import org.junit.jupiter.api.*
@@ -89,6 +91,48 @@ class TestResolverType
             val expected = ThirTypeCall(null, null, listOf("" to param))
             
             assertSuccess(expected, resolver.resolve(hirTypeCall(parameters = listOf(BOOL_TYPE))))
+        }
+    }
+    
+    @Nested
+    inner class Union
+    {
+        @Test
+        fun `Given empty, when resolving, then correct outcome`()
+        {
+            val expected = ThirTypeUnion(emptyList())
+            
+            assertSuccess(expected, resolver.resolve(hirTypeUnion()))
+        }
+        
+        @Test
+        fun `Given single, when resolving, then correct outcome`()
+        {
+            val inner = listOf(ThirTypeData(BOOL.id, Mutability.IMMUTABLE, emptyList()))
+            val expected = ThirTypeUnion(inner)
+            
+            assertSuccess(expected, resolver.resolve(hirTypeUnion(BOOL_TYPE)))
+        }
+        
+        @Test
+        fun `Given multiple, when resolving, then correct outcome`()
+        {
+            val inner = listOf(
+                ThirTypeData(BOOL.id, Mutability.IMMUTABLE, emptyList()),
+                ThirTypeData(INT32.id, Mutability.IMMUTABLE, emptyList()),
+            )
+            val expected = ThirTypeUnion(inner)
+            
+            assertSuccess(expected, resolver.resolve(hirTypeUnion(BOOL_TYPE, INT32_TYPE)))
+        }
+        
+        @Test
+        fun `Given nested, when resolving, then correct outcome`()
+        {
+            val inner = listOf(ThirTypeData(BOOL.id, Mutability.IMMUTABLE, emptyList()))
+            val expected = ThirTypeUnion(listOf(ThirTypeUnion(inner)))
+            
+            assertSuccess(expected, resolver.resolve(hirTypeUnion(hirTypeUnion(BOOL_TYPE))))
         }
     }
 }

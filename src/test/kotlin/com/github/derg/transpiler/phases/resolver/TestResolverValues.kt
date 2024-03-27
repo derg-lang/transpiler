@@ -303,8 +303,7 @@ class TestResolverValue
         @Test
         fun `Given unknown overload, when resolving, then correct error`()
         {
-            val expected =
-                ArgumentMismatch(Symbol.GREATER_EQUAL.symbol, listOf(null hirArg true, null hirArg false))
+            val expected = ArgumentMismatch(Symbol.GREATER_EQUAL.symbol, listOf(null hirArg true, null hirArg false))
             
             assertFailure(expected, run(true hirGe false))
         }
