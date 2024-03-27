@@ -48,18 +48,9 @@ internal class ResolverType(private val scope: Scope)
     
     fun resolve(type: HirTypeUnion): Result<ThirType, ResolveError>
     {
-        // We require at least one entry in the union, otherwise we do not really have anything to go by. In the case of
-        // a single entry, we can also simplify the union to that one entry, reducing nesting.
-        val types = when (type.types.size)
-        {
-            0    -> return ResolveError.Placeholder.toFailure() // TODO: Replace me with a proper error.
-            1    -> return resolve(type.types.single())
-            else -> type.types.mapUntilError { resolve(it) }.valueOr { return it.toFailure() }
-        }
+        val types = type.types.mapUntilError { resolve(it) }.valueOr { return it.toFailure() }
         
-        // If we have any unions within our union, we can simplify the entire set of types to no nested unions.
-        val simplified = types.flatMap { if (it is ThirTypeUnion) it.types else setOf(it) }
-        return ThirTypeUnion(simplified.toSet()).toSuccess()
+        return ThirTypeUnion(types).toSuccess()
     }
     
     private fun handle(type: Named<HirType>): Result<Named<ThirType>, ResolveError>

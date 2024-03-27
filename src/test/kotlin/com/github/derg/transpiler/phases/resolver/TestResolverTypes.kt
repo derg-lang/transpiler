@@ -7,8 +7,6 @@ import com.github.derg.transpiler.source.hir.Builtin.BOOL
 import com.github.derg.transpiler.source.hir.Builtin.BOOL_TYPE
 import com.github.derg.transpiler.source.hir.Builtin.INT32
 import com.github.derg.transpiler.source.hir.Builtin.INT32_TYPE
-import com.github.derg.transpiler.source.hir.Builtin.INT64
-import com.github.derg.transpiler.source.hir.Builtin.INT64_TYPE
 import com.github.derg.transpiler.source.thir.*
 import com.github.derg.transpiler.utils.*
 import org.junit.jupiter.api.*
@@ -100,17 +98,18 @@ class TestResolverType
     inner class Union
     {
         @Test
-        fun `Given empty, when resolving, then correct error`()
+        fun `Given empty, when resolving, then correct outcome`()
         {
-            val expected = Placeholder
+            val expected = ThirTypeUnion(emptyList())
             
-            assertFailure(expected, resolver.resolve(hirTypeUnion()))
+            assertSuccess(expected, resolver.resolve(hirTypeUnion()))
         }
         
         @Test
         fun `Given single, when resolving, then correct outcome`()
         {
-            val expected = ThirTypeData(BOOL.id, Mutability.IMMUTABLE, emptyList())
+            val inner = listOf(ThirTypeData(BOOL.id, Mutability.IMMUTABLE, emptyList()))
+            val expected = ThirTypeUnion(inner)
             
             assertSuccess(expected, resolver.resolve(hirTypeUnion(BOOL_TYPE)))
         }
@@ -118,7 +117,7 @@ class TestResolverType
         @Test
         fun `Given multiple, when resolving, then correct outcome`()
         {
-            val inner = setOf(
+            val inner = listOf(
                 ThirTypeData(BOOL.id, Mutability.IMMUTABLE, emptyList()),
                 ThirTypeData(INT32.id, Mutability.IMMUTABLE, emptyList()),
             )
@@ -130,22 +129,10 @@ class TestResolverType
         @Test
         fun `Given nested, when resolving, then correct outcome`()
         {
-            val expected = ThirTypeData(BOOL.id, Mutability.IMMUTABLE, emptyList())
+            val inner = listOf(ThirTypeData(BOOL.id, Mutability.IMMUTABLE, emptyList()))
+            val expected = ThirTypeUnion(listOf(ThirTypeUnion(inner)))
             
             assertSuccess(expected, resolver.resolve(hirTypeUnion(hirTypeUnion(BOOL_TYPE))))
-        }
-        
-        @Test
-        fun `Given union, when resolving, then correct outcome`()
-        {
-            val inner = setOf(
-                ThirTypeData(BOOL.id, Mutability.IMMUTABLE, emptyList()),
-                ThirTypeData(INT32.id, Mutability.IMMUTABLE, emptyList()),
-                ThirTypeData(INT64.id, Mutability.IMMUTABLE, emptyList()),
-            )
-            val expected = ThirTypeUnion(inner)
-            
-            assertSuccess(expected, resolver.resolve(hirTypeUnion(BOOL_TYPE, hirTypeUnion(INT32_TYPE, INT64_TYPE))))
         }
     }
 }
