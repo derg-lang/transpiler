@@ -11,7 +11,7 @@ import org.junit.jupiter.api.Assertions.*
 /**
  * Generates a thir-representation of the struct.
  */
-private fun HirStruct.asThir() = ThirTypeStruct(
+private fun HirStruct.asThir() = ThirTypeData(
     symbolId = id,
     generics = emptyList(),
     mutability = Mutability.IMMUTABLE,
@@ -23,7 +23,7 @@ private fun HirStruct.asThir() = ThirTypeStruct(
 private fun HirParameter.asThir() = ThirParameter(
     id = id,
     name = name,
-    type = ThirTypeStruct(Builtin.INT32.id, emptyList(), Mutability.IMMUTABLE),
+    type = Builtin.INT32.asThir(),
     value = null,
     passability = passability,
 )

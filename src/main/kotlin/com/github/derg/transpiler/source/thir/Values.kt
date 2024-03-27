@@ -44,7 +44,7 @@ data class ThirCall(
  */
 sealed interface ThirValueBool : ThirValue
 {
-    override val value: ThirType get() = ThirTypeStruct(Builtin.BOOL.id, emptyList(), Mutability.IMMUTABLE)
+    override val value: ThirType get() = ThirTypeData(Builtin.BOOL.id, Mutability.IMMUTABLE, emptyList())
     override val error: Nothing? get() = null
 }
 
@@ -61,7 +61,7 @@ data class ThirBoolNot(val rhs: ThirValue) : ThirValueBool
  */
 sealed interface ThirValueInt32 : ThirValue
 {
-    override val value: ThirType get() = ThirTypeStruct(Builtin.INT32.id, emptyList(), Mutability.IMMUTABLE)
+    override val value: ThirType get() = ThirTypeData(Builtin.INT32.id, Mutability.IMMUTABLE, emptyList())
     override val error: Nothing? get() = null
 }
 
@@ -84,7 +84,7 @@ data class ThirInt32Neg(val rhs: ThirValue) : ThirValueInt32
  */
 sealed interface ThirValueInt64 : ThirValue
 {
-    override val value: ThirType get() = ThirTypeStruct(Builtin.INT64.id, emptyList(), Mutability.IMMUTABLE)
+    override val value: ThirType get() = ThirTypeData(Builtin.INT64.id, Mutability.IMMUTABLE, emptyList())
     override val error: Nothing? get() = null
 }
 

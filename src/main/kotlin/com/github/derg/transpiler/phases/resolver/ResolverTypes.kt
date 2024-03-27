@@ -22,7 +22,7 @@ internal class ResolverType(private val scope: Scope)
         is HirTypeLiteral -> resolve(type)
     }
     
-    fun resolve(type: HirTypeData): Result<ThirTypeStruct, ResolveError>
+    fun resolve(type: HirTypeData): Result<ThirTypeData, ResolveError>
     {
         // TODO: This way of resolving the typed information does not take generics into consideration. We need to match
         //       all provided generics towards all potential candidates, taking names and ordering into consideration.
@@ -34,16 +34,16 @@ internal class ResolverType(private val scope: Scope)
             else -> return ResolveError.AmbiguousStruct(type.name).toFailure()
         }
         
-        return ThirTypeStruct(symbolId = candidate.id, generics = emptyList(), mutability = type.mutability).toSuccess()
+        return ThirTypeData(symbolId = candidate.id, generics = emptyList(), mutability = type.mutability).toSuccess()
     }
     
-    fun resolve(type: HirTypeCall): Result<ThirTypeFunction, ResolveError>
+    fun resolve(type: HirTypeCall): Result<ThirTypeCall, ResolveError>
     {
         val value = type.value?.let { resolve(it) }?.valueOr { return it.toFailure() }
         val error = type.error?.let { resolve(it) }?.valueOr { return it.toFailure() }
         val parameters = type.parameters.mapUntilError { handle(it) }.valueOr { return it.toFailure() }
         
-        return ThirTypeFunction(value = value, error = error, parameters = parameters).toSuccess()
+        return ThirTypeCall(value = value, error = error, parameters = parameters).toSuccess()
     }
     
     fun resolve(type: HirTypeLiteral): Result<ThirTypeLiteral, ResolveError>
@@ -54,10 +54,8 @@ internal class ResolverType(private val scope: Scope)
         return ThirTypeLiteral(value = value, parameter = parameter).toSuccess()
     }
     
-    private fun handle(type: Named<HirType>): Result<ThirTypedParameter, ResolveError>
+    private fun handle(type: Named<HirType>): Result<Named<ThirType>, ResolveError>
     {
-        val value = resolve(type.second).valueOr { return it.toFailure() }
-        
-        return ThirTypedParameter(name = type.first, value = value).toSuccess()
+        return resolve(type.second).mapValue { type.first to it }
     }
 }

@@ -83,7 +83,7 @@ data class ThirConcept(
 data class ThirFunction(
     override val id: UUID,
     override val name: String,
-    val type: ThirTypeFunction,
+    val type: ThirTypeCall,
     val visibility: Visibility,
     val instructions: List<ThirInstruction>,
     
@@ -118,7 +118,7 @@ data class ThirLiteral(
 data class ThirMethod(
     override val id: UUID,
     override val name: String,
-    val type: ThirTypeFunction,
+    val type: ThirTypeCall,
     val visibility: Visibility,
     val instructions: List<ThirInstruction>,
     

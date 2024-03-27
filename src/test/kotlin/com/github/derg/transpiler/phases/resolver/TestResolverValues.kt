@@ -15,8 +15,8 @@ import java.math.*
 private fun HirFunction.thirCall(vararg parameters: Any): ThirValue
 {
     val inputs = parameters.map { it.thir }
-    val types = this.parameters.zip(inputs).map { ThirTypedParameter(it.first.name, it.second.value!!) }
-    val type = ThirTypeFunction(null, null, types)
+    val types = this.parameters.zip(inputs).map { it.first.name to it.second.value!! }
+    val type = ThirTypeCall(null, null, types)
     
     return ThirCall(null, null, ThirLoad(type, id, emptyList()), inputs)
 }
@@ -24,8 +24,8 @@ private fun HirFunction.thirCall(vararg parameters: Any): ThirValue
 private fun HirLiteral.thirCall(parameter: Any): ThirValue
 {
     val input = parameter.thir
-    val output = ThirTypeStruct(Builtin.INT32.id, emptyList(), Mutability.IMMUTABLE)
-    val type = ThirTypeLiteral(output, input.value as ThirTypeStruct)
+    val output = ThirTypeData(Builtin.INT32.id, Mutability.IMMUTABLE, emptyList())
+    val type = ThirTypeLiteral(output, input.value as ThirTypeData)
     
     return ThirCall(output, null, ThirLoad(type, id, emptyList()), listOf(input))
 }
@@ -319,7 +319,7 @@ class TestResolverValue
             assertSuccess(1.thir, run(1.hir))
             assertSuccess(1L.thir, run(1L.hir))
         }
-    
+        
         @Test
         fun `Given invalid type, when resolving, then correct outcome`()
         {
