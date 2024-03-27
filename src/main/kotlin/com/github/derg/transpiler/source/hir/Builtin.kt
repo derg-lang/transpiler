@@ -78,8 +78,11 @@ object Builtin
 /**
  * Generates a type based on the [struct].
  */
-private fun typeOf(struct: HirStruct) =
-    HirTypeStruct(name = struct.name, generics = emptyList(), mutability = Mutability.IMMUTABLE)
+private fun typeOf(struct: HirStruct) = HirTypeData(
+    name = struct.name,
+    generics = emptyList(),
+    mutability = Mutability.IMMUTABLE,
+)
 
 /**
  * Registers a new type with the given [name].
@@ -97,10 +100,10 @@ private fun registerStruct(name: String) = HirStruct(
  * Defines a new literal with the given [name] and [parameter]. The literal will return the same type as the parameter
  * itself.
  */
-private fun registerLiteral(name: String, parameter: HirTypeStruct) = HirLiteral(
+private fun registerLiteral(name: String, parameter: HirTypeData) = HirLiteral(
     id = UUID.randomUUID(),
     name = name,
-    type = HirTypeLiteral(value = parameter, parameter = parameter),
+    type = HirTypeCall(value = parameter, error = null, parameters = listOf("" to parameter)),
     visibility = Visibility.EXPORTED,
     instructions = emptyList(),
     variables = emptyList(),
@@ -114,10 +117,10 @@ private fun registerLiteral(name: String, parameter: HirTypeStruct) = HirLiteral
 private fun registerInfixOp(operator: Symbol, parameter: HirType, value: HirType, error: HirType?) = HirFunction(
     id = UUID.randomUUID(),
     name = operator.symbol,
-    type = HirTypeFunction(
+    type = HirTypeCall(
         value = value,
         error = error,
-        parameters = listOf(HirTypedParameter("lhs", parameter), HirTypedParameter("rhs", parameter)),
+        parameters = listOf("lhs" to parameter, "rhs" to parameter),
     ),
     visibility = Visibility.EXPORTED,
     instructions = emptyList(),
@@ -133,10 +136,10 @@ private fun registerInfixOp(operator: Symbol, parameter: HirType, value: HirType
 private fun registerPrefixOp(operator: Symbol, parameter: HirType, value: HirType, error: HirType?) = HirFunction(
     id = UUID.randomUUID(),
     name = operator.symbol,
-    type = HirTypeFunction(
+    type = HirTypeCall(
         value = value,
         error = error,
-        parameters = listOf(HirTypedParameter("rhs", parameter)),
+        parameters = listOf("rhs" to parameter),
     ),
     visibility = Visibility.EXPORTED,
     instructions = emptyList(),

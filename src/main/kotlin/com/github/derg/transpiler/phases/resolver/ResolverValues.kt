@@ -55,7 +55,7 @@ internal class ResolverValue(private val types: TypeTable, private val scope: Sc
     private fun handleInfix(operator: Symbol, lhs: HirValue, rhs: HirValue): Result<ThirValue, ResolveError>
     {
         val instance = HirLoad(operator.symbol, emptyList())
-        val call = HirCall(instance, listOf(HirNamedParameter(null, lhs), HirNamedParameter(null, rhs)))
+        val call = HirCall(instance, listOf(null to lhs, null to rhs))
         
         return handleCall(call)
     }
@@ -66,7 +66,7 @@ internal class ResolverValue(private val types: TypeTable, private val scope: Sc
     private fun handlePrefix(operator: Symbol, rhs: HirValue): Result<ThirValue, ResolveError>
     {
         val instance = HirLoad(operator.symbol, emptyList())
-        val call = HirCall(instance, listOf(HirNamedParameter(null, rhs)))
+        val call = HirCall(instance, listOf(null to rhs))
         
         return handleCall(call)
     }
@@ -76,7 +76,7 @@ internal class ResolverValue(private val types: TypeTable, private val scope: Sc
      * valid candidate for being invoked with the parameters, a function call value is generated. Note that multiple
      * functions may be valid, which is the case when the function call is ambiguous.
      */
-    private fun resolveCall(id: UUID, type: ThirTypeFunction, inputs: List<ThirNamedParameter>): Result<ThirCall, ResolveError>
+    private fun resolveCall(id: UUID, type: ThirTypeCall, inputs: List<NamedMaybe<ThirValue>>): Result<ThirCall, ResolveError>
     {
         // TODO: Support variadic arguments.
         if (type.parameters.size != inputs.size)
@@ -84,11 +84,11 @@ internal class ResolverValue(private val types: TypeTable, private val scope: Sc
         
         // Reject function if parameter types do not match function signature. The parameters must be ordered in the
         // same order as expected by the function before we can compare types.
-        val nameToIndex = type.parameters.withIndex().associate { it.value.name to it.index }
-        val sorted = inputs.withIndex().sortedBy { nameToIndex[it.value.name] ?: it.index }.map { it.value }
+        val nameToIndex = type.parameters.withIndex().associate { it.value.first to it.index }
+        val sorted = inputs.withIndex().sortedBy { nameToIndex[it.value.first] ?: it.index }.map { it.value }
         
         // TODO: Handle generics, attempt to infer the type if at all possible at this point.
-        if (type.parameters.zip(sorted).any { (param, input) -> param.value != input.value.value })
+        if (type.parameters.zip(sorted).any { (param, input) -> param.second != input.second.value })
             return ResolveError.Placeholder.toFailure() // TODO: Replace with mismatched parameter types.
         
         // All parameters provided by the user are now confirmed to be compatible with the function under evaluation. We
@@ -97,7 +97,7 @@ internal class ResolverValue(private val types: TypeTable, private val scope: Sc
             value = type.value,
             error = type.error,
             instance = ThirLoad(type, id, emptyList()),
-            parameters = sorted.map { it.value },
+            parameters = sorted.map { it.second },
         ).toSuccess()
     }
     
@@ -109,8 +109,8 @@ internal class ResolverValue(private val types: TypeTable, private val scope: Sc
         
         // We do not allow named arguments to appear before unnamed parameters. If any name has been specified within
         // the parameter list, then all parameters after that point must also be named.
-        val firstNamed = node.parameters.withIndex().firstOrNull { it.value.name != null }
-        val lastUnnamed = node.parameters.withIndex().lastOrNull { it.value.name == null }
+        val firstNamed = node.parameters.withIndex().firstOrNull { it.value.first != null }
+        val lastUnnamed = node.parameters.withIndex().lastOrNull { it.value.first == null }
         if (firstNamed != null && lastUnnamed != null && lastUnnamed.index > firstNamed.index)
             return ResolveError.ArgumentMisnamed(node.instance.name, node.parameters).toFailure()
         
@@ -152,9 +152,11 @@ internal class ResolverValue(private val types: TypeTable, private val scope: Sc
         // We must convert the raw literal into a value which can be passed into the literal itself. The parameter must
         // be a builtin type, as only builtin types can be converted into proper typed constants. The compiler does not
         // know how to construct instances of user-defined types.
-        // TODO: Replace invalid parameter error with something more appropriate.
+        // TODO: Replace invalid parameter error with something more appropriate. We must have exactly one parameter,
+        //       and the parameter must be a builtin integer type.
         val literal = types.literals[candidate.id]!!
-        val value = when ((literal.parameter as? ThirTypeStruct)?.symbolId)
+        val parameter = literal.parameters.singleOrNull() ?: return ResolveError.Placeholder.toFailure()
+        val value = when ((parameter.second as? ThirTypeData)?.symbolId)
         {
             Builtin.INT32.id -> ThirInt32Const(node.value.toInt()) // TODO: Verify that the value fits the range.
             Builtin.INT64.id -> ThirInt64Const(node.value.toLong()) // TODO: Verify that the value fits the range.
@@ -174,10 +176,8 @@ internal class ResolverValue(private val types: TypeTable, private val scope: Sc
         ).toSuccess()
     }
     
-    private fun handle(node: HirNamedParameter): Result<ThirNamedParameter, ResolveError>
+    private fun handle(node: NamedMaybe<HirValue>): Result<NamedMaybe<ThirValue>, ResolveError>
     {
-        val value = resolve(node.value).valueOr { return it.toFailure() }
-        
-        return ThirNamedParameter(name = node.name, value = value).toSuccess()
+        return resolve(node.second).mapValue { node.first to it }
     }
 }

@@ -1,5 +1,6 @@
 package com.github.derg.transpiler.source.hir
 
+import com.github.derg.transpiler.utils.*
 import java.math.*
 
 /**
@@ -18,7 +19,7 @@ sealed interface HirValue
  */
 data class HirLoad(
     val name: String,
-    val generics: List<HirNamedParameter>,
+    val generics: List<NamedMaybe<HirType>>,
 ) : HirValue
 
 /**
@@ -31,7 +32,7 @@ data class HirLoad(
 data class HirRead(
     val instance: HirValue,
     val field: String,
-    val generics: List<HirNamedParameter>,
+    val generics: List<NamedMaybe<HirType>>,
 ) : HirValue
 
 /**
@@ -41,7 +42,7 @@ data class HirRead(
  */
 data class HirCall(
     val instance: HirValue,
-    val parameters: List<HirNamedParameter>,
+    val parameters: List<NamedMaybe<HirValue>>,
 ) : HirValue
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

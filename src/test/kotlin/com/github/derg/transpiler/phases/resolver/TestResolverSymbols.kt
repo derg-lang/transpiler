@@ -11,7 +11,7 @@ import org.junit.jupiter.api.Assertions.*
 /**
  * Generates a thir-representation of the struct.
  */
-private fun HirStruct.asThir() = ThirTypeStruct(
+private fun HirStruct.asThir() = ThirTypeData(
     symbolId = id,
     generics = emptyList(),
     mutability = Mutability.IMMUTABLE,
@@ -23,7 +23,7 @@ private fun HirStruct.asThir() = ThirTypeStruct(
 private fun HirParameter.asThir() = ThirParameter(
     id = id,
     name = name,
-    type = ThirTypeStruct(Builtin.INT32.id, emptyList(), Mutability.IMMUTABLE),
+    type = Builtin.INT32.asThir(),
     value = null,
     passability = passability,
 )
@@ -168,7 +168,7 @@ class TestResolverSymbol
         @Test
         fun `Given unknown type, when resolving, then correct error`()
         {
-            val input = hirParamOf(type = HirTypeStruct("invalid", emptyList(), Mutability.IMMUTABLE))
+            val input = hirParamOf(type = hirTypeData("invalid"))
             val expected = UnknownStruct("invalid")
         
             assertFailure(expected, run(input))
@@ -177,7 +177,7 @@ class TestResolverSymbol
         @Test
         fun `Given ambiguous type, when resolving, then correct error`()
         {
-            val type = HirTypeStruct("ambiguous", emptyList(), Mutability.IMMUTABLE)
+            val type = hirTypeData("ambiguous")
     
             hirStructOf(name = type.name).also { scope.register(it) }
             hirStructOf(name = type.name).also { scope.register(it) }
@@ -267,7 +267,7 @@ class TestResolverSymbol
         @Test
         fun `Given unknown type, when resolving, then correct error`()
         {
-            val input = hirVarOf(type = HirTypeStruct("invalid", emptyList(), Mutability.IMMUTABLE))
+            val input = hirVarOf(type = hirTypeData("invalid"))
             val expected = UnknownStruct("invalid")
             
             assertFailure(expected, run(input))
@@ -276,7 +276,7 @@ class TestResolverSymbol
         @Test
         fun `Given ambiguous type, when resolving, then correct error`()
         {
-            val type = HirTypeStruct("ambiguous", emptyList(), Mutability.IMMUTABLE)
+            val type = hirTypeData("ambiguous")
         
             hirStructOf(name = type.name).also { scope.register(it) }
             hirStructOf(name = type.name).also { scope.register(it) }

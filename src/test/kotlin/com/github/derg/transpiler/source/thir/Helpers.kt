@@ -98,11 +98,7 @@ fun thirFunOf(
 ) = ThirFunction(
     id = UUID.randomUUID(),
     name = name,
-    type = ThirTypeFunction(
-        value = value,
-        error = error,
-        parameters = params.map { ThirTypedParameter(it.name, it.type) },
-    ),
+    type = ThirTypeCall(value, error, params.map { it.name to it.type }),
     visibility = Visibility.PRIVATE,
     instructions = emptyList(),
     genericIds = emptySet(),

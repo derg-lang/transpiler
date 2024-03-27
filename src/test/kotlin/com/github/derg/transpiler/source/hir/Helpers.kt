@@ -1,6 +1,7 @@
 package com.github.derg.transpiler.source.hir
 
 import com.github.derg.transpiler.source.*
+import com.github.derg.transpiler.utils.*
 import java.util.*
 
 /////////////////////
@@ -17,6 +18,38 @@ val Any.hir: HirValue
         is String   -> HirText(this, STR_LIT_NAME)
         else        -> throw IllegalArgumentException("Value $this does not represent a valid hir value")
     }
+
+//////////////////
+// Type helpers //
+//////////////////
+
+fun hirTypeData(
+    struct: HirStruct = Builtin.INT32,
+    mutability: Mutability = Mutability.IMMUTABLE,
+) = HirTypeData(
+    name = struct.name,
+    generics = emptyList(),
+    mutability = mutability,
+)
+
+fun hirTypeData(
+    name: String,
+    mutability: Mutability = Mutability.IMMUTABLE,
+) = HirTypeData(
+    name = name,
+    generics = emptyList(),
+    mutability = mutability,
+)
+
+fun hirTypeCall(
+    value: HirType? = null,
+    error: HirType? = null,
+    parameters: List<HirType> = emptyList(),
+) = HirTypeCall(
+    value = value,
+    error = error,
+    parameters = parameters.map { "" to it },
+)
 
 ////////////////////////
 // Expression helpers //
@@ -45,7 +78,7 @@ val Any.hirPlus: HirValue get() = HirPlus(hir)
 
 val HirSymbol.hirLoad: HirValue get() = HirLoad(name, emptyList())
 fun HirFunction.hirCall(vararg parameters: Any) = HirCall(hirLoad, parameters.map { null hirArg it })
-infix fun String?.hirArg(that: Any) = HirNamedParameter(this, that.hir)
+infix fun String?.hirArg(that: Any) = NamedMaybe(this, that.hir)
 
 ///////////////////////
 // Statement helpers //
@@ -87,11 +120,7 @@ fun hirFunOf(
 ) = HirFunction(
     id = UUID.randomUUID(),
     name = name,
-    type = HirTypeFunction(
-        value = value,
-        error = error,
-        parameters = params.map { HirTypedParameter(it.name, it.type) },
-    ),
+    type = HirTypeCall(value, error, params.map { it.name to it.type }),
     visibility = Visibility.PRIVATE,
     instructions = emptyList(),
     generics = emptyList(),
@@ -106,7 +135,7 @@ fun hirLitOf(
 ) = HirLiteral(
     id = UUID.randomUUID(),
     name = name,
-    type = HirTypeLiteral(value = value, parameter = param.type),
+    type = HirTypeCall(value, null, listOf("" to param.type)),
     visibility = Visibility.PRIVATE,
     instructions = emptyList(),
     variables = emptyList(),
