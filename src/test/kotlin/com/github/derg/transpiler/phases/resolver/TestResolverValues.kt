@@ -323,7 +323,7 @@ class TestResolverValue
         @Test
         fun `Given invalid type, when resolving, then correct outcome`()
         {
-            val literal = registerLit("foo", HirTypeFunction(null, null, emptyList()))
+            val literal = registerLit("foo", HirTypeCall(null, null, emptyList()))
             val expected = InvalidLiteralParam(literal.name)
             
             assertFailure(expected, run(HirInteger(BigInteger.ONE, literal.name)))

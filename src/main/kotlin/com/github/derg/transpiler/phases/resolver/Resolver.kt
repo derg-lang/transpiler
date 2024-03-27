@@ -65,7 +65,7 @@ sealed interface ResolveError
      * The function call to [name] with the given [parameters] resolved to multiple candidate functions, where none of
      * the candidates could be unambiguously selected.
      */
-    data class AmbiguousFunction(val name: String, val parameters: List<HirNamedParameter>) : ResolveError
+    data class AmbiguousFunction(val name: String, val parameters: List<NamedMaybe<HirValue>>) : ResolveError
     
     /**
      * The function call to [name] with the given [parameter] resolved to multiple candidate literals, where none of
@@ -88,13 +88,13 @@ sealed interface ResolveError
      * No function candidates were found for the function with the given [name], when invoked with the given
      * [parameters].
      */
-    data class ArgumentMismatch(val name: String, val parameters: List<HirNamedParameter>) : ResolveError
+    data class ArgumentMismatch(val name: String, val parameters: List<NamedMaybe<HirValue>>) : ResolveError
     
     /**
      * The function call was invoked in such a way, that a parameter without name was later in the list of parameters
      * than a named parameter.
      */
-    data class ArgumentMisnamed(val name: String, val parameters: List<HirNamedParameter>) : ResolveError
+    data class ArgumentMisnamed(val name: String, val parameters: List<NamedMaybe<HirValue>>) : ResolveError
     
     /**
      * The definition for the variable with the given [name] resolved to no type. The variable was defined without a

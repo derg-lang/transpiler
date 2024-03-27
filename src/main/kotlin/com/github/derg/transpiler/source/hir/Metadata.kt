@@ -1,6 +1,7 @@
 package com.github.derg.transpiler.source.hir
 
 import com.github.derg.transpiler.source.*
+import com.github.derg.transpiler.utils.*
 
 /**
  * Type annotations indicates which type a specific object is. All variables must be declared with a specific type,
@@ -10,23 +11,16 @@ import com.github.derg.transpiler.source.*
 sealed interface HirType
 
 /**
- * The struct type describes a concrete type by [name], which may be specialized with any number of [generics].
+ * The struct type describes a concrete type by [name], which may be specialized with any number of [generics]. The data
+ * within the type has a certain [mutability], indicating whether the type is internally mutable or not.
  */
-data class HirTypeStruct(
-    val name: String,
-    val generics: List<HirTypedParameter>,
-    val mutability: Mutability,
-) : HirType
+data class HirTypeData(val name: String, val mutability: Mutability, val generics: List<Named<HirType>>) : HirType
 
 /**
  * The function type describes a function returning a [value] and [error] type, with any number of [parameters]. The
  * parameters are required to have a valid value, and are not permitted to have any error type associated with them.
  */
-data class HirTypeFunction(
-    val value: HirType?,
-    val error: HirType?,
-    val parameters: List<HirTypedParameter>,
-) : HirType
+data class HirTypeCall(val value: HirType?, val error: HirType?, val parameters: List<Named<HirType>>) : HirType
 
 /**
  * The literal type describes a function returning a [value] type, with exactly one [parameter]. The parameter must be a
@@ -37,21 +31,3 @@ data class HirTypeLiteral(
     val value: HirType,
     val parameter: HirType,
 ) : HirType
-
-/**
- * The parameter type describing what the type of the parameter is. All function parameters must have a [name] and
- * [value] type.
- */
-data class HirTypedParameter(
-    val name: String,
-    val value: HirType,
-)
-
-/**
- * An optionally named parameter used when invoking a function. The parameter may be given a specific [name], but must
- * be given a specific [value].
- */
-data class HirNamedParameter(
-    val name: String?,
-    val value: HirValue,
-)

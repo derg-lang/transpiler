@@ -168,7 +168,7 @@ class TestResolverSymbol
         @Test
         fun `Given unknown type, when resolving, then correct error`()
         {
-            val input = hirParamOf(type = HirTypeStruct("invalid", emptyList(), Mutability.IMMUTABLE))
+            val input = hirParamOf(type = hirTypeData("invalid"))
             val expected = UnknownStruct("invalid")
         
             assertFailure(expected, run(input))
@@ -177,7 +177,7 @@ class TestResolverSymbol
         @Test
         fun `Given ambiguous type, when resolving, then correct error`()
         {
-            val type = HirTypeStruct("ambiguous", emptyList(), Mutability.IMMUTABLE)
+            val type = hirTypeData("ambiguous")
     
             hirStructOf(name = type.name).also { scope.register(it) }
             hirStructOf(name = type.name).also { scope.register(it) }
@@ -267,7 +267,7 @@ class TestResolverSymbol
         @Test
         fun `Given unknown type, when resolving, then correct error`()
         {
-            val input = hirVarOf(type = HirTypeStruct("invalid", emptyList(), Mutability.IMMUTABLE))
+            val input = hirVarOf(type = hirTypeData("invalid"))
             val expected = UnknownStruct("invalid")
             
             assertFailure(expected, run(input))
@@ -276,7 +276,7 @@ class TestResolverSymbol
         @Test
         fun `Given ambiguous type, when resolving, then correct error`()
         {
-            val type = HirTypeStruct("ambiguous", emptyList(), Mutability.IMMUTABLE)
+            val type = hirTypeData("ambiguous")
         
             hirStructOf(name = type.name).also { scope.register(it) }
             hirStructOf(name = type.name).also { scope.register(it) }

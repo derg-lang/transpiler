@@ -55,7 +55,7 @@ internal class ResolverValue(private val types: TypeTable, private val scope: Sc
     private fun handleInfix(operator: Symbol, lhs: HirValue, rhs: HirValue): Result<ThirValue, ResolveError>
     {
         val instance = HirLoad(operator.symbol, emptyList())
-        val call = HirCall(instance, listOf(HirNamedParameter(null, lhs), HirNamedParameter(null, rhs)))
+        val call = HirCall(instance, listOf(null to lhs, null to rhs))
         
         return handleCall(call)
     }
@@ -66,7 +66,7 @@ internal class ResolverValue(private val types: TypeTable, private val scope: Sc
     private fun handlePrefix(operator: Symbol, rhs: HirValue): Result<ThirValue, ResolveError>
     {
         val instance = HirLoad(operator.symbol, emptyList())
-        val call = HirCall(instance, listOf(HirNamedParameter(null, rhs)))
+        val call = HirCall(instance, listOf(null to rhs))
         
         return handleCall(call)
     }
@@ -109,8 +109,8 @@ internal class ResolverValue(private val types: TypeTable, private val scope: Sc
         
         // We do not allow named arguments to appear before unnamed parameters. If any name has been specified within
         // the parameter list, then all parameters after that point must also be named.
-        val firstNamed = node.parameters.withIndex().firstOrNull { it.value.name != null }
-        val lastUnnamed = node.parameters.withIndex().lastOrNull { it.value.name == null }
+        val firstNamed = node.parameters.withIndex().firstOrNull { it.value.first != null }
+        val lastUnnamed = node.parameters.withIndex().lastOrNull { it.value.first == null }
         if (firstNamed != null && lastUnnamed != null && lastUnnamed.index > firstNamed.index)
             return ResolveError.ArgumentMisnamed(node.instance.name, node.parameters).toFailure()
         
@@ -174,10 +174,10 @@ internal class ResolverValue(private val types: TypeTable, private val scope: Sc
         ).toSuccess()
     }
     
-    private fun handle(node: HirNamedParameter): Result<ThirNamedParameter, ResolveError>
+    private fun handle(node: NamedMaybe<HirValue>): Result<ThirNamedParameter, ResolveError>
     {
-        val value = resolve(node.value).valueOr { return it.toFailure() }
+        val value = resolve(node.second).valueOr { return it.toFailure() }
         
-        return ThirNamedParameter(name = node.name, value = value).toSuccess()
+        return ThirNamedParameter(name = node.first, value = value).toSuccess()
     }
 }

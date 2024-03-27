@@ -27,7 +27,7 @@ private fun module(name: String, segments: List<AstSegment>) = HirModule(
 /**
  *
  */
-private fun AstType.toHir() = HirTypeStruct(
+private fun AstType.toHir() = HirTypeData(
     name = name,
     generics = emptyList(),
     mutability = mutability,
@@ -50,10 +50,10 @@ internal fun AstConstant.toHir() = HirConstant(
 internal fun AstFunction.toHir() = HirFunction(
     id = UUID.randomUUID(),
     name = name,
-    type = HirTypeFunction(
+    type = HirTypeCall(
         value = valueType?.toHir(),
         error = errorType?.toHir(),
-        parameters = parameters.map { HirTypedParameter(it.name, it.type.toHir()) },
+        parameters = parameters.map { it.name to it.type.toHir() },
     ),
     visibility = visibility,
     instructions = statements.map { it.toHir() },
@@ -127,7 +127,7 @@ internal fun AstVariable.toHir() = HirVariable(
  */
 internal fun AstValue.toHir(): HirValue = when (this)
 {
-    is AstCall         -> HirCall(HirLoad(name, emptyList()), valArgs.map { HirNamedParameter(it.name, it.expression.toHir()) })
+    is AstCall         -> HirCall(HirLoad(name, emptyList()), valArgs.map { it.name to it.expression.toHir() })
     is AstRead         -> HirLoad(name, emptyList())
     is AstBool         -> HirBool(value)
     is AstInteger      -> HirInteger(value, literal)
