@@ -1,5 +1,6 @@
 package com.github.derg.transpiler.source.ast
 
+import com.github.derg.transpiler.source.*
 import java.math.*
 
 /**
@@ -175,28 +176,7 @@ data class AstModulo(val lhs: AstValue, val rhs: AstValue) : AstValue
 
 // ERROR OPERATORS
 
-/**
- * Catches any errors which are raised in the [lhs] expression, replacing errors with the [rhs] expression. In essence,
- * this operator allows errors to be caught and replaced with a default value in their place. That is, if an error
- * occurs in the base expression, the error is replaced with the value produced by the second expression. When no error
- * occurs, the outcome of the expression is [lhs], otherwise it is [rhs].
- */
-data class AstCatch(val lhs: AstValue, val rhs: AstValue) : AstValue
-
-/**
- * Catches any errors which are raised in the [lhs] expression, and raises a new error based on the value calculated in
- * the [rhs] expression. The original error may be referenced by the second expression, allowing the original error to
- * be transformed into a different error.
- */
-data class AstRaise(val lhs: AstValue, val rhs: AstValue) : AstValue
-
-/**
- * Catches any errors which are raised in the [lhs] expression, and returns a new value based on the value calculated in
- * the [rhs] expression. The original error may be referenced by the second expression, allowing the original error to
- * be transformed into a different value.
- */
-// TODO: Add return expression
-// data class AstReturn(val lhs: Expression, val rhs: Expression) : Operator
+data class AstCatch(val lhs: AstValue, val rhs: AstValue, val capture: Capture) : AstValue
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Unsorted

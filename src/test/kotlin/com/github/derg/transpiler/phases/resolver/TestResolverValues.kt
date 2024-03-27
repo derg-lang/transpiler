@@ -201,6 +201,28 @@ class TestResolverValue
     }
     
     @Nested
+    inner class Catch
+    {
+        @Test
+        fun `Given handle, when resolving, then correct outcome`()
+        {
+            assertSuccess(1 thirCatchHandle 2, run(1 hirCatchHandle 2))
+        }
+        
+        @Test
+        fun `Given raise, when resolving, then correct outcome`()
+        {
+            assertSuccess(1 thirCatchRaise 2, run(1 hirCatchRaise 2))
+        }
+        
+        @Test
+        fun `Given return, when resolving, then correct outcome`()
+        {
+            assertSuccess(1 thirCatchReturn 2, run(1 hirCatchReturn 2))
+        }
+    }
+    
+    @Nested
     inner class Divide
     {
         @Test

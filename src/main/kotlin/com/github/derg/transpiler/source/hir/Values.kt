@@ -1,5 +1,6 @@
 package com.github.derg.transpiler.source.hir
 
+import com.github.derg.transpiler.source.*
 import com.github.derg.transpiler.utils.*
 import java.math.*
 
@@ -72,6 +73,9 @@ data class HirGe(val lhs: HirValue, val rhs: HirValue) : HirValue
 data class HirGt(val lhs: HirValue, val rhs: HirValue) : HirValue
 data class HirLe(val lhs: HirValue, val rhs: HirValue) : HirValue
 data class HirLt(val lhs: HirValue, val rhs: HirValue) : HirValue
+
+// Errors
+data class HirCatch(val lhs: HirValue, val rhs: HirValue, val capture: Capture) : HirValue
 
 // Logic
 data class HirAnd(val lhs: HirValue, val rhs: HirValue) : HirValue
