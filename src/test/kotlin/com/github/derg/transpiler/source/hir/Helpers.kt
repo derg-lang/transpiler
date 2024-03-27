@@ -120,11 +120,7 @@ fun hirFunOf(
 ) = HirFunction(
     id = UUID.randomUUID(),
     name = name,
-    type = HirTypeCall(
-        value = value,
-        error = error,
-        parameters = params.map { it.name to it.type },
-    ),
+    type = HirTypeCall(value, error, params.map { it.name to it.type }),
     visibility = Visibility.PRIVATE,
     instructions = emptyList(),
     generics = emptyList(),
@@ -139,7 +135,7 @@ fun hirLitOf(
 ) = HirLiteral(
     id = UUID.randomUUID(),
     name = name,
-    type = HirTypeLiteral(value = value, parameter = param.type),
+    type = HirTypeCall(value, null, listOf("" to param.type)),
     visibility = Visibility.PRIVATE,
     instructions = emptyList(),
     variables = emptyList(),

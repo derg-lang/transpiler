@@ -21,12 +21,3 @@ data class ThirTypeData(val symbolId: UUID, val mutability: Mutability, val gene
  * parameters are required to have a valid value, and are not permitted to have any error type associated with them.
  */
 data class ThirTypeCall(val value: ThirType?, val error: ThirType?, val parameters: List<Named<ThirType>>) : ThirType
-
-/**
- * The literal type describes a function returning a [value] type, with exactly one [parameter]. The parameter must be a
- * builtin type.
- */
-data class ThirTypeLiteral(
-    val value: ThirType,
-    val parameter: ThirType,
-) : ThirType

@@ -102,7 +102,7 @@ data class ThirFunction(
 data class ThirLiteral(
     override val id: UUID,
     override val name: String,
-    val type: ThirTypeLiteral,
+    val type: ThirTypeCall,
     val visibility: Visibility,
     val instructions: List<ThirInstruction>,
     

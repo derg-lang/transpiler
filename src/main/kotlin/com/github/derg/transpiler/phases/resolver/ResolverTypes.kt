@@ -17,9 +17,8 @@ internal class ResolverType(private val scope: Scope)
      */
     fun resolve(type: HirType): Result<ThirType, ResolveError> = when (type)
     {
-        is HirTypeData    -> resolve(type)
-        is HirTypeCall    -> resolve(type)
-        is HirTypeLiteral -> resolve(type)
+        is HirTypeCall -> resolve(type)
+        is HirTypeData -> resolve(type)
     }
     
     fun resolve(type: HirTypeData): Result<ThirTypeData, ResolveError>
@@ -44,14 +43,6 @@ internal class ResolverType(private val scope: Scope)
         val parameters = type.parameters.mapUntilError { handle(it) }.valueOr { return it.toFailure() }
         
         return ThirTypeCall(value = value, error = error, parameters = parameters).toSuccess()
-    }
-    
-    fun resolve(type: HirTypeLiteral): Result<ThirTypeLiteral, ResolveError>
-    {
-        val value = resolve(type.value).valueOr { return it.toFailure() }
-        val parameter = resolve(type.parameter).valueOr { return it.toFailure() }
-        
-        return ThirTypeLiteral(value = value, parameter = parameter).toSuccess()
     }
     
     private fun handle(type: Named<HirType>): Result<Named<ThirType>, ResolveError>

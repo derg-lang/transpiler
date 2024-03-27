@@ -152,9 +152,11 @@ internal class ResolverValue(private val types: TypeTable, private val scope: Sc
         // We must convert the raw literal into a value which can be passed into the literal itself. The parameter must
         // be a builtin type, as only builtin types can be converted into proper typed constants. The compiler does not
         // know how to construct instances of user-defined types.
-        // TODO: Replace invalid parameter error with something more appropriate.
+        // TODO: Replace invalid parameter error with something more appropriate. We must have exactly one parameter,
+        //       and the parameter must be a builtin integer type.
         val literal = types.literals[candidate.id]!!
-        val value = when ((literal.parameter as? ThirTypeData)?.symbolId)
+        val parameter = literal.parameters.singleOrNull() ?: return ResolveError.Placeholder.toFailure()
+        val value = when ((parameter.second as? ThirTypeData)?.symbolId)
         {
             Builtin.INT32.id -> ThirInt32Const(node.value.toInt()) // TODO: Verify that the value fits the range.
             Builtin.INT64.id -> ThirInt64Const(node.value.toLong()) // TODO: Verify that the value fits the range.

@@ -15,8 +15,8 @@ import java.math.*
 private fun HirFunction.thirCall(vararg parameters: Any): ThirValue
 {
     val inputs = parameters.map { it.thir }
-    val types = this.parameters.zip(inputs).map { it.first.name to it.second.value!! }
-    val type = ThirTypeCall(null, null, types)
+    val params = this.parameters.zip(inputs).map { it.first.name to it.second.value!! }
+    val type = ThirTypeCall(null, null, params)
     
     return ThirCall(null, null, ThirLoad(type, id, emptyList()), inputs)
 }
@@ -25,7 +25,7 @@ private fun HirLiteral.thirCall(parameter: Any): ThirValue
 {
     val input = parameter.thir
     val output = ThirTypeData(Builtin.INT32.id, Mutability.IMMUTABLE, emptyList())
-    val type = ThirTypeLiteral(output, input.value as ThirTypeData)
+    val type = ThirTypeCall(output, null, listOf("" to input.value as ThirTypeData))
     
     return ThirCall(output, null, ThirLoad(type, id, emptyList()), listOf(input))
 }

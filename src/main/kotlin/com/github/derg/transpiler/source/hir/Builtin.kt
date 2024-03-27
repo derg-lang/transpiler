@@ -103,7 +103,7 @@ private fun registerStruct(name: String) = HirStruct(
 private fun registerLiteral(name: String, parameter: HirTypeData) = HirLiteral(
     id = UUID.randomUUID(),
     name = name,
-    type = HirTypeLiteral(value = parameter, parameter = parameter),
+    type = HirTypeCall(value = parameter, error = null, parameters = listOf("" to parameter)),
     visibility = Visibility.EXPORTED,
     instructions = emptyList(),
     variables = emptyList(),
