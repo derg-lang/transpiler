@@ -24,10 +24,10 @@ data class ThirBranch(
 ) : ThirInstruction
 
 /**
- * Evaluates the [value], executes any side effects which may arise as a consequence. The value and error returned from
+ * Evaluates the [expression], executes any side effects which may arise as a consequence. The value and error returned from
  * the invocation must resolve to void.
  */
-data class ThirEvaluate(val value: ThirValue) : ThirInstruction
+data class ThirEvaluate(val expression: ThirValue) : ThirInstruction
 
 /**
  * Exist the current function call, returning control flow to whoever called the function in the first place.

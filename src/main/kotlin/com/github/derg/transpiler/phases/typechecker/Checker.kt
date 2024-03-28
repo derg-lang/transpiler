@@ -17,4 +17,14 @@ sealed interface TypeError
      * The branch predicate contains an [error] type which is not permitted. Predicates must always succeed.
      */
     data class BranchPredicateHasError(val error: ThirValue) : TypeError
+    
+    /**
+     * The provided [value] was evaluated to have a value type, which is not permitted.
+     */
+    data class EvaluateHasValue(val value: ThirValue): TypeError
+    
+    /**
+     * The provided [error] was evaluated to have a value type, which is not permitted.
+     */
+    data class EvaluateHasError(val error: ThirValue): TypeError
 }

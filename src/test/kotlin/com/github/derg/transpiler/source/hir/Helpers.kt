@@ -92,7 +92,7 @@ infix fun String?.hirArg(that: Any) = NamedMaybe(this, that.hir)
 
 infix fun HirVariable.hirAssign(that: Any) = HirAssign(hirLoad, that.hir)
 
-val HirValue.hirEval get() = HirEvaluate(this)
+val Any.hirEval get() = HirEvaluate(hir)
 val Any.hirReturnError get() = HirReturnError(hir)
 val Any.hirReturnValue get() = HirReturnValue(hir)
 

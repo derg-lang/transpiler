@@ -102,7 +102,7 @@ fun ThirFunction.thirCall(vararg parameters: Any) = ThirCall(type.value, type.er
 
 infix fun ThirVariable.thirAssign(that: Any) = ThirAssign(id, that.thir)
 
-val ThirValue.thirEval get() = ThirEvaluate(this)
+val Any.thirEval get() = ThirEvaluate(thir)
 val Any.thirReturnError get() = ThirReturnError(thir)
 val Any.thirReturnValue get() = ThirReturnValue(thir)
 
