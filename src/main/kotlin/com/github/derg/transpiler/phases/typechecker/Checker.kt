@@ -21,10 +21,40 @@ sealed interface TypeError
     /**
      * The provided [value] was evaluated to have a value type, which is not permitted.
      */
-    data class EvaluateHasValue(val value: ThirValue): TypeError
+    data class EvaluateHasValue(val value: ThirValue) : TypeError
     
     /**
      * The provided [error] was evaluated to have a value type, which is not permitted.
      */
-    data class EvaluateHasError(val error: ThirValue): TypeError
+    data class EvaluateHasError(val error: ThirValue) : TypeError
+    
+    /**
+     * The return statement lacks a value associated with it, when the callable expected something to be returned.
+     */
+    data object ReturnLacksValue : TypeError
+    
+    /**
+     * The return statement lacks an error associated with it, when the callable expected something to be raised.
+     */
+    data object ReturnLacksError : TypeError
+    
+    /**
+     * The return statement has a [value] associated with it, when the callable expected nothing to be returned.
+     */
+    data class ReturnHasValue(val value: ThirValue) : TypeError
+    
+    /**
+     * The return statement has an [error] associated with it, when the callable expected nothing to be raised.
+     */
+    data class ReturnHasError(val error: ThirValue) : TypeError
+    
+    /**
+     * The return statement has a [value] associated with it, when the callable expected a different return type.
+     */
+    data class ReturnWrongValue(val value: ThirValue) : TypeError
+    
+    /**
+     * The return statement has an [error] associated with it, when the callable expected a different raise type.
+     */
+    data class ReturnWrongError(val error: ThirValue) : TypeError
 }
