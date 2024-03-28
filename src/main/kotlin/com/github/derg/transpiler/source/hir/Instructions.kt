@@ -22,10 +22,10 @@ data class HirBranch(
 ) : HirInstruction
 
 /**
- * Evaluates the [value], and executes any side effects which may arise as a consequence. The [value] is not permitted
- * to evaluate to any non-void value or error.
+ * Evaluates the [expression], and executes any side effects which may arise as a consequence. The [expression] is not
+ * permitted to evaluate to any non-void value or error.
  */
-data class HirEvaluate(val value: HirValue) : HirInstruction
+data class HirEvaluate(val expression: HirValue) : HirInstruction
 
 /**
  * Exist the current function call, returning control flow to whoever called the function in the first place.

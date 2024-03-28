@@ -11,7 +11,7 @@ internal fun check(node: ThirInstruction): Result<Unit, TypeError> = when (node)
 {
     is ThirAssign      -> TODO()
     is ThirBranch      -> handle(node)
-    is ThirEvaluate    -> TODO()
+    is ThirEvaluate    -> handle(node)
     is ThirReturn      -> TODO()
     is ThirReturnError -> TODO()
     is ThirReturnValue -> TODO()
@@ -27,6 +27,19 @@ private fun handle(node: ThirBranch): Result<Unit, TypeError>
     val value = node.predicate.value as? ThirTypeData
     if (value == null || value.symbolId != Builtin.BOOL.id)
         return TypeError.BranchPredicateNotBool(node.predicate).toFailure()
+    
+    return Unit.toSuccess()
+}
+
+private fun handle(node: ThirEvaluate): Result<Unit, TypeError>
+{
+    // Evaluations are not permitted to contain error types.
+    if (node.expression.error != null)
+        return TypeError.EvaluateHasError(node.expression).toFailure()
+    
+    // Evaluations are not permitted to contain value types.
+    if (node.expression.value != null)
+        return TypeError.EvaluateHasValue(node.expression).toFailure()
     
     return Unit.toSuccess()
 }

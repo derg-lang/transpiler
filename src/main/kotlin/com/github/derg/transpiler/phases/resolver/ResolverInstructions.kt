@@ -61,8 +61,8 @@ internal class ResolverInstruction(private val types: TypeTable, private val sco
     
     private fun handle(node: HirEvaluate): Result<ThirInstruction, ResolveError>
     {
-        val value = values.resolve(node.value).valueOr { return it.toFailure() }
+        val expression = values.resolve(node.expression).valueOr { return it.toFailure() }
         
-        return ThirEvaluate(value).toSuccess()
+        return ThirEvaluate(expression).toSuccess()
     }
 }
