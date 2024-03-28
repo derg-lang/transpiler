@@ -35,6 +35,7 @@ private fun ThirSymbol.toExpected(input: HirSymbol): ThirSymbol = when (this)
 {
     is ThirFunction  -> copy(id = input.id, name = input.name)
     is ThirField     -> copy(id = input.id, name = input.name)
+    is ThirLiteral   -> copy(id = input.id, name = input.name)
     is ThirParameter -> copy(id = input.id, name = input.name)
     is ThirStruct    -> copy(id = input.id, name = input.name)
     is ThirVariable  -> copy(id = input.id, name = input.name)
@@ -151,6 +152,59 @@ class TestResolverSymbol
             
             assertTrue(param.id in engine.symbols.parameters)
         }
+        
+        @Test
+        fun `Given instruction, when resolving, then instruction resolved`()
+        {
+            val input = hirFunOf(instructions = listOf(HirReturn))
+            val symbol = run(input).valueOrDie() as ThirFunction
+            
+            assertEquals(listOf(ThirReturn), symbol.instructions)
+        }
+    }
+    
+    @Nested
+    inner class Literal
+    {
+        @Test
+        fun `Given valid, when resolving, then correct outcome`()
+        {
+            val param = hirParamOf()
+            val input = hirLitOf(value = Builtin.INT32_TYPE, param = param)
+            val expected = thirLitOf(value = Builtin.INT32.asThir(), param = param.asThir()).toExpected(input)
+            
+            assertSuccess(expected, run(input))
+        }
+        
+        @Test
+        fun `Given self, when resolving, then symbol resolved`()
+        {
+            val input = hirLitOf()
+            
+            run(input).valueOrDie()
+            
+            assertTrue(input.id in engine.symbols.literals)
+        }
+        
+        @Test
+        fun `Given parameter, when resolving, then symbol resolved`()
+        {
+            val param = hirParamOf()
+            val input = hirLitOf(param = param)
+            
+            run(input).valueOrDie()
+            
+            assertTrue(param.id in engine.symbols.parameters)
+        }
+        
+        @Test
+        fun `Given instruction, when resolving, then instruction resolved`()
+        {
+            val input = hirLitOf(instructions = listOf(HirReturn))
+            val symbol = run(input).valueOrDie() as ThirLiteral
+            
+            assertEquals(listOf(ThirReturn), symbol.instructions)
+        }
     }
     
     @Nested
@@ -164,27 +218,27 @@ class TestResolverSymbol
             
             assertSuccess(expected, run(input))
         }
-    
+        
         @Test
         fun `Given unknown type, when resolving, then correct error`()
         {
             val input = hirParamOf(type = hirTypeData("invalid"))
             val expected = UnknownStruct("invalid")
-        
+            
             assertFailure(expected, run(input))
         }
-    
+        
         @Test
         fun `Given ambiguous type, when resolving, then correct error`()
         {
             val type = hirTypeData("ambiguous")
-    
+            
             hirStructOf(name = type.name).also { scope.register(it) }
             hirStructOf(name = type.name).also { scope.register(it) }
             
             val input = hirParamOf(type = type)
             val expected = AmbiguousStruct(type.name)
-        
+            
             assertFailure(expected, run(input))
         }
         
@@ -272,18 +326,18 @@ class TestResolverSymbol
             
             assertFailure(expected, run(input))
         }
-    
+        
         @Test
         fun `Given ambiguous type, when resolving, then correct error`()
         {
             val type = hirTypeData("ambiguous")
-        
+            
             hirStructOf(name = type.name).also { scope.register(it) }
             hirStructOf(name = type.name).also { scope.register(it) }
-        
+            
             val input = hirVarOf(type = type)
             val expected = AmbiguousStruct(type.name)
-        
+            
             assertFailure(expected, run(input))
         }
         

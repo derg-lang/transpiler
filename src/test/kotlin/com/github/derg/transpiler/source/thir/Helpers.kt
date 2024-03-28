@@ -1,6 +1,7 @@
 package com.github.derg.transpiler.source.thir
 
 import com.github.derg.transpiler.source.*
+import com.github.derg.transpiler.source.hir.*
 import java.util.*
 
 /////////////////////
@@ -144,14 +145,28 @@ fun thirFunOf(
     parameterIds = params.map { it.id }.toSet(),
 )
 
+fun thirLitOf(
+    name: String = UUID.randomUUID().toString(),
+    value: ThirType = thirTypeData(Builtin.INT32.id),
+    param: ThirParameter = thirParamOf(),
+) = ThirLiteral(
+    id = UUID.randomUUID(),
+    name = name,
+    type = ThirTypeCall(value, null, listOf("" to param.type)),
+    visibility = Visibility.PRIVATE,
+    instructions = emptyList(),
+    variableIds = emptySet(),
+    parameterId = param.id,
+)
+
 fun thirParamOf(
     name: String = UUID.randomUUID().toString(),
-    type: ThirType? = null,
+    type: ThirType = thirTypeData(Builtin.INT32.id),
     value: ThirValue? = null,
 ) = ThirParameter(
     id = UUID.randomUUID(),
     name = name,
-    type = type ?: value?.value ?: throw IllegalArgumentException("Either type or value must be specified"),
+    type = type,
     value = value,
     passability = Passability.IN,
 )
