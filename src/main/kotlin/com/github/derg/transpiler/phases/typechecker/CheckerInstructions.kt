@@ -27,7 +27,7 @@ internal class CheckerInstruction(private val value: ThirType?, private val erro
     {
         // Predicates are not permitted to contain error types.
         if (node.predicate.error != null)
-            return TypeError.BranchHasError(node.predicate).toFailure()
+            return TypeError.BranchContainsError(node.predicate).toFailure()
         
         // The value type must be boolean.
         val value = node.predicate.value as? ThirTypeData
@@ -42,11 +42,11 @@ internal class CheckerInstruction(private val value: ThirType?, private val erro
     {
         // Evaluations are not permitted to contain error types.
         if (node.expression.error != null)
-            return TypeError.EvaluateHasError(node.expression).toFailure()
+            return TypeError.EvaluateContainsError(node.expression).toFailure()
         
         // Evaluations are not permitted to contain value types.
         if (node.expression.value != null)
-            return TypeError.EvaluateHasValue(node.expression).toFailure()
+            return TypeError.EvaluateContainsValue(node.expression).toFailure()
         
         // TODO: Type-check the expression too, ensure that it does not contain any forbidden values either.
         return Unit.toSuccess()
@@ -56,11 +56,11 @@ internal class CheckerInstruction(private val value: ThirType?, private val erro
     {
         // If the context requires an error to be raised, we cannot simply bail from the callable.
         if (error != null)
-            return TypeError.ReturnLacksError.toFailure()
+            return TypeError.ReturnMissingExpression.toFailure()
         
         // If the context requires a value to be returned, we cannot simply bail from the callable.
         if (value != null)
-            return TypeError.ReturnLacksValue.toFailure()
+            return TypeError.ReturnMissingExpression.toFailure()
         
         return Unit.toSuccess()
     }
@@ -69,14 +69,20 @@ internal class CheckerInstruction(private val value: ThirType?, private val erro
     {
         // If the function is not permitted to return anything, we cannot return anything.
         if (value == null)
-            return TypeError.ReturnHasValue(node.expression).toFailure()
+            return TypeError.ReturnContainsValue(node.expression).toFailure()
         
-        // If the expected value type is different, we have incompatible types.
+        // The expression must evaluate to exactly a value type, no error type is permitted.
+        if (node.expression.value == null)
+            return TypeError.ReturnMissingValue(node.expression).toFailure()
+        if (node.expression.error != null)
+            return TypeError.ReturnContainsError(node.expression).toFailure()
+        
+        // If the expected type is different, we have incompatible types.
         // TODO: Support generics.
         // TODO: Support mutable types.
         // TODO: Support union types.
         if (value != node.expression.value)
-            return TypeError.ReturnWrongValue(node.expression).toFailure()
+            return TypeError.ReturnWrongType(node.expression).toFailure()
         
         // TODO: Type-check the expression too, ensure that it does not contain any forbidden values either.
         return Unit.toSuccess()
@@ -86,14 +92,20 @@ internal class CheckerInstruction(private val value: ThirType?, private val erro
     {
         // If the function is not permitted to raise anything, we cannot raise anything.
         if (error == null)
-            return TypeError.ReturnHasError(node.expression).toFailure()
+            return TypeError.ReturnContainsValue(node.expression).toFailure()
+    
+        // The expression must evaluate to exactly a value type, no error type is permitted.
+        if (node.expression.value == null)
+            return TypeError.ReturnMissingValue(node.expression).toFailure()
+        if (node.expression.error != null)
+            return TypeError.ReturnContainsError(node.expression).toFailure()
         
-        // If the expected error type is different, we have incompatible types.
+        // If the expected type is different, we have incompatible types.
         // TODO: Support generics.
         // TODO: Support mutable types.
         // TODO: Support union types.
-        if (error != node.expression.error)
-            return TypeError.ReturnWrongError(node.expression).toFailure()
+        if (error != node.expression.value)
+            return TypeError.ReturnWrongType(node.expression).toFailure()
         
         // TODO: Type-check the expression too, ensure that it does not contain any forbidden values either.
         return Unit.toSuccess()
