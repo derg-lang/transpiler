@@ -16,6 +16,7 @@ import com.github.derg.transpiler.utils.*
 internal class ResolverSymbol(private val symbols: SymbolTable, private val types: TypeTable, private val scope: Scope)
 {
     private val values = ResolverValue(types, scope)
+    private val instructions = ResolverInstruction(types, scope)
     
     /**
      * Converts the symbol indicated by the [node] to a typed version. This operation converts all raw names into the
@@ -65,7 +66,7 @@ internal class ResolverSymbol(private val symbols: SymbolTable, private val type
             name = node.name,
             type = types.functions[node.id]!!,
             visibility = node.visibility,
-            instructions = emptyList(), // TODO: Resolve all instructions.
+            instructions = node.instructions.mapUntilError { instructions.resolve(it) }.valueOr { return it.toFailure() },
             genericIds = node.generics.map { it.id }.toSet(),
             variableIds = node.variables.map { it.id }.toSet(),
             parameterIds = node.parameters.map { it.id }.toSet(),
@@ -85,7 +86,7 @@ internal class ResolverSymbol(private val symbols: SymbolTable, private val type
             name = node.name,
             type = types.literals[node.id]!!,
             visibility = node.visibility,
-            instructions = emptyList(), // TODO: Resolve all instructions.
+            instructions = node.instructions.mapUntilError { instructions.resolve(it) }.valueOr { return it.toFailure() },
             variableIds = node.variables.map { it.id }.toSet(),
             parameterId = node.parameter.id,
         )
