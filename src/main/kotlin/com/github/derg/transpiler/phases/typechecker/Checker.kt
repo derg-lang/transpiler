@@ -9,6 +9,11 @@ import com.github.derg.transpiler.source.thir.*
 sealed interface TypeError
 {
     /**
+     * The branch [predicate] evaluates to no type at all.
+     */
+    data class BranchMissingValue(val predicate: ThirValue) : TypeError
+    
+    /**
      * The branch [predicate] did not evaluate to a boolean type, which is required by the branch predicate.
      */
     data class BranchWrongValue(val predicate: ThirValue) : TypeError
@@ -16,45 +21,40 @@ sealed interface TypeError
     /**
      * The branch [predicate] is evaluated to a possible error type, which is not permitted.
      */
-    data class BranchHasError(val predicate: ThirValue) : TypeError
+    data class BranchContainsError(val predicate: ThirValue) : TypeError
     
     /**
      * The provided [expression] is evaluated to a possible value, which is not permitted.
      */
-    data class EvaluateHasValue(val expression: ThirValue) : TypeError
+    data class EvaluateContainsValue(val expression: ThirValue) : TypeError
     
     /**
      * The provided [expression] is evaluated to a possible error, which is not permitted.
      */
-    data class EvaluateHasError(val expression: ThirValue) : TypeError
+    data class EvaluateContainsError(val expression: ThirValue) : TypeError
     
     /**
      * The return statement lacks a value associated with it, when the callable expected something to be returned.
      */
-    data object ReturnLacksValue : TypeError
+    data object ReturnMissingExpression : TypeError
     
     /**
-     * The return statement lacks an error associated with it, when the callable expected something to be raised.
+     * The return statement has an [expression] which evaluates to no type at all.
      */
-    data object ReturnLacksError : TypeError
+    data class ReturnMissingValue(val expression: ThirValue) : TypeError
     
     /**
-     * The return statement has a [expression] which evaluates to a value, when no return value was expected.
+     * The return statement has an [expression] which evaluates to the wrong type.
      */
-    data class ReturnHasValue(val expression: ThirValue) : TypeError
+    data class ReturnWrongType(val expression: ThirValue) : TypeError
+    
+    /**
+     * The return statement has an [expression] which evaluates to a value, when no return value was expected.
+     */
+    data class ReturnContainsValue(val expression: ThirValue) : TypeError
     
     /**
      * The return statement has an [expression] which evaluates to an error, when no return error was expected.
      */
-    data class ReturnHasError(val expression: ThirValue) : TypeError
-    
-    /**
-     * The return statement has an [expression] which evaluates to the wrong value type.
-     */
-    data class ReturnWrongValue(val expression: ThirValue) : TypeError
-    
-    /**
-     * The return statement has an [expression] which evaluates to the wrong error type.
-     */
-    data class ReturnWrongError(val expression: ThirValue) : TypeError
+    data class ReturnContainsError(val expression: ThirValue) : TypeError
 }
