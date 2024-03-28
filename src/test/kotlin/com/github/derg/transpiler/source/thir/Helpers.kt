@@ -17,6 +17,38 @@ val Any.thir: ThirValue
         else         -> throw IllegalArgumentException("Value $this does not represent a valid thir value")
     }
 
+//////////////////
+// Type helpers //
+//////////////////
+
+fun thirTypeData(
+    struct: ThirStruct,
+    mutability: Mutability = Mutability.IMMUTABLE,
+) = ThirTypeData(
+    symbolId = struct.id,
+    generics = emptyList(),
+    mutability = mutability,
+)
+
+fun thirTypeData(
+    symbolId: UUID = UUID.randomUUID(),
+    mutability: Mutability = Mutability.IMMUTABLE,
+) = ThirTypeData(
+    symbolId = symbolId,
+    generics = emptyList(),
+    mutability = mutability,
+)
+
+fun thirTypeCall(
+    value: ThirType? = null,
+    error: ThirType? = null,
+    parameters: List<ThirType> = emptyList(),
+) = ThirTypeCall(
+    value = value,
+    error = error,
+    parameters = parameters.map { "" to it },
+)
+
 ////////////////////////
 // Expression helpers //
 ////////////////////////

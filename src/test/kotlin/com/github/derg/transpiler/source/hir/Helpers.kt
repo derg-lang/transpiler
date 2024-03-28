@@ -33,7 +33,7 @@ fun hirTypeData(
 )
 
 fun hirTypeData(
-    name: String,
+    name: String = UUID.randomUUID().toString(),
     mutability: Mutability = Mutability.IMMUTABLE,
 ) = HirTypeData(
     name = name,
