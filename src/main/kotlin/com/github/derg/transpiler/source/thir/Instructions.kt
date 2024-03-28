@@ -36,12 +36,12 @@ data object ThirReturn : ThirInstruction
 
 /**
  * Exits the current function call, returning control flow to whoever called the function in the first place. The
- * error value of the function is provided by the given [error].
+ * error value of the function is provided by the given [expression].
  */
-data class ThirReturnError(val error: ThirValue) : ThirInstruction
+data class ThirReturnError(val expression: ThirValue) : ThirInstruction
 
 /**
  * Exits the current function call, returning control flow to whoever called the function in the first place. The
- * return value of the function is provided by the given [value].
+ * return value of the function is provided by the given [expression].
  */
-data class ThirReturnValue(val value: ThirValue) : ThirInstruction
+data class ThirReturnValue(val expression: ThirValue) : ThirInstruction
