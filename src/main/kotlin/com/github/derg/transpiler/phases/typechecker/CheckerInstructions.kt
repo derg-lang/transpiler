@@ -5,8 +5,8 @@ import com.github.derg.transpiler.source.thir.*
 import com.github.derg.transpiler.utils.*
 
 /**
- * The instruction checker ensures that all instructions within some callable context are valid. The instructions are expected to output the [value] and [error]
- * types, if they are specified.
+ * The instruction checker ensures that all instructions within some contexts are valid. The instructions are expected
+ * to output the [value] and [error] types, if they are specified. For some instructions, the types are not applicable.
  */
 internal class CheckerInstruction(private val value: ThirType?, private val error: ThirType?)
 {
@@ -15,12 +15,30 @@ internal class CheckerInstruction(private val value: ThirType?, private val erro
      */
     fun check(node: ThirInstruction): Result<Unit, TypeError> = when (node)
     {
-        is ThirAssign      -> TODO()
+        is ThirAssign      -> handle(node)
         is ThirBranch      -> handle(node)
         is ThirEvaluate    -> handle(node)
         is ThirReturn      -> handle(node)
         is ThirReturnError -> handle(node)
         is ThirReturnValue -> handle(node)
+    }
+    
+    private fun handle(node: ThirAssign): Result<Unit, TypeError>
+    {
+        // The expression must evaluate to exactly a value type, no error type is permitted.
+        if (node.expression.value == null)
+            return TypeError.AssignMissingValue(node.expression).toFailure()
+        if (node.expression.error != null)
+            return TypeError.AssignContainsError(node.expression).toFailure()
+        
+        // If the expected type is different, we have incompatible types.
+        // TODO: Support generics.
+        // TODO: Support mutable types.
+        // TODO: Support union types.
+        if (value != node.expression.value)
+            return TypeError.AssignWrongType(node.expression).toFailure()
+        
+        return Unit.toSuccess()
     }
     
     private fun handle(node: ThirBranch): Result<Unit, TypeError>
@@ -32,7 +50,7 @@ internal class CheckerInstruction(private val value: ThirType?, private val erro
         // The value type must be boolean.
         val value = node.predicate.value ?: return TypeError.BranchMissingValue(node.predicate).toFailure()
         if (value !is ThirTypeData || value.symbolId != Builtin.BOOL.id)
-            return TypeError.BranchWrongValue(node.predicate).toFailure()
+            return TypeError.BranchWrongType(node.predicate).toFailure()
         
         // TODO: Type-check the predicate too, ensure that it does not contain any forbidden values either.
         return Unit.toSuccess()

@@ -7,9 +7,9 @@ package com.github.derg.transpiler.source.hir
 sealed interface HirInstruction
 
 /**
- * Assigns the specified [value] to the object located under the given [instance].
+ * Assigns the specified [expression] to the object located under the given [instance].
  */
-data class HirAssign(val instance: HirValue, val value: HirValue) : HirInstruction
+data class HirAssign(val instance: HirValue, val expression: HirValue) : HirInstruction
 
 /**
  * Conditional execution is possible by branching the control flow one a [predicate]. If the predicates matches, the

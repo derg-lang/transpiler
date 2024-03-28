@@ -42,10 +42,10 @@ internal class ResolverInstruction(private val types: TypeTable, private val sco
         {
             1    -> candidates.single()
             0    -> return ResolveError.UnknownVariable(node.instance.name).toFailure()
-            else -> return ResolveError.AmbiguousVariable(node.instance.name, node.value).toFailure()
+            else -> return ResolveError.AmbiguousVariable(node.instance.name, node.expression).toFailure()
         }
         
-        val value = values.resolve(node.value).valueOr { return it.toFailure() }
+        val value = values.resolve(node.expression).valueOr { return it.toFailure() }
         return ThirAssign(candidate.id, value).toSuccess()
     }
     

@@ -9,6 +9,21 @@ import com.github.derg.transpiler.source.thir.*
 sealed interface TypeError
 {
     /**
+     * The assignment [expression] evaluates to no type at all.
+     */
+    data class AssignMissingValue(val expression: ThirValue) : TypeError
+    
+    /**
+     * The assignment [expression] did not evaluate to a type compatible with the variable.
+     */
+    data class AssignWrongType(val expression: ThirValue) : TypeError
+    
+    /**
+     * The assignment [expression] is evaluated to a possible error type, which is not permitted.
+     */
+    data class AssignContainsError(val expression: ThirValue) : TypeError
+    
+    /**
      * The branch [predicate] evaluates to no type at all.
      */
     data class BranchMissingValue(val predicate: ThirValue) : TypeError
@@ -16,7 +31,7 @@ sealed interface TypeError
     /**
      * The branch [predicate] did not evaluate to a boolean type, which is required by the branch predicate.
      */
-    data class BranchWrongValue(val predicate: ThirValue) : TypeError
+    data class BranchWrongType(val predicate: ThirValue) : TypeError
     
     /**
      * The branch [predicate] is evaluated to a possible error type, which is not permitted.
