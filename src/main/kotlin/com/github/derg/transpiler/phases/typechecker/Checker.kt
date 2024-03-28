@@ -9,6 +9,11 @@ import com.github.derg.transpiler.source.thir.*
 sealed interface TypeError
 {
     /**
+     * The branch [predicate] evaluates to no type at all.
+     */
+    data class BranchMissingValue(val predicate: ThirValue) : TypeError
+    
+    /**
      * The branch [predicate] did not evaluate to a boolean type, which is required by the branch predicate.
      */
     data class BranchWrongValue(val predicate: ThirValue) : TypeError

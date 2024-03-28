@@ -30,8 +30,8 @@ internal class CheckerInstruction(private val value: ThirType?, private val erro
             return TypeError.BranchContainsError(node.predicate).toFailure()
         
         // The value type must be boolean.
-        val value = node.predicate.value as? ThirTypeData
-        if (value == null || value.symbolId != Builtin.BOOL.id)
+        val value = node.predicate.value ?: return TypeError.BranchMissingValue(node.predicate).toFailure()
+        if (value !is ThirTypeData || value.symbolId != Builtin.BOOL.id)
             return TypeError.BranchWrongValue(node.predicate).toFailure()
         
         // TODO: Type-check the predicate too, ensure that it does not contain any forbidden values either.
@@ -93,7 +93,7 @@ internal class CheckerInstruction(private val value: ThirType?, private val erro
         // If the function is not permitted to raise anything, we cannot raise anything.
         if (error == null)
             return TypeError.ReturnContainsValue(node.expression).toFailure()
-    
+        
         // The expression must evaluate to exactly a value type, no error type is permitted.
         if (node.expression.value == null)
             return TypeError.ReturnMissingValue(node.expression).toFailure()
