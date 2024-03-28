@@ -34,12 +34,12 @@ data object HirReturn : HirInstruction
 
 /**
  * Exits the current function call, returning control flow to whoever called the function in the first place. The
- * error value of the function is provided by the given [value].
+ * error value of the function is provided by the given [expression].
  */
-data class HirReturnError(val value: HirValue) : HirInstruction
+data class HirReturnError(val expression: HirValue) : HirInstruction
 
 /**
  * Exits the current function call, returning control flow to whoever called the function in the first place. The
- * return value of the function is provided by the given [value].
+ * return value of the function is provided by the given [expression].
  */
-data class HirReturnValue(val value: HirValue) : HirInstruction
+data class HirReturnValue(val expression: HirValue) : HirInstruction

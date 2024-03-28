@@ -24,7 +24,7 @@ class TestCheckerInstructions
         fun `Given invalid value type, when checking, then correct error`()
         {
             val input = thirFunOf(value = thirTypeData(), error = null).thirCall()
-            val expected = TypeError.BranchPredicateNotBool(input)
+            val expected = TypeError.BranchWrongValue(input)
             
             assertFailure(expected, checker.check(input.thirBranch()))
         }
@@ -33,7 +33,7 @@ class TestCheckerInstructions
         fun `Given invalid error type, when checking, then correct error`()
         {
             val input = thirFunOf(value = thirTypeData(Builtin.BOOL.id), error = thirTypeData()).thirCall()
-            val expected = TypeError.BranchPredicateHasError(input)
+            val expected = TypeError.BranchHasError(input)
             
             assertFailure(expected, checker.check(input.thirBranch()))
         }
