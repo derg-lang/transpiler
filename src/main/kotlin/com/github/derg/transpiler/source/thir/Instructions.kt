@@ -9,9 +9,9 @@ import java.util.*
 sealed interface ThirInstruction
 
 /**
- * Assigns the specified [value] to the [symbolId].
+ * Assigns the specified [expression] to the [symbolId].
  */
-data class ThirAssign(val symbolId: UUID, val value: ThirValue) : ThirInstruction
+data class ThirAssign(val symbolId: UUID, val expression: ThirValue) : ThirInstruction
 
 /**
  * Conditional execution is possible by branching the control flow one a [predicate]. If the predicates matches, the

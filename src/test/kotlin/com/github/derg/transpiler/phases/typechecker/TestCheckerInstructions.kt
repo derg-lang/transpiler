@@ -11,6 +11,45 @@ class TestCheckerInstructions
     private val int32 = thirTypeData(Builtin.INT32.id)
     
     @Nested
+    inner class Assign
+    {
+        private val checker = CheckerInstruction(value = bool, error = null)
+        private val variable = thirVarOf(type = bool)
+        
+        @Test
+        fun `Given valid type, when checking, then correct outcome`()
+        {
+            val input = thirFunOf(value = bool).thirCall()
+            
+            assertSuccess(Unit, checker.check(variable.thirAssign(input)))
+        }
+        
+        @Test
+        fun `Given invalid type, when checking, then correct error`()
+        {
+            val input = thirFunOf(value = thirTypeData()).thirCall()
+            
+            assertFailure(TypeError.AssignWrongType(input), checker.check(variable.thirAssign(input)))
+        }
+        
+        @Test
+        fun `Given error type, when checking, then correct error`()
+        {
+            val input = thirFunOf(value = bool, error = bool).thirCall()
+            
+            assertFailure(TypeError.AssignContainsError(input), checker.check(variable.thirAssign(input)))
+        }
+        
+        @Test
+        fun `Given no type, when checking, then correct error`()
+        {
+            val input = thirFunOf(value = null).thirCall()
+            
+            assertFailure(TypeError.AssignMissingValue(input), checker.check(variable.thirAssign(input)))
+        }
+    }
+    
+    @Nested
     inner class Branch
     {
         private val checker = CheckerInstruction(value = null, error = null)
@@ -24,21 +63,19 @@ class TestCheckerInstructions
         }
         
         @Test
-        fun `Given invalid value type, when checking, then correct error`()
+        fun `Given invalid type, when checking, then correct error`()
         {
             val input = thirFunOf(value = thirTypeData()).thirCall()
-            val expected = TypeError.BranchWrongValue(input)
             
-            assertFailure(expected, checker.check(input.thirBranch()))
+            assertFailure(TypeError.BranchWrongType(input), checker.check(input.thirBranch()))
         }
         
         @Test
         fun `Given error type, when checking, then correct error`()
         {
             val input = thirFunOf(value = bool, error = bool).thirCall()
-            val expected = TypeError.BranchContainsError(input)
             
-            assertFailure(expected, checker.check(input.thirBranch()))
+            assertFailure(TypeError.BranchContainsError(input), checker.check(input.thirBranch()))
         }
         
         @Test
@@ -56,7 +93,7 @@ class TestCheckerInstructions
         private val checker = CheckerInstruction(value = null, error = null)
         
         @Test
-        fun `Given valid type, when checking, then correct outcome`()
+        fun `Given no type, when checking, then correct outcome`()
         {
             val input = thirFunOf(value = null, error = null).thirCall()
             
@@ -64,21 +101,19 @@ class TestCheckerInstructions
         }
         
         @Test
-        fun `Given invalid value type, when checking, then correct error`()
+        fun `Given value type, when checking, then correct error`()
         {
             val input = thirFunOf(value = thirTypeData(), error = null).thirCall()
-            val expected = TypeError.EvaluateContainsValue(input)
             
-            assertFailure(expected, checker.check(input.thirEval))
+            assertFailure(TypeError.EvaluateContainsValue(input), checker.check(input.thirEval))
         }
         
         @Test
-        fun `Given invalid error type, when checking, then correct error`()
+        fun `Given error type, when checking, then correct error`()
         {
             val input = thirFunOf(value = null, error = thirTypeData()).thirCall()
-            val expected = TypeError.EvaluateContainsError(input)
             
-            assertFailure(expected, checker.check(input.thirEval))
+            assertFailure(TypeError.EvaluateContainsError(input), checker.check(input.thirEval))
         }
     }
     
@@ -89,7 +124,7 @@ class TestCheckerInstructions
         private val checkerValue = CheckerInstruction(value = bool, error = null)
         
         @Test
-        fun `Given no types, when checking, then correct outcome`()
+        fun `Given no type, when checking, then correct outcome`()
         {
             assertSuccess(Unit, checkerEmpty.check(ThirReturn))
         }
