@@ -38,7 +38,7 @@ internal class CheckerInstruction(private val value: ThirType?, private val erro
         if (value != node.expression.value)
             return TypeError.AssignWrongType(node.expression).toFailure()
         
-        return Unit.toSuccess()
+        return CheckerValue().check(node.expression)
     }
     
     private fun handle(node: ThirBranch): Result<Unit, TypeError>

@@ -47,6 +47,24 @@ class TestCheckerInstructions
             
             assertFailure(TypeError.AssignMissingValue(input), checker.check(variable.thirAssign(input)))
         }
+    
+        @Test
+        fun `Given valid value, when checking, then correct outcome`()
+        {
+            val instance = thirFunOf(value = thirTypeCall(bool), error = null).thirCall()
+            val input = instance.thirCall(value = bool, error = null)
+            
+            assertSuccess(Unit, checker.check(variable.thirAssign(input)))
+        }
+        
+        @Test
+        fun `Given invalid value, when checking, then correct error`()
+        {
+            val instance = thirFunOf(value = thirTypeCall(bool), error = int32).thirCall()
+            val input = instance.thirCall(value = bool, error = null)
+    
+            assertFailure(TypeError.CallContainsError(instance), checker.check(variable.thirAssign(input)))
+        }
     }
     
     @Nested
