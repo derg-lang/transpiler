@@ -122,11 +122,18 @@ class TestCheckerInstructions
     {
         private val checkerEmpty = CheckerInstruction(value = null, error = null)
         private val checkerValue = CheckerInstruction(value = bool, error = null)
+        private val checkerError = CheckerInstruction(value = null, error = bool)
         
         @Test
         fun `Given no type, when checking, then correct outcome`()
         {
             assertSuccess(Unit, checkerEmpty.check(ThirReturn))
+        }
+        
+        @Test
+        fun `Given error type, when checking, then correct outcome`()
+        {
+            assertSuccess(Unit, checkerError.check(ThirReturn))
         }
         
         @Test
