@@ -1,6 +1,24 @@
 package com.github.derg.transpiler.phases.typechecker
 
+import com.github.derg.transpiler.phases.resolver.*
 import com.github.derg.transpiler.source.thir.*
+import com.github.derg.transpiler.utils.*
+
+/**
+ * Performs type-checking across all entries in the symbol [table].
+ */
+// TODO: Super-superficial type-checker operating on a whole symbol table.
+fun check(table: SymbolTable): Result<Unit, TypeError>
+{
+    for (function in table.functions.values)
+    {
+        val checker = CheckerInstruction(function.type.value, function.type.error)
+        
+        function.instructions.mapUntilError { checker.check(it) }.valueOr { return it.toFailure() }
+    }
+    
+    return Unit.toSuccess()
+}
 
 /**
  * During the type checking phase, a variety of type errors may arise. These errors describe why a type cannot be used

@@ -57,9 +57,9 @@ internal class ResolverSymbol(private val symbols: SymbolTable, private val type
     
     private fun handle(node: HirFunction): Result<ThirSymbol, ResolveError>
     {
-//        node.generics.mapUntilError { resolve(it) }.onFailure { return it.toFailure() }
-//        node.variables.mapUntilError { resolve(it) }.onFailure { return it.toFailure() }
-        node.parameters.mapUntilError { resolve(it) }.onFailure { return it.toFailure() }
+//        node.generics.mapUntilError { handle(it) }.onFailure { return it.toFailure() }
+//        node.variables.mapUntilError { handle(it) }.onFailure { return it.toFailure() }
+        node.parameters.mapUntilError { handle(it) }.onFailure { return it.toFailure() }
         
         val symbol = ThirFunction(
             id = node.id,
@@ -78,8 +78,8 @@ internal class ResolverSymbol(private val symbols: SymbolTable, private val type
     
     private fun handle(node: HirLiteral): Result<ThirSymbol, ResolveError>
     {
-//        node.variables.mapUntilError { resolve(it) }.onFailure { return it.toFailure() }
-        resolve(node.parameter).onFailure { return it.toFailure() }
+//        node.variables.mapUntilError { handle(it) }.onFailure { return it.toFailure() }
+        handle(node.parameter).onFailure { return it.toFailure() }
         
         val symbol = ThirLiteral(
             id = node.id,
@@ -111,9 +111,9 @@ internal class ResolverSymbol(private val symbols: SymbolTable, private val type
     
     private fun handle(node: HirStruct): Result<ThirSymbol, ResolveError>
     {
-        node.fields.mapUntilError { resolve(it) }.onFailure { return it.toFailure() }
-//        node.methods.mapUntilError { resolve(it) }.onFailure { return it.toFailure() }
-//        node.generics.mapUntilError { resolve(it) }.onFailure { return it.toFailure() }
+        node.fields.mapUntilError { handle(it) }.onFailure { return it.toFailure() }
+//        node.methods.mapUntilError { handle(it) }.onFailure { return it.toFailure() }
+//        node.generics.mapUntilError { handle(it) }.onFailure { return it.toFailure() }
         
         val symbol = ThirStruct(
             id = node.id,
