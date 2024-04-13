@@ -151,6 +151,24 @@ class TestCheckerInstructions
             
             assertFailure(TypeError.EvaluateContainsError(input), checker.check(input.thirEval))
         }
+    
+        @Test
+        fun `Given valid value, when checking, then correct outcome`()
+        {
+            val instance = thirFunOf(value = thirTypeCall(), error = null).thirCall()
+            val input = instance.thirCall(value = null, error = null)
+        
+            assertSuccess(Unit, checker.check(input.thirEval))
+        }
+    
+        @Test
+        fun `Given invalid value, when checking, then correct error`()
+        {
+            val instance = thirFunOf(value = thirTypeCall(), error = int32).thirCall()
+            val input = instance.thirCall(value = null, error = null)
+        
+            assertFailure(TypeError.CallContainsError(instance), checker.check(input.thirEval))
+        }
     }
     
     @Nested
