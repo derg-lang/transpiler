@@ -96,6 +96,7 @@ val ThirVariable.thirLoad: ThirValue get() = ThirLoad(type, id, emptyList())
 val ThirParameter.thirLoad: ThirValue get() = ThirLoad(type, id, emptyList())
 val ThirFunction.thirLoad: ThirValue get() = ThirLoad(type, id, emptyList())
 fun ThirFunction.thirCall(vararg parameters: Any) = ThirCall(type.value, type.error, thirLoad, parameters.map { it.thir })
+fun ThirValue.thirCall(value: ThirType? = null, error: ThirType? = null, parameters: List<ThirValue> = emptyList()) = ThirCall(value, error, this, parameters)
 
 ///////////////////////
 // Statement helpers //

@@ -57,6 +57,21 @@ sealed interface TypeError
     data class BranchContainsError(val predicate: ThirValue) : TypeError
     
     /**
+     * The call [instance] does not evaluate to something which has any value type.
+     */
+    data class CallMissingValue(val instance: ThirValue) : TypeError
+    
+    /**
+     * The call [instance] did not evaluate to a type which is callable.
+     */
+    data class CallWrongType(val instance: ThirValue) : TypeError
+    
+    /**
+     * The call [instance] is evaluated to a possible error type, which is not permitted.
+     */
+    data class CallContainsError(val instance: ThirValue) : TypeError
+    
+    /**
      * The provided [expression] is evaluated to a possible value, which is not permitted.
      */
     data class EvaluateContainsValue(val expression: ThirValue) : TypeError
