@@ -72,10 +72,6 @@ internal class CheckerInstruction(private val value: ThirType?, private val erro
     
     private fun handle(node: ThirReturn): Result<Unit, TypeError>
     {
-        // If the context requires an error to be raised, we cannot simply bail from the callable.
-        if (error != null)
-            return TypeError.ReturnMissingExpression.toFailure()
-        
         // If the context requires a value to be returned, we cannot simply bail from the callable.
         if (value != null)
             return TypeError.ReturnMissingExpression.toFailure()
