@@ -37,7 +37,7 @@ internal class CheckerInstruction(private val value: ThirType?, private val erro
         // TODO: Support union types.
         if (value != node.expression.value)
             return TypeError.AssignWrongType(node.expression).toFailure()
-        
+    
         return CheckerValue().check(node.expression)
     }
     
@@ -51,9 +51,8 @@ internal class CheckerInstruction(private val value: ThirType?, private val erro
         val value = node.predicate.value ?: return TypeError.BranchMissingValue(node.predicate).toFailure()
         if (value !is ThirTypeData || value.symbolId != Builtin.BOOL.id)
             return TypeError.BranchWrongType(node.predicate).toFailure()
-        
-        // TODO: Type-check the predicate too, ensure that it does not contain any forbidden values either.
-        return Unit.toSuccess()
+    
+        return CheckerValue().check(node.predicate)
     }
     
     private fun handle(node: ThirEvaluate): Result<Unit, TypeError>
