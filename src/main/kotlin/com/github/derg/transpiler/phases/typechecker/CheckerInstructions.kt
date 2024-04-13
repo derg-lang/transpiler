@@ -37,8 +37,8 @@ internal class CheckerInstruction(private val value: ThirType?, private val erro
         // TODO: Support union types.
         if (value != node.expression.value)
             return TypeError.AssignWrongType(node.expression).toFailure()
-        
-        return Unit.toSuccess()
+    
+        return CheckerValue().check(node.expression)
     }
     
     private fun handle(node: ThirBranch): Result<Unit, TypeError>
@@ -51,9 +51,8 @@ internal class CheckerInstruction(private val value: ThirType?, private val erro
         val value = node.predicate.value ?: return TypeError.BranchMissingValue(node.predicate).toFailure()
         if (value !is ThirTypeData || value.symbolId != Builtin.BOOL.id)
             return TypeError.BranchWrongType(node.predicate).toFailure()
-        
-        // TODO: Type-check the predicate too, ensure that it does not contain any forbidden values either.
-        return Unit.toSuccess()
+    
+        return CheckerValue().check(node.predicate)
     }
     
     private fun handle(node: ThirEvaluate): Result<Unit, TypeError>
@@ -65,9 +64,8 @@ internal class CheckerInstruction(private val value: ThirType?, private val erro
         // Evaluations are not permitted to contain value types.
         if (node.expression.value != null)
             return TypeError.EvaluateContainsValue(node.expression).toFailure()
-        
-        // TODO: Type-check the expression too, ensure that it does not contain any forbidden values either.
-        return Unit.toSuccess()
+    
+        return CheckerValue().check(node.expression)
     }
     
     private fun handle(node: ThirReturn): Result<Unit, TypeError>
@@ -97,9 +95,8 @@ internal class CheckerInstruction(private val value: ThirType?, private val erro
         // TODO: Support union types.
         if (value != node.expression.value)
             return TypeError.ReturnWrongType(node.expression).toFailure()
-        
-        // TODO: Type-check the expression too, ensure that it does not contain any forbidden values either.
-        return Unit.toSuccess()
+    
+        return CheckerValue().check(node.expression)
     }
     
     private fun handle(node: ThirReturnError): Result<Unit, TypeError>
@@ -120,8 +117,7 @@ internal class CheckerInstruction(private val value: ThirType?, private val erro
         // TODO: Support union types.
         if (error != node.expression.value)
             return TypeError.ReturnWrongType(node.expression).toFailure()
-        
-        // TODO: Type-check the expression too, ensure that it does not contain any forbidden values either.
-        return Unit.toSuccess()
+    
+        return CheckerValue().check(node.expression)
     }
 }
