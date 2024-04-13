@@ -127,11 +127,8 @@ internal class ResolutionEngine
      * Initializes the engine with the information present within the given [scope]. Symbols which are defined within
      * the scope are
      */
-    fun prepare(scope: Scope): Result<Unit, ResolveError>
-    {
-        val preparer = PreparerSymbol(types, scope)
-        return scope.symbols.mapUntilError { preparer.prepare(it) }.mapValue {}
-    }
+    fun prepare(scope: Scope): Result<Unit, ResolveError> =
+        PreparerSymbol(types, scope).prepare(scope.symbols).resolve()
     
     fun resolve(scope: Scope, node: HirSymbol): Result<ThirSymbol, ResolveError> =
         ResolverSymbol(symbols, types, scope).resolve(node)
@@ -144,22 +141,43 @@ internal class ResolutionEngine
 }
 
 /**
- * // TODO: Write me.
+ * Prepares the source code for lowering from HIR to THIR, by performing a type-collecting pass. During this stage, all
+ * types are recorded and resolved, where possible.
  *
  * Note that type-checking is not performed at this phase. We only make sure that the type information is generates for
  * all symbols which need such information.
  */
-private class PreparerSymbol(private val table: TypeTable, private val scope: Scope)
+private class PreparerSymbol(private val table: TypeTable, scope: Scope)
 {
     private val types = ResolverType(scope)
     private val values = ResolverValue(table, scope)
     
+    // Collection of symbols which remains to be processed, in the exact order they should be processed.
+    private val queue = ArrayDeque<HirSymbol>()
+    
     /**
-     * Prepares the type resolution for the given [symbol], including all syb-symbols included as a part of it. The
+     * Prepares the type resolution for the given [symbols], including all syb-symbols included as a part of it. The
      * preparation phase ensures that it is possible to look up the type of symbols, without requiring the entire symbol
      * to be fully defined.
      */
-    fun prepare(symbol: HirSymbol): Result<Unit, ResolveError> = when (symbol)
+    fun prepare(symbols: List<HirSymbol>): PreparerSymbol
+    {
+        queue.addAll(symbols)
+        return this
+    }
+    
+    /**
+     * Performs the resolution of all types, or fails trying.
+     */
+    fun resolve(): Result<Unit, ResolveError>
+    {
+        while (queue.isNotEmpty())
+            handle(queue.removeFirst()).onFailure { return it.toFailure() }
+        
+        return Unit.toSuccess()
+    }
+    
+    private fun handle(symbol: HirSymbol): Result<Unit, ResolveError> = when (symbol)
     {
         is HirConcept   -> TODO()
         is HirConstant  -> TODO()
@@ -186,19 +204,19 @@ private class PreparerSymbol(private val table: TypeTable, private val scope: Sc
     private fun handle(symbol: HirFunction): Result<Unit, ResolveError>
     {
         table.functions[symbol.id] = types.resolve(symbol.type).valueOr { return it.toFailure() }
-//        symbol.generics.mapUntilError { prepare(it) }.valueOr { return it.toFailure() }
-//        symbol.variables.mapUntilError { prepare(it) }.valueOr { return it.toFailure() }
-        symbol.parameters.mapUntilError { prepare(it) }.valueOr { return it.toFailure() }
-        
+    
+//        prepare(symbol.generics)
+        prepare(symbol.variables)
+        prepare(symbol.parameters)
         return Unit.toSuccess()
     }
     
     private fun handle(symbol: HirLiteral): Result<Unit, ResolveError>
     {
         table.literals[symbol.id] = types.resolve(symbol.type).valueOr { return it.toFailure() }
-//        symbol.variables.mapUntilError { prepare(it) }.valueOr { return it.toFailure() }
-        prepare(symbol.parameter).valueOr { return it.toFailure() }
-        
+
+//        prepare(symbol.variables)
+        prepare(listOf(symbol.parameter))
         return Unit.toSuccess()
     }
     
@@ -211,10 +229,9 @@ private class PreparerSymbol(private val table: TypeTable, private val scope: Sc
     
     private fun handle(symbol: HirStruct): Result<Unit, ResolveError>
     {
-        symbol.fields.mapUntilError { prepare(it) }.valueOr { return it.toFailure() }
-//        symbol.methods.mapUntilError { prepare(it) }.valueOr { return it.toFailure() }
-//        symbol.generics.mapUntilError { prepare(it) }.valueOr { return it.toFailure() }
-        
+        prepare(symbol.fields)
+//        prepare(symbol.methods)
+//        prepare(symbol.generics)
         return Unit.toSuccess()
     }
     
