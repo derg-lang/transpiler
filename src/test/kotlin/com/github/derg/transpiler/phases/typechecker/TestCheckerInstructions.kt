@@ -1,5 +1,6 @@
 package com.github.derg.transpiler.phases.typechecker
 
+import com.github.derg.transpiler.phases.typechecker.TypeError.*
 import com.github.derg.transpiler.source.hir.*
 import com.github.derg.transpiler.source.thir.*
 import com.github.derg.transpiler.utils.*
@@ -29,7 +30,7 @@ class TestCheckerInstructions
         {
             val input = thirFunOf(value = thirTypeData()).thirCall()
             
-            assertFailure(TypeError.AssignWrongType(input), checker.check(variable.thirAssign(input)))
+            assertFailure(AssignWrongType(input), checker.check(variable.thirAssign(input)))
         }
         
         @Test
@@ -37,7 +38,7 @@ class TestCheckerInstructions
         {
             val input = thirFunOf(value = bool, error = bool).thirCall()
             
-            assertFailure(TypeError.AssignContainsError(input), checker.check(variable.thirAssign(input)))
+            assertFailure(AssignContainsError(input), checker.check(variable.thirAssign(input)))
         }
         
         @Test
@@ -45,7 +46,7 @@ class TestCheckerInstructions
         {
             val input = thirFunOf(value = null).thirCall()
             
-            assertFailure(TypeError.AssignMissingValue(input), checker.check(variable.thirAssign(input)))
+            assertFailure(AssignMissingValue(input), checker.check(variable.thirAssign(input)))
         }
     
         @Test
@@ -63,7 +64,7 @@ class TestCheckerInstructions
             val instance = thirFunOf(value = thirTypeCall(bool), error = int32).thirCall()
             val input = instance.thirCall(value = bool, error = null)
     
-            assertFailure(TypeError.CallContainsError(instance), checker.check(variable.thirAssign(input)))
+            assertFailure(CallContainsError(instance), checker.check(variable.thirAssign(input)))
         }
     }
     
@@ -85,7 +86,7 @@ class TestCheckerInstructions
         {
             val input = thirFunOf(value = thirTypeData()).thirCall()
             
-            assertFailure(TypeError.BranchWrongType(input), checker.check(input.thirBranch()))
+            assertFailure(BranchWrongType(input), checker.check(input.thirBranch()))
         }
         
         @Test
@@ -93,7 +94,7 @@ class TestCheckerInstructions
         {
             val input = thirFunOf(value = bool, error = bool).thirCall()
             
-            assertFailure(TypeError.BranchContainsError(input), checker.check(input.thirBranch()))
+            assertFailure(BranchContainsError(input), checker.check(input.thirBranch()))
         }
         
         @Test
@@ -101,7 +102,7 @@ class TestCheckerInstructions
         {
             val input = thirFunOf(value = null).thirCall()
             
-            assertFailure(TypeError.BranchMissingValue(input), checker.check(input.thirBranch()))
+            assertFailure(BranchMissingValue(input), checker.check(input.thirBranch()))
         }
     
         @Test
@@ -119,7 +120,7 @@ class TestCheckerInstructions
             val instance = thirFunOf(value = thirTypeCall(bool), error = int32).thirCall()
             val input = instance.thirCall(value = bool, error = null)
         
-            assertFailure(TypeError.CallContainsError(instance), checker.check(input.thirBranch()))
+            assertFailure(CallContainsError(instance), checker.check(input.thirBranch()))
         }
     }
     
@@ -141,7 +142,7 @@ class TestCheckerInstructions
         {
             val input = thirFunOf(value = thirTypeData(), error = null).thirCall()
             
-            assertFailure(TypeError.EvaluateContainsValue(input), checker.check(input.thirEval))
+            assertFailure(EvaluateContainsValue(input), checker.check(input.thirEval))
         }
         
         @Test
@@ -149,7 +150,7 @@ class TestCheckerInstructions
         {
             val input = thirFunOf(value = null, error = thirTypeData()).thirCall()
             
-            assertFailure(TypeError.EvaluateContainsError(input), checker.check(input.thirEval))
+            assertFailure(EvaluateContainsError(input), checker.check(input.thirEval))
         }
     
         @Test
@@ -167,7 +168,7 @@ class TestCheckerInstructions
             val instance = thirFunOf(value = thirTypeCall(), error = int32).thirCall()
             val input = instance.thirCall(value = null, error = null)
         
-            assertFailure(TypeError.CallContainsError(instance), checker.check(input.thirEval))
+            assertFailure(CallContainsError(instance), checker.check(input.thirEval))
         }
     }
     
@@ -193,7 +194,7 @@ class TestCheckerInstructions
         @Test
         fun `Given value type, when checking, then correct error`()
         {
-            assertFailure(TypeError.ReturnMissingExpression, checkerValue.check(ThirReturn))
+            assertFailure(ReturnMissingExpression, checkerValue.check(ThirReturn))
         }
     }
     
@@ -216,7 +217,7 @@ class TestCheckerInstructions
         {
             val input = thirFunOf(value = int32).thirCall()
             
-            assertFailure(TypeError.ReturnWrongType(input), checkerValue.check(input.thirReturnValue))
+            assertFailure(ReturnWrongType(input), checkerValue.check(input.thirReturnValue))
         }
         
         @Test
@@ -224,7 +225,7 @@ class TestCheckerInstructions
         {
             val input = thirFunOf(value = bool, error = bool).thirCall()
             
-            assertFailure(TypeError.ReturnContainsError(input), checkerValue.check(input.thirReturnValue))
+            assertFailure(ReturnContainsError(input), checkerValue.check(input.thirReturnValue))
         }
         
         @Test
@@ -232,7 +233,7 @@ class TestCheckerInstructions
         {
             val input = thirFunOf(value = null).thirCall()
             
-            assertFailure(TypeError.ReturnMissingValue(input), checkerValue.check(input.thirReturnValue))
+            assertFailure(ReturnMissingValue(input), checkerValue.check(input.thirReturnValue))
         }
         
         @Test
@@ -240,7 +241,7 @@ class TestCheckerInstructions
         {
             val input = thirFunOf(value = bool).thirCall()
             
-            assertFailure(TypeError.ReturnContainsValue(input), checkerEmpty.check(input.thirReturnValue))
+            assertFailure(ReturnContainsValue(input), checkerEmpty.check(input.thirReturnValue))
         }
     
         @Test
@@ -258,7 +259,7 @@ class TestCheckerInstructions
             val instance = thirFunOf(value = thirTypeCall(bool), error = int32).thirCall()
             val input = instance.thirCall(value = bool, error = null)
         
-            assertFailure(TypeError.CallContainsError(instance), checkerValue.check(input.thirReturnValue))
+            assertFailure(CallContainsError(instance), checkerValue.check(input.thirReturnValue))
         }
     }
     
@@ -281,7 +282,7 @@ class TestCheckerInstructions
         {
             val input = thirFunOf(value = int32).thirCall()
             
-            assertFailure(TypeError.ReturnWrongType(input), checkerError.check(input.thirReturnError))
+            assertFailure(ReturnWrongType(input), checkerError.check(input.thirReturnError))
         }
         
         @Test
@@ -289,7 +290,7 @@ class TestCheckerInstructions
         {
             val input = thirFunOf(value = bool, error = bool).thirCall()
             
-            assertFailure(TypeError.ReturnContainsError(input), checkerError.check(input.thirReturnError))
+            assertFailure(ReturnContainsError(input), checkerError.check(input.thirReturnError))
         }
         
         @Test
@@ -297,7 +298,7 @@ class TestCheckerInstructions
         {
             val input = thirFunOf(value = null).thirCall()
             
-            assertFailure(TypeError.ReturnMissingValue(input), checkerError.check(input.thirReturnError))
+            assertFailure(ReturnMissingValue(input), checkerError.check(input.thirReturnError))
         }
         
         @Test
@@ -305,7 +306,7 @@ class TestCheckerInstructions
         {
             val input = thirFunOf(value = bool).thirCall()
             
-            assertFailure(TypeError.ReturnContainsValue(input), checkerEmpty.check(input.thirReturnError))
+            assertFailure(ReturnContainsValue(input), checkerEmpty.check(input.thirReturnError))
         }
     
         @Test
@@ -323,7 +324,7 @@ class TestCheckerInstructions
             val instance = thirFunOf(value = thirTypeCall(bool), error = int32).thirCall()
             val input = instance.thirCall(value = bool, error = null)
         
-            assertFailure(TypeError.CallContainsError(instance), checkerError.check(input.thirReturnError))
+            assertFailure(CallContainsError(instance), checkerError.check(input.thirReturnError))
         }
     }
 }
