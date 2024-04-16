@@ -18,7 +18,7 @@ class TestCheckerValues
         private val checker = CheckerValue()
     
         @Test
-        fun `Given no type, when checking, then correct error`()
+        fun `Given no instance type, when checking, then correct error`()
         {
             val instance = thirFunOf(value = null, error = null).thirCall()
     
@@ -26,7 +26,7 @@ class TestCheckerValues
         }
     
         @Test
-        fun `Given valid type, when checking, then correct error`()
+        fun `Given valid instance type, when checking, then correct error`()
         {
             val instance = thirFunOf(value = func, error = null).thirCall()
         
@@ -34,7 +34,7 @@ class TestCheckerValues
         }
         
         @Test
-        fun `Given invalid type, when checking, then correct error`()
+        fun `Given invalid instance type, when checking, then correct error`()
         {
             val instance = thirFunOf(value = bool, error = null).thirCall()
     
@@ -42,7 +42,7 @@ class TestCheckerValues
         }
     
         @Test
-        fun `Given error type, when checking, then correct error`()
+        fun `Given error instance type, when checking, then correct error`()
         {
             val instance = thirFunOf(value = func, error = bool).thirCall()
         
@@ -65,6 +65,24 @@ class TestCheckerValues
             val input = instance.thirCall(value = func, error = null)
         
             assertFailure(CallContainsError(instance), checker.check(input.thirCall()))
+        }
+    
+        @Test
+        fun `Given no parameter error, when checking, then correct outcome`()
+        {
+            val function = thirFunOf(params = listOf(thirParamOf(type = bool)))
+            val instance = thirFunOf(value = null, error = null).thirCall()
+        
+            assertSuccess(Unit, checker.check(function.thirCall(instance)))
+        }
+    
+        @Test
+        fun `Given error parameter type, when checking, then correct error`()
+        {
+            val function = thirFunOf(params = listOf(thirParamOf(type = bool)))
+            val instance = thirFunOf(value = null, error = bool).thirCall()
+        
+            assertFailure(CallContainsError(instance), checker.check(function.thirCall(instance)))
         }
     }
     

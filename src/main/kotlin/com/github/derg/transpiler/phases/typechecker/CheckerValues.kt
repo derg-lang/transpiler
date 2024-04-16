@@ -35,6 +35,9 @@ internal class CheckerValue
         if (node.instance.value !is ThirTypeCall)
             return TypeError.CallWrongType(node.instance).toFailure()
         
+        // Parameters are not permitted to have errors.
+        node.parameters.firstOrNull { it.error != null }?.also { return TypeError.CallContainsError(it).toFailure() }
+        
         // Ensure that all inputs to the call are also valid.
         check(node.instance).onFailure { return it.toFailure() }
         node.parameters.mapUntilError { check(it) }.onFailure { return it.toFailure() }
