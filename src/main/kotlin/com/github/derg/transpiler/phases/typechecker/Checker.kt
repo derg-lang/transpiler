@@ -72,6 +72,21 @@ sealed interface TypeError
     data class CallContainsError(val instance: ThirValue) : TypeError
     
     /**
+     * The catch [instance] does not evaluate to something which has any value type.
+     */
+    data class CatchMissingValue(val instance: ThirValue) : TypeError
+    
+    /**
+     * The catch [instance] does not evaluate to something which has any error type.
+     */
+    data class CatchMissingError(val instance: ThirValue) : TypeError
+    
+    /**
+     * The catch [instance] is evaluated to a possible error type, which is not permitted.
+     */
+    data class CatchContainsError(val instance: ThirValue) : TypeError
+    
+    /**
      * The provided [expression] is evaluated to a possible value, which is not permitted.
      */
     data class EvaluateContainsValue(val expression: ThirValue) : TypeError
