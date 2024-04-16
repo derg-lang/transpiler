@@ -619,8 +619,8 @@ class TestResolverValue
         @Test
         fun `Given builtin types, when resolving, then correct outcome`()
         {
-            assertSuccess(1.thir, run(1.hirPlus))
-            assertSuccess(1L.thir, run(1L.hirPlus))
+            assertSuccess(1.thirPlus, run(1.hirPlus))
+            assertSuccess(1L.thirPlus, run(1L.hirPlus))
         }
         
         @Test

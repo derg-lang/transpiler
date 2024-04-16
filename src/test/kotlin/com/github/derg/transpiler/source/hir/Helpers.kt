@@ -57,6 +57,10 @@ fun hirTypeUnion(vararg types: HirType) = HirTypeUnion(types.toList())
 // Expression helpers //
 ////////////////////////
 
+val Any.hirNot: HirValue get() = HirNot(hir)
+val Any.hirPlus: HirValue get() = HirPlus(hir)
+val Any.hirMinus: HirValue get() = HirMinus(hir)
+
 infix fun Any.hirEq(that: Any): HirValue = HirEq(this.hir, that.hir)
 infix fun Any.hirNe(that: Any): HirValue = HirNe(this.hir, that.hir)
 infix fun Any.hirGe(that: Any): HirValue = HirGe(this.hir, that.hir)
@@ -77,10 +81,6 @@ infix fun Any.hirXor(that: Any): HirValue = HirXor(this.hir, that.hir)
 infix fun Any.hirCatchRaise(that: Any) = HirCatch(this.hir, that.hir, Capture.RAISE)
 infix fun Any.hirCatchReturn(that: Any) = HirCatch(this.hir, that.hir, Capture.RETURN)
 infix fun Any.hirCatchHandle(that: Any) = HirCatch(this.hir, that.hir, Capture.HANDLE)
-
-val Any.hirNot: HirValue get() = HirNot(hir)
-val Any.hirMinus: HirValue get() = HirMinus(hir)
-val Any.hirPlus: HirValue get() = HirPlus(hir)
 
 val HirSymbol.hirLoad: HirValue get() = HirLoad(name, emptyList())
 fun HirFunction.hirCall(vararg parameters: Any) = HirCall(hirLoad, parameters.map { null hirArg it })
