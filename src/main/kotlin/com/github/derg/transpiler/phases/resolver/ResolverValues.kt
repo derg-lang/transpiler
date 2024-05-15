@@ -1,10 +1,30 @@
 package com.github.derg.transpiler.phases.resolver
 
-import com.github.derg.transpiler.source.*
+import com.github.derg.transpiler.source.Symbol
 import com.github.derg.transpiler.source.hir.*
 import com.github.derg.transpiler.source.thir.*
 import com.github.derg.transpiler.utils.*
+import java.math.BigInteger
 import java.util.*
+
+internal val INT32_MIN = Int.MIN_VALUE.toBigInteger()
+internal val INT32_MAX = Int.MAX_VALUE.toBigInteger()
+internal val INT64_MIN = Long.MIN_VALUE.toBigInteger()
+internal val INT64_MAX = Long.MAX_VALUE.toBigInteger()
+
+private fun BigInteger.toInt32(): Result<ThirInt32Const, ResolveError>
+{
+    if (this < INT32_MIN || this > INT32_MAX)
+        return ResolveError.InvalidLiteralInteger(this).toFailure()
+    return ThirInt32Const(toInt()).toSuccess()
+}
+
+private fun BigInteger.toInt64(): Result<ThirInt64Const, ResolveError>
+{
+    if (this < INT64_MIN || this > INT64_MAX)
+        return ResolveError.InvalidLiteralInteger(this).toFailure()
+    return ThirInt64Const(toLong()).toSuccess()
+}
 
 /**
  * The value resolver is responsible for ensuring that values within the given [scope] can be resolved to typed values.
@@ -168,8 +188,8 @@ internal class ResolverValue(private val types: TypeTable, private val scope: Sc
         val parameter = literal.parameters.singleOrNull() ?: return ResolveError.Placeholder.toFailure()
         val value = when ((parameter.second as? ThirTypeData)?.symbolId)
         {
-            Builtin.INT32.id -> ThirInt32Const(node.value.toInt()) // TODO: Verify that the value fits the range.
-            Builtin.INT64.id -> ThirInt64Const(node.value.toLong()) // TODO: Verify that the value fits the range.
+            Builtin.INT32.id -> node.value.toInt32().valueOr { return it.toFailure() }
+            Builtin.INT64.id -> node.value.toInt64().valueOr { return it.toFailure() }
             else             -> return ResolveError.InvalidLiteralParam(node.literal).toFailure()
         }
         

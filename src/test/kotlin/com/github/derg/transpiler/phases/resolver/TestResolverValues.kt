@@ -1,12 +1,17 @@
 package com.github.derg.transpiler.phases.resolver
 
 import com.github.derg.transpiler.phases.resolver.ResolveError.*
-import com.github.derg.transpiler.source.*
+import com.github.derg.transpiler.source.INT32_LIT_NAME
+import com.github.derg.transpiler.source.INT64_LIT_NAME
+import com.github.derg.transpiler.source.Mutability
+import com.github.derg.transpiler.source.Symbol
 import com.github.derg.transpiler.source.hir.*
 import com.github.derg.transpiler.source.thir.*
 import com.github.derg.transpiler.utils.*
-import org.junit.jupiter.api.*
-import java.math.*
+import org.junit.jupiter.api.Disabled
+import org.junit.jupiter.api.Nested
+import org.junit.jupiter.api.Test
+import java.math.BigInteger
 
 /**
  * Simulates what a thir call on [this] function would be given the list of [parameters]. The function is assumed
@@ -337,8 +342,21 @@ class TestResolverValue
         @Test
         fun `Given builtin types, when resolving, then correct outcome`()
         {
+            // Int32
+            assertSuccess(0.thir, run(0.hir))
             assertSuccess(1.thir, run(1.hir))
+            assertSuccess(Int.MIN_VALUE.thir, run(Int.MIN_VALUE.hir))
+            assertSuccess(Int.MAX_VALUE.thir, run(Int.MAX_VALUE.hir))
+            assertFailure(InvalidLiteralInteger(INT32_MIN - 1), run(HirInteger(INT32_MIN - 1, INT32_LIT_NAME)))
+            assertFailure(InvalidLiteralInteger(INT32_MAX + 1), run(HirInteger(INT32_MAX + 1, INT32_LIT_NAME)))
+            
+            // Int64
+            assertSuccess(0L.thir, run(0L.hir))
             assertSuccess(1L.thir, run(1L.hir))
+            assertSuccess(Long.MIN_VALUE.thir, run(Long.MIN_VALUE.hir))
+            assertSuccess(Long.MAX_VALUE.thir, run(Long.MAX_VALUE.hir))
+            assertFailure(InvalidLiteralInteger(INT64_MIN - 1), run(HirInteger(INT64_MIN - 1, INT64_LIT_NAME)))
+            assertFailure(InvalidLiteralInteger(INT64_MAX + 1), run(HirInteger(INT64_MAX + 1, INT64_LIT_NAME)))
         }
         
         @Test
