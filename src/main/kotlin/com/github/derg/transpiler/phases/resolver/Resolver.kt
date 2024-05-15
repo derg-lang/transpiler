@@ -3,6 +3,7 @@ package com.github.derg.transpiler.phases.resolver
 import com.github.derg.transpiler.source.hir.*
 import com.github.derg.transpiler.source.thir.*
 import com.github.derg.transpiler.utils.*
+import java.math.BigInteger
 
 /**
  * Converts the input [hirPackage] into a typed variable. All symbols found within the package are stored in the symbol
@@ -106,6 +107,11 @@ sealed interface ResolveError
      * The literal with the given [name] has a parameter which is not a builtin type.
      */
     data class InvalidLiteralParam(val name: String) : ResolveError
+    
+    /**
+     * The literal with the given [value] is outside the allowed dynamic range.
+     */
+    data class InvalidLiteralInteger(val value: BigInteger) : ResolveError
     
     /**
      * Used to represent an error which is not yet defined.
