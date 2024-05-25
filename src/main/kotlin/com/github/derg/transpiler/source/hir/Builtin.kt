@@ -1,6 +1,6 @@
 package com.github.derg.transpiler.source.hir
 
-import com.github.derg.transpiler.phases.resolver.*
+import com.github.derg.transpiler.phases.resolver.Scope
 import com.github.derg.transpiler.source.*
 import java.util.*
 
@@ -17,14 +17,8 @@ object Builtin
      */
     val GLOBAL_SCOPE = Scope(null)
     
-    /**
-     * Void represents a special type that can never be instantiated. This type is used to represent the absence of a
-     * value, where a value would normally be expected. This is commonly used to model functions which has no return
-     * value or error, and to capture errors where an expression is used as statements.
-     */
-    // TODO: Remove the void type; it should never appear in the type system.
-    private val VOID = registerStruct(VOID_TYPE_NAME)
-    private val VOID_TYPE = typeOf(VOID)
+    val DIVIDE_BY_ZERO = registerStruct(DIVIDE_BY_ZERO_TYPE_NAME)
+    val DIVIDE_BY_ZERO_TYPE = typeOf(DIVIDE_BY_ZERO)
     
     val BOOL = registerStruct(BOOL_TYPE_NAME)
     val BOOL_TYPE = typeOf(BOOL)
@@ -44,13 +38,13 @@ object Builtin
     val INT32_LE = registerInfixOp(Symbol.LESS_EQUAL, INT32_TYPE, BOOL_TYPE, null)
     val INT32_LT = registerInfixOp(Symbol.LESS, INT32_TYPE, BOOL_TYPE, null)
     val INT32_NE = registerInfixOp(Symbol.NOT_EQUAL, INT32_TYPE, BOOL_TYPE, null)
-    val INT32_ADD = registerInfixOp(Symbol.PLUS, INT32_TYPE, INT32_TYPE, VOID_TYPE)
-    val INT32_DIV = registerInfixOp(Symbol.DIVIDE, INT32_TYPE, INT32_TYPE, VOID_TYPE)
-    val INT32_MOD = registerInfixOp(Symbol.MODULO, INT32_TYPE, INT32_TYPE, VOID_TYPE)
-    val INT32_MUL = registerInfixOp(Symbol.MULTIPLY, INT32_TYPE, INT32_TYPE, VOID_TYPE)
-    val INT32_NEG = registerPrefixOp(Symbol.MINUS, INT32_TYPE, INT32_TYPE, VOID_TYPE)
-    val INT32_POS = registerPrefixOp(Symbol.PLUS, INT32_TYPE, INT32_TYPE, VOID_TYPE)
-    val INT32_SUB = registerInfixOp(Symbol.MINUS, INT32_TYPE, INT32_TYPE, VOID_TYPE)
+    val INT32_ADD = registerInfixOp(Symbol.PLUS, INT32_TYPE, INT32_TYPE, null)
+    val INT32_DIV = registerInfixOp(Symbol.DIVIDE, INT32_TYPE, INT32_TYPE, DIVIDE_BY_ZERO_TYPE)
+    val INT32_MOD = registerInfixOp(Symbol.MODULO, INT32_TYPE, INT32_TYPE, DIVIDE_BY_ZERO_TYPE)
+    val INT32_MUL = registerInfixOp(Symbol.MULTIPLY, INT32_TYPE, INT32_TYPE, null)
+    val INT32_NEG = registerPrefixOp(Symbol.MINUS, INT32_TYPE, INT32_TYPE, null)
+    val INT32_POS = registerPrefixOp(Symbol.PLUS, INT32_TYPE, INT32_TYPE, null)
+    val INT32_SUB = registerInfixOp(Symbol.MINUS, INT32_TYPE, INT32_TYPE, null)
     
     val INT64 = registerStruct(INT64_TYPE_NAME)
     val INT64_TYPE = typeOf(INT64)
@@ -61,13 +55,13 @@ object Builtin
     val INT64_LE = registerInfixOp(Symbol.LESS_EQUAL, INT64_TYPE, BOOL_TYPE, null)
     val INT64_LT = registerInfixOp(Symbol.LESS, INT64_TYPE, BOOL_TYPE, null)
     val INT64_NE = registerInfixOp(Symbol.NOT_EQUAL, INT64_TYPE, BOOL_TYPE, null)
-    val INT64_ADD = registerInfixOp(Symbol.PLUS, INT64_TYPE, INT64_TYPE, VOID_TYPE)
-    val INT64_DIV = registerInfixOp(Symbol.DIVIDE, INT64_TYPE, INT64_TYPE, VOID_TYPE)
-    val INT64_MOD = registerInfixOp(Symbol.MODULO, INT64_TYPE, INT64_TYPE, VOID_TYPE)
-    val INT64_MUL = registerInfixOp(Symbol.MULTIPLY, INT64_TYPE, INT64_TYPE, VOID_TYPE)
-    val INT64_NEG = registerPrefixOp(Symbol.MINUS, INT64_TYPE, INT64_TYPE, VOID_TYPE)
-    val INT64_POS = registerPrefixOp(Symbol.PLUS, INT64_TYPE, INT64_TYPE, VOID_TYPE)
-    val INT64_SUB = registerInfixOp(Symbol.MINUS, INT64_TYPE, INT64_TYPE, VOID_TYPE)
+    val INT64_ADD = registerInfixOp(Symbol.PLUS, INT64_TYPE, INT64_TYPE, null)
+    val INT64_DIV = registerInfixOp(Symbol.DIVIDE, INT64_TYPE, INT64_TYPE, DIVIDE_BY_ZERO_TYPE)
+    val INT64_MOD = registerInfixOp(Symbol.MODULO, INT64_TYPE, INT64_TYPE, DIVIDE_BY_ZERO_TYPE)
+    val INT64_MUL = registerInfixOp(Symbol.MULTIPLY, INT64_TYPE, INT64_TYPE, null)
+    val INT64_NEG = registerPrefixOp(Symbol.MINUS, INT64_TYPE, INT64_TYPE, null)
+    val INT64_POS = registerPrefixOp(Symbol.PLUS, INT64_TYPE, INT64_TYPE, null)
+    val INT64_SUB = registerInfixOp(Symbol.MINUS, INT64_TYPE, INT64_TYPE, null)
     
     // TODO: Support strings somehow
     val STR = registerStruct(STR_TYPE_NAME)

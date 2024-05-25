@@ -18,3 +18,5 @@ const val BOOL_TYPE_NAME = "__builtin_bool"
 const val INT32_TYPE_NAME = "__builtin_i32"
 const val INT64_TYPE_NAME = "__builtin_i64"
 const val STR_TYPE_NAME = "__builtin_str"
+
+const val DIVIDE_BY_ZERO_TYPE_NAME = "__builtin_divide_by_zero"
