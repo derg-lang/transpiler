@@ -1,7 +1,8 @@
 package com.github.derg.transpiler.source.thir
 
-import com.github.derg.transpiler.source.*
-import com.github.derg.transpiler.source.hir.*
+import com.github.derg.transpiler.source.Capture
+import com.github.derg.transpiler.source.Mutability
+import com.github.derg.transpiler.source.hir.Builtin
 import java.util.*
 
 /**
@@ -73,7 +74,13 @@ data class ThirBoolNot(val rhs: ThirValue) : ThirValueBool
 sealed interface ThirValueInt32 : ThirValue
 {
     override val value: ThirType get() = ThirTypeData(Builtin.INT32.id, Mutability.IMMUTABLE, emptyList())
-    override val error: Nothing? get() = null
+    override val error: ThirType?
+        get() = when (this)
+        {
+            is ThirInt32Div -> ThirTypeData(Builtin.DIVIDE_BY_ZERO.id, Mutability.IMMUTABLE, emptyList())
+            is ThirInt32Mod -> ThirTypeData(Builtin.DIVIDE_BY_ZERO.id, Mutability.IMMUTABLE, emptyList())
+            else            -> null
+        }
 }
 
 data class ThirInt32Const(val raw: Int) : ThirValueInt32
@@ -96,7 +103,13 @@ data class ThirInt32Neg(val rhs: ThirValue) : ThirValueInt32
 sealed interface ThirValueInt64 : ThirValue
 {
     override val value: ThirType get() = ThirTypeData(Builtin.INT64.id, Mutability.IMMUTABLE, emptyList())
-    override val error: Nothing? get() = null
+    override val error: ThirType?
+        get() = when (this)
+        {
+            is ThirInt64Div -> ThirTypeData(Builtin.DIVIDE_BY_ZERO.id, Mutability.IMMUTABLE, emptyList())
+            is ThirInt64Mod -> ThirTypeData(Builtin.DIVIDE_BY_ZERO.id, Mutability.IMMUTABLE, emptyList())
+            else            -> null
+        }
 }
 
 data class ThirInt64Const(val raw: Long) : ThirValueInt64
