@@ -1,8 +1,7 @@
 package com.github.derg.transpiler.source.thir
 
-import com.github.derg.transpiler.source.Capture
-import com.github.derg.transpiler.source.Mutability
-import com.github.derg.transpiler.source.hir.Builtin
+import com.github.derg.transpiler.source.*
+import com.github.derg.transpiler.source.hir.*
 import java.util.*
 
 /**
@@ -56,7 +55,7 @@ data class ThirCatch(val lhs: ThirValue, val rhs: ThirValue, val capture: Captur
  */
 data class ThirConstBool(val raw: Boolean) : ThirValue
 {
-    override val value: ThirType get() = ThirTypeData(Builtin.BOOL.id, Mutability.IMMUTABLE, emptyList())
+    override val value: ThirType get() = ThirTypeStruct(Builtin.BOOL.id, Mutability.IMMUTABLE, emptyList())
     override val error: Nothing? get() = null
 }
 
@@ -65,7 +64,7 @@ data class ThirConstBool(val raw: Boolean) : ThirValue
  */
 data class ThirConstInt32(val raw: Int) : ThirValue
 {
-    override val value: ThirType get() = ThirTypeData(Builtin.INT32.id, Mutability.IMMUTABLE, emptyList())
+    override val value: ThirType get() = ThirTypeStruct(Builtin.INT32.id, Mutability.IMMUTABLE, emptyList())
     override val error: Nothing? get() = null
 }
 
@@ -74,6 +73,6 @@ data class ThirConstInt32(val raw: Int) : ThirValue
  */
 data class ThirConstInt64(val raw: Long) : ThirValue
 {
-    override val value: ThirType get() = ThirTypeData(Builtin.INT64.id, Mutability.IMMUTABLE, emptyList())
+    override val value: ThirType get() = ThirTypeStruct(Builtin.INT64.id, Mutability.IMMUTABLE, emptyList())
     override val error: Nothing? get() = null
 }

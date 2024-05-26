@@ -1,17 +1,12 @@
 package com.github.derg.transpiler.phases.resolver
 
 import com.github.derg.transpiler.phases.resolver.ResolveError.*
-import com.github.derg.transpiler.source.INT32_LIT_NAME
-import com.github.derg.transpiler.source.INT64_LIT_NAME
-import com.github.derg.transpiler.source.Mutability
-import com.github.derg.transpiler.source.Symbol
+import com.github.derg.transpiler.source.*
 import com.github.derg.transpiler.source.hir.*
 import com.github.derg.transpiler.source.thir.*
 import com.github.derg.transpiler.utils.*
-import org.junit.jupiter.api.Disabled
-import org.junit.jupiter.api.Nested
-import org.junit.jupiter.api.Test
-import java.math.BigInteger
+import org.junit.jupiter.api.*
+import java.math.*
 
 /**
  * Simulates what a thir call on [this] function would be given the list of [parameters]. The function is assumed
@@ -21,7 +16,7 @@ private fun HirFunction.thirCall(vararg parameters: Any): ThirValue
 {
     val inputs = parameters.map { it.thir }
     val params = this.parameters.zip(inputs).map { it.first.name to it.second.value!! }
-    val type = ThirTypeCall(null, null, params)
+    val type = ThirTypeFunction(null, null, params)
     
     return ThirCall(null, null, ThirLoad(type, id, emptyList()), inputs)
 }
@@ -29,8 +24,8 @@ private fun HirFunction.thirCall(vararg parameters: Any): ThirValue
 private fun HirLiteral.thirCall(parameter: Any): ThirValue
 {
     val input = parameter.thir
-    val output = ThirTypeData(Builtin.INT32.id, Mutability.IMMUTABLE, emptyList())
-    val type = ThirTypeCall(output, null, listOf("" to input.value as ThirTypeData))
+    val output = ThirTypeStruct(Builtin.INT32.id, Mutability.IMMUTABLE, emptyList())
+    val type = ThirTypeLiteral(output, input.value as ThirTypeStruct)
     
     return ThirCall(output, null, ThirLoad(type, id, emptyList()), listOf(input))
 }
@@ -357,15 +352,6 @@ class TestResolverValue
             assertSuccess(Long.MAX_VALUE.thir, run(Long.MAX_VALUE.hir))
             assertFailure(InvalidLiteralInteger(INT64_MIN - 1), run(HirInteger(INT64_MIN - 1, INT64_LIT_NAME)))
             assertFailure(InvalidLiteralInteger(INT64_MAX + 1), run(HirInteger(INT64_MAX + 1, INT64_LIT_NAME)))
-        }
-        
-        @Test
-        fun `Given invalid type, when resolving, then correct outcome`()
-        {
-            val literal = registerLit("foo", HirTypeCall(null, null, emptyList()))
-            val expected = InvalidLiteralParam(literal.name)
-            
-            assertFailure(expected, run(HirInteger(BigInteger.ONE, literal.name)))
         }
         
         @Test

@@ -11,14 +11,13 @@ class SymbolTable
 {
     val fields = mutableMapOf<UUID, ThirField>()
     val functions = mutableMapOf<UUID, ThirFunction>()
-    val literals = mutableMapOf<UUID, ThirLiteral>()
     val parameters = mutableMapOf<UUID, ThirParameter>()
     val structs = mutableMapOf<UUID, ThirStruct>()
     val variables = mutableMapOf<UUID, ThirVariable>()
     
     override fun toString(): String
     {
-        return "SymbolTable(\n\tfields=${fields.values},\n\tfunctions=${functions.values},\n\tliterals=${literals.values},\n\tparameters=${parameters.values},\n\tstructs=${structs.values},\n\tvariables=${variables.values})"
+        return "SymbolTable(\n\tfields=${fields.values},\n\tfunctions=${functions.values},\n\tparameters=${parameters.values},\n\tstructs=${structs.values},\n\tvariables=${variables.values})"
     }
 }
 
@@ -29,8 +28,8 @@ class SymbolTable
 class TypeTable
 {
     val fields = mutableMapOf<UUID, ThirType>()
-    val functions = mutableMapOf<UUID, ThirTypeCall>()
-    val literals = mutableMapOf<UUID, ThirTypeCall>()
+    val functions = mutableMapOf<UUID, ThirTypeFunction>()
+    val literals = mutableMapOf<UUID, ThirTypeLiteral>()
     val parameters = mutableMapOf<UUID, ThirType>()
     val variables = mutableMapOf<UUID, ThirType>()
 }

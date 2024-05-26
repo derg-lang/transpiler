@@ -1,9 +1,7 @@
 package com.github.derg.transpiler.source.thir
 
 import com.github.derg.transpiler.source.*
-import com.github.derg.transpiler.source.hir.Builtin
-import com.github.derg.transpiler.source.hir.HirFunction
-import com.github.derg.transpiler.source.hir.HirStruct
+import com.github.derg.transpiler.source.hir.*
 import java.util.*
 
 /////////////////////
@@ -27,7 +25,7 @@ val Any.thir: ThirValue
 fun thirTypeData(
     struct: ThirStruct,
     mutability: Mutability = Mutability.IMMUTABLE,
-) = ThirTypeData(
+) = ThirTypeStruct(
     symbolId = struct.id,
     generics = emptyList(),
     mutability = mutability,
@@ -36,7 +34,7 @@ fun thirTypeData(
 fun thirTypeData(
     symbolId: UUID = UUID.randomUUID(),
     mutability: Mutability = Mutability.IMMUTABLE,
-) = ThirTypeData(
+) = ThirTypeStruct(
     symbolId = symbolId,
     generics = emptyList(),
     mutability = mutability,
@@ -46,7 +44,7 @@ fun thirTypeCall(
     value: ThirType? = null,
     error: ThirType? = null,
     parameters: List<ThirType> = emptyList(),
-) = ThirTypeCall(
+) = ThirTypeFunction(
     value = value,
     error = error,
     parameters = parameters.map { "" to it },
@@ -64,9 +62,9 @@ private fun op(function: HirFunction, value: HirStruct, error: HirStruct?, varar
 {
     val names = if (params.size == 1) mutableMapOf(0 to "rhs") else mutableMapOf(0 to "lhs", 1 to "rhs")
     
-    val valueType = ThirTypeData(value.id, Mutability.IMMUTABLE, emptyList())
-    val errorType = error?.let { ThirTypeData(it.id, Mutability.IMMUTABLE, emptyList()) }
-    val callable = ThirTypeCall(valueType, errorType, params.mapIndexed { i, p -> names[i]!! to p.value!! })
+    val valueType = ThirTypeStruct(value.id, Mutability.IMMUTABLE, emptyList())
+    val errorType = error?.let { ThirTypeStruct(it.id, Mutability.IMMUTABLE, emptyList()) }
+    val callable = ThirTypeFunction(valueType, errorType, params.mapIndexed { i, p -> names[i]!! to p.value!! })
     val instance = ThirLoad(callable, function.id, emptyList())
     
     return ThirCall(valueType, errorType, instance, params.toList())
@@ -115,8 +113,12 @@ infix fun Any.thirCatchHandle(that: Any) = ThirCatch(this.thir, that.thir, Captu
 val ThirVariable.thirLoad: ThirValue get() = ThirLoad(type, id, emptyList())
 val ThirParameter.thirLoad: ThirValue get() = ThirLoad(type, id, emptyList())
 val ThirFunction.thirLoad: ThirValue get() = ThirLoad(type, id, emptyList())
-fun ThirFunction.thirCall(vararg parameters: Any) = ThirCall(type.value, type.error, thirLoad, parameters.map { it.thir })
 fun ThirValue.thirCall(value: ThirType? = null, error: ThirType? = null, parameters: List<ThirValue> = emptyList()) = ThirCall(value, error, this, parameters)
+fun ThirFunction.thirCall(vararg parameters: Any): ThirCall = when (val inner = type)
+{
+    is ThirTypeFunction -> ThirCall(inner.value, inner.error, thirLoad, parameters.map { it.thir })
+    is ThirTypeLiteral  -> ThirCall(inner.value, null, thirLoad, parameters.map { it.thir })
+}
 
 ///////////////////////
 // Statement helpers //
@@ -160,7 +162,7 @@ fun thirFunOf(
 ) = ThirFunction(
     id = id,
     name = name,
-    type = ThirTypeCall(value, error, params.map { it.name to it.type }),
+    type = ThirTypeFunction(value, error, params.map { it.name to it.type }),
     visibility = Visibility.PRIVATE,
     instructions = emptyList(),
     genericIds = emptySet(),
@@ -173,14 +175,15 @@ fun thirLitOf(
     name: String = UUID.randomUUID().toString(),
     value: ThirType = thirTypeData(Builtin.INT32.id),
     param: ThirParameter = thirParamOf(),
-) = ThirLiteral(
+) = ThirFunction(
     id = id,
     name = name,
-    type = ThirTypeCall(value, null, listOf("" to param.type)),
+    type = ThirTypeLiteral(value, param.type as ThirTypeStruct),
     visibility = Visibility.PRIVATE,
     instructions = emptyList(),
+    genericIds = emptySet(),
     variableIds = emptySet(),
-    parameterId = param.id,
+    parameterIds = setOf(param.id),
 )
 
 fun thirParamOf(

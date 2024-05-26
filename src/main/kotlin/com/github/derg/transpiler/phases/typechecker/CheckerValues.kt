@@ -32,7 +32,7 @@ internal class CheckerValue
         // TODO: Support callable structs.
         if (node.instance.value == null)
             return TypeError.CallMissingValue(node.instance).toFailure()
-        if (node.instance.value !is ThirTypeCall)
+        if (node.instance.value !is ThirTypeFunction)
             return TypeError.CallWrongType(node.instance).toFailure()
         
         // Parameters are not permitted to have errors.

@@ -27,7 +27,7 @@ class TestResolverType
         @Test
         fun `Given builtin, when resolving, then correct outcome`()
         {
-            val expected = ThirTypeData(BOOL.id, Mutability.IMMUTABLE, emptyList())
+            val expected = ThirTypeStruct(BOOL.id, Mutability.IMMUTABLE, emptyList())
             
             assertSuccess(expected, resolver.resolve(BOOL_TYPE))
         }
@@ -36,7 +36,7 @@ class TestResolverType
         fun `Given user-defined, when resolving, then correct outcome`()
         {
             val struct = hirStructOf().register(scope)
-            val expected = ThirTypeData(struct.id, Mutability.IMMUTABLE, emptyList())
+            val expected = ThirTypeStruct(struct.id, Mutability.IMMUTABLE, emptyList())
             
             assertSuccess(expected, resolver.resolve(hirTypeData(struct)))
         }
@@ -69,8 +69,8 @@ class TestResolverType
         @Test
         fun `Given value, when resolving, then correct outcome`()
         {
-            val value = ThirTypeData(BOOL.id, Mutability.IMMUTABLE, emptyList())
-            val expected = ThirTypeCall(value, null, emptyList())
+            val value = ThirTypeStruct(BOOL.id, Mutability.IMMUTABLE, emptyList())
+            val expected = ThirTypeFunction(value, null, emptyList())
             
             assertSuccess(expected, resolver.resolve(hirTypeCall(value = BOOL_TYPE)))
         }
@@ -78,8 +78,8 @@ class TestResolverType
         @Test
         fun `Given error, when resolving, then correct outcome`()
         {
-            val error = ThirTypeData(BOOL.id, Mutability.IMMUTABLE, emptyList())
-            val expected = ThirTypeCall(null, error, emptyList())
+            val error = ThirTypeStruct(BOOL.id, Mutability.IMMUTABLE, emptyList())
+            val expected = ThirTypeFunction(null, error, emptyList())
             
             assertSuccess(expected, resolver.resolve(hirTypeCall(error = BOOL_TYPE)))
         }
@@ -87,8 +87,8 @@ class TestResolverType
         @Test
         fun `Given parameter, when resolving, then correct outcome`()
         {
-            val param = ThirTypeData(BOOL.id, Mutability.IMMUTABLE, emptyList())
-            val expected = ThirTypeCall(null, null, listOf("" to param))
+            val param = ThirTypeStruct(BOOL.id, Mutability.IMMUTABLE, emptyList())
+            val expected = ThirTypeFunction(null, null, listOf("" to param))
             
             assertSuccess(expected, resolver.resolve(hirTypeCall(parameters = listOf(BOOL_TYPE))))
         }
@@ -108,7 +108,7 @@ class TestResolverType
         @Test
         fun `Given single, when resolving, then correct outcome`()
         {
-            val inner = listOf(ThirTypeData(BOOL.id, Mutability.IMMUTABLE, emptyList()))
+            val inner = listOf(ThirTypeStruct(BOOL.id, Mutability.IMMUTABLE, emptyList()))
             val expected = ThirTypeUnion(inner)
             
             assertSuccess(expected, resolver.resolve(hirTypeUnion(BOOL_TYPE)))
@@ -118,8 +118,8 @@ class TestResolverType
         fun `Given multiple, when resolving, then correct outcome`()
         {
             val inner = listOf(
-                ThirTypeData(BOOL.id, Mutability.IMMUTABLE, emptyList()),
-                ThirTypeData(INT32.id, Mutability.IMMUTABLE, emptyList()),
+                ThirTypeStruct(BOOL.id, Mutability.IMMUTABLE, emptyList()),
+                ThirTypeStruct(INT32.id, Mutability.IMMUTABLE, emptyList()),
             )
             val expected = ThirTypeUnion(inner)
             
@@ -129,7 +129,7 @@ class TestResolverType
         @Test
         fun `Given nested, when resolving, then correct outcome`()
         {
-            val inner = listOf(ThirTypeData(BOOL.id, Mutability.IMMUTABLE, emptyList()))
+            val inner = listOf(ThirTypeStruct(BOOL.id, Mutability.IMMUTABLE, emptyList()))
             val expected = ThirTypeUnion(listOf(ThirTypeUnion(inner)))
             
             assertSuccess(expected, resolver.resolve(hirTypeUnion(hirTypeUnion(BOOL_TYPE))))

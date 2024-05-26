@@ -11,7 +11,7 @@ import org.junit.jupiter.api.Assertions.*
 /**
  * Generates a thir-representation of the struct.
  */
-private fun HirStruct.asThir() = ThirTypeData(
+private fun HirStruct.asThir() = ThirTypeStruct(
     symbolId = id,
     generics = emptyList(),
     mutability = Mutability.IMMUTABLE,
@@ -35,7 +35,6 @@ private fun ThirSymbol.toExpected(input: HirSymbol): ThirSymbol = when (this)
 {
     is ThirFunction  -> copy(id = input.id, name = input.name)
     is ThirField     -> copy(id = input.id, name = input.name)
-    is ThirLiteral   -> copy(id = input.id, name = input.name)
     is ThirParameter -> copy(id = input.id, name = input.name)
     is ThirStruct    -> copy(id = input.id, name = input.name)
     is ThirVariable  -> copy(id = input.id, name = input.name)
@@ -183,7 +182,7 @@ class TestResolverSymbol
             
             run(input).valueOrDie()
             
-            assertTrue(input.id in engine.symbols.literals)
+            assertTrue(input.id in engine.symbols.functions)
         }
         
         @Test
@@ -201,7 +200,7 @@ class TestResolverSymbol
         fun `Given instruction, when resolving, then instruction resolved`()
         {
             val input = hirLitOf(instructions = listOf(HirReturn))
-            val symbol = run(input).valueOrDie() as ThirLiteral
+            val symbol = run(input).valueOrDie() as ThirFunction
             
             assertEquals(listOf(ThirReturn), symbol.instructions)
         }

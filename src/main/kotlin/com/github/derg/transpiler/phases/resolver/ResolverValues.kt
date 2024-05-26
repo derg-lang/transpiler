@@ -1,10 +1,10 @@
 package com.github.derg.transpiler.phases.resolver
 
-import com.github.derg.transpiler.source.Symbol
+import com.github.derg.transpiler.source.*
 import com.github.derg.transpiler.source.hir.*
 import com.github.derg.transpiler.source.thir.*
 import com.github.derg.transpiler.utils.*
-import java.math.BigInteger
+import java.math.*
 import java.util.*
 
 internal val INT32_MIN = Int.MIN_VALUE.toBigInteger()
@@ -97,7 +97,7 @@ internal class ResolverValue(private val types: TypeTable, private val scope: Sc
      * valid candidate for being invoked with the parameters, a function call value is generated. Note that multiple
      * functions may be valid, which is the case when the function call is ambiguous.
      */
-    private fun resolveCall(id: UUID, type: ThirTypeCall, inputs: List<NamedMaybe<ThirValue>>): Result<ThirCall, ResolveError>
+    private fun resolveCall(id: UUID, type: ThirTypeFunction, inputs: List<NamedMaybe<ThirValue>>): Result<ThirCall, ResolveError>
     {
         // TODO: Support variadic arguments.
         if (type.parameters.size != inputs.size)
@@ -185,8 +185,7 @@ internal class ResolverValue(private val types: TypeTable, private val scope: Sc
         // TODO: Replace invalid parameter error with something more appropriate. We must have exactly one parameter,
         //       and the parameter must be a builtin integer type.
         val literal = types.literals[candidate.id]!!
-        val parameter = literal.parameters.singleOrNull() ?: return ResolveError.Placeholder.toFailure()
-        val value = when ((parameter.second as? ThirTypeData)?.symbolId)
+        val value = when (literal.parameter.symbolId)
         {
             Builtin.INT32.id -> node.value.toInt32().valueOr { return it.toFailure() }
             Builtin.INT64.id -> node.value.toInt64().valueOr { return it.toFailure() }
