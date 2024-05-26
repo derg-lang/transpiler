@@ -1,10 +1,10 @@
 package com.github.derg.transpiler.phases.resolver
 
-import com.github.derg.transpiler.source.Symbol
+import com.github.derg.transpiler.source.*
 import com.github.derg.transpiler.source.hir.*
 import com.github.derg.transpiler.source.thir.*
 import com.github.derg.transpiler.utils.*
-import java.math.BigInteger
+import java.math.*
 import java.util.*
 
 internal val INT32_MIN = Int.MIN_VALUE.toBigInteger()

@@ -1,9 +1,7 @@
 package com.github.derg.transpiler.source.thir
 
 import com.github.derg.transpiler.source.*
-import com.github.derg.transpiler.source.hir.Builtin
-import com.github.derg.transpiler.source.hir.HirFunction
-import com.github.derg.transpiler.source.hir.HirStruct
+import com.github.derg.transpiler.source.hir.*
 import java.util.*
 
 /////////////////////

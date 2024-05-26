@@ -3,7 +3,7 @@ package com.github.derg.transpiler.phases.resolver
 import com.github.derg.transpiler.source.hir.*
 import com.github.derg.transpiler.source.thir.*
 import com.github.derg.transpiler.utils.*
-import java.math.BigInteger
+import java.math.*
 
 /**
  * Converts the input [hirPackage] into a typed variable. All symbols found within the package are stored in the symbol

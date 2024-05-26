@@ -1,17 +1,12 @@
 package com.github.derg.transpiler.phases.resolver
 
 import com.github.derg.transpiler.phases.resolver.ResolveError.*
-import com.github.derg.transpiler.source.INT32_LIT_NAME
-import com.github.derg.transpiler.source.INT64_LIT_NAME
-import com.github.derg.transpiler.source.Mutability
-import com.github.derg.transpiler.source.Symbol
+import com.github.derg.transpiler.source.*
 import com.github.derg.transpiler.source.hir.*
 import com.github.derg.transpiler.source.thir.*
 import com.github.derg.transpiler.utils.*
-import org.junit.jupiter.api.Disabled
-import org.junit.jupiter.api.Nested
-import org.junit.jupiter.api.Test
-import java.math.BigInteger
+import org.junit.jupiter.api.*
+import java.math.*
 
 /**
  * Simulates what a thir call on [this] function would be given the list of [parameters]. The function is assumed

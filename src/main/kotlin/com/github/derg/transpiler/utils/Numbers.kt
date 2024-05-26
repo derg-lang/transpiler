@@ -1,6 +1,6 @@
 package com.github.derg.transpiler.utils
 
-import java.math.BigInteger
+import java.math.*
 
 operator fun Int.plus(that: BigInteger): BigInteger = this.toBigInteger() + that
 operator fun Long.plus(that: BigInteger): BigInteger = this.toBigInteger() + that

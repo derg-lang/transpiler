@@ -1,8 +1,7 @@
 package com.github.derg.transpiler.source.thir
 
-import com.github.derg.transpiler.source.Capture
-import com.github.derg.transpiler.source.Mutability
-import com.github.derg.transpiler.source.hir.Builtin
+import com.github.derg.transpiler.source.*
+import com.github.derg.transpiler.source.hir.*
 import java.util.*
 
 /**

@@ -4,8 +4,7 @@ import com.github.derg.transpiler.phases.typechecker.TypeError.*
 import com.github.derg.transpiler.source.hir.*
 import com.github.derg.transpiler.source.thir.*
 import com.github.derg.transpiler.utils.*
-import org.junit.jupiter.api.Nested
-import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.*
 
 class TestCheckerValues
 {

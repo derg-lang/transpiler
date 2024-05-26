@@ -1,6 +1,6 @@
 package com.github.derg.transpiler.source.hir
 
-import com.github.derg.transpiler.phases.resolver.Scope
+import com.github.derg.transpiler.phases.resolver.*
 import com.github.derg.transpiler.source.*
 import java.util.*
 
