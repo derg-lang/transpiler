@@ -12,18 +12,18 @@ internal val INT32_MAX = Int.MAX_VALUE.toBigInteger()
 internal val INT64_MIN = Long.MIN_VALUE.toBigInteger()
 internal val INT64_MAX = Long.MAX_VALUE.toBigInteger()
 
-private fun BigInteger.toInt32(): Result<ThirInt32Const, ResolveError>
+private fun BigInteger.toInt32(): Result<ThirConstInt32, ResolveError>
 {
     if (this < INT32_MIN || this > INT32_MAX)
         return ResolveError.InvalidLiteralInteger(this).toFailure()
-    return ThirInt32Const(toInt()).toSuccess()
+    return ThirConstInt32(toInt()).toSuccess()
 }
 
-private fun BigInteger.toInt64(): Result<ThirInt64Const, ResolveError>
+private fun BigInteger.toInt64(): Result<ThirConstInt64, ResolveError>
 {
     if (this < INT64_MIN || this > INT64_MAX)
         return ResolveError.InvalidLiteralInteger(this).toFailure()
-    return ThirInt64Const(toLong()).toSuccess()
+    return ThirConstInt64(toLong()).toSuccess()
 }
 
 /**
@@ -45,7 +45,7 @@ internal class ResolverValue(private val types: TypeTable, private val scope: Sc
     {
         is HirAdd     -> handleInfix(Symbol.PLUS, node.lhs, node.rhs)
         is HirAnd     -> handleInfix(Symbol.AND, node.lhs, node.rhs)
-        is HirBool    -> ThirBoolConst(node.value).toSuccess()
+        is HirBool    -> ThirConstBool(node.value).toSuccess()
         is HirCall    -> handleCall(node)
         is HirCatch   -> handleCatch(node)
         is HirDecimal -> TODO()
@@ -153,7 +153,7 @@ internal class ResolverValue(private val types: TypeTable, private val scope: Sc
         
         return when (matching.size)
         {
-            1    -> matching.single().toBuiltin().toSuccess()
+            1    -> matching.single().toSuccess()
             0    -> ResolveError.ArgumentMismatch(node.instance.name, node.parameters).toFailure()
             else -> ResolveError.AmbiguousFunction(node.instance.name, node.parameters).toFailure()
         }

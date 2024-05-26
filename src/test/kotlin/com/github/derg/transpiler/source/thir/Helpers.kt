@@ -1,7 +1,9 @@
 package com.github.derg.transpiler.source.thir
 
 import com.github.derg.transpiler.source.*
-import com.github.derg.transpiler.source.hir.*
+import com.github.derg.transpiler.source.hir.Builtin
+import com.github.derg.transpiler.source.hir.HirFunction
+import com.github.derg.transpiler.source.hir.HirStruct
 import java.util.*
 
 /////////////////////
@@ -12,9 +14,9 @@ val Any.thir: ThirValue
     get() = when (this)
     {
         is ThirValue -> this
-        is Boolean   -> ThirBoolConst(this)
-        is Int       -> ThirInt32Const(this)
-        is Long      -> ThirInt64Const(this)
+        is Boolean   -> ThirConstBool(this)
+        is Int       -> ThirConstInt32(this)
+        is Long      -> ThirConstInt64(this)
         else         -> throw IllegalArgumentException("Value $this does not represent a valid thir value")
     }
 
@@ -54,43 +56,61 @@ fun thirTypeCall(
 // Expression helpers //
 ////////////////////////
 
-infix fun Boolean.thirEq(that: Boolean) = ThirBoolEq(this.thir, that.thir)
-infix fun Int.thirEq(that: Int) = ThirInt32Eq(this.thir, that.thir)
-infix fun Long.thirEq(that: Long) = ThirInt64Eq(this.thir, that.thir)
-infix fun Boolean.thirNe(that: Boolean) = ThirBoolNe(this.thir, that.thir)
-infix fun Int.thirNe(that: Int) = ThirInt32Ne(this.thir, that.thir)
-infix fun Long.thirNe(that: Long) = ThirInt64Ne(this.thir, that.thir)
-infix fun Int.thirGe(that: Int) = ThirInt32Ge(this.thir, that.thir)
-infix fun Long.thirGe(that: Long) = ThirInt64Ge(this.thir, that.thir)
-infix fun Int.thirGt(that: Int) = ThirInt32Gt(this.thir, that.thir)
-infix fun Long.thirGt(that: Long) = ThirInt64Gt(this.thir, that.thir)
-infix fun Int.thirLe(that: Int) = ThirInt32Le(this.thir, that.thir)
-infix fun Long.thirLe(that: Long) = ThirInt64Le(this.thir, that.thir)
-infix fun Int.thirLt(that: Int) = ThirInt32Lt(this.thir, that.thir)
-infix fun Long.thirLt(that: Long) = ThirInt64Lt(this.thir, that.thir)
+/**
+ * Invokes the [function], assuming it returns a type of the given [value] and [error]. Any number of [params] can be
+ * specified, although two should be specified for binary operators, and one for unary operators.
+ */
+private fun op(function: HirFunction, value: HirStruct, error: HirStruct?, vararg params: ThirValue): ThirCall
+{
+    val names = if (params.size == 1) mutableMapOf(0 to "rhs") else mutableMapOf(0 to "lhs", 1 to "rhs")
+    
+    val valueType = ThirTypeData(value.id, Mutability.IMMUTABLE, emptyList())
+    val errorType = error?.let { ThirTypeData(it.id, Mutability.IMMUTABLE, emptyList()) }
+    val callable = ThirTypeCall(valueType, errorType, params.mapIndexed { i, p -> names[i]!! to p.value!! })
+    val instance = ThirLoad(callable, function.id, emptyList())
+    
+    return ThirCall(valueType, errorType, instance, params.toList())
+}
 
-infix fun Int.thirAdd(that: Int) = ThirInt32Add(this.thir, that.thir)
-infix fun Long.thirAdd(that: Long) = ThirInt64Add(this.thir, that.thir)
-infix fun Int.thirSub(that: Int) = ThirInt32Sub(this.thir, that.thir)
-infix fun Long.thirSub(that: Long) = ThirInt64Sub(this.thir, that.thir)
-infix fun Int.thirMul(that: Int) = ThirInt32Mul(this.thir, that.thir)
-infix fun Long.thirMul(that: Long) = ThirInt64Mul(this.thir, that.thir)
-infix fun Int.thirDiv(that: Int) = ThirInt32Div(this.thir, that.thir)
-infix fun Long.thirDiv(that: Long) = ThirInt64Div(this.thir, that.thir)
-infix fun Int.thirMod(that: Int) = ThirInt32Mod(this.thir, that.thir)
-infix fun Long.thirMod(that: Long) = ThirInt64Mod(this.thir, that.thir)
+val Boolean.thirNot get() = op(Builtin.BOOL_NOT, Builtin.BOOL, null, this.thir)
+val Int.thirPlus get() = op(Builtin.INT32_POS, Builtin.INT32, null, this.thir)
+val Long.thirPlus get() = op(Builtin.INT64_POS, Builtin.INT64, null, this.thir)
+val Int.thirMinus get() = op(Builtin.INT32_NEG, Builtin.INT32, null, this.thir)
+val Long.thirMinus get() = op(Builtin.INT64_NEG, Builtin.INT64, null, this.thir)
 
-infix fun Boolean.thirAnd(that: Boolean) = ThirBoolAnd(this.thir, that.thir)
-infix fun Boolean.thirOr(that: Boolean) = ThirBoolOr(this.thir, that.thir)
-infix fun Boolean.thirXor(that: Boolean) = ThirBoolXor(this.thir, that.thir)
+infix fun Boolean.thirEq(that: Boolean) = op(Builtin.BOOL_EQ, Builtin.BOOL, null, this.thir, that.thir)
+infix fun Int.thirEq(that: Int) = op(Builtin.INT32_EQ, Builtin.BOOL, null, this.thir, that.thir)
+infix fun Long.thirEq(that: Long) = op(Builtin.INT64_EQ, Builtin.BOOL, null, this.thir, that.thir)
+infix fun Boolean.thirNe(that: Boolean) = op(Builtin.BOOL_NE, Builtin.BOOL, null, this.thir, that.thir)
+infix fun Int.thirNe(that: Int) = op(Builtin.INT32_NE, Builtin.BOOL, null, this.thir, that.thir)
+infix fun Long.thirNe(that: Long) = op(Builtin.INT64_NE, Builtin.BOOL, null, this.thir, that.thir)
+infix fun Int.thirGe(that: Int) = op(Builtin.INT32_GE, Builtin.BOOL, null, this.thir, that.thir)
+infix fun Long.thirGe(that: Long) = op(Builtin.INT64_GE, Builtin.BOOL, null, this.thir, that.thir)
+infix fun Int.thirGt(that: Int) = op(Builtin.INT32_GT, Builtin.BOOL, null, this.thir, that.thir)
+infix fun Long.thirGt(that: Long) = op(Builtin.INT64_GT, Builtin.BOOL, null, this.thir, that.thir)
+infix fun Int.thirLe(that: Int) = op(Builtin.INT32_LE, Builtin.BOOL, null, this.thir, that.thir)
+infix fun Long.thirLe(that: Long) = op(Builtin.INT64_LE, Builtin.BOOL, null, this.thir, that.thir)
+infix fun Int.thirLt(that: Int) = op(Builtin.INT32_LT, Builtin.BOOL, null, this.thir, that.thir)
+infix fun Long.thirLt(that: Long) = op(Builtin.INT64_LT, Builtin.BOOL, null, this.thir, that.thir)
+
+infix fun Int.thirAdd(that: Int) = op(Builtin.INT32_ADD, Builtin.INT32, null, this.thir, that.thir)
+infix fun Long.thirAdd(that: Long) = op(Builtin.INT64_ADD, Builtin.INT64, null, this.thir, that.thir)
+infix fun Int.thirSub(that: Int) = op(Builtin.INT32_SUB, Builtin.INT32, null, this.thir, that.thir)
+infix fun Long.thirSub(that: Long) = op(Builtin.INT64_SUB, Builtin.INT64, null, this.thir, that.thir)
+infix fun Int.thirMul(that: Int) = op(Builtin.INT32_MUL, Builtin.INT32, null, this.thir, that.thir)
+infix fun Long.thirMul(that: Long) = op(Builtin.INT64_MUL, Builtin.INT64, null, this.thir, that.thir)
+infix fun Int.thirDiv(that: Int) = op(Builtin.INT32_DIV, Builtin.INT32, Builtin.DIVIDE_BY_ZERO, this.thir, that.thir)
+infix fun Long.thirDiv(that: Long) = op(Builtin.INT64_DIV, Builtin.INT64, Builtin.DIVIDE_BY_ZERO, this.thir, that.thir)
+infix fun Int.thirMod(that: Int) = op(Builtin.INT32_MOD, Builtin.INT32, Builtin.DIVIDE_BY_ZERO, this.thir, that.thir)
+infix fun Long.thirMod(that: Long) = op(Builtin.INT64_MOD, Builtin.INT64, Builtin.DIVIDE_BY_ZERO, this.thir, that.thir)
+
+infix fun Boolean.thirAnd(that: Boolean) = op(Builtin.BOOL_AND, Builtin.BOOL, null, this.thir, that.thir)
+infix fun Boolean.thirOr(that: Boolean) = op(Builtin.BOOL_OR, Builtin.BOOL, null, this.thir, that.thir)
+infix fun Boolean.thirXor(that: Boolean) = op(Builtin.BOOL_XOR, Builtin.BOOL, null, this.thir, that.thir)
 
 infix fun Any.thirCatchRaise(that: Any) = ThirCatch(this.thir, that.thir, Capture.RAISE)
 infix fun Any.thirCatchReturn(that: Any) = ThirCatch(this.thir, that.thir, Capture.RETURN)
 infix fun Any.thirCatchHandle(that: Any) = ThirCatch(this.thir, that.thir, Capture.HANDLE)
-
-val Boolean.thirNot get() = ThirBoolNot(thir)
-val Int.thirMinus get() = ThirInt32Neg(thir)
-val Long.thirMinus get() = ThirInt64Neg(thir)
 
 val ThirVariable.thirLoad: ThirValue get() = ThirLoad(type, id, emptyList())
 val ThirParameter.thirLoad: ThirValue get() = ThirLoad(type, id, emptyList())
@@ -118,11 +138,12 @@ fun Any.thirBranch(
 ////////////////////
 
 fun thirFieldOf(
+    id: UUID = UUID.randomUUID(),
     name: String = UUID.randomUUID().toString(),
     type: ThirType? = null,
     value: ThirValue? = null,
 ) = ThirField(
-    id = UUID.randomUUID(),
+    id = id,
     name = name,
     type = type ?: value?.value ?: throw IllegalArgumentException("Either type or value must be specified"),
     value = value,
@@ -131,12 +152,13 @@ fun thirFieldOf(
 )
 
 fun thirFunOf(
+    id: UUID = UUID.randomUUID(),
     name: String = UUID.randomUUID().toString(),
     value: ThirType? = null,
     error: ThirType? = null,
     params: List<ThirParameter> = emptyList(),
 ) = ThirFunction(
-    id = UUID.randomUUID(),
+    id = id,
     name = name,
     type = ThirTypeCall(value, error, params.map { it.name to it.type }),
     visibility = Visibility.PRIVATE,
@@ -147,11 +169,12 @@ fun thirFunOf(
 )
 
 fun thirLitOf(
+    id: UUID = UUID.randomUUID(),
     name: String = UUID.randomUUID().toString(),
     value: ThirType = thirTypeData(Builtin.INT32.id),
     param: ThirParameter = thirParamOf(),
 ) = ThirLiteral(
-    id = UUID.randomUUID(),
+    id = id,
     name = name,
     type = ThirTypeCall(value, null, listOf("" to param.type)),
     visibility = Visibility.PRIVATE,
@@ -161,11 +184,12 @@ fun thirLitOf(
 )
 
 fun thirParamOf(
+    id: UUID = UUID.randomUUID(),
     name: String = UUID.randomUUID().toString(),
     type: ThirType = thirTypeData(Builtin.INT32.id),
     value: ThirValue? = null,
 ) = ThirParameter(
-    id = UUID.randomUUID(),
+    id = id,
     name = name,
     type = type,
     value = value,
@@ -173,12 +197,13 @@ fun thirParamOf(
 )
 
 fun thirStructOf(
+    id: UUID = UUID.randomUUID(),
     name: String = UUID.randomUUID().toString(),
     fields: Set<UUID> = emptySet(),
     methods: Set<UUID> = emptySet(),
     generics: Set<UUID> = emptySet(),
 ) = ThirStruct(
-    id = UUID.randomUUID(),
+    id = id,
     name = name,
     visibility = Visibility.PRIVATE,
     fieldIds = fields,
@@ -187,11 +212,12 @@ fun thirStructOf(
 )
 
 fun thirVarOf(
+    id: UUID = UUID.randomUUID(),
     name: String = UUID.randomUUID().toString(),
     type: ThirType? = null,
     value: ThirValue? = null,
 ) = ThirVariable(
-    id = UUID.randomUUID(),
+    id = id,
     name = name,
     type = type ?: value?.value ?: throw IllegalArgumentException("Either type or value must be specified"),
     assignability = Assignability.FINAL,
