@@ -83,7 +83,7 @@ infix fun Any.hirCatchReturn(that: Any) = HirCatch(this.hir, that.hir, Capture.R
 infix fun Any.hirCatchHandle(that: Any) = HirCatch(this.hir, that.hir, Capture.HANDLE)
 
 fun HirSymbol.hirLoad(vararg parameters: Any) = HirLoad(name, parameters.map { null hirArg it })
-fun HirValue.hirCall(vararg parameters: Any) = HirCall(this, parameters.map { null hirArg it })
+fun HirValue.hirCall(vararg parameters: Pair<String?, Any>) = HirCall(this, parameters.map { it.first hirArg it.second })
 fun HirValue.hirMember(field: HirLoad) = HirMember(this, field)
 infix fun String?.hirArg(that: Any) = NamedMaybe(this, that.hir)
 

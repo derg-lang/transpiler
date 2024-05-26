@@ -160,7 +160,7 @@ class TestResolverValue
         {
             val function = registerFun("fun", Builtin.INT32_TYPE)
             
-            assertSuccess(function.thirCall(1), run(function.hirLoad().hirCall(1)))
+            assertSuccess(function.thirCall(1), run(function.hirLoad().hirCall(null to 1)))
         }
         
         @Test
@@ -169,7 +169,7 @@ class TestResolverValue
             val function = registerFun("fun", Builtin.INT32_TYPE)
             val expected = ArgumentMismatch(function.name, listOf(null hirArg true))
             
-            assertFailure(expected, run(function.hirLoad().hirCall(true)))
+            assertFailure(expected, run(function.hirLoad().hirCall(null to true)))
         }
         
         @Test
@@ -202,25 +202,29 @@ class TestResolverValue
             )
             val expected = AmbiguousFunction(functions[0].name, listOf(null hirArg true))
             
-            assertFailure(expected, run(functions[0].hirLoad().hirCall(true)))
+            assertFailure(expected, run(functions[0].hirLoad().hirCall(null to true)))
         }
         
         @Test
-        @Disabled // TODO: Find a way to write this test in a pretty way.
         fun `Given named parameters, when resolving, then correct outcome`()
         {
-//            assertSuccess(f.thirCall(1, "2" to 2L), converter(f.name.astCall(1, "2" to 2L)))
-//            assertSuccess(f.thirCall("1" to 1, "2" to 2L), converter(f.name.astCall("1" to 1, "2" to 2L)))
-//            assertSuccess(f.thirCall("1" to 1, "2" to 2L), converter(f.name.astCall("2" to 2L, "1" to 1)))
+            val params = listOf(hirParamOf("a"), hirParamOf("b"))
+            val function = hirFunOf(params = params).also { scope.register(it) }
+            
+            assertSuccess(function.thirCall(1, 2), run(function.hirLoad().hirCall(null to 1, null to 2)))
+            assertSuccess(function.thirCall(1, 2), run(function.hirLoad().hirCall(null to 1, "b" to 2)))
+            assertSuccess(function.thirCall(1, 2), run(function.hirLoad().hirCall("a" to 1, "b" to 2)))
+            assertSuccess(function.thirCall(1, 2), run(function.hirLoad().hirCall("b" to 2, "a" to 1)))
         }
         
         @Test
-        @Disabled // TODO: Find a way to write this test in a pretty way.
         fun `Given named parameters before unnamed, when resolving, then correct error`()
         {
-//            val expected = ArgumentMisnamed(f.name, listOf(("2" to 2L).thirArg, 1.thirArg))
-//
-//            assertFailure(expected, converter(f.name.astCall("2" to 2L, 1)))
+            val params = listOf(hirParamOf("a"), hirParamOf("b"))
+            val function = hirFunOf(params = params).also { scope.register(it) }
+            val expected = ArgumentMisnamed(function.name, listOf("a" hirArg 1, null hirArg 2))
+            
+            assertFailure(expected, run(function.hirLoad().hirCall("a" to 1, null to 2)))
         }
     }
     
