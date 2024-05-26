@@ -113,8 +113,12 @@ infix fun Any.thirCatchHandle(that: Any) = ThirCatch(this.thir, that.thir, Captu
 val ThirVariable.thirLoad: ThirValue get() = ThirLoad(type, id, emptyList())
 val ThirParameter.thirLoad: ThirValue get() = ThirLoad(type, id, emptyList())
 val ThirFunction.thirLoad: ThirValue get() = ThirLoad(type, id, emptyList())
-fun ThirFunction.thirCall(vararg parameters: Any) = ThirCall(type.value, type.error, thirLoad, parameters.map { it.thir })
 fun ThirValue.thirCall(value: ThirType? = null, error: ThirType? = null, parameters: List<ThirValue> = emptyList()) = ThirCall(value, error, this, parameters)
+fun ThirFunction.thirCall(vararg parameters: Any): ThirCall = when (val inner = type)
+{
+    is ThirTypeFunction -> ThirCall(inner.value, inner.error, thirLoad, parameters.map { it.thir })
+    is ThirTypeLiteral  -> ThirCall(inner.value, null, thirLoad, parameters.map { it.thir })
+}
 
 ///////////////////////
 // Statement helpers //
@@ -171,14 +175,15 @@ fun thirLitOf(
     name: String = UUID.randomUUID().toString(),
     value: ThirType = thirTypeData(Builtin.INT32.id),
     param: ThirParameter = thirParamOf(),
-) = ThirLiteral(
+) = ThirFunction(
     id = id,
     name = name,
-    type = ThirTypeFunction(value, null, listOf("" to param.type)),
+    type = ThirTypeLiteral(value, param.type as ThirTypeStruct),
     visibility = Visibility.PRIVATE,
     instructions = emptyList(),
+    genericIds = emptySet(),
     variableIds = emptySet(),
-    parameterId = param.id,
+    parameterIds = setOf(param.id),
 )
 
 fun thirParamOf(

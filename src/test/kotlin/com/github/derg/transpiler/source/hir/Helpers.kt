@@ -143,7 +143,7 @@ fun hirLitOf(
 ) = HirLiteral(
     id = UUID.randomUUID(),
     name = name,
-    type = HirTypeFunction(value, null, listOf("" to param.type)),
+    type = HirTypeLiteral(value, param.type as HirTypeStruct),
     visibility = Visibility.PRIVATE,
     instructions = instructions,
     variables = emptyList(),

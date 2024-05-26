@@ -18,6 +18,7 @@ internal class ResolverType(private val scope: Scope)
     fun resolve(type: HirType): Result<ThirType, ResolveError> = when (type)
     {
         is HirTypeFunction -> resolve(type)
+        is HirTypeLiteral  -> resolve(type)
         is HirTypeStruct   -> resolve(type)
         is HirTypeUnion    -> resolve(type)
     }
@@ -41,9 +42,17 @@ internal class ResolverType(private val scope: Scope)
     {
         val value = type.value?.let { resolve(it) }?.valueOr { return it.toFailure() }
         val error = type.error?.let { resolve(it) }?.valueOr { return it.toFailure() }
-        val parameters = type.parameters.mapUntilError { handle(it) }.valueOr { return it.toFailure() }
+        val parameters = type.parameters.mapUntilError { resolve(it) }.valueOr { return it.toFailure() }
         
         return ThirTypeFunction(value = value, error = error, parameters = parameters).toSuccess()
+    }
+    
+    fun resolve(type: HirTypeLiteral): Result<ThirTypeLiteral, ResolveError>
+    {
+        val value = resolve(type.value).valueOr { return it.toFailure() }
+        val parameter = resolve(type.parameter).valueOr { return it.toFailure() }
+        
+        return ThirTypeLiteral(value = value, parameter = parameter).toSuccess()
     }
     
     fun resolve(type: HirTypeUnion): Result<ThirType, ResolveError>
@@ -53,8 +62,6 @@ internal class ResolverType(private val scope: Scope)
         return ThirTypeUnion(types).toSuccess()
     }
     
-    private fun handle(type: Named<HirType>): Result<Named<ThirType>, ResolveError>
-    {
-        return resolve(type.second).mapValue { type.first to it }
-    }
+    private fun resolve(type: Named<HirType>): Result<Named<ThirType>, ResolveError> =
+        resolve(type.second).mapValue { type.first to it }
 }

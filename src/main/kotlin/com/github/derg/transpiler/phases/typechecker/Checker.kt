@@ -12,7 +12,11 @@ fun check(table: SymbolTable): Result<Unit, TypeError>
 {
     for (function in table.functions.values)
     {
-        val checker = CheckerInstruction(function.type.value, function.type.error)
+        val checker = when (function.type)
+        {
+            is ThirTypeFunction -> CheckerInstruction(function.type.value, function.type.error)
+            is ThirTypeLiteral  -> CheckerInstruction(function.type.value, null)
+        }
         
         function.instructions.mapUntilError { checker.check(it) }.valueOr { return it.toFailure() }
     }

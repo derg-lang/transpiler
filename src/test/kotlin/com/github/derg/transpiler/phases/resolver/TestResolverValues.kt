@@ -25,7 +25,7 @@ private fun HirLiteral.thirCall(parameter: Any): ThirValue
 {
     val input = parameter.thir
     val output = ThirTypeStruct(Builtin.INT32.id, Mutability.IMMUTABLE, emptyList())
-    val type = ThirTypeFunction(output, null, listOf("" to input.value as ThirTypeStruct))
+    val type = ThirTypeLiteral(output, input.value as ThirTypeStruct)
     
     return ThirCall(output, null, ThirLoad(type, id, emptyList()), listOf(input))
 }
@@ -352,15 +352,6 @@ class TestResolverValue
             assertSuccess(Long.MAX_VALUE.thir, run(Long.MAX_VALUE.hir))
             assertFailure(InvalidLiteralInteger(INT64_MIN - 1), run(HirInteger(INT64_MIN - 1, INT64_LIT_NAME)))
             assertFailure(InvalidLiteralInteger(INT64_MAX + 1), run(HirInteger(INT64_MAX + 1, INT64_LIT_NAME)))
-        }
-        
-        @Test
-        fun `Given invalid type, when resolving, then correct outcome`()
-        {
-            val literal = registerLit("foo", HirTypeFunction(null, null, emptyList()))
-            val expected = InvalidLiteralParam(literal.name)
-            
-            assertFailure(expected, run(HirInteger(BigInteger.ONE, literal.name)))
         }
         
         @Test

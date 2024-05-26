@@ -81,17 +81,18 @@ internal class ResolverSymbol(private val symbols: SymbolTable, private val type
 //        node.variables.mapUntilError { handle(it) }.onFailure { return it.toFailure() }
         handle(node.parameter).onFailure { return it.toFailure() }
         
-        val symbol = ThirLiteral(
+        val symbol = ThirFunction(
             id = node.id,
             name = node.name,
             type = types.literals[node.id]!!,
             visibility = node.visibility,
             instructions = node.instructions.mapUntilError { instructions.resolve(it) }.valueOr { return it.toFailure() },
+            genericIds = emptySet(),
             variableIds = node.variables.map { it.id }.toSet(),
-            parameterId = node.parameter.id,
+            parameterIds = setOf(node.parameter.id),
         )
         
-        symbols.literals[symbol.id] = symbol
+        symbols.functions[symbol.id] = symbol
         return symbol.toSuccess()
     }
     

@@ -23,6 +23,12 @@ data class HirTypeStruct(val name: String, val mutability: Mutability, val gener
 data class HirTypeFunction(val value: HirType?, val error: HirType?, val parameters: List<Named<HirType>>) : HirType
 
 /**
+ * The literal type describes a literal returning a [value] type, taking in exactly one [parameter]. The parameter is
+ * required to have a valid value, and is not permitted to have any error type associated with it.
+ */
+data class HirTypeLiteral(val value: HirType, val parameter: HirTypeStruct) : HirType
+
+/**
  * The union type describes a type which is one of the specified [types]. Any type can be in a union with a union type,
  * although the set of potential types is collapsed into a single set.
  */

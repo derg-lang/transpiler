@@ -83,42 +83,7 @@ data class ThirConcept(
 data class ThirFunction(
     override val id: UUID,
     override val name: String,
-    val type: ThirTypeFunction,
-    val visibility: Visibility,
-    val instructions: List<ThirInstruction>,
-    
-    // Symbols present within the object
-    val genericIds: Set<UUID>,
-    val variableIds: Set<UUID>,
-    val parameterIds: Set<UUID>,
-) : ThirSymbol
-
-/**
- * Literals are a special case of functions. In order to convert from an arbitrary constant value written into the
- * source code (i.e. any number or string), the value may be annotated with a literal which indicates how the constant
- * value should be interpreted. Literals are functions which accept exactly a single parameter, which must be of a
- * predefined set of legal types.
- */
-data class ThirLiteral(
-    override val id: UUID,
-    override val name: String,
-    val type: ThirTypeFunction,
-    val visibility: Visibility,
-    val instructions: List<ThirInstruction>,
-    
-    // Symbols present within the object
-    val variableIds: Set<UUID>,
-    val parameterId: UUID,
-) : ThirSymbol
-
-/**
- * TODO: Write me
- */
-// TODO: Add something which describes the "self" parameter, const-correctness, and such.
-data class ThirMethod(
-    override val id: UUID,
-    override val name: String,
-    val type: ThirTypeFunction,
+    val type: ThirTypeCall,
     val visibility: Visibility,
     val instructions: List<ThirInstruction>,
     

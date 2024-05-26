@@ -185,8 +185,7 @@ internal class ResolverValue(private val types: TypeTable, private val scope: Sc
         // TODO: Replace invalid parameter error with something more appropriate. We must have exactly one parameter,
         //       and the parameter must be a builtin integer type.
         val literal = types.literals[candidate.id]!!
-        val parameter = literal.parameters.singleOrNull() ?: return ResolveError.Placeholder.toFailure()
-        val value = when ((parameter.second as? ThirTypeStruct)?.symbolId)
+        val value = when (literal.parameter.symbolId)
         {
             Builtin.INT32.id -> node.value.toInt32().valueOr { return it.toFailure() }
             Builtin.INT64.id -> node.value.toInt64().valueOr { return it.toFailure() }

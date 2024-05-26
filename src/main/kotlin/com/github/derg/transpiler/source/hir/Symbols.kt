@@ -112,7 +112,7 @@ data class HirMethod(
 data class HirLiteral(
     override val id: UUID,
     override val name: String,
-    val type: HirTypeFunction,
+    val type: HirTypeLiteral,
     val visibility: Visibility,
     val instructions: List<HirInstruction>,
     
