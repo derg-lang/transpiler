@@ -173,18 +173,6 @@ class TestResolverValue
         }
         
         @Test
-        @Disabled // TODO: Find a way to implement this test in a sane manner.
-        fun `Given parameter without value type, when resolving, then correct error`()
-        {
-        }
-        
-        @Test
-        @Disabled // TODO: Find a way to implement this test in a sane manner.
-        fun `Given parameter with error type, when resolving, then correct error`()
-        {
-        }
-        
-        @Test
         fun `Given unknown overload, when resolving, then correct error`()
         {
             val instance = HirLoad("unknown", emptyList())
