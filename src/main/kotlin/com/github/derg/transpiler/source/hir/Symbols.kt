@@ -78,7 +78,7 @@ data class HirConcept(
 data class HirFunction(
     override val id: UUID,
     override val name: String,
-    val type: HirTypeCall,
+    val type: HirTypeFunction,
     val visibility: Visibility,
     val instructions: List<HirInstruction>,
     
@@ -95,7 +95,7 @@ data class HirFunction(
 data class HirMethod(
     override val id: UUID,
     override val name: String,
-    val type: HirTypeCall,
+    val type: HirTypeFunction,
     val visibility: Visibility,
     val instructions: List<HirInstruction>,
     
@@ -112,7 +112,7 @@ data class HirMethod(
 data class HirLiteral(
     override val id: UUID,
     override val name: String,
-    val type: HirTypeCall,
+    val type: HirTypeFunction,
     val visibility: Visibility,
     val instructions: List<HirInstruction>,
     

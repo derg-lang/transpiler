@@ -26,7 +26,7 @@ val Any.hir: HirValue
 fun hirTypeData(
     struct: HirStruct = Builtin.INT32,
     mutability: Mutability = Mutability.IMMUTABLE,
-) = HirTypeData(
+) = HirTypeStruct(
     name = struct.name,
     generics = emptyList(),
     mutability = mutability,
@@ -35,7 +35,7 @@ fun hirTypeData(
 fun hirTypeData(
     name: String = UUID.randomUUID().toString(),
     mutability: Mutability = Mutability.IMMUTABLE,
-) = HirTypeData(
+) = HirTypeStruct(
     name = name,
     generics = emptyList(),
     mutability = mutability,
@@ -45,7 +45,7 @@ fun hirTypeCall(
     value: HirType? = null,
     error: HirType? = null,
     parameters: List<HirType> = emptyList(),
-) = HirTypeCall(
+) = HirTypeFunction(
     value = value,
     error = error,
     parameters = parameters.map { "" to it },
@@ -127,7 +127,7 @@ fun hirFunOf(
 ) = HirFunction(
     id = UUID.randomUUID(),
     name = name,
-    type = HirTypeCall(value, error, params.map { it.name to it.type }),
+    type = HirTypeFunction(value, error, params.map { it.name to it.type }),
     visibility = Visibility.PRIVATE,
     instructions = instructions,
     generics = emptyList(),
@@ -143,7 +143,7 @@ fun hirLitOf(
 ) = HirLiteral(
     id = UUID.randomUUID(),
     name = name,
-    type = HirTypeCall(value, null, listOf("" to param.type)),
+    type = HirTypeFunction(value, null, listOf("" to param.type)),
     visibility = Visibility.PRIVATE,
     instructions = instructions,
     variables = emptyList(),

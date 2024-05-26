@@ -27,7 +27,7 @@ val Any.thir: ThirValue
 fun thirTypeData(
     struct: ThirStruct,
     mutability: Mutability = Mutability.IMMUTABLE,
-) = ThirTypeData(
+) = ThirTypeStruct(
     symbolId = struct.id,
     generics = emptyList(),
     mutability = mutability,
@@ -36,7 +36,7 @@ fun thirTypeData(
 fun thirTypeData(
     symbolId: UUID = UUID.randomUUID(),
     mutability: Mutability = Mutability.IMMUTABLE,
-) = ThirTypeData(
+) = ThirTypeStruct(
     symbolId = symbolId,
     generics = emptyList(),
     mutability = mutability,
@@ -46,7 +46,7 @@ fun thirTypeCall(
     value: ThirType? = null,
     error: ThirType? = null,
     parameters: List<ThirType> = emptyList(),
-) = ThirTypeCall(
+) = ThirTypeFunction(
     value = value,
     error = error,
     parameters = parameters.map { "" to it },
@@ -64,9 +64,9 @@ private fun op(function: HirFunction, value: HirStruct, error: HirStruct?, varar
 {
     val names = if (params.size == 1) mutableMapOf(0 to "rhs") else mutableMapOf(0 to "lhs", 1 to "rhs")
     
-    val valueType = ThirTypeData(value.id, Mutability.IMMUTABLE, emptyList())
-    val errorType = error?.let { ThirTypeData(it.id, Mutability.IMMUTABLE, emptyList()) }
-    val callable = ThirTypeCall(valueType, errorType, params.mapIndexed { i, p -> names[i]!! to p.value!! })
+    val valueType = ThirTypeStruct(value.id, Mutability.IMMUTABLE, emptyList())
+    val errorType = error?.let { ThirTypeStruct(it.id, Mutability.IMMUTABLE, emptyList()) }
+    val callable = ThirTypeFunction(valueType, errorType, params.mapIndexed { i, p -> names[i]!! to p.value!! })
     val instance = ThirLoad(callable, function.id, emptyList())
     
     return ThirCall(valueType, errorType, instance, params.toList())
@@ -160,7 +160,7 @@ fun thirFunOf(
 ) = ThirFunction(
     id = id,
     name = name,
-    type = ThirTypeCall(value, error, params.map { it.name to it.type }),
+    type = ThirTypeFunction(value, error, params.map { it.name to it.type }),
     visibility = Visibility.PRIVATE,
     instructions = emptyList(),
     genericIds = emptySet(),
@@ -176,7 +176,7 @@ fun thirLitOf(
 ) = ThirLiteral(
     id = id,
     name = name,
-    type = ThirTypeCall(value, null, listOf("" to param.type)),
+    type = ThirTypeFunction(value, null, listOf("" to param.type)),
     visibility = Visibility.PRIVATE,
     instructions = emptyList(),
     variableIds = emptySet(),

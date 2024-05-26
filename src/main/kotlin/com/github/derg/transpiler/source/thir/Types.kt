@@ -14,13 +14,13 @@ sealed interface ThirType
 /**
  * The struct type describes a concrete type by [symbolId], which may be specialized with any number of [generics].
  */
-data class ThirTypeData(val symbolId: UUID, val mutability: Mutability, val generics: List<Named<ThirType>>) : ThirType
+data class ThirTypeStruct(val symbolId: UUID, val mutability: Mutability, val generics: List<Named<ThirType>>) : ThirType
 
 /**
  * The function type describes a function returning a [value] and [error] type, with any number of [parameters]. The
  * parameters are required to have a valid value, and are not permitted to have any error type associated with them.
  */
-data class ThirTypeCall(val value: ThirType?, val error: ThirType?, val parameters: List<Named<ThirType>>) : ThirType
+data class ThirTypeFunction(val value: ThirType?, val error: ThirType?, val parameters: List<Named<ThirType>>) : ThirType
 
 /**
  * The union type describes a type which is one of the specified [types]. Any type can be in a union with a union type,

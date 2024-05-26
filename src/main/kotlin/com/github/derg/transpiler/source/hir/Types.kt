@@ -14,13 +14,13 @@ sealed interface HirType
  * The struct type describes a concrete type by [name], which may be specialized with any number of [generics]. The data
  * within the type has a certain [mutability], indicating whether the type is internally mutable or not.
  */
-data class HirTypeData(val name: String, val mutability: Mutability, val generics: List<Named<HirType>>) : HirType
+data class HirTypeStruct(val name: String, val mutability: Mutability, val generics: List<Named<HirType>>) : HirType
 
 /**
  * The function type describes a function returning a [value] and [error] type, with any number of [parameters]. The
  * parameters are required to have a valid value, and are not permitted to have any error type associated with them.
  */
-data class HirTypeCall(val value: HirType?, val error: HirType?, val parameters: List<Named<HirType>>) : HirType
+data class HirTypeFunction(val value: HirType?, val error: HirType?, val parameters: List<Named<HirType>>) : HirType
 
 /**
  * The union type describes a type which is one of the specified [types]. Any type can be in a union with a union type,
