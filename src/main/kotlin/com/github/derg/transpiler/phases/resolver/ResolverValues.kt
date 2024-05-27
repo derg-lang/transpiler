@@ -100,26 +100,49 @@ internal class ResolverValue(private val symbols: SymbolTable, private val types
      */
     private fun resolveCall(id: UUID, type: ThirType.Function, inputs: List<NamedMaybe<ThirValue>>): Result<ThirCall, ResolveError>
     {
-        // TODO: Support variadic arguments.
-        if (type.parameters.size != inputs.size)
-            return ResolveError.Placeholder.toFailure() // TODO: Replace with mismatching parameter count error.
+        val parameters = mutableMapOf<Int, ThirValue>()
+        val nameToPosition = type.parameters.withIndex().associate { it.value.name to it.index }
         
-        // Reject function if parameter types do not match function signature. The parameters must be ordered in the
-        // same order as expected by the function before we can compare types.
-        val nameToIndex = type.parameters.withIndex().associate { it.value.name to it.index }
-        val sorted = inputs.withIndex().sortedBy { nameToIndex[it.value.first] ?: it.index }.map { it.value }
+        // By iterating through all parameters in the function, we can figure out which inputs match them. All inputs
+        // must be evaluated in some order, where all positional parameters must match exactly with the function
+        // parameters.
+        for ((index, input) in inputs.withIndex())
+        {
+            // Determine which position this parameter will consume. All inputs may only fill a single parameter in the
+            // function signature.
+            // TODO: Support variadic parameters.
+            val position = nameToPosition[input.first] ?: index
+            if (position in parameters)
+                return ResolveError.Placeholder.toFailure() // TODO: A parameter cannot be consumed multiple times.
+            
+            // We must make sure the input parameter actually matches the expected type. We also need to guard against
+            // the case where there are too many inputs for the current function we are considering.
+            val expected = type.parameters.getOrNull(position)
+                ?: return ResolveError.Placeholder.toFailure() // TODO: Too many input parameters.
+            if (expected.type != input.second.value)
+                return ResolveError.Placeholder.toFailure() // TODO: Types of parameter and input must match.
+            
+            // When all is good, we can record the input as taking one of the positional slots.
+            parameters[position] = input.second
+        }
         
-        // TODO: Handle generics, attempt to infer the type if at all possible at this point.
-        if (type.parameters.zip(sorted).any { (param, input) -> param.type != input.second.value })
-            return ResolveError.Placeholder.toFailure() // TODO: Replace with mismatched parameter types.
+        // Any positional parameter which is not filled at this point, has not been provided by the user. We need to
+        // insert all default values, if any.
+        for ((position, parameter) in type.parameters.withIndex())
+        {
+            if (position in parameters)
+                continue
+            if (parameter.value == null)
+                return ResolveError.Placeholder.toFailure() // TODO: Not all expected parameters were filled.
+            
+            parameters[position] = parameter.value
+        }
         
-        // All parameters provided by the user are now confirmed to be compatible with the function under evaluation. We
-        // can safely construct a function call value for this case.
         return ThirCall(
             value = type.value,
             error = type.error,
             instance = ThirLoad(type, id, emptyList()),
-            parameters = sorted.map { it.second },
+            parameters = parameters.toList().sortedBy { it.first }.map { it.second },
         ).toSuccess()
     }
     
@@ -232,7 +255,7 @@ internal class ResolverValue(private val symbols: SymbolTable, private val types
         
         // Once we know which symbol we are working with, we can deduce which type it has, which we can pass further
         // down in the chain.
-        val resolver = ResolverType(scope)
+        val resolver = ResolverType(symbols, types, scope)
         val type = when (candidate)
         {
             is HirParameter -> resolver.resolve(candidate.type)

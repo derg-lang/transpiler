@@ -20,8 +20,10 @@ private fun <Type : HirSymbol> Type.register(scope: Scope): Type = also { scope.
 
 class TestResolverType
 {
+    private val symbols = SymbolTable()
+    private val types = TypeTable()
     private val scope = Scope(Builtin.GLOBAL_SCOPE)
-    private val resolver = ResolverType(scope)
+    private val resolver = ResolverType(symbols, types, scope)
     
     @Nested
     inner class Struct
@@ -90,7 +92,7 @@ class TestResolverType
         fun `Given parameter, when resolving, then correct outcome`()
         {
             val param = ThirType.Structure(BOOL.id, Mutability.IMMUTABLE, emptyList())
-            val expected = ThirType.Function(null, null, listOf(ThirParameterDynamic("", param, Passability.IN)))
+            val expected = ThirType.Function(null, null, listOf(thirTypeParam(name = "", type = param)))
             
             assertSuccess(expected, resolver.resolve(hirTypeCall(parameters = listOf(BOOL_TYPE))))
         }

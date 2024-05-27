@@ -8,8 +8,8 @@ import org.junit.jupiter.api.*
 
 class TestCheckerValues
 {
-    private val bool = thirTypeData(Builtin.BOOL.id)
-    private val func = thirTypeCall()
+    private val bool = thirTypeStruct(Builtin.BOOL.id)
+    private val func = thirTypeFun()
     
     @Nested
     inner class Call
@@ -51,7 +51,7 @@ class TestCheckerValues
         @Test
         fun `Given valid instance value, when checking, then correct outcome`()
         {
-            val instance = thirFunOf(value = thirTypeCall(func), error = null).thirCall()
+            val instance = thirFunOf(value = thirTypeFun(func), error = null).thirCall()
             val input = instance.thirCall(value = func, error = null)
         
             assertSuccess(Unit, checker.check(input.thirCall()))
@@ -60,7 +60,7 @@ class TestCheckerValues
         @Test
         fun `Given invalid instance value, when checking, then correct error`()
         {
-            val instance = thirFunOf(value = thirTypeCall(func), error = bool).thirCall()
+            val instance = thirFunOf(value = thirTypeFun(func), error = bool).thirCall()
             val input = instance.thirCall(value = func, error = null)
         
             assertFailure(CallContainsError(instance), checker.check(input.thirCall()))
@@ -152,7 +152,7 @@ class TestCheckerValues
         @Test
         fun `Given valid lhs value, when checking, then correct outcome`()
         {
-            val instance = thirFunOf(value = thirTypeCall(bool), error = null).thirCall()
+            val instance = thirFunOf(value = thirTypeFun(bool), error = null).thirCall()
             val input = instance.thirCall(value = bool, error = bool)
     
             assertSuccess(Unit, checker.check(input thirCatchRaise 0))
@@ -163,7 +163,7 @@ class TestCheckerValues
         @Test
         fun `Given invalid lhs value, when checking, then correct error`()
         {
-            val instance = thirFunOf(value = thirTypeCall(bool), error = bool).thirCall()
+            val instance = thirFunOf(value = thirTypeFun(bool), error = bool).thirCall()
             val input = instance.thirCall(value = bool, error = bool)
     
             assertFailure(CallContainsError(instance), checker.check(input thirCatchRaise 0))
@@ -174,7 +174,7 @@ class TestCheckerValues
         @Test
         fun `Given valid rhs value, when checking, then correct outcome`()
         {
-            val instance = thirFunOf(value = thirTypeCall(bool), error = null).thirCall()
+            val instance = thirFunOf(value = thirTypeFun(bool), error = null).thirCall()
             val input = instance.thirCall(value = bool, error = null)
         
             assertSuccess(Unit, checker.check(both thirCatchRaise input))
@@ -185,7 +185,7 @@ class TestCheckerValues
         @Test
         fun `Given invalid rhs value, when checking, then correct error`()
         {
-            val instance = thirFunOf(value = thirTypeCall(bool), error = bool).thirCall()
+            val instance = thirFunOf(value = thirTypeFun(bool), error = bool).thirCall()
             val input = instance.thirCall(value = bool, error = null)
         
             assertFailure(CallContainsError(instance), checker.check(both thirCatchRaise input))

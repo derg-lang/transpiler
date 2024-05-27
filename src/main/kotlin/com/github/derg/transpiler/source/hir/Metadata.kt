@@ -94,6 +94,7 @@ data class HirParameterStatic(val name: String?, val value: HirValue)
  *
  * @param name The name of the parameter.
  * @param type The type of possible values which can be used as the parameter.
+ * @param value The value associated with the runtime parameter.
  * @param passability The method used to pass the parameter into the function.
  */
-data class HirParameterDynamic(val name: String, val type: HirType, val passability: Passability)
+data class HirParameterDynamic(val name: String, val type: HirType, val value: HirValue?, val passability: Passability)

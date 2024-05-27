@@ -101,7 +101,7 @@ private fun registerLiteral(name: String, parameter: HirType.Structure) = HirLit
         value = parameter,
         error = null,
         parameters = listOf(
-            HirParameterDynamic(name = "input", type = parameter, passability = Passability.IN),
+            HirParameterDynamic(name = "input", type = parameter, value = null, passability = Passability.IN),
         ),
     ),
     visibility = Visibility.EXPORTED,
@@ -121,8 +121,8 @@ private fun registerInfixOp(operator: Symbol, parameter: HirType, value: HirType
         value = value,
         error = error,
         parameters = listOf(
-            HirParameterDynamic(name = "lhs", type = parameter, passability = Passability.IN),
-            HirParameterDynamic(name = "rhs", type = parameter, passability = Passability.IN),
+            HirParameterDynamic(name = "lhs", type = parameter, value = null, passability = Passability.IN),
+            HirParameterDynamic(name = "rhs", type = parameter, value = null, passability = Passability.IN),
         ),
     ),
     visibility = Visibility.EXPORTED,
@@ -143,7 +143,7 @@ private fun registerPrefixOp(operator: Symbol, parameter: HirType, value: HirTyp
         value = value,
         error = error,
         parameters = listOf(
-            HirParameterDynamic(name = "rhs", type = parameter, passability = Passability.IN),
+            HirParameterDynamic(name = "rhs", type = parameter, value = null, passability = Passability.IN),
         ),
     ),
     visibility = Visibility.EXPORTED,
