@@ -160,3 +160,71 @@ fun my_function() -> borrow Int32 // Returns a borrowed value from the function.
 fun my_function() -> move Int32   // Returns a value together with its ownership from the function.
 fun my_function() -> copy Int32   // Returns a copy of some inner value from the function.
 ```
+
+## Error handling
+
+Traditional programming languages are often based on a form of exception mechanism, return value, or some form
+of `Result` type. These approaches have advantages and disadvantages, typically in some way of being too intrusive and
+unergonomic, easy-to-forget to handle, or some other variant thereof. Derg seeks to use a `Result` approach, but rather
+than repeating the mistakes of other languages with this approach, the error path will be a first-class citizen.
+
+Typically, functions can fail if one or more invariant is violated, and the type system is unable to capture the error
+to make it impossible. This can for example be the case when the developer wants to access a value stored in a map of
+some sort, and want to access a non-existing key. As we cannot easily or at all detect such errors, we need an
+alternative way to represent this error. Other languages opt in for a `null`, `undef`, or `Option` variant, but Derg can
+express this violation in a far more powerful feature: the error track.
+
+### Error track
+
+All functions in Derg may be declared with a return value, and error value, neither, or both. A function which does not
+return an error, is not permitted to fail for any reason. All errors *must* be handled inside the function, and it is
+not permitted to propagate errors upwards. On the contrary, a function which does declare an error value, is permitted
+to pass on errors of that type only.
+
+The advantage of handling errors as their own track, is that functions can more easily be passed around as parameters
+themselves. Certain functions take other functions as parameters, for example a `map` function for collections. Such
+functions may expect the operation to always succeed, or may provide specialized implementations for functions which can
+fail. In such cases, if we provide a function which never fails, a developer might be able to optimize their
+implementation to be considerably more efficient or safe. Or, if only a fallible function can be provided as a
+parameter, the developer can still pass a function which never fails; the error case is just never triggered in that
+case.
+
+Developers are thus able to re-use their implementations for a greater number of functions, avoiding the function color
+problem. Functions which never fails, can *always* be used in place of a fallible function, assuming the function
+signatures are otherwise similar.
+
+A function can be declared to return errors in the following manner:
+
+```derg
+fun my_function(): Error // This function is permitted to raise errors. Callers of this function must handle the error.
+```
+
+### Dealing with errors
+
+As a more practical example, a theoretical interface for accessing a value from a map could be the following:
+
+```derg
+struct KeyNotPresent
+
+struct Map[Key, Value]
+{
+    val data // Details omitted.
+}
+
+fun Map.get(key: Key): KeyNotPresent -> Value
+{
+    if !data.contains(key)
+        raise KeyNotPresent
+    return data.at(key)
+}
+```
+
+This interface could on the caller side be used in the following manner:
+
+```derg
+val value = map.get("key") : "default-value" // Or any other error-handling operator.
+```
+
+Any valid [error-handling operator](operators.md#error-operators) could be utilized here, providing a succinct way to
+handle arbitrary errors. Note that this mechanism does not rely on exceptions, but instead provides a more clean way of
+representing errors as a sum type. A function may return either a value, an error, or neither, but never both.

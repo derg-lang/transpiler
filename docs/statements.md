@@ -63,3 +63,11 @@ do_work() // Legal, function returns no value, nor does it raise any error.
 make_it() // Not legal, expression has a value type associated with it.
 9001      // Not legal, expression has a value type associated with it. 
 ```
+
+### Raise
+
+// TODO: Write me.
+
+### Return
+
+// TODO: Write me.
