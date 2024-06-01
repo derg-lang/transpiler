@@ -1,5 +1,0 @@
-# Lifetimes
-
-## Ownership
-
-## Resource management

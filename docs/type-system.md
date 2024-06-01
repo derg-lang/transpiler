@@ -130,15 +130,15 @@ Values may be passed into and out of functions in one of multiple manners:
   as `copy` instead. Any type which is copyable, can be passed in this manner; for types which are not trivially
   copyable, the developer may have to write the functionality for copying the type first.
 
-When a value is passed as `borrow`, the developer will have to take the [lifetime](lifetimes.md#lifetimes) of the value
-into consideration. A value cannot outlive the scope it is declared in, nor can the memory the value resides in be
-invalidated in any way, shape, or form. Note that values owned by a scope cannot be borrowed to a scope that outlives
-the original scope; this means that functions cannot return borrows to local variables.
+When a value is passed as `borrow`, the developer will have to take the [lifetime](resource-management.md#lifetimes) of
+the value into consideration. A value cannot outlive the scope it is declared in, nor can the memory the value resides
+in be invalidated in any way, shape, or form. Note that values owned by a scope cannot be borrowed to a scope that
+outlives the original scope; this means that functions cannot return borrows to local variables.
 
 A value which is moved, cannot be accessed in the previous scope. For example, a value passed into a function by `move`,
 is now inaccessible in the function it was originally declared in. Any access to the value through its previous binding
-is a compile-time error. As [ownership](lifetimes.md#ownership) is transferred to another scope, once the value goes out
-of the new scope it will be destroyed as usual.
+is a compile-time error. As [ownership](resource-management.md#ownership) is transferred to another scope, once the
+value goes out of the new scope it will be destroyed as usual.
 
 Note that passing values by copy, does not mean a bitwise identical copy is passed. All types which are copyable, must
 define a copy function, detailing how the data can be copied. The types themselves are responsible for defining what
