@@ -16,6 +16,7 @@ Example:
 
 ```derg
 val value = add(1, 2) : 0
+val value = add(1, 2) : compute_default_value(it)
 ```
 
 ### Catch-Raise
@@ -31,6 +32,7 @@ Example:
 
 ```derg
 val value = add(1, 2) !: 0
+val value = add(1, 2) !: apply_error_context(it)
 ```
 
 ### Catch-Return
@@ -47,6 +49,7 @@ Example:
 
 ```derg
 val value = add(1, 2) ?: 0
+val value = add(1, 2) : compute_fallback_value(it)
 ```
 
 ## Logical operators
