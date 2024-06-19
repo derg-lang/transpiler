@@ -343,6 +343,21 @@ struct MyData
 }
 ```
 
+### Dynamic dispatch
+
+// TODO: Write me. This is all notes and raw brain dump at the moment.
+
+The type system cannot prove or disprove that the code is memory safe when dynamic dispatching is introduced. As such,
+we need some way to opt-out of the compiler saying no when we *know* the code is safe but cannot prove it. Examples of
+safe but unprovable code can look like the following:
+
+```derg
+trait MyTrait
+{
+    fun do_work()
+}
+```
+
 ### Concurrency
 
 Concurrency is critically important in high-performance modern applications, but concurrency can cause major issues in
