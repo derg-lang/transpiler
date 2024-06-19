@@ -53,7 +53,7 @@ internal fun AstFunction.toHir() = HirFunction(
     type = HirTypeFunction(
         value = valueType?.toHir(),
         error = errorType?.toHir(),
-        parameters = parameters.map { it.name to it.type.toHir() },
+        parameters = parameters.map { HirTypeFunction.Parameter(it.name, it.type.toHir()) },
     ),
     visibility = visibility,
     instructions = statements.map { it.toHir() },

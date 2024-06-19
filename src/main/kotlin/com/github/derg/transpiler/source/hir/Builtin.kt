@@ -114,7 +114,7 @@ private fun registerInfixOp(operator: Symbol, parameter: HirType, value: HirType
     type = HirTypeFunction(
         value = value,
         error = error,
-        parameters = listOf("lhs" to parameter, "rhs" to parameter),
+        parameters = listOf(HirTypeFunction.Parameter("lhs", parameter), HirTypeFunction.Parameter("rhs", parameter)),
     ),
     visibility = Visibility.EXPORTED,
     instructions = emptyList(),
@@ -133,7 +133,7 @@ private fun registerPrefixOp(operator: Symbol, parameter: HirType, value: HirTyp
     type = HirTypeFunction(
         value = value,
         error = error,
-        parameters = listOf("rhs" to parameter),
+        parameters = listOf(HirTypeFunction.Parameter("rhs", parameter)),
     ),
     visibility = Visibility.EXPORTED,
     instructions = emptyList(),

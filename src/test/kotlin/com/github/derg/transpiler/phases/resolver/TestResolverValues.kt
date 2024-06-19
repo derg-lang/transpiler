@@ -15,7 +15,7 @@ import java.math.*
 private fun HirFunction.thirCall(vararg parameters: Any): ThirValue
 {
     val inputs = parameters.map { it.thir }
-    val params = this.parameters.zip(inputs).map { it.first.name to it.second.value!! }
+    val params = this.parameters.zip(inputs).map { ThirTypeFunction.Parameter(it.first.name, it.second.value!!) }
     val type = ThirTypeFunction(null, null, params)
     
     return ThirCall(null, null, ThirLoad(type, id, emptyList()), inputs)

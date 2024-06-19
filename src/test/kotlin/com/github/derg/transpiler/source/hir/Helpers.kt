@@ -48,7 +48,7 @@ fun hirTypeCall(
 ) = HirTypeFunction(
     value = value,
     error = error,
-    parameters = parameters.map { "" to it },
+    parameters = parameters.map { HirTypeFunction.Parameter("", it) },
 )
 
 fun hirTypeUnion(vararg types: HirType) = HirTypeUnion(types.toList())
@@ -127,7 +127,7 @@ fun hirFunOf(
 ) = HirFunction(
     id = UUID.randomUUID(),
     name = name,
-    type = HirTypeFunction(value, error, params.map { it.name to it.type }),
+    type = HirTypeFunction(value, error, params.map { HirTypeFunction.Parameter(it.name, it.type) }),
     visibility = Visibility.PRIVATE,
     instructions = instructions,
     generics = emptyList(),

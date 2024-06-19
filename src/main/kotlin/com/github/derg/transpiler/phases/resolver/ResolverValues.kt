@@ -105,11 +105,11 @@ internal class ResolverValue(private val types: TypeTable, private val scope: Sc
         
         // Reject function if parameter types do not match function signature. The parameters must be ordered in the
         // same order as expected by the function before we can compare types.
-        val nameToIndex = type.parameters.withIndex().associate { it.value.first to it.index }
+        val nameToIndex = type.parameters.withIndex().associate { it.value.name to it.index }
         val sorted = inputs.withIndex().sortedBy { nameToIndex[it.value.first] ?: it.index }.map { it.value }
         
         // TODO: Handle generics, attempt to infer the type if at all possible at this point.
-        if (type.parameters.zip(sorted).any { (param, input) -> param.second != input.second.value })
+        if (type.parameters.zip(sorted).any { (param, input) -> param.type != input.second.value })
             return ResolveError.Placeholder.toFailure() // TODO: Replace with mismatched parameter types.
         
         // All parameters provided by the user are now confirmed to be compatible with the function under evaluation. We

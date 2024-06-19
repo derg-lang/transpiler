@@ -47,7 +47,7 @@ fun thirTypeCall(
 ) = ThirTypeFunction(
     value = value,
     error = error,
-    parameters = parameters.map { "" to it },
+    parameters = parameters.map { ThirTypeFunction.Parameter("", it) },
 )
 
 ////////////////////////
@@ -64,7 +64,7 @@ private fun op(function: HirFunction, value: HirStruct, error: HirStruct?, varar
     
     val valueType = ThirTypeStruct(value.id, Mutability.IMMUTABLE, emptyList())
     val errorType = error?.let { ThirTypeStruct(it.id, Mutability.IMMUTABLE, emptyList()) }
-    val callable = ThirTypeFunction(valueType, errorType, params.mapIndexed { i, p -> names[i]!! to p.value!! })
+    val callable = ThirTypeFunction(valueType, errorType, params.mapIndexed { i, p -> ThirTypeFunction.Parameter(names[i]!!, p.value!!) })
     val instance = ThirLoad(callable, function.id, emptyList())
     
     return ThirCall(valueType, errorType, instance, params.toList())
@@ -162,7 +162,7 @@ fun thirFunOf(
 ) = ThirFunction(
     id = id,
     name = name,
-    type = ThirTypeFunction(value, error, params.map { it.name to it.type }),
+    type = ThirTypeFunction(value, error, params.map { ThirTypeFunction.Parameter(it.name, it.type) }),
     visibility = Visibility.PRIVATE,
     instructions = emptyList(),
     genericIds = emptySet(),

@@ -88,7 +88,7 @@ class TestResolverType
         fun `Given parameter, when resolving, then correct outcome`()
         {
             val param = ThirTypeStruct(BOOL.id, Mutability.IMMUTABLE, emptyList())
-            val expected = ThirTypeFunction(null, null, listOf("" to param))
+            val expected = ThirTypeFunction(null, null, listOf(ThirTypeFunction.Parameter("", param)))
             
             assertSuccess(expected, resolver.resolve(hirTypeCall(parameters = listOf(BOOL_TYPE))))
         }
