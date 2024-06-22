@@ -72,7 +72,7 @@ object Builtin
 /**
  * Generates a type based on the [struct].
  */
-private fun typeOf(struct: HirStruct) = HirTypeStruct(
+private fun typeOf(struct: HirStruct) = HirType.Data(
     name = struct.name,
     generics = emptyList(),
     mutability = Mutability.IMMUTABLE,
@@ -94,10 +94,10 @@ private fun registerStruct(name: String) = HirStruct(
  * Defines a new literal with the given [name] and [parameter]. The literal will return the same type as the parameter
  * itself.
  */
-private fun registerLiteral(name: String, parameter: HirTypeStruct) = HirLiteral(
+private fun registerLiteral(name: String, parameter: HirType.Data) = HirLiteral(
     id = UUID.randomUUID(),
     name = name,
-    type = HirTypeLiteral(value = parameter, parameter = parameter),
+    valueType = parameter,
     visibility = Visibility.EXPORTED,
     instructions = emptyList(),
     variables = emptyList(),
@@ -111,11 +111,8 @@ private fun registerLiteral(name: String, parameter: HirTypeStruct) = HirLiteral
 private fun registerInfixOp(operator: Symbol, parameter: HirType, value: HirType, error: HirType?) = HirFunction(
     id = UUID.randomUUID(),
     name = operator.symbol,
-    type = HirTypeFunction(
-        value = value,
-        error = error,
-        parameters = listOf(HirTypeFunction.Parameter("lhs", parameter), HirTypeFunction.Parameter("rhs", parameter)),
-    ),
+    valueType = value,
+    errorType = error,
     visibility = Visibility.EXPORTED,
     instructions = emptyList(),
     generics = emptyList(),
@@ -130,11 +127,8 @@ private fun registerInfixOp(operator: Symbol, parameter: HirType, value: HirType
 private fun registerPrefixOp(operator: Symbol, parameter: HirType, value: HirType, error: HirType?) = HirFunction(
     id = UUID.randomUUID(),
     name = operator.symbol,
-    type = HirTypeFunction(
-        value = value,
-        error = error,
-        parameters = listOf(HirTypeFunction.Parameter("rhs", parameter)),
-    ),
+    valueType = value,
+    errorType = error,
     visibility = Visibility.EXPORTED,
     instructions = emptyList(),
     generics = emptyList(),

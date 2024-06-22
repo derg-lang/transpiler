@@ -114,14 +114,28 @@ fun <Value, Error, T> Result<Value, Error>.flatMapError(transformation: (Error) 
     }
 
 /**
- * Transforms the collection of failable operations into either all successes, or the first failure case. Each element
+ * Transforms the collection of fallible operations into either all successes, or the first failure case. Each element
  * is transformed using the [transformation] function.
  */
 fun <Value, Error, T> Iterable<T>.mapUntilError(transformation: (T) -> Result<Value, Error>): Result<List<Value>, Error> =
-    map { result -> transformation(result).valueOr { return it.toFailure() } }.toSuccess()
+    map { element -> transformation(element).valueOr { return it.toFailure() } }.toSuccess()
 
 /**
- * Transforms the collection of failable operations into two lists, one containing all the success cases and the other
+ * Transforms the collection of fallible operations into either all successes, or the first failure case. Each element
+ * is transformed using the [transformation] function. All values which are mapped to `null` are discarded.
+ */
+fun <Value : Any, Error, T> Iterable<T>.mapNotInnerNull(transformation: (T) -> Result<Value?, Error>): List<Result<Value, Error>> =
+    mapNotNull { element -> transformation(element).map(success = { it?.toSuccess() }, failure = { it.toFailure() }) }
+
+/**
+ * Filters the collection using the [predicate] until either all elements have been filtered according to the predicate,
+ * or the first failure. If no error occurred, the success case contains all elements which satisfied the predicate.
+ */
+fun <Error, T> Iterable<T>.filterUntilError(predicate: (T) -> Result<Boolean, Error>): Result<List<T>, Error> =
+    filter { element -> predicate(element).valueOr { return it.toFailure() } }.toSuccess()
+
+/**
+ * Transforms the collection of fallible operations into two lists, one containing all the success cases and the other
  * containing all the failure cases.
  */
 fun <Value, Error> Iterable<Result<Value, Error>>.partitionOutcomes(): Pair<List<Value>, List<Error>> =

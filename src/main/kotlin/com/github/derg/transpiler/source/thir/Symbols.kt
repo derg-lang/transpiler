@@ -83,7 +83,8 @@ data class ThirConcept(
 data class ThirFunction(
     override val id: UUID,
     override val name: String,
-    val type: ThirTypeCall,
+    val valueType: ThirType?,
+    val errorType: ThirType?,
     val visibility: Visibility,
     val instructions: List<ThirInstruction>,
     
@@ -137,6 +138,17 @@ data class ThirField(
     val value: ThirValue?,
     val visibility: Visibility,
     val assignability: Assignability,
+) : ThirSymbol
+
+/**
+ * Type parameters represents a generic type used in a construct. These parameters are used to generalize across a whole
+ * range of types, rather than just a single type. Generics may be constrained by any number of concepts.
+ */
+data class ThirGeneric(
+    override val id: UUID,
+    override val name: String,
+    val template: ThirTemplate,
+    val conceptIds: Set<UUID>,
 ) : ThirSymbol
 
 /**

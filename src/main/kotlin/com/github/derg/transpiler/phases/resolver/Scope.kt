@@ -1,7 +1,6 @@
 package com.github.derg.transpiler.phases.resolver
 
 import com.github.derg.transpiler.source.hir.*
-import java.util.*
 
 /**
  * Scopes represents the symbols which are accessible at a certain layer in the source code. Scopes may be nested inside
@@ -37,14 +36,6 @@ class Scope(private val parent: Scope?)
         
         return inner + outer
     }
-    
-    /**
-     * Resolves the given [name] to all symbols visible from the current scope, including all outer scopes. If [Type] is
-     * specified more narrowly, then all symbols which are not of that type are omitted.
-     */
-    @JvmName("resolveType")
-    inline fun <reified Type : HirSymbol> resolve(name: String): List<Type> =
-        resolve(name).filterIsInstance<Type>()
     
     override fun toString(): String = _symbols.toString()
     override fun hashCode(): Int = _symbols.hashCode()

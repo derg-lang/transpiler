@@ -4,6 +4,29 @@ import com.github.derg.transpiler.source.*
 import com.github.derg.transpiler.utils.*
 import java.util.*
 
+//////////////////
+// Type helpers //
+//////////////////
+
+fun hirTypeData(
+    name: String = UUID.randomUUID().toString(),
+    mutability: Mutability = Mutability.IMMUTABLE,
+) = HirType.Data(
+    name = name,
+    mutability = mutability,
+    generics = emptyList(),
+)
+
+fun hirTypeCall(
+    valueType: HirType? = null,
+    errorType: HirType? = null,
+    parameters: List<Pair<String, HirType>> = emptyList(),
+) = HirType.Call(
+    valueType = valueType,
+    errorType = errorType,
+    parameters = parameters.map { HirType.Parameter(it.first, it.second) },
+)
+
 /////////////////////
 // Literal helpers //
 /////////////////////
@@ -18,40 +41,6 @@ val Any.hir: HirValue
         is String   -> HirText(this, STR_LIT_NAME)
         else        -> throw IllegalArgumentException("Value $this does not represent a valid hir value")
     }
-
-//////////////////
-// Type helpers //
-//////////////////
-
-fun hirTypeData(
-    struct: HirStruct = Builtin.INT32,
-    mutability: Mutability = Mutability.IMMUTABLE,
-) = HirTypeStruct(
-    name = struct.name,
-    generics = emptyList(),
-    mutability = mutability,
-)
-
-fun hirTypeData(
-    name: String = UUID.randomUUID().toString(),
-    mutability: Mutability = Mutability.IMMUTABLE,
-) = HirTypeStruct(
-    name = name,
-    generics = emptyList(),
-    mutability = mutability,
-)
-
-fun hirTypeCall(
-    value: HirType? = null,
-    error: HirType? = null,
-    parameters: List<HirType> = emptyList(),
-) = HirTypeFunction(
-    value = value,
-    error = error,
-    parameters = parameters.map { HirTypeFunction.Parameter("", it) },
-)
-
-fun hirTypeUnion(vararg types: HirType) = HirTypeUnion(types.toList())
 
 ////////////////////////
 // Expression helpers //
@@ -82,15 +71,24 @@ infix fun Any.hirCatchRaise(that: Any) = HirCatch(this.hir, that.hir, Capture.RA
 infix fun Any.hirCatchReturn(that: Any) = HirCatch(this.hir, that.hir, Capture.RETURN)
 infix fun Any.hirCatchHandle(that: Any) = HirCatch(this.hir, that.hir, Capture.HANDLE)
 
-val HirSymbol.hirLoad: HirValue get() = HirLoad(name, emptyList())
-fun HirFunction.hirCall(vararg parameters: Any) = HirCall(hirLoad, parameters.map { null hirArg it })
-infix fun String?.hirArg(that: Any) = NamedMaybe(this, that.hir)
+fun HirValue.hirCall(
+    parameters: List<NamedMaybe<HirValue>> = emptyList(),
+) = HirCall(HirInstance.Value(this), parameters)
+
+fun HirSymbol.hirCall(
+    generics: List<NamedMaybe<HirValue>> = emptyList(),
+    parameters: List<NamedMaybe<HirValue>> = emptyList(),
+) = HirCall(HirInstance.Named(name, generics), parameters)
+
+fun HirSymbol.hirLoad(
+    generics: List<NamedMaybe<HirValue>> = emptyList()
+) = HirLoad(HirInstance.Named(name, generics))
 
 ///////////////////////
 // Statement helpers //
 ///////////////////////
 
-infix fun HirVariable.hirAssign(that: Any) = HirAssign(hirLoad, that.hir)
+infix fun HirVariable.hirAssign(that: Any) = HirAssign(HirInstance.Named(name, emptyList()), that.hir)
 
 val Any.hirEval get() = HirEvaluate(hir)
 val Any.hirReturnError get() = HirReturnError(hir)
@@ -120,30 +118,42 @@ fun hirFieldOf(
 
 fun hirFunOf(
     name: String = UUID.randomUUID().toString(),
-    value: HirType? = null,
-    error: HirType? = null,
-    params: List<HirParameter> = emptyList(),
+    valueType: HirType? = null,
+    errorType: HirType? = null,
+    generics: List<HirGeneric> = emptyList(),
+    parameters: List<HirParameter> = emptyList(),
     instructions: List<HirInstruction> = emptyList(),
 ) = HirFunction(
     id = UUID.randomUUID(),
     name = name,
-    type = HirTypeFunction(value, error, params.map { HirTypeFunction.Parameter(it.name, it.type) }),
+    valueType = valueType,
+    errorType = errorType,
     visibility = Visibility.PRIVATE,
     instructions = instructions,
-    generics = emptyList(),
+    generics = generics,
     variables = emptyList(),
-    parameters = params,
+    parameters = parameters,
+)
+
+fun hirGenOf(
+    name: String = UUID.randomUUID().toString(),
+    template: HirTemplate = HirTemplate.Type,
+) = HirGeneric(
+    id = UUID.randomUUID(),
+    name = name,
+    template = template,
+    concepts = emptyList(),
 )
 
 fun hirLitOf(
     name: String = UUID.randomUUID().toString(),
-    value: HirType = Builtin.INT32_TYPE,
+    valueType: HirType = Builtin.INT32_TYPE,
     param: HirParameter = hirParamOf(),
     instructions: List<HirInstruction> = emptyList(),
 ) = HirLiteral(
     id = UUID.randomUUID(),
     name = name,
-    type = HirTypeLiteral(value, param.type as HirTypeStruct),
+    valueType = valueType,
     visibility = Visibility.PRIVATE,
     instructions = instructions,
     variables = emptyList(),

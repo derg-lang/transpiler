@@ -14,37 +14,17 @@ sealed interface HirValue
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 /**
- * Loads the value bound to the identifier with the given [name]. The identifier may refer to either a value bound to
- * any memory address, or any named symbol. When referring to a function, [generics] may be used to disambiguate which
- * instance is intended.
+ * Loads the value bound to the identifier with the given [instance]. The identifier may refer to either a value bound
+ * to any memory address, or any named symbol.
  */
-data class HirLoad(
-    val name: String,
-    val generics: List<NamedMaybe<HirType>>,
-) : HirValue
-
-/**
- * Retrieves the value of the given [field] from the given [instance]. The object may be an object which exists on the
- * stack or heap. When referring to a method, [generics] may be used to disambiguate which method is intended.
- */
-// TODO: Should objects within modules be accessible via this value? Possibly yes, to unify instance and module access.
-//       In doing so, the syntax could be simplified, using only `foo.bar`, instead of also including `foo::bar`. The
-//       downside being name resolution becomes much more finicky as modules cannot have the same names as other items.
-data class HirRead(
-    val instance: HirValue,
-    val field: String,
-    val generics: List<NamedMaybe<HirType>>,
-) : HirValue
+data class HirLoad(val instance: HirInstance) : HirValue
 
 /**
  * Invokes the callable [instance] using the provided [parameters]. The arguments are specified in the same order in
  * which they appear in source code. In some cases, the callable cannot be resolved without additional information about
  * the callable template specialization.
  */
-data class HirCall(
-    val instance: HirValue,
-    val parameters: List<NamedMaybe<HirValue>>,
-) : HirValue
+data class HirCall(val instance: HirInstance, val parameters: List<NamedMaybe<HirValue>>) : HirValue
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Constants

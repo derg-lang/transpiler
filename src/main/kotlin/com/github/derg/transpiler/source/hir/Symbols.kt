@@ -78,7 +78,8 @@ data class HirConcept(
 data class HirFunction(
     override val id: UUID,
     override val name: String,
-    val type: HirTypeFunction,
+    val valueType: HirType?,
+    val errorType: HirType?,
     val visibility: Visibility,
     val instructions: List<HirInstruction>,
     
@@ -95,7 +96,8 @@ data class HirFunction(
 data class HirMethod(
     override val id: UUID,
     override val name: String,
-    val type: HirTypeFunction,
+    val valueType: HirType?,
+    val errorType: HirType?,
     val visibility: Visibility,
     val instructions: List<HirInstruction>,
     
@@ -112,7 +114,7 @@ data class HirMethod(
 data class HirLiteral(
     override val id: UUID,
     override val name: String,
-    val type: HirTypeLiteral,
+    val valueType: HirType,
     val visibility: Visibility,
     val instructions: List<HirInstruction>,
     
@@ -185,13 +187,12 @@ data class HirField(
 data class HirGeneric(
     override val id: UUID,
     override val name: String,
-    val type: HirType?,
-    val value: HirValue?,
+    val template: HirTemplate,
     val concepts: List<String>,
 ) : HirSymbol
 
 /**
- * The parameter represents a specific input expected to a callable construct.
+ * The runtime parameter represents a specific input expected to a callable construct.
  */
 data class HirParameter(
     override val id: UUID,

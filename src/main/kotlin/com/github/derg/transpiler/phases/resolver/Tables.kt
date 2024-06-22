@@ -4,32 +4,48 @@ import com.github.derg.transpiler.source.thir.*
 import java.util.*
 
 /**
- * The symbol table holds a reference to all symbols which have been found and resolved. It also keeps track of the
- * types of symbols that have been found but not yet fully resolved.
+ * All tables which are relevant for full type resolution. Each table is populated during type resolution, and is only
+ * guaranteed to be fully constructed once the type resolution phase is fully completed. During type resolution, the
+ * tables may be incomplete, not containing all information about every symbol.
+ *
+ * @param types The type information of all symbols which has been resolved during type resolution.
+ * @param symbols The actual symbols which have been fully constructed during type resolution.
  */
-class SymbolTable
-{
-    val fields = mutableMapOf<UUID, ThirField>()
-    val functions = mutableMapOf<UUID, ThirFunction>()
-    val parameters = mutableMapOf<UUID, ThirParameter>()
-    val structs = mutableMapOf<UUID, ThirStruct>()
-    val variables = mutableMapOf<UUID, ThirVariable>()
-    
-    override fun toString(): String
-    {
-        return "SymbolTable(\n\tfields=${fields.values},\n\tfunctions=${functions.values},\n\tparameters=${parameters.values},\n\tstructs=${structs.values},\n\tvariables=${variables.values})"
-    }
-}
+data class Tables(val types: TypeTable, val symbols: SymbolTable)
 
 /**
- * The type table holds a reference to the type of various objects that have been found and processed. The types are
- * analyzed and made available before the full type resolution takes place.
+ * The type table contains information about the type of all symbols which have been encountered so far during type
+ * resolution. Once type resolution is fully complete, all symbols declared within the source code will have a proper
+ * entry in this table.
  */
 class TypeTable
 {
+    // Binding types.
     val fields = mutableMapOf<UUID, ThirType>()
-    val functions = mutableMapOf<UUID, ThirTypeFunction>()
-    val literals = mutableMapOf<UUID, ThirTypeLiteral>()
     val parameters = mutableMapOf<UUID, ThirType>()
     val variables = mutableMapOf<UUID, ThirType>()
+    
+    // Call types.
+    val functions = mutableMapOf<UUID, ThirType.Call>()
+    
+    // Data types.
+    val structs = mutableMapOf<UUID, Unit>()
+}
+
+/**
+ * The symbol table holds a reference to all symbols which have been fully type-checked and is considered well-formed.
+ * Every symbol which is fully type-checked and valid will be inserted into the table.
+ */
+class SymbolTable
+{
+    // Binding types.
+    val fields = mutableMapOf<UUID, ThirField>()
+    val parameters = mutableMapOf<UUID, ThirParameter>()
+    val variables = mutableMapOf<UUID, ThirVariable>()
+    
+    // Call types.
+    val functions = mutableMapOf<UUID, ThirFunction>()
+    
+    // Data types.
+    val structs = mutableMapOf<UUID, ThirStruct>()
 }

@@ -2,7 +2,6 @@ package com.github.derg.transpiler.source.thir
 
 import com.github.derg.transpiler.source.*
 import com.github.derg.transpiler.source.hir.*
-import java.util.*
 
 /**
  * All values the source code operates on, are represented as expressions. Expressions may be constant values provided
@@ -11,21 +10,20 @@ import java.util.*
  */
 sealed interface ThirValue
 {
-    val value: ThirType?
-    val error: ThirType?
+    val valueType: ThirType?
+    val errorType: ThirType?
 }
 
 /**
  * Represents a value read from memory, or any other named location. The value is read from the location defined by the
- * [symbolId], utilizing the given [generics] to disambiguate which specialization to load.
+ * [instance].
  */
 data class ThirLoad(
-    override val value: ThirType,
-    val symbolId: UUID,
-    val generics: List<ThirType>,
+    val instance: ThirInstance,
+    override val valueType: ThirType,
 ) : ThirValue
 {
-    override val error: Nothing? get() = null
+    override val errorType: Nothing? get() = null
 }
 
 /**
@@ -33,10 +31,10 @@ data class ThirLoad(
  * value can be computed.
  */
 data class ThirCall(
-    override val value: ThirType?,
-    override val error: ThirType?,
-    val instance: ThirValue,
+    val instance: ThirInstance,
     val parameters: List<ThirValue>,
+    override val valueType: ThirType?,
+    override val errorType: ThirType?,
 ) : ThirValue
 
 /**
@@ -46,8 +44,8 @@ data class ThirCall(
  */
 data class ThirCatch(val lhs: ThirValue, val rhs: ThirValue, val capture: Capture) : ThirValue
 {
-    override val value: ThirType get() = ThirTypeUnion(listOf(lhs.value, rhs.value).mapNotNull { it })
-    override val error: Nothing? get() = null
+    override val valueType: ThirType? get() = lhs.valueType
+    override val errorType: Nothing? get() = null
 }
 
 /**
@@ -55,8 +53,8 @@ data class ThirCatch(val lhs: ThirValue, val rhs: ThirValue, val capture: Captur
  */
 data class ThirConstBool(val raw: Boolean) : ThirValue
 {
-    override val value: ThirType get() = ThirTypeStruct(Builtin.BOOL.id, Mutability.IMMUTABLE, emptyList())
-    override val error: Nothing? get() = null
+    override val valueType: ThirType get() = ThirType.Data(Builtin.BOOL.id, Mutability.IMMUTABLE, emptyList())
+    override val errorType: Nothing? get() = null
 }
 
 /**
@@ -64,8 +62,8 @@ data class ThirConstBool(val raw: Boolean) : ThirValue
  */
 data class ThirConstInt32(val raw: Int) : ThirValue
 {
-    override val value: ThirType get() = ThirTypeStruct(Builtin.INT32.id, Mutability.IMMUTABLE, emptyList())
-    override val error: Nothing? get() = null
+    override val valueType: ThirType get() = ThirType.Data(Builtin.INT32.id, Mutability.IMMUTABLE, emptyList())
+    override val errorType: Nothing? get() = null
 }
 
 /**
@@ -73,6 +71,6 @@ data class ThirConstInt32(val raw: Int) : ThirValue
  */
 data class ThirConstInt64(val raw: Long) : ThirValue
 {
-    override val value: ThirType get() = ThirTypeStruct(Builtin.INT64.id, Mutability.IMMUTABLE, emptyList())
-    override val error: Nothing? get() = null
+    override val valueType: ThirType get() = ThirType.Data(Builtin.INT64.id, Mutability.IMMUTABLE, emptyList())
+    override val errorType: Nothing? get() = null
 }

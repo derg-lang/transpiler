@@ -1,38 +1,22 @@
 package com.github.derg.transpiler.phases.resolver
 
+import com.github.derg.transpiler.source.*
 import com.github.derg.transpiler.source.hir.*
 import com.github.derg.transpiler.source.thir.*
 import com.github.derg.transpiler.utils.*
 import java.math.*
 
 /**
- * Converts the input [hirPackage] into a typed variable. All symbols found within the package are stored in the symbol
- * table. All symbol references will be resolved as well, ensuring that the program is well-structured. Note that the
- * symbols are not type-checked by this point.
+ * Converts everything present within the [symbol] into a type table describing all types found within it.
  */
-fun resolve(hirPackage: HirPackage): Result<SymbolTable, ResolveError>
+fun resolve(symbol: HirFunction): Result<Tables, ResolveError>
 {
-    val engine = ResolutionEngine()
-    val outer = Builtin.GLOBAL_SCOPE
-    val inner = Scope(outer)
+    val tables = Tables(TypeTable(), SymbolTable())
+    val resolver = Resolver(tables.types, tables.symbols, Builtin.GLOBAL_SCOPE)
+
+//    resolver.resolve(Builtin.GLOBAL_SCOPE, symbol).onFailure { return it.toFailure() }
     
-    // TODO: Obviously find a better way to access the contents of the package. The engine should take care of the heavy
-    //       lifting, going through the modules and segments. The order in which modules are handled does matter - we
-    //       must ensure that modules which depends on others, are resolved last.
-    val hirModule = hirPackage.modules.single()
-    val hirSegment = hirModule.segments.single()
-    
-    hirSegment.structs.forEach { inner.register(it) }
-    hirSegment.functions.forEach { inner.register(it) }
-    
-    // Make sure that all symbols present within the package are handled appropriately.
-    engine.prepare(outer).valueOr { return it.toFailure() }
-    engine.prepare(inner).valueOr { return it.toFailure() }
-    
-    outer.symbols.mapUntilError { engine.resolve(outer, it) }.onFailure { return it.toFailure() }
-    inner.symbols.mapUntilError { engine.resolve(inner, it) }.onFailure { return it.toFailure() }
-    
-    return engine.symbols.toSuccess()
+    return tables.toSuccess()
 }
 
 /**
@@ -42,10 +26,32 @@ fun resolve(hirPackage: HirPackage): Result<SymbolTable, ResolveError>
 sealed interface ResolveError
 {
     /**
-     * The callable object with the given [name] is not recognized and did not resolve to anything which could be
-     * invoked.
+     * The function call to [name] with the given [parameter] resolved to multiple candidate literals, where none of
+     * the candidates could be unambiguously selected.
      */
-    data class UnknownFunction(val name: String) : ResolveError
+    data class AmbiguousLiteral(val name: String, val parameter: HirValue) : ResolveError
+    
+    /**
+     * The usage of the type with the given [name] is ambiguous; the name resolved to multiple candidates which cannot
+     * be disambiguated.
+     */
+    data class AmbiguousType(val name: String) : ResolveError
+    
+    /**
+     * The literal with the given [value] is outside the allowed range of the literal.
+     */
+    data class InvalidInteger(val value: BigInteger) : ResolveError
+    
+    /**
+     * The [instance] has been evaluated to something which is not callable, when the current situation expected a
+     * callable value.
+     */
+    data class InvalidCall(val instance: HirInstance) : ResolveError
+    
+    /**
+     * The parameter [type] is not permitted to be used as a parameter in the literal [name].
+     */
+    data class InvalidType(val name: String, val type: HirType) : ResolveError
     
     /**
      * The literal [name] is not recognized and cannot be used to convert the constant into a sensible value.
@@ -55,199 +61,303 @@ sealed interface ResolveError
     /**
      * The type with the given [name] could not be found in the current or any outer scope.
      */
-    data class UnknownStruct(val name: String) : ResolveError
-    
-    /**
-     * The variable with the given [name] could not be found in the current or any outer scope.
-     */
-    data class UnknownVariable(val name: String) : ResolveError
-    
-    /**
-     * The function call to [name] with the given [parameters] resolved to multiple candidate functions, where none of
-     * the candidates could be unambiguously selected.
-     */
-    data class AmbiguousFunction(val name: String, val parameters: List<NamedMaybe<HirValue>>) : ResolveError
-    
-    /**
-     * The function call to [name] with the given [parameter] resolved to multiple candidate literals, where none of
-     * the candidates could be unambiguously selected.
-     */
-    data class AmbiguousLiteral(val name: String, val parameter: HirValue) : ResolveError
-    
-    /**
-     * The usage of struct with the given [name] is ambiguous; the name resolved to multiple candidates which cannot be
-     * disambiguated.
-     */
-    data class AmbiguousStruct(val name: String) : ResolveError
-    
-    /**
-     * The variable assignment to [name] with the given [value] resolved to multiple candidate variables.
-     */
-    data class AmbiguousVariable(val name: String, val value: HirValue) : ResolveError
-    
-    /**
-     * No function candidates were found for the function with the given [name], when invoked with the given
-     * [parameters].
-     */
-    data class ArgumentMismatch(val name: String, val parameters: List<NamedMaybe<HirValue>>) : ResolveError
-    
-    /**
-     * The function call was invoked in such a way, that a parameter without name was later in the list of parameters
-     * than a named parameter.
-     */
-    data class ArgumentMisnamed(val name: String, val parameters: List<NamedMaybe<HirValue>>) : ResolveError
-    
-    /**
-     * The definition for the variable with the given [name] resolved to no type. The variable was defined without a
-     * type, and the [value] resolved to no valid type.
-     */
-    data class TypeMissing(val name: String, val value: HirValue) : ResolveError
-    
-    /**
-     * The literal with the given [name] has a parameter which is not a builtin type.
-     */
-    data class InvalidLiteralParam(val name: String) : ResolveError
-    
-    /**
-     * The literal with the given [value] is outside the allowed dynamic range.
-     */
-    data class InvalidLiteralInteger(val value: BigInteger) : ResolveError
-    
-    /**
-     * Used to represent an error which is not yet defined.
-     */
-    data object Placeholder : ResolveError
+    data class UnknownType(val name: String) : ResolveError
 }
 
 /**
- * The resolution engine is responsible for resolving all symbols in such a manner that type-checking is performed in a
- * reliable and efficient manner. The engine determines the order in which all symbols must be resolved, providing the
- * link between symbols and the final symbol table as well.
- */
-internal class ResolutionEngine
-{
-    val symbols = SymbolTable()
-    val types = TypeTable()
-    
-    /**
-     * Initializes the engine with the information present within the given [scope]. Symbols which are defined within
-     * the scope are
-     */
-    fun prepare(scope: Scope): Result<Unit, ResolveError> =
-        PreparerSymbol(types, scope).prepare(scope.symbols).resolve()
-    
-    fun resolve(scope: Scope, node: HirSymbol): Result<ThirSymbol, ResolveError> =
-        ResolverSymbol(symbols, types, scope).resolve(node)
-    
-    fun resolve(scope: Scope, node: HirValue): Result<ThirValue, ResolveError> =
-        ResolverValue(types, scope).resolve(node)
-    
-    fun resolve(scope: Scope, node: HirInstruction): Result<ThirInstruction, ResolveError> =
-        ResolverInstruction(types, scope).resolve(node)
-}
-
-/**
- * Prepares the source code for lowering from HIR to THIR, by performing a type-collecting pass. During this stage, all
- * types are recorded and resolved, where possible.
+ * The resolver ensures that all symbols, types, instructions, and values can all be converted into the appropriate
+ * typed variant. All type-checking is performed at this stage, if at all possible. Note that during this process, not
+ * all symbols and/or types are fully defined.
  *
- * Note that type-checking is not performed at this phase. We only make sure that the type information is generates for
- * all symbols which need such information.
+ * @param types The table holding the type of symbols which will be granted a type during resolution.
+ * @param symbols The table of all symbols resolved during the resolution phase.
+ * @param scope The base scope in which all resolution should take place.
  */
-private class PreparerSymbol(private val table: TypeTable, scope: Scope)
+internal class Resolver(private val types: TypeTable, private val symbols: SymbolTable, private val scope: Scope)
 {
-    private val types = ResolverType(scope)
-    private val values = ResolverValue(table, scope)
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    // Metadata
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     
-    // Collection of symbols which remains to be processed, in the exact order they should be processed.
-    private val queue = ArrayDeque<HirSymbol>()
-    
-    /**
-     * Prepares the type resolution for the given [symbols], including all syb-symbols included as a part of it. The
-     * preparation phase ensures that it is possible to look up the type of symbols, without requiring the entire symbol
-     * to be fully defined.
-     */
-    fun prepare(symbols: List<HirSymbol>): PreparerSymbol
+    fun resolve(input: HirTemplate): Result<ThirTemplate, ResolveError> = when (input)
     {
-        queue.addAll(symbols)
-        return this
+        is HirTemplate.Type  -> ThirTemplate.Type.toSuccess()
+        is HirTemplate.Value -> resolve(input)
     }
     
-    /**
-     * Performs the resolution of all types, or fails trying.
-     */
-    fun resolve(): Result<Unit, ResolveError>
+    fun resolve(input: HirTemplate.Value): Result<ThirTemplate.Value, ResolveError> =
+        resolve(input.type).mapValue { ThirTemplate.Value(it) }
+    
+    fun resolve(input: HirType): Result<ThirType, ResolveError> = when (input)
     {
-        while (queue.isNotEmpty())
-            handle(queue.removeFirst()).onFailure { return it.toFailure() }
+        is HirType.Call -> resolve(input)
+        is HirType.Data -> resolve(input)
+    }
+    
+    fun resolve(input: HirType.Call): Result<ThirType.Call, ResolveError>
+    {
+        val valueType = input.valueType?.let { resolve(it) }?.valueOr { return it.toFailure() }
+        val errorType = input.errorType?.let { resolve(it) }?.valueOr { return it.toFailure() }
+        val parameters = input.parameters.mapUntilError { resolve(it) }.valueOr { return it.toFailure() }
         
-        return Unit.toSuccess()
+        return ThirType.Call(
+            valueType = valueType,
+            errorType = errorType,
+            parameters = parameters,
+        ).toSuccess()
     }
     
-    private fun handle(symbol: HirSymbol): Result<Unit, ResolveError> = when (symbol)
+    fun resolve(input: HirType.Data): Result<ThirType.Data, ResolveError>
     {
-        is HirConcept   -> TODO()
-        is HirConstant  -> TODO()
-        is HirField     -> handle(symbol)
-        is HirFunction  -> handle(symbol)
-        is HirGeneric   -> TODO()
-        is HirLiteral   -> handle(symbol)
-        is HirMethod    -> TODO()
-        is HirModule    -> TODO()
-        is HirPackage   -> TODO()
-        is HirParameter -> handle(symbol)
-        is HirSegment   -> TODO()
-        is HirStruct    -> handle(symbol)
-        is HirVariable  -> handle(symbol)
-    }
-    
-    private fun handle(symbol: HirField): Result<Unit, ResolveError>
-    {
-        table.fields[symbol.id] = types.resolve(symbol.type).valueOr { return it.toFailure() }
+        // TODO: Support aliasing and unions.
+        val candidates = scope.resolve(input.name).filterIsInstance<HirStruct>()
+        val candidate = when (candidates.size)
+        {
+            1    -> candidates.single()
+            0    -> return ResolveError.UnknownType(input.name).toFailure()
+            else -> return ResolveError.AmbiguousType(input.name).toFailure()
+        }
         
-        return Unit.toSuccess()
+        return ThirType.Data(
+            symbolId = candidate.id,
+            mutability = input.mutability,
+            generics = emptyList(),
+        ).toSuccess()
     }
     
-    private fun handle(symbol: HirFunction): Result<Unit, ResolveError>
+    private fun resolve(input: HirType.Parameter): Result<ThirType.Parameter, ResolveError>
     {
-        table.functions[symbol.id] = types.resolve(symbol.type).valueOr { return it.toFailure() }
-    
-//        prepare(symbol.generics)
-        prepare(symbol.variables)
-        prepare(symbol.parameters)
-        return Unit.toSuccess()
-    }
-    
-    private fun handle(symbol: HirLiteral): Result<Unit, ResolveError>
-    {
-        table.literals[symbol.id] = types.resolve(symbol.type).valueOr { return it.toFailure() }
-
-//        prepare(symbol.variables)
-        prepare(listOf(symbol.parameter))
-        return Unit.toSuccess()
-    }
-    
-    private fun handle(symbol: HirParameter): Result<Unit, ResolveError>
-    {
-        table.parameters[symbol.id] = types.resolve(symbol.type).valueOr { return it.toFailure() }
+        val type = resolve(input.type).valueOr { return it.toFailure() }
         
-        return Unit.toSuccess()
+        return ThirType.Parameter(
+            name = input.name,
+            type = type,
+        ).toSuccess()
     }
     
-    private fun handle(symbol: HirStruct): Result<Unit, ResolveError>
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    // Symbols
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    
+    fun resolve(input: HirStruct): Result<ThirStruct, ResolveError>
     {
-        prepare(symbol.fields)
-//        prepare(symbol.methods)
-//        prepare(symbol.generics)
-        return Unit.toSuccess()
+        return ThirStruct(
+            id = input.id,
+            name = input.name,
+            visibility = input.visibility,
+            fieldIds = input.fields.map { it.id }.toSet(),
+            methodIds = input.methods.map { it.id }.toSet(),
+            genericIds = input.generics.map { it.id }.toSet(),
+        ).toSuccess()
     }
     
-    private fun handle(symbol: HirVariable): Result<Unit, ResolveError>
+    fun resolve(input: HirField): Result<ThirField, ResolveError>
     {
-        val type = symbol.type?.let { types.resolve(it) }?.valueOr { return it.toFailure() }
-        val value = values.resolve(symbol.value).valueOr { return it.toFailure() }
+        val type = resolve(input.type).valueOr { return it.toFailure() }
+        val value = input.value?.let { resolve(it) }?.valueOr { return it.toFailure() }
         
-        table.variables[symbol.id] = type ?: value.value ?: return ResolveError.TypeMissing(symbol.name, symbol.value).toFailure()
-        
-        return Unit.toSuccess()
+        return ThirField(
+            id = input.id,
+            name = input.name,
+            type = type,
+            value = value,
+            visibility = input.visibility,
+            assignability = input.assignability,
+        ).toSuccess()
     }
+    
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    // Values
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    
+    private fun HirInstance.Value.resolveCall(parameters: List<NamedMaybe<HirValue>>): Result<ThirValue, ResolveError>
+    {
+        // Example code which we are currently trying to resolve:
+        // `my_function()(1, 2, 3)`
+        
+        // The actual callable is hidden inside some expression, we must ensure the expression is legal and cannot raise
+        // any errors.
+        val callable = resolve(value).valueOr { return it.toFailure() }
+        if (callable.errorType != null)
+            return ResolveError.InvalidCall(this).toFailure()
+        
+        // In order to invoke the callable, it must actually be callable. All callables has a signature which describe
+        // what it can accept, and what it returns.
+        val signature = callable.valueType as? ThirType.Call ?: return ResolveError.InvalidCall(this).toFailure()
+        
+        // Once we have the signature of the callable, we can attempt to resolve the actual call with the provided
+        // arguments. If the signature is a match with the provided arguments, the call can be accepted. All parameters
+        // are provided in arbitrary order by the caller, so we need to re-organize all parameters such that they are in
+        // the same order as expected by the callable instance.
+        val unsortedParameters = parameters.mapUntilError { resolve(it) }.valueOr { return it.toFailure() }
+        // TODO: Order all parameters according to the names in the signature!
+        // TODO: Ensure that the parameter lists actually are compatible with each other!
+        
+        return ThirCall(
+            instance = ThirInstance.Value(callable),
+            parameters = unsortedParameters.map { it.second },
+            valueType = signature.valueType,
+            errorType = signature.errorType,
+        ).toSuccess()
+    }
+    
+    private fun HirInstance.Named.resolveCall(parameters: List<NamedMaybe<HirValue>>): Result<ThirValue, ResolveError>
+    {
+        // Example code which we are currently trying to resolve:
+        // `my_function[foo, bar, baz](1, 2, 3)`
+        
+        // All inputs should be converted into the typed form ahead of time, to avoid a potential massive amount of
+        // conversion.
+        val unsortedParameters = parameters.mapUntilError { resolve(it) }.valueOr { return it.toFailure() }
+        
+        // Knowing the actual inputs we are working with, all symbols which match the name might be valid candidates. We
+        // need to filter away all candidates which do not resolve to a valid call invocation.
+        val (candidates, failures) = scope.resolve(name)
+            .mapNotInnerNull { it.resolveCall(generics, unsortedParameters) }
+            .partitionOutcomes()
+        
+        return when (candidates.size)
+        {
+            1    -> candidates.single().toSuccess()
+            0    -> TODO()
+            else -> TODO()
+        }
+    }
+    
+    private fun HirSymbol.resolveCall(generics: List<NamedMaybe<HirValue>>, parameters: List<NamedMaybe<ThirValue>>): Result<ThirCall?, ResolveError> =
+        when (this)
+        {
+            // TODO: Support variables, parameters, and any other similar sort of symbol if they are callable.
+            is HirFunction -> resolveCall(generics, parameters)
+            else           -> null.toSuccess()
+        }
+    
+    private fun HirFunction.resolveCall(generics: List<NamedMaybe<HirValue>>, parameters: List<NamedMaybe<ThirValue>>): Result<ThirCall?, ResolveError>
+    {
+        // We receive something along the lines of `some_function[foo, bar, baz](1, 2, 3)`, which we need to translate
+        // into something we can work with. The function name and templates (`some_function[foo, bar, baz]`) together
+        // form the instance, and these determine what the parameters actually should be interpreted as.
+        //
+        // The template arguments may be given in any arbitrary order, so we need to ensure they are sorted according to
+        // the ordering expected by the symbol. The same holds for the arguments, they are given in arbitrary order.
+        //
+        // Once we know the ordering of all templates and arguments, we can build up the callable signature. Since we
+        // know the templates at this point, we can substitute all template references with the actual type which should
+        // be used. In doing so, the signature will hold no reference to the templates, and instead form a specific
+        // variant of the call site. This specific variant can be used later to monomorphism purposes later on.
+        
+        // NOTE: We assume that the templates and arguments are in the correct order, and that they are compatible. This
+        //       is not true, but it makes it easier to start working on this code!
+        // TODO: Order all parameters according to the names in the signature!
+        // TODO: Ensure that the parameter lists actually are compatible with each other!
+        // TODO: Massively improve the way that generics actually should work here!
+        // TODO: Some form of parameter conversion interplay with templates also needs to be implemented here.
+        
+        val foo: List<ThirInstance.Generic> = this.generics.zip(generics).map()
+        { (generic, input) ->
+            when (generic.template)
+            {
+                is HirTemplate.Type  ->
+                {
+                    val load = input.second as? HirLoad ?: TODO()
+                    val named = load.instance as? HirInstance.Named ?: TODO()
+                    val candidate = scope.resolve(named.name).singleOrNull() ?: TODO() // Structs, unions, aliases, etc.
+                    
+                    // We have some sort of recursive hogwash happening here. Need to determine the candidate based on
+                    // the generic parameters in `named`. We cannot accept the first choice we pick up here.
+                    ThirInstance.Generic.Type(ThirType.Data(symbolId = candidate.id, mutability = Mutability.IMMUTABLE, generics = emptyList()))
+                    
+                    TODO()
+                    // ThirInstance.Generic.Type(((input.second as HirLoad).instance as HirInstance.Named).name)
+                }
+                is HirTemplate.Value -> resolve(input.second).mapValue { ThirInstance.Generic.Value(it) }.valueOr { return it.toFailure() }
+            }
+        }
+        
+        // All parameters provided by the user are now confirmed to be compatible with the function under evaluation. We
+        // can safely construct a function call value for this case.
+        return ThirCall(
+            instance = ThirInstance.Named(id, foo),
+            parameters = parameters.map { it.second },
+            valueType = valueType?.let { resolve(it) }?.valueOr { return it.toFailure() },
+            errorType = errorType?.let { resolve(it) }?.valueOr { return it.toFailure() },
+        ).toSuccess()
+    }
+    
+    fun resolve(input: HirValue): Result<ThirValue, ResolveError> = when (input)
+    {
+        is HirAdd     -> TODO()
+        is HirAnd     -> TODO()
+        is HirBool    -> ThirConstBool(input.value).toSuccess()
+        is HirCall    -> resolve(input)
+        is HirCatch   -> TODO()
+        is HirDecimal -> TODO()
+        is HirDiv     -> TODO()
+        is HirEq      -> TODO()
+        is HirGe      -> TODO()
+        is HirGt      -> TODO()
+        is HirInteger -> resolve(input)
+        is HirLe      -> TODO()
+        is HirLoad    -> TODO()
+        is HirLt      -> TODO()
+        is HirMinus   -> TODO()
+        is HirMod     -> TODO()
+        is HirMul     -> TODO()
+        is HirNe      -> TODO()
+        is HirNot     -> TODO()
+        is HirOr      -> TODO()
+        is HirPlus    -> TODO()
+        is HirSub     -> TODO()
+        is HirText    -> TODO()
+        is HirXor     -> TODO()
+    }
+    
+    fun resolve(input: HirCall): Result<ThirValue, ResolveError> = when (input.instance)
+    {
+        is HirInstance.Named -> input.instance.resolveCall(input.parameters)
+        is HirInstance.Value -> input.instance.resolveCall(input.parameters)
+    }
+    
+    fun resolve(input: HirInteger): Result<ThirValue, ResolveError>
+    {
+        // Literals cannot be overloaded on name, as the parameter provided must be a builtin type. We do not know ahead
+        // of time what the raw literal should be converted to, so we require that only a single candidate exists.
+        val candidates = scope.resolve(input.literal).filterIsInstance<HirLiteral>()
+        val candidate = when (candidates.size)
+        {
+            1    -> candidates.single()
+            0    -> return ResolveError.UnknownLiteral(input.literal).toFailure()
+            else -> return ResolveError.AmbiguousLiteral(input.literal, input).toFailure()
+        }
+        
+        // We must convert the raw literal into a value which can be passed into the literal itself. The parameter must
+        // be a builtin integer, as only builtin types can be converted into proper typed constants. The compiler does
+        // not know how to construct instances of user-defined types.
+        val inputType = resolve(candidate.parameter.type).valueOr { return it.toFailure() }
+        if (inputType !is ThirType.Data)
+            return ResolveError.InvalidType(input.literal, candidate.parameter.type).toFailure()
+        
+        val value = when (inputType.symbolId)
+        {
+            Builtin.INT32.id -> input.value.toInt32().valueOr { return it.toFailure() }
+            Builtin.INT64.id -> input.value.toInt64().valueOr { return it.toFailure() }
+            else             -> return ResolveError.InvalidType(input.literal, candidate.parameter.type).toFailure()
+        }
+        
+        // For builtin literals, we are done - the builtin literal will always return the same value as passed in, so we
+        // can return what we have.
+        if (candidate.id == Builtin.INT32_LIT.id || candidate.id == Builtin.INT64_LIT.id)
+            return value.toSuccess()
+        
+        // For non-builtin literals, we need to invoke the appropriate function representing the literal.
+        return ThirCall(
+            valueType = resolve(candidate.valueType).valueOr { return it.toFailure() },
+            errorType = null,
+            instance = ThirInstance.Named(candidate.id, emptyList()),
+            parameters = listOf(value),
+        ).toSuccess()
+    }
+    
+    private fun resolve(input: NamedMaybe<HirValue>): Result<NamedMaybe<ThirValue>, ResolveError> =
+        resolve(input.second).mapValue { NamedMaybe(input.first, it) }
 }

@@ -4,6 +4,29 @@ import com.github.derg.transpiler.source.*
 import com.github.derg.transpiler.source.hir.*
 import java.util.*
 
+//////////////////
+// Type helpers //
+//////////////////
+
+fun thirTypeData(
+    symbolId: UUID = Builtin.INT32.id,
+    mutability: Mutability = Mutability.IMMUTABLE,
+) = ThirType.Data(
+    symbolId = symbolId,
+    mutability = mutability,
+    generics = emptyList(),
+)
+
+fun thirTypeCall(
+    valueType: ThirType? = null,
+    errorType: ThirType? = null,
+    parameters: List<Pair<String, ThirType>> = emptyList(),
+) = ThirType.Call(
+    valueType = valueType,
+    errorType = errorType,
+    parameters = parameters.map { ThirType.Parameter(it.first, it.second) },
+)
+
 /////////////////////
 // Literal helpers //
 /////////////////////
@@ -18,56 +41,20 @@ val Any.thir: ThirValue
         else         -> throw IllegalArgumentException("Value $this does not represent a valid thir value")
     }
 
-//////////////////
-// Type helpers //
-//////////////////
-
-fun thirTypeData(
-    struct: ThirStruct,
-    mutability: Mutability = Mutability.IMMUTABLE,
-) = ThirTypeStruct(
-    symbolId = struct.id,
-    generics = emptyList(),
-    mutability = mutability,
-)
-
-fun thirTypeData(
-    symbolId: UUID = UUID.randomUUID(),
-    mutability: Mutability = Mutability.IMMUTABLE,
-) = ThirTypeStruct(
-    symbolId = symbolId,
-    generics = emptyList(),
-    mutability = mutability,
-)
-
-fun thirTypeCall(
-    value: ThirType? = null,
-    error: ThirType? = null,
-    parameters: List<ThirType> = emptyList(),
-) = ThirTypeFunction(
-    value = value,
-    error = error,
-    parameters = parameters.map { ThirTypeFunction.Parameter("", it) },
-)
-
 ////////////////////////
 // Expression helpers //
 ////////////////////////
 
 /**
- * Invokes the [function], assuming it returns a type of the given [value] and [error]. Any number of [params] can be
- * specified, although two should be specified for binary operators, and one for unary operators.
+ * Invokes the [function], assuming it returns a type of the given [value] and [error] type. Any number of [params] can
+ * be specified, although two should be specified for binary operators, and one for unary operators.
  */
-private fun op(function: HirFunction, value: HirStruct, error: HirStruct?, vararg params: ThirValue): ThirCall
+private fun op(function: HirFunction, value: HirStruct?, error: HirStruct?, vararg params: ThirValue): ThirCall
 {
-    val names = if (params.size == 1) mutableMapOf(0 to "rhs") else mutableMapOf(0 to "lhs", 1 to "rhs")
+    val valueType = value?.let { ThirType.Data(it.id, Mutability.IMMUTABLE, emptyList()) }
+    val errorType = error?.let { ThirType.Data(it.id, Mutability.IMMUTABLE, emptyList()) }
     
-    val valueType = ThirTypeStruct(value.id, Mutability.IMMUTABLE, emptyList())
-    val errorType = error?.let { ThirTypeStruct(it.id, Mutability.IMMUTABLE, emptyList()) }
-    val callable = ThirTypeFunction(valueType, errorType, params.mapIndexed { i, p -> ThirTypeFunction.Parameter(names[i]!!, p.value!!) })
-    val instance = ThirLoad(callable, function.id, emptyList())
-    
-    return ThirCall(valueType, errorType, instance, params.toList())
+    return ThirCall(ThirInstance.Named(function.id, emptyList()), params.toList(), valueType, errorType)
 }
 
 val Boolean.thirNot get() = op(Builtin.BOOL_NOT, Builtin.BOOL, null, this.thir)
@@ -110,15 +97,16 @@ infix fun Any.thirCatchRaise(that: Any) = ThirCatch(this.thir, that.thir, Captur
 infix fun Any.thirCatchReturn(that: Any) = ThirCatch(this.thir, that.thir, Capture.RETURN)
 infix fun Any.thirCatchHandle(that: Any) = ThirCatch(this.thir, that.thir, Capture.HANDLE)
 
-val ThirVariable.thirLoad: ThirValue get() = ThirLoad(type, id, emptyList())
-val ThirParameter.thirLoad: ThirValue get() = ThirLoad(type, id, emptyList())
-val ThirFunction.thirLoad: ThirValue get() = ThirLoad(type, id, emptyList())
-fun ThirValue.thirCall(value: ThirType? = null, error: ThirType? = null, parameters: List<ThirValue> = emptyList()) = ThirCall(value, error, this, parameters)
-fun ThirFunction.thirCall(vararg parameters: Any): ThirCall = when (val inner = type)
-{
-    is ThirTypeFunction -> ThirCall(inner.value, inner.error, thirLoad, parameters.map { it.thir })
-    is ThirTypeLiteral  -> ThirCall(inner.value, null, thirLoad, parameters.map { it.thir })
-}
+fun HirSymbol.thirCall(
+    valueType: ThirType? = null,
+    errorType: ThirType? = null,
+    parameters: List<ThirValue> = emptyList(),
+) = ThirCall(
+    instance = ThirInstance.Named(id, emptyList()),
+    parameters = parameters,
+    valueType = valueType,
+    errorType = errorType,
+)
 
 ///////////////////////
 // Statement helpers //
@@ -147,43 +135,10 @@ fun thirFieldOf(
 ) = ThirField(
     id = id,
     name = name,
-    type = type ?: value?.value ?: throw IllegalArgumentException("Either type or value must be specified"),
+    type = type ?: value?.valueType ?: thirTypeData(),
     value = value,
     visibility = Visibility.PRIVATE,
     assignability = Assignability.FINAL,
-)
-
-fun thirFunOf(
-    id: UUID = UUID.randomUUID(),
-    name: String = UUID.randomUUID().toString(),
-    value: ThirType? = null,
-    error: ThirType? = null,
-    params: List<ThirParameter> = emptyList(),
-) = ThirFunction(
-    id = id,
-    name = name,
-    type = ThirTypeFunction(value, error, params.map { ThirTypeFunction.Parameter(it.name, it.type) }),
-    visibility = Visibility.PRIVATE,
-    instructions = emptyList(),
-    genericIds = emptySet(),
-    variableIds = emptySet(),
-    parameterIds = params.map { it.id }.toSet(),
-)
-
-fun thirLitOf(
-    id: UUID = UUID.randomUUID(),
-    name: String = UUID.randomUUID().toString(),
-    value: ThirType = thirTypeData(Builtin.INT32.id),
-    param: ThirParameter = thirParamOf(),
-) = ThirFunction(
-    id = id,
-    name = name,
-    type = ThirTypeLiteral(value, param.type as ThirTypeStruct),
-    visibility = Visibility.PRIVATE,
-    instructions = emptyList(),
-    genericIds = emptySet(),
-    variableIds = emptySet(),
-    parameterIds = setOf(param.id),
 )
 
 fun thirParamOf(
@@ -199,21 +154,6 @@ fun thirParamOf(
     passability = Passability.IN,
 )
 
-fun thirStructOf(
-    id: UUID = UUID.randomUUID(),
-    name: String = UUID.randomUUID().toString(),
-    fields: Set<UUID> = emptySet(),
-    methods: Set<UUID> = emptySet(),
-    generics: Set<UUID> = emptySet(),
-) = ThirStruct(
-    id = id,
-    name = name,
-    visibility = Visibility.PRIVATE,
-    fieldIds = fields,
-    methodIds = methods,
-    genericIds = generics,
-)
-
 fun thirVarOf(
     id: UUID = UUID.randomUUID(),
     name: String = UUID.randomUUID().toString(),
@@ -222,6 +162,87 @@ fun thirVarOf(
 ) = ThirVariable(
     id = id,
     name = name,
-    type = type ?: value?.value ?: throw IllegalArgumentException("Either type or value must be specified"),
+    type = type ?: value?.valueType ?: thirTypeData(),
     assignability = Assignability.FINAL,
+)
+
+fun thirFunOf(
+    id: UUID = UUID.randomUUID(),
+    name: String = UUID.randomUUID().toString(),
+    valueType: ThirType? = null,
+    errorType: ThirType? = null,
+    params: List<ThirParameter> = emptyList(),
+) = ThirFunction(
+    id = id,
+    name = name,
+    valueType = valueType,
+    errorType = errorType,
+    visibility = Visibility.PRIVATE,
+    instructions = emptyList(),
+    genericIds = emptySet(),
+    variableIds = emptySet(),
+    parameterIds = params.map { it.id }.toSet(),
+)
+
+fun thirStructOf(
+    id: UUID = UUID.randomUUID(),
+    name: String = UUID.randomUUID().toString(),
+    visibility: Visibility = Visibility.PRIVATE,
+    fields: Set<UUID> = emptySet(),
+    methods: Set<UUID> = emptySet(),
+    generics: Set<UUID> = emptySet(),
+) = ThirStruct(
+    id = id,
+    name = name,
+    visibility = visibility,
+    fieldIds = fields,
+    methodIds = methods,
+    genericIds = generics,
+)
+
+/**
+ * Binds the id and name of the given [symbol] to [this] symbol. This helper function may be used to more easily relate
+ * a THIR symbol to the corresponding HIR symbol in tests.
+ */
+fun ThirSymbol.bind(symbol: HirSymbol) = when (this)
+{
+    is ThirConcept   -> copy(id = symbol.id, name = symbol.name)
+    is ThirConstant  -> copy(id = symbol.id, name = symbol.name)
+    is ThirField     -> copy(id = symbol.id, name = symbol.name)
+    is ThirFunction  -> copy(id = symbol.id, name = symbol.name)
+    is ThirGeneric   -> copy(id = symbol.id, name = symbol.name)
+    is ThirModule    -> copy(id = symbol.id, name = symbol.name)
+    is ThirPackage   -> copy(id = symbol.id, name = symbol.name)
+    is ThirParameter -> copy(id = symbol.id, name = symbol.name)
+    is ThirSegment   -> copy(id = symbol.id, name = symbol.name)
+    is ThirStruct    -> copy(id = symbol.id, name = symbol.name)
+    is ThirVariable  -> copy(id = symbol.id, name = symbol.name)
+}
+
+/**
+ * Helper function for representing [this] HIR symbol as a proper THIR symbol. Note that this function assumed the type
+ * is `int32`.
+ */
+fun HirField.toThir(
+    type: ThirType = thirTypeData(),
+    value: ThirValue? = null,
+) = ThirField(
+    id = id,
+    name = name,
+    type = type,
+    value = value,
+    visibility = visibility,
+    assignability = assignability,
+)
+
+/**
+ * Helper function for representing [this] HIR symbol as a proper THIR symbol.
+ */
+fun HirStruct.toThir() = ThirStruct(
+    id = id,
+    name = name,
+    visibility = visibility,
+    fieldIds = fields.map { it.id }.toSet(),
+    methodIds = methods.map { it.id }.toSet(),
+    genericIds = generics.map { it.id }.toSet(),
 )

@@ -27,7 +27,7 @@ private fun module(name: String, segments: List<AstSegment>) = HirModule(
 /**
  *
  */
-private fun AstType.toHir() = HirTypeStruct(
+private fun AstType.toHir() = HirType.Data(
     name = name,
     generics = emptyList(),
     mutability = mutability,
@@ -50,11 +50,8 @@ internal fun AstConstant.toHir() = HirConstant(
 internal fun AstFunction.toHir() = HirFunction(
     id = UUID.randomUUID(),
     name = name,
-    type = HirTypeFunction(
-        value = valueType?.toHir(),
-        error = errorType?.toHir(),
-        parameters = parameters.map { HirTypeFunction.Parameter(it.name, it.type.toHir()) },
-    ),
+    valueType = valueType?.toHir(),
+    errorType = errorType?.toHir(),
     visibility = visibility,
     instructions = statements.map { it.toHir() },
     generics = emptyList(),
@@ -127,8 +124,8 @@ internal fun AstVariable.toHir() = HirVariable(
  */
 internal fun AstValue.toHir(): HirValue = when (this)
 {
-    is AstCall         -> HirCall(HirLoad(name, emptyList()), valArgs.map { it.name to it.expression.toHir() })
-    is AstRead         -> HirLoad(name, emptyList())
+    is AstCall         -> HirCall(HirInstance.Named(name, emptyList()), valArgs.map { it.name to it.expression.toHir() })
+    is AstRead         -> HirLoad(HirInstance.Named(name, emptyList()))
     is AstBool         -> HirBool(value)
     is AstInteger      -> HirInteger(value, literal)
     is AstDecimal      -> HirDecimal(value, literal)
@@ -161,11 +158,11 @@ internal fun AstValue.toHir(): HirValue = when (this)
  */
 internal fun AstInstruction.toHir(): HirInstruction = when (this)
 {
-    is AstAssign      -> HirAssign(HirLoad(name, emptyList()), expression.toHir())
+    is AstAssign      -> HirAssign(HirInstance.Named(name, emptyList()), expression.toHir())
     is AstBranch      -> HirBranch(predicate.toHir(), success.map { it.toHir() }, failure.map { it.toHir() })
     is AstEvaluate    -> HirEvaluate(expression.toHir())
     is AstReturn      -> HirReturn
     is AstReturnError -> HirReturnError(expression.toHir())
     is AstReturnValue -> HirReturnValue(expression.toHir())
-    is AstVariable    -> HirAssign(HirLoad(name, emptyList()), value.toHir())
+    is AstVariable    -> HirAssign(HirInstance.Named(name, emptyList()), value.toHir())
 }
