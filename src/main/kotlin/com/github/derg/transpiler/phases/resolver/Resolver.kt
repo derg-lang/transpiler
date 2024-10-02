@@ -6,11 +6,11 @@ import com.github.derg.transpiler.utils.*
 import java.math.*
 
 /**
- * Converts the input [hirPackage] into a typed variable. All symbols found within the package are stored in the symbol
+ * Converts the input [program] into a typed variant. All symbols found within the package are stored in the symbol
  * table. All symbol references will be resolved as well, ensuring that the program is well-structured. Note that the
  * symbols are not type-checked by this point.
  */
-fun resolve(hirPackage: HirPackage): Result<SymbolTable, ResolveError>
+fun resolve(program: HirProgram): Result<SymbolTable, ResolveError>
 {
     val engine = ResolutionEngine()
     val outer = Builtin.GLOBAL_SCOPE
@@ -19,15 +19,12 @@ fun resolve(hirPackage: HirPackage): Result<SymbolTable, ResolveError>
     // TODO: Obviously find a better way to access the contents of the package. The engine should take care of the heavy
     //       lifting, going through the modules and segments. The order in which modules are handled does matter - we
     //       must ensure that modules which depends on others, are resolved last.
-    val hirModule = hirPackage.modules.single()
-    val hirSegment = hirModule.segments.single()
-    
-    hirSegment.structs.forEach { inner.register(it) }
-    hirSegment.functions.forEach { inner.register(it) }
+    program.applications.single().structs.forEach { inner.register(it) }
+    program.applications.single().functions.forEach { inner.register(it) }
     
     // Make sure that all symbols present within the package are handled appropriately.
-    engine.prepare(outer).valueOr { return it.toFailure() }
-    engine.prepare(inner).valueOr { return it.toFailure() }
+    engine.prepare(outer).onFailure { return it.toFailure() }
+    engine.prepare(inner).onFailure { return it.toFailure() }
     
     outer.symbols.mapUntilError { engine.resolve(outer, it) }.onFailure { return it.toFailure() }
     inner.symbols.mapUntilError { engine.resolve(inner, it) }.onFailure { return it.toFailure() }
@@ -192,10 +189,7 @@ private class PreparerSymbol(private val table: TypeTable, scope: Scope)
         is HirGeneric   -> TODO()
         is HirLiteral   -> handle(symbol)
         is HirMethod    -> TODO()
-        is HirModule    -> TODO()
-        is HirPackage   -> TODO()
         is HirParameter -> handle(symbol)
-        is HirSegment   -> TODO()
         is HirStruct    -> handle(symbol)
         is HirVariable  -> handle(symbol)
     }
@@ -210,7 +204,7 @@ private class PreparerSymbol(private val table: TypeTable, scope: Scope)
     private fun handle(symbol: HirFunction): Result<Unit, ResolveError>
     {
         table.functions[symbol.id] = types.resolve(symbol.type).valueOr { return it.toFailure() }
-    
+
 //        prepare(symbol.generics)
         prepare(symbol.variables)
         prepare(symbol.parameters)

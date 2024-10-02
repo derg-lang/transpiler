@@ -32,10 +32,7 @@ internal class ResolverSymbol(private val symbols: SymbolTable, private val type
         is HirGeneric   -> TODO()
         is HirLiteral   -> handle(node)
         is HirMethod    -> TODO()
-        is HirModule    -> TODO()
-        is HirPackage   -> TODO()
         is HirParameter -> handle(node)
-        is HirSegment   -> TODO()
         is HirStruct    -> handle(node)
         is HirVariable  -> handle(node)
     }

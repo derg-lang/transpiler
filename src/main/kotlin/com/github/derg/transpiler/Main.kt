@@ -4,6 +4,7 @@ import com.github.derg.transpiler.phases.converter.*
 import com.github.derg.transpiler.phases.parser.*
 import com.github.derg.transpiler.phases.resolver.*
 import com.github.derg.transpiler.phases.typechecker.*
+import com.github.derg.transpiler.source.ast.*
 import com.github.derg.transpiler.utils.*
 
 private const val SOURCE = """
@@ -18,10 +19,12 @@ private const val SOURCE = """
     }
 """
 
+private fun AstSegment.toProgram() = AstProgram(applications = listOf(this), packages = emptyList())
+
 fun main(args: Array<String>)
 {
-    val ast = parse(SOURCE).valueOrDie()
-    val hir = convert(listOf(ast))
+    val ast = parse(SOURCE).valueOrDie().toProgram()
+    val hir = convert(ast)
     val thir = resolve(hir).valueOrDie()
     
     check(thir).valueOrDie()

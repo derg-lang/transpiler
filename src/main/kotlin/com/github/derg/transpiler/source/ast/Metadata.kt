@@ -21,18 +21,3 @@ data class AstArgument(
     val name: String?,
     val expression: AstValue,
 )
-
-/**
- * Every source code file is parsed into a single segment, in which the total collection of segments with the same
- * module name form a single module. The segment forms the most basic building block when structuring code, and is the
- * component which allows code fragmentation to take place.
- *
- * @param module The name of the module this segment is part of.
- * @param imports The modules which are to be imported into this segment.
- * @param definitions All components which are injected into the module by this segment.
- */
-data class AstSegment(
-    val module: String?,
-    val imports: List<String>,
-    val definitions: List<AstSymbol>,
-)

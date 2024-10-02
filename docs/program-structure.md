@@ -9,13 +9,17 @@ the package represents the default module.
 Given an empty project, all packages may be declared in the following manner:
 
 ```
-root-directory
-  src
-    package-a
-    package-b
-  tests:
-    package-a
-    package-b
+root-directory:
+  src:
+    bin:
+      application-a.derg
+      application-b.derg
+    lib:
+      package-a
+      package-b
+    tests:
+      package-a
+      package-b
 ```
 
 The test folder is optional but highly encouraged. All test code is part of the package, but will only be relevant when
@@ -35,19 +39,24 @@ any number of segments, each of which contribute to the module itself. Any symbo
 segments, will be made available to the module as a whole, provided
 the [visibility rules](type-system.md#visibility-modifiers) permit so.
 
+Each segment is represented as a regular source code file. While the name of the module is meaningful, the name of each
+segment file is not. The name of segment files may be used to hint to the contents of said file. Note that a module does
+not need to contain any source code files, in which case the module does nothing and holds no content.
+
 Modules may contain additional submodules. Submodules can be declared by simply creating a sub-folder within the module
-folder. Files placed in the submodules does not contribute to the parent module; a developer who wants to access these
-symbols must explicitly import them, if accessing them from a different module.
+folder. Files placed in the submodules does not contribute to the parent module; they are only applicable to the nearest
+defined module. This means that anything declared in a submodule, does not exist in the parent module - these modules
+are fully unrelated to each other.
 
 The folder structure of modules are declared in the following manner:
 
 ```
 package-directory:
-  module-a
+  module-a:
     submodule-1
     submodule-2
-  module-b
-  module-c
+  module-b:
+  module-c:
 ```
 
 In order to access symbols from a different module, the developer must explicitly import the symbols into the current
@@ -72,12 +81,22 @@ modules it depends on have been compiled. Developers should take great care in e
 single purpose; if two modules strongly relate to each other, the developer should consider merging them into a single
 module instead.
 
-## Segments
+## Source files
 
-Each individual segment within a module represents a single concept or topic within the module. Each segment is
-represented as a single file within the module.
+Source files are where the actual code written by a developer reside. The source code files come in two different
+flavors, application source code and library source code. Application source code lives in the `bin` folder, whereas the
+library source code lives in the `lib` folder.
 
-Segments may be declared in the following manner:
+Additionally, application source files behave slightly differently from ordinary library source code files. Most
+notably, an application source code file must contain the `main` function, which is the application's entry point. All
+code present within the application source file also resides in an unnamed module, meaning the code can never be
+imported.
+
+Each individual source code file within a module usually represents a single concept or topic within the module. The
+developer may use multiple source code files to fragment a module into small pieces, making the overall codebase easier
+to comprehend.
+
+Source files may be declared in the following manner:
 
 ```
 module-directory:
@@ -85,12 +104,23 @@ module-directory:
   segment-b.derg
 ```
 
-There are no restrictions on dependencies between segments. Each segment form its own local scope in terms of module
-imports, but otherwise they all live within the same module scope. This means that a symbol defined in one segment, is
-immediately visible in other scopes (provided the symbol's visibility permits that). Note that if a segment imports
-another module, that module's symbols will not be available in another segment.
+There are no restrictions on dependencies between source files. Each file form its own local scope in terms of module
+imports, but otherwise they all live within the same module scope. This means that a symbol defined in one file, is
+immediately visible in other scopes (provided the symbol's visibility permits that). Note that if a source file imports
+a module, that module's symbols will not be visible to any source file which did not explicitly import it.
 
-An example segment may look like the following:
+An example application source file may look like the following:
+
+```derg
+use std.io
+
+fun main()
+{
+    print("Hello World!")
+}
+```
+
+An example library source file may look like the following:
 
 ```derg
 use contants
