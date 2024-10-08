@@ -94,11 +94,9 @@ fun astConstOf(
  * Generates segment definition from the provided input parameters.
  */
 fun astSegmentOf(
-    module: String? = null,
     imports: List<String> = emptyList(),
     statements: List<AstSymbol> = emptyList(),
 ) = AstSegment(
-    module = module,
     imports = imports,
     definitions = statements,
 )

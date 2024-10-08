@@ -1,5 +1,6 @@
 package com.github.derg.transpiler.phases.parser
 
+import com.github.derg.transpiler.source.*
 import com.github.derg.transpiler.source.ast.*
 import com.github.derg.transpiler.source.lexeme.*
 import org.junit.jupiter.api.*
@@ -42,7 +43,6 @@ class TestParserSegment
     fun `Given valid segment, when parsing, then correctly parsed`()
     {
         tester.parse("").isDone().isValue(astSegmentOf())
-        tester.parse("module foo").isWip(2).isDone().isValue(astSegmentOf(module = "foo"))
         tester.parse("use foo").isWip(2).isDone().isValue(astSegmentOf(imports = listOf("foo")))
         tester.parse("val foo: Int = 0").isWip(6).isDone().isValue(astSegmentOf(statements = listOf(astConstOf("foo", type = "Int"))))
         tester.parse("fun foo() {}").isWip(6).isDone().isValue(astSegmentOf(statements = listOf(astFunOf("foo"))))
@@ -51,7 +51,7 @@ class TestParserSegment
     @Test
     fun `Given invalid token, when parsing, then correct error`()
     {
-        tester.parse("module").isWip(1).isBad { ParseError.UnexpectedToken(EndOfFile) }
+        tester.parse("in").isBad { ParseError.UnexpectedToken(Keyword(Symbol.IN)) }
         tester.parse("use").isWip(1).isBad { ParseError.UnexpectedToken(EndOfFile) }
     }
 }

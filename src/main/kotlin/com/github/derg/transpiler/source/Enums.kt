@@ -176,7 +176,6 @@ enum class Symbol(val symbol: String)
     FUN("fun"),
     IF("if"),
     IN("in"),
-    MODULE("module"),
     MUTABLE("mut"),
     MOVE("move"),
     OUT("out"),

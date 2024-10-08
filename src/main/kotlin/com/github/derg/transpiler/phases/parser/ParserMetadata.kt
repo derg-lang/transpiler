@@ -196,16 +196,13 @@ private fun scopeOutcomeOf(values: Parsers): List<AstInstruction>
 fun segmentParserOf(): Parser<AstSegment> =
     ParserPattern(::segmentPatternOf, ::segmentOutcomeOf)
 
-// TODO: Use statements should allow modules to be imported into namespaces
 private fun segmentPatternOf() = ParserSequence(
-    "module" to ParserOptional(nameParserOf(Symbol.MODULE)),
-    "imports" to ParserRepeating(nameParserOf(Symbol.USE)),
+    "imports" to ParserRepeating(nameParserOf(Symbol.USE)), // TODO: Use statements should allow modules to be aliased
     "definitions" to ParserRepeating(definitionParserOf()),
     "end" to ParserEnd,
 )
 
 private fun segmentOutcomeOf(values: Parsers) = AstSegment(
-    module = values["module"],
     imports = values["imports"],
     definitions = values["definitions"],
 )

@@ -5,19 +5,12 @@ import com.github.derg.transpiler.source.hir.*
 import java.util.*
 
 /**
- * Converts the provided AST [segments] into a HIR package. The input segments are all used to form the single package.
+ * Converts the provided AST [program] into a HIR program. The input segments are all used to form the single package.
  * Note that segments from another package, must be separately converted into the HIR structure.
  */
-fun convert(segments: List<AstSegment>) = HirPackage(
-    id = UUID.randomUUID(),
-    name = "TODO - package name",
-    modules = segments.groupBy { it.module ?: "TODO - module name" }.map { module(it.key, it.value) }
-)
-
-private fun module(name: String, segments: List<AstSegment>) = HirModule(
-    id = UUID.randomUUID(),
-    name = name,
-    segments = segments.map { it.toHir() },
+fun convert(program: AstProgram) = HirProgram(
+    applications = program.applications.map { it.toHir() },
+    packages = program.packages.map { it.toHir() },
 )
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -65,12 +58,30 @@ internal fun AstFunction.toHir() = HirFunction(
 /**
  *
  */
+internal fun AstModule.toHir() = HirModule(
+    id = UUID.randomUUID(),
+    name = name,
+    segments = segments.map { it.toHir() },
+)
+
+/**
+ *
+ */
 internal fun AstParameter.toHir() = HirParameter(
     id = UUID.randomUUID(),
     name = name,
     type = type.toHir(),
     value = value?.toHir(),
     passability = passability,
+)
+
+/**
+ *
+ */
+internal fun AstPackage.toHir() = HirPackage(
+    id = UUID.randomUUID(),
+    name = name,
+    modules = modules.map { it.toHir() },
 )
 
 /**
@@ -89,8 +100,6 @@ internal fun AstProperty.toHir() = HirField(
  *
  */
 internal fun AstSegment.toHir() = HirSegment(
-    id = UUID.randomUUID(),
-    name = "TODO - segment name",
     imports = imports.toSet(),
     structs = definitions.filterIsInstance<AstStruct>().map { it.toHir() },
     concepts = emptyList(),
