@@ -88,9 +88,9 @@ data class ThirFunction(
     val instructions: List<ThirInstruction>,
     
     // Symbols present within the object
-    val genericIds: Set<UUID>,
-    val variableIds: Set<UUID>,
-    val parameterIds: Set<UUID>,
+    val genericIds: List<UUID>,
+    val variableIds: List<UUID>,
+    val parameterIds: List<UUID>,
 ) : ThirSymbol
 
 /**

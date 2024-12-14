@@ -55,7 +55,7 @@ internal class ResolverValue(private val types: TypeTable, private val scope: Sc
         is HirGt      -> handleInfix(Symbol.GREATER, node.lhs, node.rhs)
         is HirInteger -> handleInteger(node)
         is HirLe      -> handleInfix(Symbol.LESS_EQUAL, node.lhs, node.rhs)
-        is HirLoad    -> TODO()
+        is HirLoad    -> handleLoad(node)
         is HirLt      -> handleInfix(Symbol.LESS, node.lhs, node.rhs)
         is HirMinus   -> handlePrefix(Symbol.MINUS, node.rhs)
         is HirMod     -> handleInfix(Symbol.MODULO, node.lhs, node.rhs)
@@ -202,6 +202,36 @@ internal class ResolverValue(private val types: TypeTable, private val scope: Sc
             error = null,
             instance = ThirLoad(literal, candidate.id, emptyList()),
             parameters = listOf(value),
+        ).toSuccess()
+    }
+    
+    private fun handleLoad(node: HirLoad): Result<ThirValue, ResolveError>
+    {
+        // We need to find the symbol which matched the name within the node. If we find only a single candidate, we
+        // know we found the right binding.
+        val candidates = scope.resolve<HirVariable>(node.name) + scope.resolve<HirParameter>(node.name)
+        val candidate = when (candidates.size)
+        {
+            1    -> candidates.single()
+            0    -> return ResolveError.UnknownVariable(node.name).toFailure()
+            else -> return ResolveError.AmbiguousVariable(node.name, node).toFailure()
+        }
+        
+        // Once we know which symbol we are working with, we can deduce which type it has, which we can pass further
+        // down in the chain.
+        val resolver = ResolverType(scope)
+        val type = when (candidate)
+        {
+            is HirParameter -> resolver.resolve(candidate.type)
+            is HirVariable  -> candidate.type?.let { resolver.resolve(it) } ?: resolve(candidate.value).mapValue { it.value ?: TODO() }
+            is HirFunction  -> resolver.resolve(candidate.type)
+            else            -> TODO()
+        }
+        
+        return ThirLoad(
+            value = type.valueOr { return it.toFailure() },
+            symbolId = candidate.id,
+            generics = emptyList(),
         ).toSuccess()
     }
     
