@@ -9,6 +9,24 @@ import org.junit.jupiter.api.*
 import java.math.*
 
 /**
+ * Generates a thir-representation of the struct.
+ */
+private fun HirStruct.asThir() = ThirTypeStruct(
+    symbolId = id,
+    generics = emptyList(),
+    mutability = Mutability.IMMUTABLE,
+)
+
+/**
+ * Generates a thir-representation of the function.
+ */
+private fun HirFunction.asThir() = ThirTypeFunction(
+    value = null,
+    error = null,
+    parameters = emptyList(),
+)
+
+/**
  * Simulates what a thir call on [this] function would be given the list of [parameters]. The function is assumed
  * to have no return value or error.
  */
@@ -44,6 +62,12 @@ class TestResolverValue
     
     private fun registerLit(name: String, parameter: HirType): HirLiteral =
         hirLitOf(name = name, param = hirParamOf(type = parameter)).also(scope::register)
+    
+    private fun registerVar(name: String): HirVariable =
+        hirVarOf(name = name).also(scope::register)
+    
+    private fun registerParam(name: String): HirParameter =
+        hirParamOf(name = name).also(scope::register)
     
     /**
      * Converts the [value] if possible, ensuring that all global scopes are registered into the engine before
@@ -435,6 +459,37 @@ class TestResolverValue
             val expected = ArgumentMismatch(Symbol.LESS_EQUAL.symbol, listOf(null hirArg true, null hirArg false))
             
             assertFailure(expected, run(true hirLe false))
+        }
+    }
+    
+    @Nested
+    inner class Load
+    {
+        @Test
+        fun `Given function, when resolving, then correct error`()
+        {
+            val symbol = registerFun("foo")
+            val expected = UnknownVariable(symbol.name)
+    
+            assertFailure(expected, run(symbol.hirLoad))
+        }
+    
+        @Test
+        fun `Given variable, when resolving, then correct outcome`()
+        {
+            val symbol = registerVar("foo")
+            val expected = ThirLoad(value = Builtin.INT32.asThir(), symbolId = symbol.id, generics = emptyList())
+        
+            assertSuccess(expected, run(symbol.hirLoad))
+        }
+    
+        @Test
+        fun `Given parameter, when resolving, then correct outcome`()
+        {
+            val symbol = registerParam("foo")
+            val expected = ThirLoad(value = Builtin.INT32.asThir(), symbolId = symbol.id, generics = emptyList())
+        
+            assertSuccess(expected, run(symbol.hirLoad))
         }
     }
     

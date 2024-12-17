@@ -165,9 +165,9 @@ fun thirFunOf(
     type = ThirTypeFunction(value, error, params.map { it.name to it.type }),
     visibility = Visibility.PRIVATE,
     instructions = emptyList(),
-    genericIds = emptySet(),
-    variableIds = emptySet(),
-    parameterIds = params.map { it.id }.toSet(),
+    genericIds = emptyList(),
+    variableIds = emptyList(),
+    parameterIds = params.map { it.id },
 )
 
 fun thirLitOf(
@@ -181,9 +181,9 @@ fun thirLitOf(
     type = ThirTypeLiteral(value, param.type as ThirTypeStruct),
     visibility = Visibility.PRIVATE,
     instructions = emptyList(),
-    genericIds = emptySet(),
-    variableIds = emptySet(),
-    parameterIds = setOf(param.id),
+    genericIds = emptyList(),
+    variableIds = emptyList(),
+    parameterIds = listOf(param.id),
 )
 
 fun thirParamOf(
