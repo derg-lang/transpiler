@@ -17,13 +17,13 @@ internal class ResolverType(private val scope: Scope)
      */
     fun resolve(type: HirType): Result<ThirType, ResolveError> = when (type)
     {
-        is HirTypeFunction -> resolve(type)
-        is HirTypeLiteral  -> resolve(type)
-        is HirTypeStruct   -> resolve(type)
-        is HirTypeUnion    -> resolve(type)
+        is HirType.Function  -> resolve(type)
+        is HirType.Literal   -> resolve(type)
+        is HirType.Structure -> resolve(type)
+        is HirType.Union     -> resolve(type)
     }
     
-    fun resolve(type: HirTypeStruct): Result<ThirTypeStruct, ResolveError>
+    fun resolve(type: HirType.Structure): Result<ThirTypeStruct, ResolveError>
     {
         // TODO: This way of resolving the typed information does not take generics into consideration. We need to match
         //       all provided generics towards all potential candidates, taking names and ordering into consideration.
@@ -38,7 +38,7 @@ internal class ResolverType(private val scope: Scope)
         return ThirTypeStruct(symbolId = candidate.id, generics = emptyList(), mutability = type.mutability).toSuccess()
     }
     
-    fun resolve(type: HirTypeFunction): Result<ThirTypeFunction, ResolveError>
+    fun resolve(type: HirType.Function): Result<ThirTypeFunction, ResolveError>
     {
         val value = type.value?.let { resolve(it) }?.valueOr { return it.toFailure() }
         val error = type.error?.let { resolve(it) }?.valueOr { return it.toFailure() }
@@ -46,22 +46,22 @@ internal class ResolverType(private val scope: Scope)
         
         return ThirTypeFunction(value = value, error = error, parameters = parameters).toSuccess()
     }
-    
-    fun resolve(type: HirTypeLiteral): Result<ThirTypeLiteral, ResolveError>
+
+    fun resolve(type: HirType.Literal): Result<ThirTypeLiteral, ResolveError>
     {
         val value = resolve(type.value).valueOr { return it.toFailure() }
         val parameter = resolve(type.parameter).valueOr { return it.toFailure() }
-        
+
         return ThirTypeLiteral(value = value, parameter = parameter).toSuccess()
     }
     
-    fun resolve(type: HirTypeUnion): Result<ThirType, ResolveError>
+    fun resolve(type: HirType.Union): Result<ThirType, ResolveError>
     {
         val types = type.types.mapUntilError { resolve(it) }.valueOr { return it.toFailure() }
         
         return ThirTypeUnion(types).toSuccess()
     }
     
-    private fun resolve(type: Named<HirType>): Result<Named<ThirType>, ResolveError> =
-        resolve(type.second).mapValue { type.first to it }
+    private fun resolve(parameter: HirParameterDynamic): Result<Named<ThirType>, ResolveError> =
+        resolve(parameter.type).mapValue { parameter.name to it }
 }

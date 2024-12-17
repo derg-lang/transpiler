@@ -1,5 +1,6 @@
 package com.github.derg.transpiler.phases.converter
 
+import com.github.derg.transpiler.source.*
 import com.github.derg.transpiler.source.ast.*
 import com.github.derg.transpiler.source.hir.*
 import java.util.*
@@ -20,10 +21,10 @@ fun convert(program: AstProgram) = HirProgram(
 /**
  *
  */
-private fun AstType.toHir() = HirTypeStruct(
+private fun AstType.toHir() = HirType.Structure(
     name = name,
-    generics = emptyList(),
     mutability = mutability,
+    parameters = emptyList(),
 )
 
 /**
@@ -43,10 +44,10 @@ internal fun AstConstant.toHir() = HirConstant(
 internal fun AstFunction.toHir() = HirFunction(
     id = UUID.randomUUID(),
     name = name,
-    type = HirTypeFunction(
+    type = HirType.Function(
         value = valueType?.toHir(),
         error = errorType?.toHir(),
-        parameters = parameters.map { it.name to it.type.toHir() },
+        parameters = parameters.map { HirParameterDynamic(it.name, it.type.toHir(), it.passability) },
     ),
     visibility = visibility,
     instructions = statements.map { it.toHir() },
