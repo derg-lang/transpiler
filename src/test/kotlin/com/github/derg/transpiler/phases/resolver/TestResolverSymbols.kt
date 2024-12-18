@@ -11,10 +11,10 @@ import org.junit.jupiter.api.Assertions.*
 /**
  * Generates a thir-representation of the struct.
  */
-private fun HirStruct.asThir() = ThirTypeStruct(
+private fun HirStruct.asThir() = ThirType.Structure(
     symbolId = id,
-    generics = emptyList(),
     mutability = Mutability.IMMUTABLE,
+    parameters = emptyList(),
 )
 
 /**

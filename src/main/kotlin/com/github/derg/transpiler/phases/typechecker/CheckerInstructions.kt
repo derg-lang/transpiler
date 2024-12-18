@@ -49,7 +49,7 @@ internal class CheckerInstruction(private val value: ThirType?, private val erro
         
         // The value type must be boolean.
         val value = node.predicate.value ?: return TypeError.BranchMissingValue(node.predicate).toFailure()
-        if (value !is ThirTypeStruct || value.symbolId != Builtin.BOOL.id)
+        if (value !is ThirType.Structure || value.symbolId != Builtin.BOOL.id)
             return TypeError.BranchWrongType(node.predicate).toFailure()
     
         return CheckerValue().check(node.predicate)

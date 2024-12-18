@@ -143,7 +143,7 @@ fun hirLitOf(
 ) = HirLiteral(
     id = UUID.randomUUID(),
     name = name,
-    type = HirType.Literal(value, param.type as HirType.Structure),
+    type = HirType.Function(value, null, listOf(HirParameterDynamic("", param.type as HirType.Structure, Passability.IN))),
     visibility = Visibility.PRIVATE,
     instructions = instructions,
     variables = emptyList(),

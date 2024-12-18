@@ -1,13 +1,14 @@
-package com.github.derg.transpiler.source.hir
+package com.github.derg.transpiler.source.thir
 
 import com.github.derg.transpiler.source.*
+import java.util.*
 
 /**
  * All expressions are granted exactly one type of all possibilities. Certain symbols within the codebase, such as
  * variables, parameters, fields, functions, and so on have their own types. The type information can be used to verify
  * that the program is well-typed, avoiding errors such as passing the wrong type as a function parameter.
  */
-sealed interface HirType
+sealed interface ThirType
 {
     /**
      * The function type describes a function-like object. These types indicate that the object may be used as a
@@ -20,7 +21,7 @@ sealed interface HirType
      * @param error The type which is permitted to be returned as an error.
      * @param parameters The types of all the runtime parameters the function accepts.
      */
-    data class Function(val value: HirType?, val error: HirType?, val parameters: List<HirParameterDynamic>) : HirType
+    data class Function(val value: ThirType?, val error: ThirType?, val parameters: List<ThirParameterDynamic>) : ThirType
     
     /**
      * The structure represents a specific layout of data in memory. This type is used to represent a specific data
@@ -28,11 +29,11 @@ sealed interface HirType
      *
      * Example syntax: `mut List[Int32]`
      *
-     * @param name The name of the structure.
+     * @param symbolId The symbol id of the data structure.
      * @param mutability The type of mutation which is permitted on the type.
      * @param parameters The types of all the compile-time parameters the structure accepts.
      */
-    data class Structure(val name: String, val mutability: Mutability, val parameters: List<HirParameterStatic>) : HirType
+    data class Structure(val symbolId: UUID, val mutability: Mutability, val parameters: List<ThirParameterStatic>) : ThirType
     
     /**
      * The union type describes a collection of types. This type encodes the meaning that a value must be exactly one of
@@ -42,7 +43,15 @@ sealed interface HirType
      *
      * @param types The types which a value is permitted to take, the value must be exactly one of them.
      */
-    data class Union(val types: Set<HirType>) : HirType
+    data class Union(val types: Set<ThirType>) : ThirType
+    
+    /**
+     * Reduces the type into the simplest possible type without losing any information. Unions are flattened where
+     * possible, ensuring that the resulting type is the most basic representation possible.
+     */
+    fun simplify(): ThirType = types().let { if (it.size == 1) it.single() else Union(it) }
+    
+    private fun types(): Set<ThirType> = if (this is Union) types.flatMap { it.types() }.toSet() else setOf(this)
 }
 
 /**
@@ -50,7 +59,7 @@ sealed interface HirType
  * structures, functions, unions, and any other customizable object. These types are used to determine which
  * compile-time parameters may be passed to other objects.
  */
-sealed interface HirParameterStatic
+sealed interface ThirParameterStatic
 {
     /**
      * A specific type which must be provided by the user. The type can be used to generalize which types a function or
@@ -60,7 +69,7 @@ sealed interface HirParameterStatic
      *
      * @param name The name of the parameter.
      */
-    data class Type(val name: String) : HirParameterStatic
+    data class Type(val name: String) : ThirParameterStatic
     
     /**
      * A specific value which must be provided by the user. The value can be used to generalize some property of a
@@ -71,7 +80,7 @@ sealed interface HirParameterStatic
      * @param name The name of the parameter.
      * @param type The type the compile-time value must be adhering to.
      */
-    data class Value(val name: String, val type: HirType) : HirParameterStatic
+    data class Value(val name: String, val type: ThirType) : ThirParameterStatic
 }
 
 /**
@@ -84,4 +93,4 @@ sealed interface HirParameterStatic
  * @param type The type of possible values which can be used as the parameter.
  * @param passability The method used to pass the parameter into the function.
  */
-data class HirParameterDynamic(val name: String, val type: HirType, val passability: Passability)
+data class ThirParameterDynamic(val name: String, val type: ThirType, val passability: Passability)

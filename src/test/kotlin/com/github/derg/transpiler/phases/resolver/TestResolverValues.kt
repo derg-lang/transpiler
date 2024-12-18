@@ -11,16 +11,16 @@ import java.math.*
 /**
  * Generates a thir-representation of the struct.
  */
-private fun HirStruct.asThir() = ThirTypeStruct(
+private fun HirStruct.asThir() = ThirType.Structure(
     symbolId = id,
-    generics = emptyList(),
     mutability = Mutability.IMMUTABLE,
+    parameters = emptyList(),
 )
 
 /**
  * Generates a thir-representation of the function.
  */
-private fun HirFunction.asThir() = ThirTypeFunction(
+private fun HirFunction.asThir() = ThirType.Function(
     value = null,
     error = null,
     parameters = emptyList(),
@@ -33,8 +33,8 @@ private fun HirFunction.asThir() = ThirTypeFunction(
 private fun HirFunction.thirCall(vararg parameters: Any): ThirValue
 {
     val inputs = parameters.map { it.thir }
-    val params = this.parameters.zip(inputs).map { it.first.name to it.second.value!! }
-    val type = ThirTypeFunction(null, null, params)
+    val params = this.parameters.zip(inputs).map { ThirParameterDynamic(it.first.name, it.second.value!!, Passability.IN) }
+    val type = ThirType.Function(null, null, params)
     
     return ThirCall(null, null, ThirLoad(type, id, emptyList()), inputs)
 }
@@ -42,8 +42,8 @@ private fun HirFunction.thirCall(vararg parameters: Any): ThirValue
 private fun HirLiteral.thirCall(parameter: Any): ThirValue
 {
     val input = parameter.thir
-    val output = ThirTypeStruct(Builtin.INT32.id, Mutability.IMMUTABLE, emptyList())
-    val type = ThirTypeLiteral(output, input.value as ThirTypeStruct)
+    val output = ThirType.Structure(Builtin.INT32.id, Mutability.IMMUTABLE, emptyList())
+    val type = ThirType.Function(output, null, listOf(ThirParameterDynamic("", input.value as ThirType.Structure, Passability.IN)))
     
     return ThirCall(output, null, ThirLoad(type, id, emptyList()), listOf(input))
 }
@@ -470,25 +470,25 @@ class TestResolverValue
         {
             val symbol = registerFun("foo")
             val expected = UnknownVariable(symbol.name)
-    
+            
             assertFailure(expected, run(symbol.hirLoad))
         }
-    
+        
         @Test
         fun `Given variable, when resolving, then correct outcome`()
         {
             val symbol = registerVar("foo")
             val expected = ThirLoad(value = Builtin.INT32.asThir(), symbolId = symbol.id, generics = emptyList())
-        
+            
             assertSuccess(expected, run(symbol.hirLoad))
         }
-    
+        
         @Test
         fun `Given parameter, when resolving, then correct outcome`()
         {
             val symbol = registerParam("foo")
             val expected = ThirLoad(value = Builtin.INT32.asThir(), symbolId = symbol.id, generics = emptyList())
-        
+            
             assertSuccess(expected, run(symbol.hirLoad))
         }
     }

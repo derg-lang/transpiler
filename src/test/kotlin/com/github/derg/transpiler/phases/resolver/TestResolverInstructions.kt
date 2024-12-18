@@ -12,7 +12,7 @@ import org.junit.jupiter.api.*
  */
 private fun HirFunction.thirCall(): ThirValue
 {
-    val type = ThirTypeFunction(null, null, emptyList())
+    val type = ThirType.Function(null, null, emptyList())
     
     return ThirCall(null, null, ThirLoad(type, id, emptyList()), emptyList())
 }
