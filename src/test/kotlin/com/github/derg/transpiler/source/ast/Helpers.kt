@@ -85,7 +85,7 @@ fun astConstOf(
     vis: Visibility = Visibility.PRIVATE,
 ) = AstConstant(
     name = name,
-    type = AstType(type, Mutability.IMMUTABLE),
+    type = AstType.Structure(type, Mutability.IMMUTABLE, emptyList()),
     value = value.ast,
     visibility = vis,
 )
@@ -126,7 +126,7 @@ fun astPropOf(
     ass: Assignability = Assignability.FINAL,
 ) = AstProperty(
     name = name,
-    type = AstType(type, mut),
+    type = AstType.Structure(type, mut, emptyList()),
     value = value?.ast,
     visibility = vis,
     assignability = ass,
@@ -144,7 +144,7 @@ fun astVarOf(
     ass: Assignability = Assignability.FINAL,
 ) = AstVariable(
     name = name,
-    type = type?.let { AstType(it, mut) },
+    type = type?.let { AstType.Structure(it, mut, emptyList()) },
     value = value.ast,
     visibility = vis,
     assignability = ass,
@@ -162,8 +162,8 @@ fun astFunOf(
     statements: List<AstInstruction> = emptyList(),
 ) = AstFunction(
     name = name,
-    valueType = valType?.let { AstType(it, Mutability.IMMUTABLE) },
-    errorType = errType?.let { AstType(it, Mutability.IMMUTABLE) },
+    valueType = valType?.let { AstType.Structure(it, Mutability.IMMUTABLE, emptyList()) },
+    errorType = errType?.let { AstType.Structure(it, Mutability.IMMUTABLE, emptyList()) },
     parameters = params,
     visibility = vis,
     statements = statements,
@@ -180,7 +180,7 @@ fun astParOf(
     mut: Mutability = Mutability.IMMUTABLE,
 ) = AstParameter(
     name = name,
-    type = AstType(type, mut),
+    type = AstType.Structure(type, mut, emptyList()),
     value = value?.ast,
     passability = pas,
 )

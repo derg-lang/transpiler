@@ -20,11 +20,15 @@ fun convert(program: AstProgram) = HirProgram(
 /**
  *
  */
-private fun AstType.toHir() = HirType.Structure(
-    name = name,
-    mutability = mutability,
-    parameters = emptyList(),
-)
+private fun AstType.toHir(): HirType = when (this)
+{
+    is AstType.Function  -> HirType.Function(value = value?.toHir(), error = error?.toHir(), parameters = parameters.map { it.toHir() })
+    is AstType.Structure -> HirType.Structure(name = name, mutability = mutability, parameters = parameters.map { it.toHir() })
+    is AstType.Union     -> HirType.Union(types = types.map { it.toHir() }.toSet())
+}
+
+private fun AstParameterStatic.toHir() = HirParameterStatic(name = name, value = value.toHir())
+private fun AstParameterDynamic.toHir() = HirParameterDynamic(name = name, type = type.toHir(), passability = passability)
 
 /**
  *

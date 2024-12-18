@@ -208,9 +208,10 @@ private fun typePatternOf() = ParserSequence(
     "name" to ParserIdentifier(),
 )
 
-private fun typeOutcomeOf(values: Parsers) = AstType(
+private fun typeOutcomeOf(values: Parsers) = AstType.Structure(
     name = values["name"],
     mutability = values["mutability"],
+    parameters = emptyList(),
 )
 
 /**
