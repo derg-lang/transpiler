@@ -11,6 +11,6 @@ import java.util.*
 class TypeTable
 {
     val bindings = mutableMapOf<UUID, ThirType>()
-    val functions = mutableMapOf<UUID, ThirTypeFunction>()
-    val literals = mutableMapOf<UUID, ThirTypeLiteral>()
+    val functions = mutableMapOf<UUID, ThirType.Function>()
+    val literals = mutableMapOf<UUID, ThirType.Function>()
 }

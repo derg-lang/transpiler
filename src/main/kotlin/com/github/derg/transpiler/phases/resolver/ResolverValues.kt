@@ -97,7 +97,7 @@ internal class ResolverValue(private val types: TypeTable, private val scope: Sc
      * valid candidate for being invoked with the parameters, a function call value is generated. Note that multiple
      * functions may be valid, which is the case when the function call is ambiguous.
      */
-    private fun resolveCall(id: UUID, type: ThirTypeFunction, inputs: List<NamedMaybe<ThirValue>>): Result<ThirCall, ResolveError>
+    private fun resolveCall(id: UUID, type: ThirType.Function, inputs: List<NamedMaybe<ThirValue>>): Result<ThirCall, ResolveError>
     {
         // TODO: Support variadic arguments.
         if (type.parameters.size != inputs.size)
@@ -105,11 +105,11 @@ internal class ResolverValue(private val types: TypeTable, private val scope: Sc
         
         // Reject function if parameter types do not match function signature. The parameters must be ordered in the
         // same order as expected by the function before we can compare types.
-        val nameToIndex = type.parameters.withIndex().associate { it.value.first to it.index }
+        val nameToIndex = type.parameters.withIndex().associate { it.value.name to it.index }
         val sorted = inputs.withIndex().sortedBy { nameToIndex[it.value.first] ?: it.index }.map { it.value }
         
         // TODO: Handle generics, attempt to infer the type if at all possible at this point.
-        if (type.parameters.zip(sorted).any { (param, input) -> param.second != input.second.value })
+        if (type.parameters.zip(sorted).any { (param, input) -> param.type != input.second.value })
             return ResolveError.Placeholder.toFailure() // TODO: Replace with mismatched parameter types.
         
         // All parameters provided by the user are now confirmed to be compatible with the function under evaluation. We
@@ -185,7 +185,19 @@ internal class ResolverValue(private val types: TypeTable, private val scope: Sc
         // TODO: Replace invalid parameter error with something more appropriate. We must have exactly one parameter,
         //       and the parameter must be a builtin integer type.
         val literal = types.literals[candidate.id]!!
-        val value = when (literal.parameter.symbolId)
+        val parameter = when (literal.parameters.size)
+        {
+            1    -> literal.parameters.single()
+            0    -> TODO()
+            else -> TODO()
+        }
+        val symbolId = when (parameter.type)
+        {
+            is ThirType.Function  -> TODO()
+            is ThirType.Structure -> parameter.type.symbolId
+            is ThirType.Union     -> TODO()
+        }
+        val value = when (symbolId)
         {
             Builtin.INT32.id -> node.value.toInt32().valueOr { return it.toFailure() }
             Builtin.INT64.id -> node.value.toInt64().valueOr { return it.toFailure() }

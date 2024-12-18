@@ -46,7 +46,7 @@ data class ThirCall(
  */
 data class ThirCatch(val lhs: ThirValue, val rhs: ThirValue, val capture: Capture) : ThirValue
 {
-    override val value: ThirType get() = ThirTypeUnion(listOf(lhs.value, rhs.value).mapNotNull { it })
+    override val value: ThirType get() = ThirType.Union(setOfNotNull(lhs.value, rhs.value)).simplify()
     override val error: Nothing? get() = null
 }
 
@@ -55,7 +55,7 @@ data class ThirCatch(val lhs: ThirValue, val rhs: ThirValue, val capture: Captur
  */
 data class ThirConstBool(val raw: Boolean) : ThirValue
 {
-    override val value: ThirType get() = ThirTypeStruct(Builtin.BOOL.id, Mutability.IMMUTABLE, emptyList())
+    override val value: ThirType get() = ThirType.Structure(Builtin.BOOL.id, Mutability.IMMUTABLE, emptyList())
     override val error: Nothing? get() = null
 }
 
@@ -64,7 +64,7 @@ data class ThirConstBool(val raw: Boolean) : ThirValue
  */
 data class ThirConstInt32(val raw: Int) : ThirValue
 {
-    override val value: ThirType get() = ThirTypeStruct(Builtin.INT32.id, Mutability.IMMUTABLE, emptyList())
+    override val value: ThirType get() = ThirType.Structure(Builtin.INT32.id, Mutability.IMMUTABLE, emptyList())
     override val error: Nothing? get() = null
 }
 
@@ -73,6 +73,6 @@ data class ThirConstInt32(val raw: Int) : ThirValue
  */
 data class ThirConstInt64(val raw: Long) : ThirValue
 {
-    override val value: ThirType get() = ThirTypeStruct(Builtin.INT64.id, Mutability.IMMUTABLE, emptyList())
+    override val value: ThirType get() = ThirType.Structure(Builtin.INT64.id, Mutability.IMMUTABLE, emptyList())
     override val error: Nothing? get() = null
 }

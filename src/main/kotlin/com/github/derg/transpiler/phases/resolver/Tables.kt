@@ -28,8 +28,8 @@ class SymbolTable
 class TypeTable
 {
     val fields = mutableMapOf<UUID, ThirType>()
-    val functions = mutableMapOf<UUID, ThirTypeFunction>()
-    val literals = mutableMapOf<UUID, ThirTypeLiteral>()
+    val functions = mutableMapOf<UUID, ThirType.Function>()
+    val literals = mutableMapOf<UUID, ThirType.Function>()
     val parameters = mutableMapOf<UUID, ThirType>()
     val variables = mutableMapOf<UUID, ThirType>()
 }

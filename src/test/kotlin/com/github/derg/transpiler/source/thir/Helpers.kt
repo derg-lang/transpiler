@@ -25,29 +25,29 @@ val Any.thir: ThirValue
 fun thirTypeData(
     struct: ThirStruct,
     mutability: Mutability = Mutability.IMMUTABLE,
-) = ThirTypeStruct(
+) = ThirType.Structure(
     symbolId = struct.id,
-    generics = emptyList(),
     mutability = mutability,
+    parameters = emptyList(),
 )
 
 fun thirTypeData(
     symbolId: UUID = UUID.randomUUID(),
     mutability: Mutability = Mutability.IMMUTABLE,
-) = ThirTypeStruct(
+) = ThirType.Structure(
     symbolId = symbolId,
-    generics = emptyList(),
     mutability = mutability,
+    parameters = emptyList(),
 )
 
 fun thirTypeCall(
     value: ThirType? = null,
     error: ThirType? = null,
     parameters: List<ThirType> = emptyList(),
-) = ThirTypeFunction(
+) = ThirType.Function(
     value = value,
     error = error,
-    parameters = parameters.map { "" to it },
+    parameters = parameters.map { ThirParameterDynamic("", it, Passability.IN) },
 )
 
 ////////////////////////
@@ -62,9 +62,9 @@ private fun op(function: HirFunction, value: HirStruct, error: HirStruct?, varar
 {
     val names = if (params.size == 1) mutableMapOf(0 to "rhs") else mutableMapOf(0 to "lhs", 1 to "rhs")
     
-    val valueType = ThirTypeStruct(value.id, Mutability.IMMUTABLE, emptyList())
-    val errorType = error?.let { ThirTypeStruct(it.id, Mutability.IMMUTABLE, emptyList()) }
-    val callable = ThirTypeFunction(valueType, errorType, params.mapIndexed { i, p -> names[i]!! to p.value!! })
+    val valueType = ThirType.Structure(value.id, Mutability.IMMUTABLE, emptyList())
+    val errorType = error?.let { ThirType.Structure(it.id, Mutability.IMMUTABLE, emptyList()) }
+    val callable = ThirType.Function(valueType, errorType, params.mapIndexed { i, p -> ThirParameterDynamic(names[i]!!, p.value!!, Passability.IN) })
     val instance = ThirLoad(callable, function.id, emptyList())
     
     return ThirCall(valueType, errorType, instance, params.toList())
@@ -114,11 +114,7 @@ val ThirVariable.thirLoad: ThirValue get() = ThirLoad(type, id, emptyList())
 val ThirParameter.thirLoad: ThirValue get() = ThirLoad(type, id, emptyList())
 val ThirFunction.thirLoad: ThirValue get() = ThirLoad(type, id, emptyList())
 fun ThirValue.thirCall(value: ThirType? = null, error: ThirType? = null, parameters: List<ThirValue> = emptyList()) = ThirCall(value, error, this, parameters)
-fun ThirFunction.thirCall(vararg parameters: Any): ThirCall = when (val inner = type)
-{
-    is ThirTypeFunction -> ThirCall(inner.value, inner.error, thirLoad, parameters.map { it.thir })
-    is ThirTypeLiteral  -> ThirCall(inner.value, null, thirLoad, parameters.map { it.thir })
-}
+fun ThirFunction.thirCall(vararg parameters: Any): ThirCall = ThirCall(type.value, type.error, thirLoad, parameters.map { it.thir })
 
 ///////////////////////
 // Statement helpers //
@@ -162,7 +158,7 @@ fun thirFunOf(
 ) = ThirFunction(
     id = id,
     name = name,
-    type = ThirTypeFunction(value, error, params.map { it.name to it.type }),
+    type = ThirType.Function(value, error, params.map { ThirParameterDynamic(it.name, it.type, Passability.IN) }),
     visibility = Visibility.PRIVATE,
     instructions = emptyList(),
     genericIds = emptyList(),
@@ -178,7 +174,7 @@ fun thirLitOf(
 ) = ThirFunction(
     id = id,
     name = name,
-    type = ThirTypeLiteral(value, param.type as ThirTypeStruct),
+    type = ThirType.Function(value, null, listOf(ThirParameterDynamic("", param.type as ThirType.Structure, Passability.IN))),
     visibility = Visibility.PRIVATE,
     instructions = emptyList(),
     genericIds = emptyList(),

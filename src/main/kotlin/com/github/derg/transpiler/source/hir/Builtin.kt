@@ -72,10 +72,10 @@ object Builtin
 /**
  * Generates a type based on the [struct].
  */
-private fun typeOf(struct: HirStruct) = HirTypeStruct(
+private fun typeOf(struct: HirStruct) = HirType.Structure(
     name = struct.name,
-    generics = emptyList(),
     mutability = Mutability.IMMUTABLE,
+    parameters = emptyList(),
 )
 
 /**
@@ -94,10 +94,16 @@ private fun registerStruct(name: String) = HirStruct(
  * Defines a new literal with the given [name] and [parameter]. The literal will return the same type as the parameter
  * itself.
  */
-private fun registerLiteral(name: String, parameter: HirTypeStruct) = HirLiteral(
+private fun registerLiteral(name: String, parameter: HirType.Structure) = HirLiteral(
     id = UUID.randomUUID(),
     name = name,
-    type = HirTypeLiteral(value = parameter, parameter = parameter),
+    type = HirType.Function(
+        value = parameter,
+        error = null,
+        parameters = listOf(
+            HirParameterDynamic(name = "input", type = parameter, passability = Passability.IN),
+        ),
+    ),
     visibility = Visibility.EXPORTED,
     instructions = emptyList(),
     variables = emptyList(),
@@ -111,10 +117,13 @@ private fun registerLiteral(name: String, parameter: HirTypeStruct) = HirLiteral
 private fun registerInfixOp(operator: Symbol, parameter: HirType, value: HirType, error: HirType?) = HirFunction(
     id = UUID.randomUUID(),
     name = operator.symbol,
-    type = HirTypeFunction(
+    type = HirType.Function(
         value = value,
         error = error,
-        parameters = listOf("lhs" to parameter, "rhs" to parameter),
+        parameters = listOf(
+            HirParameterDynamic(name = "lhs", type = parameter, passability = Passability.IN),
+            HirParameterDynamic(name = "rhs", type = parameter, passability = Passability.IN),
+        ),
     ),
     visibility = Visibility.EXPORTED,
     instructions = emptyList(),
@@ -130,10 +139,12 @@ private fun registerInfixOp(operator: Symbol, parameter: HirType, value: HirType
 private fun registerPrefixOp(operator: Symbol, parameter: HirType, value: HirType, error: HirType?) = HirFunction(
     id = UUID.randomUUID(),
     name = operator.symbol,
-    type = HirTypeFunction(
+    type = HirType.Function(
         value = value,
         error = error,
-        parameters = listOf("rhs" to parameter),
+        parameters = listOf(
+            HirParameterDynamic(name = "rhs", type = parameter, passability = Passability.IN),
+        ),
     ),
     visibility = Visibility.EXPORTED,
     instructions = emptyList(),

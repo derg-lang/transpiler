@@ -26,32 +26,32 @@ val Any.hir: HirValue
 fun hirTypeData(
     struct: HirStruct = Builtin.INT32,
     mutability: Mutability = Mutability.IMMUTABLE,
-) = HirTypeStruct(
+) = HirType.Structure(
     name = struct.name,
-    generics = emptyList(),
     mutability = mutability,
+    parameters = emptyList(),
 )
 
 fun hirTypeData(
     name: String = UUID.randomUUID().toString(),
     mutability: Mutability = Mutability.IMMUTABLE,
-) = HirTypeStruct(
+) = HirType.Structure(
     name = name,
-    generics = emptyList(),
     mutability = mutability,
+    parameters = emptyList(),
 )
 
 fun hirTypeCall(
     value: HirType? = null,
     error: HirType? = null,
     parameters: List<HirType> = emptyList(),
-) = HirTypeFunction(
+) = HirType.Function(
     value = value,
     error = error,
-    parameters = parameters.map { "" to it },
+    parameters = parameters.map { HirParameterDynamic("", it, Passability.IN) },
 )
 
-fun hirTypeUnion(vararg types: HirType) = HirTypeUnion(types.toList())
+fun hirTypeUnion(vararg types: HirType) = HirType.Union(types.toSet())
 
 ////////////////////////
 // Expression helpers //
@@ -127,7 +127,7 @@ fun hirFunOf(
 ) = HirFunction(
     id = UUID.randomUUID(),
     name = name,
-    type = HirTypeFunction(value, error, params.map { it.name to it.type }),
+    type = HirType.Function(value, error, params.map { HirParameterDynamic(it.name, it.type, Passability.IN) }),
     visibility = Visibility.PRIVATE,
     instructions = instructions,
     generics = emptyList(),
@@ -143,7 +143,7 @@ fun hirLitOf(
 ) = HirLiteral(
     id = UUID.randomUUID(),
     name = name,
-    type = HirTypeLiteral(value, param.type as HirTypeStruct),
+    type = HirType.Function(value, null, listOf(HirParameterDynamic("", param.type as HirType.Structure, Passability.IN))),
     visibility = Visibility.PRIVATE,
     instructions = instructions,
     variables = emptyList(),
