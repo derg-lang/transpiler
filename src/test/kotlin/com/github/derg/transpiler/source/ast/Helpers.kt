@@ -19,6 +19,21 @@ val Any.ast: AstValue
         else        -> throw IllegalArgumentException("Value $this does not represent a valid ast value")
     }
 
+//////////////////
+// Type helpers //
+//////////////////
+
+fun astTypeData(
+    name: String = UUID.randomUUID().toString(),
+    mutability: Mutability = Mutability.IMMUTABLE,
+    parameters: List<AstParameterStatic> = emptyList(),
+) = AstType.Structure(name = name, mutability = mutability, parameters = parameters)
+
+fun astParamStatic(
+    name: String? = null,
+    value: AstValue = 0.ast,
+) = AstParameterStatic(name = name, value = value)
+
 ////////////////////////
 // Expression helpers //
 ////////////////////////

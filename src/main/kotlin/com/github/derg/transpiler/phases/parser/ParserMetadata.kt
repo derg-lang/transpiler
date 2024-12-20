@@ -201,19 +201,30 @@ private fun segmentOutcomeOf(values: Parsers) = AstSegment(
 /**
  * Parses a type from the token stream.
  */
-fun typeParserOf(): Parser<AstType> =
-    ParserPattern(::typePatternOf, ::typeOutcomeOf)
+fun typeParserOf(): Parser<AstType> = ParserAnyOf(
+    ParserPattern(::typeStructPatternOf, ::typeStructOutcomeOf),
+)
 
-private fun typePatternOf() = ParserSequence(
+private fun typeStructPatternOf() = ParserSequence(
     "mutability" to mutabilityParserOf(),
     "name" to ParserIdentifier(),
+    "params" to ParserOptional(typeStructParamsPatternOf())
 )
 
-private fun typeOutcomeOf(values: Parsers) = AstType.Structure(
+private fun typeStructParamsPatternOf() = ParserSequence(
+    "open" to ParserSymbol(Symbol.OPEN_BRACKET),
+    "params" to ParserRepeating(argumentParserOf(), ParserSymbol(Symbol.COMMA)),
+    "close" to ParserSymbol(Symbol.CLOSE_BRACKET),
+)
+
+private fun typeStructOutcomeOf(values: Parsers) = AstType.Structure(
     name = values["name"],
     mutability = values["mutability"],
-    parameters = emptyList(),
+    parameters = typeStructParamsOutcomeOf(values["params"]),
 )
+
+private fun typeStructParamsOutcomeOf(values: Parsers?): List<AstParameterStatic> =
+    values?.get<List<NamedMaybe<AstValue>>>("params")?.map { (name, value) -> AstParameterStatic(name, value) } ?: emptyList()
 
 /**
  * Parses an optional type from the token stream. The type must be located after the given [symbol].
