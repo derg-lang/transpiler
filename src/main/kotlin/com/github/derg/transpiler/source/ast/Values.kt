@@ -18,8 +18,11 @@ sealed interface AstValue
  * All variables are permitted to hold a value, which may be accessed by examining the variable itself. Variables are
  * given a unique [name] within every scope, allowing the analyzer to resolve which variable is being referenced. Any
  * type property will be represented as a variable in the abstract syntax tree.
+ *
+ * The symbol which is loaded can be specialized with any number of [template arguments][temArgs]. These parameters are
+ * specified at compile-time, and parameterizes the loaded object.
  */
-data class AstRead(val name: String) : AstValue
+data class AstLoad(val name: String, val temArgs: List<AstArgument>) : AstValue
 
 /**
  * All procedure calls may either refer to a function with the specified [name] being invoked, or the function operator

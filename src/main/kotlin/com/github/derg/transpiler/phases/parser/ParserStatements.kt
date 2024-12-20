@@ -102,7 +102,7 @@ private fun returnOutcomeOf(values: Parsers): AstInstruction
 {
     val expression = values.get<AstValue>("expression")
     // TODO: The magic string `_` should not be used. Use the type-information of the function to remove it
-    return if (expression == AstRead("_")) AstReturn else AstReturnValue(expression)
+    return if (expression == AstLoad("_", emptyList())) AstReturn else AstReturnValue(expression)
 }
 
 /**
@@ -111,4 +111,4 @@ private fun returnOutcomeOf(values: Parsers): AstInstruction
  */
 // TODO: Not a correct implementation of the parser - must also function with error handling
 private fun invokeParserOf(): Parser<AstInstruction> =
-    ParserPattern(::functionCallParserOf) { AstEvaluate(it) }
+    ParserPattern(::callParserOf) { AstEvaluate(it) }

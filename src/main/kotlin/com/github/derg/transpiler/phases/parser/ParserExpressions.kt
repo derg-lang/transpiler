@@ -95,8 +95,8 @@ private fun basePatternOf() = ParserAnyOf(
     ParserBool(),
     ParserInteger(),
     ParserText(),
-    variableCallParserOf(),
-    functionCallParserOf(),
+    loadParserOf(),
+    callParserOf(),
     parenthesisParserOf(),
     unaryOperatorParserOf(),
     whenParserOf(),
@@ -124,23 +124,35 @@ private fun expressionOutcomeOf(values: Parsers): AstValue
 /**
  * Parses a variable access expression from the token stream.
  */
-private fun variableCallParserOf(): Parser<AstValue> =
-    ParserPattern(::ParserName) { AstRead(it) }
+private fun loadParserOf(): Parser<AstValue> =
+    ParserPattern(::loadPatternOf, ::loadOutcomeOf)
+
+private fun loadPatternOf() = ParserSequence(
+    "name" to ParserName(),
+    "params" to ParserOptional(ParserSequence(
+        "open" to ParserSymbol(Symbol.OPEN_BRACKET),
+        "params" to ParserRepeating(argumentParserOf(), ParserSymbol(Symbol.COMMA)),
+        "close" to ParserSymbol(Symbol.CLOSE_BRACKET),
+    ))
+)
+
+private fun loadOutcomeOf(outcome: Parsers): AstValue =
+    AstLoad(outcome["name"], outcome.get<Parsers?>("params")?.get("params") ?: emptyList())
 
 /**
  * Parses a function call expression from the token stream.
  */
-internal fun functionCallParserOf(): Parser<AstValue> =
-    ParserPattern(::functionCallPatternOf, ::functionCallOutcomeOf)
+internal fun callParserOf(): Parser<AstValue> =
+    ParserPattern(::callPatternOf, ::callOutcomeOf)
 
-private fun functionCallPatternOf() = ParserSequence(
+private fun callPatternOf() = ParserSequence(
     "name" to ParserName(),
     "open" to ParserSymbol(Symbol.OPEN_PARENTHESIS),
-    "params" to ParserOptional(ParserRepeating(argumentParserOf(), ParserSymbol(Symbol.COMMA))),
+    "params" to ParserRepeating(argumentParserOf(), ParserSymbol(Symbol.COMMA)),
     "close" to ParserSymbol(Symbol.CLOSE_PARENTHESIS),
 )
 
-private fun functionCallOutcomeOf(outcome: Parsers): AstValue =
+private fun callOutcomeOf(outcome: Parsers): AstValue =
     AstCall(outcome["name"], emptyList(), outcome["params"])
 
 /**
