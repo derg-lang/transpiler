@@ -11,22 +11,23 @@ import java.time.Duration
 import java.time.OffsetDateTime
 
 private const val SOURCE = """
-    fun foo() -> __builtin_i32
+    fun main() -> __builtin_i32
     {
-        val test = 2
-        var more = 3
+        return fibonacci(25)
+    }
+    
+    fun fibonacci(n: __builtin_i32) -> __builtin_i32
+    {
+        var result = 0
         
-        return bar(test) * more
-    }
-    
-    fun bar(a: __builtin_i32) -> __builtin_i32
-    {
-        return baz(a) + 3i32
-    }
-    
-    fun baz(a: __builtin_i32) -> __builtin_i32
-    {
-        return -a * a
+        if n <= 0
+            result = 0
+        else if n == 1 || n == 2
+            result = 1
+        else
+            result = fibonacci(n - 2) + fibonacci(n - 1)
+        
+        return result
     }
 """
 
@@ -40,7 +41,7 @@ fun main(args: Array<String>)
     
     check(thir).valueOrDie()
     
-    val entrypoint = thir.functions.values.first { it.name == "foo" }
+    val entrypoint = thir.functions.values.first { it.name == "main" }
     val start = OffsetDateTime.now()
     val outcome = Interpreter(thir).run(entrypoint.id)
     val end = OffsetDateTime.now()

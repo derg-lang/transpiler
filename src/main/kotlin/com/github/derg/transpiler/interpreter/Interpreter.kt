@@ -42,23 +42,80 @@ class Interpreter(private val symbols: SymbolTable)
     
     private fun evaluate(frame: StackFrame, symbol: ThirFunction, parameters: List<ThirValue>): Evaluation
     {
-        // Push a new stack frame containing all elements stored in local scope.
+        // Ensure all parameters from the outer scope is accessible to the current scope.
         parameters.withIndex().forEach { (index, value) -> frame[symbol.parameterIds[index]] = value }
         
-        for (instruction in symbol.instructions) when (instruction)
+        return evaluateInstructions(frame, symbol.instructions)
+    }
+    
+    private fun evaluateInstructions(frame: StackFrame, instructions: List<ThirInstruction>): Evaluation
+    {
+        for (instruction in instructions) when (instruction)
         {
-            is ThirAssign      -> frame[instruction.symbolId] = evaluate(frame, instruction.expression)
-            is ThirBranch      -> TODO()
-            is ThirEvaluate    -> evaluate(frame, instruction.expression)
+            is ThirAssign      -> frame[instruction.symbolId] = evaluateExpression(frame, instruction.expression)
+            is ThirBranch      -> evaluateBranch(frame, instruction)
+            is ThirEvaluate    -> evaluateExpression(frame, instruction.expression)
             is ThirReturn      -> return null.toSuccess()
-            is ThirReturnError -> return evaluate(frame, instruction.expression).toFailure()
-            is ThirReturnValue -> return evaluate(frame, instruction.expression).toSuccess()
+            is ThirReturnError -> return evaluateExpression(frame, instruction.expression).toFailure()
+            is ThirReturnValue -> return evaluateExpression(frame, instruction.expression).toSuccess()
         }
-        
         return null.toSuccess()
     }
     
-    private fun evaluate(frame: StackFrame, value: ThirValue): ThirValue = when (value)
+    private fun evaluateBranch(frame: StackFrame, instruction: ThirBranch): Evaluation
+    {
+        val predicate = evaluateExpression(frame, instruction.predicate) as ThirConstBool
+        val instructions = if (predicate.raw) instruction.success else instruction.failure
+        
+        return evaluateInstructions(frame, instructions)
+    }
+    
+    private fun evaluateCall(frame: StackFrame, value: ThirCall): ThirValue
+    {
+        val symbol = symbols.functions[(value.instance as ThirLoad).symbolId]
+            ?: throw IllegalArgumentException("No function for value '$value'")
+        val parameters = value.parameters.map { evaluateExpression(frame, it) }
+        
+        // Forgive me Father, for I have sinned.
+        return when (symbol.id)
+        {
+            Builtin.BOOL_AND.id  -> ThirConstBool((evaluateExpression(frame, parameters[0]) as ThirConstBool).raw && (evaluateExpression(frame, parameters[1]) as ThirConstBool).raw)
+            Builtin.BOOL_EQ.id   -> ThirConstBool((evaluateExpression(frame, parameters[0]) as ThirConstBool).raw == (evaluateExpression(frame, parameters[1]) as ThirConstBool).raw)
+            Builtin.BOOL_NE.id   -> ThirConstBool((evaluateExpression(frame, parameters[0]) as ThirConstBool).raw != (evaluateExpression(frame, parameters[1]) as ThirConstBool).raw)
+            Builtin.BOOL_NOT.id  -> ThirConstBool(!(evaluateExpression(frame, parameters[0]) as ThirConstBool).raw)
+            Builtin.BOOL_OR.id   -> ThirConstBool((evaluateExpression(frame, parameters[0]) as ThirConstBool).raw || (evaluateExpression(frame, parameters[1]) as ThirConstBool).raw)
+            Builtin.BOOL_XOR.id  -> ThirConstBool((evaluateExpression(frame, parameters[0]) as ThirConstBool).raw xor (evaluateExpression(frame, parameters[1]) as ThirConstBool).raw)
+            Builtin.INT32_ADD.id -> ThirConstInt32((evaluateExpression(frame, parameters[0]) as ThirConstInt32).raw + (evaluateExpression(frame, parameters[1]) as ThirConstInt32).raw)
+            Builtin.INT32_DIV.id -> ThirConstInt32((evaluateExpression(frame, parameters[0]) as ThirConstInt32).raw / (evaluateExpression(frame, parameters[1]) as ThirConstInt32).raw)
+            Builtin.INT32_EQ.id  -> ThirConstBool((evaluateExpression(frame, parameters[0]) as ThirConstInt32).raw == (evaluateExpression(frame, parameters[1]) as ThirConstInt32).raw)
+            Builtin.INT32_GE.id  -> ThirConstBool((evaluateExpression(frame, parameters[0]) as ThirConstInt32).raw >= (evaluateExpression(frame, parameters[1]) as ThirConstInt32).raw)
+            Builtin.INT32_GT.id  -> ThirConstBool((evaluateExpression(frame, parameters[0]) as ThirConstInt32).raw > (evaluateExpression(frame, parameters[1]) as ThirConstInt32).raw)
+            Builtin.INT32_LE.id  -> ThirConstBool((evaluateExpression(frame, parameters[0]) as ThirConstInt32).raw <= (evaluateExpression(frame, parameters[1]) as ThirConstInt32).raw)
+            Builtin.INT32_LT.id  -> ThirConstBool((evaluateExpression(frame, parameters[0]) as ThirConstInt32).raw < (evaluateExpression(frame, parameters[1]) as ThirConstInt32).raw)
+            Builtin.INT32_MOD.id -> ThirConstInt32((evaluateExpression(frame, parameters[0]) as ThirConstInt32).raw % (evaluateExpression(frame, parameters[1]) as ThirConstInt32).raw)
+            Builtin.INT32_MUL.id -> ThirConstInt32((evaluateExpression(frame, parameters[0]) as ThirConstInt32).raw * (evaluateExpression(frame, parameters[1]) as ThirConstInt32).raw)
+            Builtin.INT32_NE.id  -> ThirConstBool((evaluateExpression(frame, parameters[0]) as ThirConstInt32).raw != (evaluateExpression(frame, parameters[1]) as ThirConstInt32).raw)
+            Builtin.INT32_NEG.id -> ThirConstInt32(-(evaluateExpression(frame, parameters[0]) as ThirConstInt32).raw)
+            Builtin.INT32_POS.id -> ThirConstInt32((evaluateExpression(frame, parameters[0]) as ThirConstInt32).raw)
+            Builtin.INT32_SUB.id -> ThirConstInt32((evaluateExpression(frame, parameters[0]) as ThirConstInt32).raw - (evaluateExpression(frame, parameters[1]) as ThirConstInt32).raw)
+            Builtin.INT64_ADD.id -> ThirConstInt64((evaluateExpression(frame, parameters[0]) as ThirConstInt64).raw + (evaluateExpression(frame, parameters[1]) as ThirConstInt64).raw)
+            Builtin.INT64_DIV.id -> ThirConstInt64((evaluateExpression(frame, parameters[0]) as ThirConstInt64).raw / (evaluateExpression(frame, parameters[1]) as ThirConstInt64).raw)
+            Builtin.INT64_EQ.id  -> ThirConstBool((evaluateExpression(frame, parameters[0]) as ThirConstInt64).raw == (evaluateExpression(frame, parameters[1]) as ThirConstInt64).raw)
+            Builtin.INT64_GE.id  -> ThirConstBool((evaluateExpression(frame, parameters[0]) as ThirConstInt64).raw >= (evaluateExpression(frame, parameters[1]) as ThirConstInt64).raw)
+            Builtin.INT64_GT.id  -> ThirConstBool((evaluateExpression(frame, parameters[0]) as ThirConstInt64).raw > (evaluateExpression(frame, parameters[1]) as ThirConstInt64).raw)
+            Builtin.INT64_LE.id  -> ThirConstBool((evaluateExpression(frame, parameters[0]) as ThirConstInt64).raw <= (evaluateExpression(frame, parameters[1]) as ThirConstInt64).raw)
+            Builtin.INT64_LT.id  -> ThirConstBool((evaluateExpression(frame, parameters[0]) as ThirConstInt64).raw < (evaluateExpression(frame, parameters[1]) as ThirConstInt64).raw)
+            Builtin.INT64_MOD.id -> ThirConstInt64((evaluateExpression(frame, parameters[0]) as ThirConstInt64).raw % (evaluateExpression(frame, parameters[1]) as ThirConstInt64).raw)
+            Builtin.INT64_MUL.id -> ThirConstInt64((evaluateExpression(frame, parameters[0]) as ThirConstInt64).raw * (evaluateExpression(frame, parameters[1]) as ThirConstInt64).raw)
+            Builtin.INT64_NE.id  -> ThirConstBool((evaluateExpression(frame, parameters[0]) as ThirConstInt64).raw != (evaluateExpression(frame, parameters[1]) as ThirConstInt64).raw)
+            Builtin.INT64_NEG.id -> ThirConstInt64(-(evaluateExpression(frame, parameters[0]) as ThirConstInt64).raw)
+            Builtin.INT64_POS.id -> ThirConstInt64((evaluateExpression(frame, parameters[0]) as ThirConstInt64).raw)
+            Builtin.INT64_SUB.id -> ThirConstInt64((evaluateExpression(frame, parameters[0]) as ThirConstInt64).raw - (evaluateExpression(frame, parameters[1]) as ThirConstInt64).raw)
+            else                 -> pushFrame { evaluate(it, symbol, parameters).valueOrNull() ?: TODO() }
+        }
+    }
+    
+    private fun evaluateExpression(frame: StackFrame, value: ThirValue): ThirValue = when (value)
     {
         is ThirCall       -> evaluateCall(frame, value)
         is ThirCatch      -> TODO()
@@ -66,51 +123,6 @@ class Interpreter(private val symbols: SymbolTable)
         is ThirConstInt32 -> value
         is ThirConstInt64 -> value
         is ThirLoad       -> frame[value.symbolId]
-    }
-    
-    private fun evaluateCall(frame: StackFrame, value: ThirCall): ThirValue
-    {
-        val symbol = symbols.functions[(value.instance as ThirLoad).symbolId]
-            ?: throw IllegalArgumentException("No function for value '$value'")
-        val parameters = value.parameters.map { evaluate(frame, it) }
-        
-        // Forgive me Father, for I have sinned.
-        return when (symbol.id)
-        {
-            Builtin.BOOL_AND.id  -> ThirConstBool((evaluate(frame, parameters[0]) as ThirConstBool).raw && (evaluate(frame, parameters[1]) as ThirConstBool).raw)
-            Builtin.BOOL_EQ.id   -> ThirConstBool((evaluate(frame, parameters[0]) as ThirConstBool).raw == (evaluate(frame, parameters[1]) as ThirConstBool).raw)
-            Builtin.BOOL_NE.id   -> ThirConstBool((evaluate(frame, parameters[0]) as ThirConstBool).raw != (evaluate(frame, parameters[1]) as ThirConstBool).raw)
-            Builtin.BOOL_NOT.id  -> ThirConstBool(!(evaluate(frame, parameters[0]) as ThirConstBool).raw)
-            Builtin.BOOL_OR.id   -> ThirConstBool((evaluate(frame, parameters[0]) as ThirConstBool).raw || (evaluate(frame, parameters[1]) as ThirConstBool).raw)
-            Builtin.BOOL_XOR.id  -> ThirConstBool((evaluate(frame, parameters[0]) as ThirConstBool).raw xor (evaluate(frame, parameters[1]) as ThirConstBool).raw)
-            Builtin.INT32_ADD.id -> ThirConstInt32((evaluate(frame, parameters[0]) as ThirConstInt32).raw + (evaluate(frame, parameters[1]) as ThirConstInt32).raw)
-            Builtin.INT32_DIV.id -> ThirConstInt32((evaluate(frame, parameters[0]) as ThirConstInt32).raw / (evaluate(frame, parameters[1]) as ThirConstInt32).raw)
-            Builtin.INT32_EQ.id  -> ThirConstBool((evaluate(frame, parameters[0]) as ThirConstInt32).raw == (evaluate(frame, parameters[1]) as ThirConstInt32).raw)
-            Builtin.INT32_GE.id  -> ThirConstBool((evaluate(frame, parameters[0]) as ThirConstInt32).raw >= (evaluate(frame, parameters[1]) as ThirConstInt32).raw)
-            Builtin.INT32_GT.id  -> ThirConstBool((evaluate(frame, parameters[0]) as ThirConstInt32).raw > (evaluate(frame, parameters[1]) as ThirConstInt32).raw)
-            Builtin.INT32_LE.id  -> ThirConstBool((evaluate(frame, parameters[0]) as ThirConstInt32).raw <= (evaluate(frame, parameters[1]) as ThirConstInt32).raw)
-            Builtin.INT32_LT.id  -> ThirConstBool((evaluate(frame, parameters[0]) as ThirConstInt32).raw < (evaluate(frame, parameters[1]) as ThirConstInt32).raw)
-            Builtin.INT32_MOD.id -> ThirConstInt32((evaluate(frame, parameters[0]) as ThirConstInt32).raw % (evaluate(frame, parameters[1]) as ThirConstInt32).raw)
-            Builtin.INT32_MUL.id -> ThirConstInt32((evaluate(frame, parameters[0]) as ThirConstInt32).raw * (evaluate(frame, parameters[1]) as ThirConstInt32).raw)
-            Builtin.INT32_NE.id  -> ThirConstBool((evaluate(frame, parameters[0]) as ThirConstInt32).raw != (evaluate(frame, parameters[1]) as ThirConstInt32).raw)
-            Builtin.INT32_NEG.id -> ThirConstInt32(-(evaluate(frame, parameters[0]) as ThirConstInt32).raw)
-            Builtin.INT32_POS.id -> ThirConstInt32((evaluate(frame, parameters[0]) as ThirConstInt32).raw)
-            Builtin.INT32_SUB.id -> ThirConstInt32((evaluate(frame, parameters[0]) as ThirConstInt32).raw - (evaluate(frame, parameters[1]) as ThirConstInt32).raw)
-            Builtin.INT64_ADD.id -> ThirConstInt64((evaluate(frame, parameters[0]) as ThirConstInt64).raw + (evaluate(frame, parameters[1]) as ThirConstInt64).raw)
-            Builtin.INT64_DIV.id -> ThirConstInt64((evaluate(frame, parameters[0]) as ThirConstInt64).raw / (evaluate(frame, parameters[1]) as ThirConstInt64).raw)
-            Builtin.INT64_EQ.id  -> ThirConstBool((evaluate(frame, parameters[0]) as ThirConstInt64).raw == (evaluate(frame, parameters[1]) as ThirConstInt64).raw)
-            Builtin.INT64_GE.id  -> ThirConstBool((evaluate(frame, parameters[0]) as ThirConstInt64).raw >= (evaluate(frame, parameters[1]) as ThirConstInt64).raw)
-            Builtin.INT64_GT.id  -> ThirConstBool((evaluate(frame, parameters[0]) as ThirConstInt64).raw > (evaluate(frame, parameters[1]) as ThirConstInt64).raw)
-            Builtin.INT64_LE.id  -> ThirConstBool((evaluate(frame, parameters[0]) as ThirConstInt64).raw <= (evaluate(frame, parameters[1]) as ThirConstInt64).raw)
-            Builtin.INT64_LT.id  -> ThirConstBool((evaluate(frame, parameters[0]) as ThirConstInt64).raw < (evaluate(frame, parameters[1]) as ThirConstInt64).raw)
-            Builtin.INT64_MOD.id -> ThirConstInt64((evaluate(frame, parameters[0]) as ThirConstInt64).raw % (evaluate(frame, parameters[1]) as ThirConstInt64).raw)
-            Builtin.INT64_MUL.id -> ThirConstInt64((evaluate(frame, parameters[0]) as ThirConstInt64).raw * (evaluate(frame, parameters[1]) as ThirConstInt64).raw)
-            Builtin.INT64_NE.id  -> ThirConstBool((evaluate(frame, parameters[0]) as ThirConstInt64).raw != (evaluate(frame, parameters[1]) as ThirConstInt64).raw)
-            Builtin.INT64_NEG.id -> ThirConstInt64(-(evaluate(frame, parameters[0]) as ThirConstInt64).raw)
-            Builtin.INT64_POS.id -> ThirConstInt64((evaluate(frame, parameters[0]) as ThirConstInt64).raw)
-            Builtin.INT64_SUB.id -> ThirConstInt64((evaluate(frame, parameters[0]) as ThirConstInt64).raw - (evaluate(frame, parameters[1]) as ThirConstInt64).raw)
-            else                 -> pushFrame { evaluate(it, symbol, parameters).valueOrNull() ?: TODO() }
-        }
     }
 }
 
