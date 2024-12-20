@@ -153,7 +153,7 @@ private fun callPatternOf() = ParserSequence(
 )
 
 private fun callOutcomeOf(outcome: Parsers): AstValue =
-    AstCall(outcome["name"], emptyList(), outcome["params"])
+    AstCall(AstLoad(outcome["name"], emptyList()), outcome["params"])
 
 /**
  * Parses an expression from in-between parenthesis from the token stream.

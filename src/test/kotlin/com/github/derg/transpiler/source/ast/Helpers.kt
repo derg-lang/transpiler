@@ -48,8 +48,8 @@ infix fun Any.astCatchRaise(that: Any) = AstCatch(this.ast, that.ast, Capture.RA
 infix fun Any.astCatchReturn(that: Any) = AstCatch(this.ast, that.ast, Capture.RETURN)
 infix fun Any.astCatchHandle(that: Any) = AstCatch(this.ast, that.ast, Capture.HANDLE)
 
-fun String.astLoad(vararg temArgs: Any) = AstLoad(this, temArgs.map { it.astArg })
-fun String.astCall(vararg valArgs: Any) = AstCall(this, emptyList(), valArgs.map { it.astArg })
+fun String.astLoad(vararg parameters: Any) = AstLoad(this, parameters.map { it.astArg })
+fun AstValue.astCall(vararg parameters: Any) = AstCall(this, parameters.map { it.astArg })
 
 val Any.astArg: AstArgument
     get() = if (this is Pair<*, *>) AstArgument(first as String, (second as Any).ast) else AstArgument(null, ast)

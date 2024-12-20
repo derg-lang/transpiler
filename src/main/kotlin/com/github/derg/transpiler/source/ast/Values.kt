@@ -19,17 +19,17 @@ sealed interface AstValue
  * given a unique [name] within every scope, allowing the analyzer to resolve which variable is being referenced. Any
  * type property will be represented as a variable in the abstract syntax tree.
  *
- * The symbol which is loaded can be specialized with any number of [template arguments][temArgs]. These parameters are
- * specified at compile-time, and parameterizes the loaded object.
+ * The symbol which is loaded can be specialized with any number of compile-time [parameters]. These parameters
+ * parameterize the loaded object, permitting the user to generalize the object over various types and values.
  */
-data class AstLoad(val name: String, val temArgs: List<AstArgument>) : AstValue
+data class AstLoad(val name: String, val parameters: List<AstArgument>) : AstValue
 
 /**
- * All procedure calls may either refer to a function with the specified [name] being invoked, or the function operator
- * being invoked on an instance with the given [name]. Every procedure call is permitted an arbitrary number of
- * [value arguments][valArgs] and [template arguments][temArgs].
+ * All procedure calls may either refer to a function with the specified [instance] being invoked, or the function
+ * operator being invoked on an instance with the given [instance]. Every procedure call is permitted an arbitrary
+ * number of runtime [parameters].
  */
-data class AstCall(val name: String, val temArgs: List<AstArgument>, val valArgs: List<AstArgument>) : AstValue
+data class AstCall(val instance: AstValue, val parameters: List<AstArgument>) : AstValue
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Constants
