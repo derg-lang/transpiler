@@ -39,7 +39,7 @@ class TestParserStatement
         tester.parse("return _").isChain(1, 1).isValue(AstReturn)
         
         // Function call
-        tester.parse("a()").isChain(2, 1).isValue(astInvokeOf("a".astCall()))
+        tester.parse("a()").isChain(2, 1).isValue(astInvokeOf("a".astLoad().astCall()))
     }
     
     @Test

@@ -20,7 +20,7 @@ sealed interface HirValue
  */
 data class HirLoad(
     val name: String,
-    val generics: List<NamedMaybe<HirType>>,
+    val generics: List<NamedMaybe<HirValue>>,
 ) : HirValue
 
 /**

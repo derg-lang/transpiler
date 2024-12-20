@@ -28,13 +28,20 @@ class TestParserExpression
         tester.parse("\"foo\"").isChain(1).isValue("foo".ast).resets()
         tester.parse("\"bar\"s").isChain(1).isValue("bar".ast).resets()
         
-        // Accesses
-        tester.parse("whatever").isChain(1).isValue("whatever".astRead).resets()
-        tester.parse("f()").isChain(1, 1, 1).isValue("f".astCall()).resets()
-        tester.parse("f(1)").isChain(1, 2, 1).isValue("f".astCall(1)).resets()
-        tester.parse("f(1,)").isChain(1, 3, 1).isValue("f".astCall(1)).resets()
-        tester.parse("f(1,2)").isChain(1, 4, 1).isValue("f".astCall(1, 2)).resets()
-        tester.parse("f(bar = 1)").isChain(1, 4, 1).isValue("f".astCall("bar" to 1)).resets()
+        // Loads
+        tester.parse("v").isChain(1).isValue("v".astLoad()).resets()
+        tester.parse("v[]").isChain(1, 1, 1).isValue("v".astLoad()).resets()
+        tester.parse("v[1]").isChain(1, 2, 1).isValue("v".astLoad(1)).resets()
+        tester.parse("v[1,]").isChain(1, 3, 1).isValue("v".astLoad(1)).resets()
+        tester.parse("v[1,2]").isChain(1, 4, 1).isValue("v".astLoad(1, 2)).resets()
+        tester.parse("v[bar = 1]").isChain(1, 4, 1).isValue("v".astLoad("bar" to 1)).resets()
+        
+        // Calls
+        tester.parse("f()").isChain(1, 1, 1).isValue("f".astLoad().astCall()).resets()
+        tester.parse("f(1)").isChain(1, 2, 1).isValue("f".astLoad().astCall(1)).resets()
+        tester.parse("f(1,)").isChain(1, 3, 1).isValue("f".astLoad().astCall(1)).resets()
+        tester.parse("f(1,2)").isChain(1, 4, 1).isValue("f".astLoad().astCall(1, 2)).resets()
+        tester.parse("f(bar = 1)").isChain(1, 4, 1).isValue("f".astLoad().astCall("bar" to 1)).resets()
         
         // Structural
         tester.parse("(1)").isChain(0, 2, 1).isValue(1.ast).resets()

@@ -1,6 +1,5 @@
 package com.github.derg.transpiler.phases.converter
 
-import com.github.derg.transpiler.source.*
 import com.github.derg.transpiler.source.ast.*
 import com.github.derg.transpiler.source.hir.*
 import java.util.*
@@ -137,8 +136,8 @@ internal fun AstVariable.toHir() = HirVariable(
  */
 internal fun AstValue.toHir(): HirValue = when (this)
 {
-    is AstCall         -> HirCall(HirLoad(name, emptyList()), valArgs.map { it.name to it.expression.toHir() })
-    is AstRead         -> HirLoad(name, emptyList())
+    is AstCall         -> HirCall(instance.toHir(), parameters.map { it.name to it.expression.toHir() })
+    is AstLoad         -> HirLoad(name, parameters.map { it.name to it.expression.toHir() })
     is AstBool         -> HirBool(value)
     is AstInteger      -> HirInteger(value, literal)
     is AstDecimal      -> HirDecimal(value, literal)
@@ -171,11 +170,16 @@ internal fun AstValue.toHir(): HirValue = when (this)
  */
 internal fun AstInstruction.toHir(): HirInstruction = when (this)
 {
-    is AstAssign      -> HirAssign(HirLoad(name, emptyList()), expression.toHir())
-    is AstBranch      -> HirBranch(predicate.toHir(), success.map { it.toHir() }, failure.map { it.toHir() })
-    is AstEvaluate    -> HirEvaluate(expression.toHir())
-    is AstReturn      -> HirReturn
-    is AstReturnError -> HirReturnError(expression.toHir())
-    is AstReturnValue -> HirReturnValue(expression.toHir())
-    is AstVariable    -> HirAssign(HirLoad(name, emptyList()), value.toHir())
+    is AstAssign         -> HirAssign(HirLoad(name, emptyList()), expression.toHir())
+    is AstAssignDivide   -> HirAssignDivide(HirLoad(name, emptyList()), expression.toHir())
+    is AstAssignSubtract -> HirAssignSubtract(HirLoad(name, emptyList()), expression.toHir())
+    is AstAssignModulo   -> HirAssignModulo(HirLoad(name, emptyList()), expression.toHir())
+    is AstAssignMultiply -> HirAssignMultiply(HirLoad(name, emptyList()), expression.toHir())
+    is AstAssignAdd      -> HirAssignAdd(HirLoad(name, emptyList()), expression.toHir())
+    is AstBranch         -> HirBranch(predicate.toHir(), success.map { it.toHir() }, failure.map { it.toHir() })
+    is AstEvaluate       -> HirEvaluate(expression.toHir())
+    is AstReturn         -> HirReturn
+    is AstReturnError    -> HirReturnError(expression.toHir())
+    is AstReturnValue    -> HirReturnValue(expression.toHir())
+    is AstVariable       -> HirAssign(HirLoad(name, emptyList()), value.toHir())
 }
