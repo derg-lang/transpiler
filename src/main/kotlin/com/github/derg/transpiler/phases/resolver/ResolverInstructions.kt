@@ -23,12 +23,17 @@ internal class ResolverInstruction(private val types: TypeTable, private val sco
      */
     fun resolve(node: HirInstruction): Result<ThirInstruction, ResolveError> = when (node)
     {
-        is HirAssign      -> handle(node)
-        is HirBranch      -> handle(node)
-        is HirEvaluate    -> handle(node)
-        is HirReturn      -> ThirReturn.toSuccess()
-        is HirReturnError -> values.resolve(node.expression).mapValue { ThirReturnError(it) }
-        is HirReturnValue -> values.resolve(node.expression).mapValue { ThirReturnValue(it) }
+        is HirAssign         -> handle(node)
+        is HirAssignDivide   -> TODO()
+        is HirAssignSubtract -> TODO()
+        is HirAssignModulo   -> TODO()
+        is HirAssignMultiply -> TODO()
+        is HirAssignAdd      -> TODO()
+        is HirBranch         -> handle(node)
+        is HirEvaluate       -> handle(node)
+        is HirReturn         -> ThirReturn.toSuccess()
+        is HirReturnError    -> values.resolve(node.expression).mapValue { ThirReturnError(it) }
+        is HirReturnValue    -> values.resolve(node.expression).mapValue { ThirReturnValue(it) }
     }
     
     private fun handle(node: HirAssign): Result<ThirInstruction, ResolveError>

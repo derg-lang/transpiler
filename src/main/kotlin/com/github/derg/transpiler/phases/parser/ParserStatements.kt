@@ -9,11 +9,11 @@ import com.github.derg.transpiler.source.ast.*
 private fun merge(name: String, operator: Symbol, rhs: AstValue): AstInstruction = when (operator)
 {
     Symbol.ASSIGN          -> AstAssign(name, rhs)
-    Symbol.ASSIGN_PLUS     -> AstAssign(name, AstAdd(AstRead(name), rhs))
-    Symbol.ASSIGN_MINUS    -> AstAssign(name, AstSubtract(AstRead(name), rhs))
-    Symbol.ASSIGN_MULTIPLY -> AstAssign(name, AstMultiply(AstRead(name), rhs))
-    Symbol.ASSIGN_MODULO   -> AstAssign(name, AstModulo(AstRead(name), rhs))
-    Symbol.ASSIGN_DIVIDE   -> AstAssign(name, AstDivide(AstRead(name), rhs))
+    Symbol.ASSIGN_PLUS     -> AstAssignAdd(name, rhs)
+    Symbol.ASSIGN_MINUS    -> AstAssignSubtract(name, rhs)
+    Symbol.ASSIGN_MULTIPLY -> AstAssignMultiply(name, rhs)
+    Symbol.ASSIGN_MODULO   -> AstAssignModulo(name, rhs)
+    Symbol.ASSIGN_DIVIDE   -> AstAssignDivide(name, rhs)
     else                   -> throw IllegalStateException("Illegal operator $operator when parsing assignment")
 }
 

@@ -15,6 +15,11 @@ sealed interface AstInstruction
  * Assigns the given [expression] to [name], returning the new value of [name].
  */
 data class AstAssign(val name: String, val expression: AstValue) : AstInstruction
+data class AstAssignAdd(val name: String, val expression: AstValue) : AstInstruction
+data class AstAssignDivide(val name: String, val expression: AstValue) : AstInstruction
+data class AstAssignModulo(val name: String, val expression: AstValue) : AstInstruction
+data class AstAssignMultiply(val name: String, val expression: AstValue) : AstInstruction
+data class AstAssignSubtract(val name: String, val expression: AstValue) : AstInstruction
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Control flow

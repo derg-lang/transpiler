@@ -59,11 +59,11 @@ val Any.astArg: AstArgument
 ///////////////////////
 
 infix fun String.astAssign(that: Any) = AstAssign(this, that.ast)
-infix fun String.astAssignAdd(that: Any) = AstAssign(this, AstAdd(AstRead(this), that.ast))
-infix fun String.astAssignSub(that: Any) = AstAssign(this, AstSubtract(AstRead(this), that.ast))
-infix fun String.astAssignMul(that: Any) = AstAssign(this, AstMultiply(AstRead(this), that.ast))
-infix fun String.astAssignMod(that: Any) = AstAssign(this, AstModulo(AstRead(this), that.ast))
-infix fun String.astAssignDiv(that: Any) = AstAssign(this, AstDivide(AstRead(this), that.ast))
+infix fun String.astAssignAdd(that: Any) = AstAssignAdd(this, that.ast)
+infix fun String.astAssignSub(that: Any) = AstAssignSubtract(this, that.ast)
+infix fun String.astAssignMul(that: Any) = AstAssignMultiply(this, that.ast)
+infix fun String.astAssignMod(that: Any) = AstAssignModulo(this, that.ast)
+infix fun String.astAssignDiv(that: Any) = AstAssignDivide(this, that.ast)
 
 val Any.astReturnError get() = AstReturnError(ast)
 val Any.astReturnValue get() = AstReturnValue(ast)
