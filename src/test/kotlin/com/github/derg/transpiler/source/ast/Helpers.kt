@@ -23,6 +23,16 @@ val Any.ast: AstValue
 // Type helpers //
 //////////////////
 
+fun astTemplateStruct(
+    name: String = UUID.randomUUID().toString(),
+) = AstTemplate.Type(name = name)
+
+fun astTemplateValue(
+    name: String = UUID.randomUUID().toString(),
+    type: AstType,
+    default: AstValue? = null,
+) = AstTemplate.Value(name = name, type = type, default = default)
+
 fun astTypeData(
     name: String = UUID.randomUUID().toString(),
     mutability: Mutability = Mutability.IMMUTABLE,
@@ -88,24 +98,9 @@ val AstValue.astEval get() = AstEvaluate(this)
 
 fun astInvokeOf(expression: Any) = AstEvaluate(expression.ast)
 
-////////////////////
-// Symbol helpers //
-////////////////////
-
-/**
- * Generates variable definition from the provided input parameters.
- */
-fun astConstOf(
-    name: String = UUID.randomUUID().toString(),
-    type: String = INT32_TYPE_NAME,
-    value: Any = 0,
-    vis: Visibility = Visibility.PRIVATE,
-) = AstConstant(
-    name = name,
-    type = AstType.Structure(type, Mutability.IMMUTABLE, emptyList()),
-    value = value.ast,
-    visibility = vis,
-)
+//////////////////////
+// Unsorted helpers //
+//////////////////////
 
 /**
  * Generates segment definition from the provided input parameters.
@@ -119,57 +114,33 @@ fun astSegmentOf(
 )
 
 /**
- * Generates type definition from the provided input parameters.
+ * Generates a branch statement from the provided input parameters.
  */
-fun astStructOf(
-    name: String = UUID.randomUUID().toString(),
-    vis: Visibility = Visibility.PRIVATE,
-    props: List<AstProperty> = emptyList(),
-) = AstStruct(
-    name = name,
-    visibility = vis,
-    properties = props,
-)
+fun astIfOf(predicate: Any, success: List<AstInstruction>, failure: List<AstInstruction> = emptyList()) =
+    AstBranch(predicate.ast, success, failure)
 
 /**
- * Generates type property definition from the provided input parameters.
+ * Generates a branch expression from the provided input parameters.
  */
-fun astPropOf(
-    name: String = UUID.randomUUID().toString(),
-    type: String,
-    value: Any? = null,
-    vis: Visibility = Visibility.PRIVATE,
-    mut: Mutability = Mutability.IMMUTABLE,
-    ass: Assignability = Assignability.FINAL,
-) = AstProperty(
-    name = name,
-    type = AstType.Structure(type, mut, emptyList()),
-    value = value?.ast,
-    visibility = vis,
-    assignability = ass,
-)
+fun astWhenOf(expression: Any, vararg branches: Pair<Any, Any>, default: Any? = null) =
+    AstWhen(expression.ast, branches.map { it.first.ast to it.second.ast }, default?.ast)
 
-/**
- * Generates variable definition from the provided input parameters.
- */
-fun astVarOf(
+////////////////////
+// Symbol helpers //
+////////////////////
+
+fun astConstOf(
     name: String = UUID.randomUUID().toString(),
+    type: String = INT32_TYPE_NAME,
     value: Any = 0,
-    type: String? = null,
     vis: Visibility = Visibility.PRIVATE,
-    mut: Mutability = Mutability.IMMUTABLE,
-    ass: Assignability = Assignability.FINAL,
-) = AstVariable(
+) = AstConstant(
     name = name,
-    type = type?.let { AstType.Structure(it, mut, emptyList()) },
+    type = AstType.Structure(type, Mutability.IMMUTABLE, emptyList()),
     value = value.ast,
     visibility = vis,
-    assignability = ass,
 )
 
-/**
- * Generates function definition from the provided input parameters.
- */
 fun astFunOf(
     name: String = UUID.randomUUID().toString(),
     valType: String? = null,
@@ -186,9 +157,6 @@ fun astFunOf(
     statements = statements,
 )
 
-/**
- * Generates function parameter definition from the provided input parameters.
- */
 fun astParOf(
     name: String,
     type: String,
@@ -202,14 +170,44 @@ fun astParOf(
     passability = pas,
 )
 
-/**
- * Generates a branch statement from the provided input parameters.
- */
-fun astIfOf(predicate: Any, success: List<AstInstruction>, failure: List<AstInstruction> = emptyList()) =
-    AstBranch(predicate.ast, success, failure)
+fun astPropOf(
+    name: String = UUID.randomUUID().toString(),
+    type: String,
+    value: Any? = null,
+    vis: Visibility = Visibility.PRIVATE,
+    mut: Mutability = Mutability.IMMUTABLE,
+    ass: Assignability = Assignability.FINAL,
+) = AstProperty(
+    name = name,
+    type = AstType.Structure(type, mut, emptyList()),
+    value = value?.ast,
+    visibility = vis,
+    assignability = ass,
+)
 
-/**
- * Generates a branch expression from the provided input parameters.
- */
-fun astWhenOf(expression: Any, vararg branches: Pair<Any, Any>, default: Any? = null) =
-    AstWhen(expression.ast, branches.map { it.first.ast to it.second.ast }, default?.ast)
+fun astStructOf(
+    name: String = UUID.randomUUID().toString(),
+    vis: Visibility = Visibility.PRIVATE,
+    props: List<AstProperty> = emptyList(),
+    templates: List<AstTemplate> = emptyList(),
+) = AstStruct(
+    name = name,
+    visibility = vis,
+    fields = props,
+    templates = templates,
+)
+
+fun astVarOf(
+    name: String = UUID.randomUUID().toString(),
+    value: Any = 0,
+    type: String? = null,
+    vis: Visibility = Visibility.PRIVATE,
+    mut: Mutability = Mutability.IMMUTABLE,
+    ass: Assignability = Assignability.FINAL,
+) = AstVariable(
+    name = name,
+    type = type?.let { AstType.Structure(it, mut, emptyList()) },
+    value = value.ast,
+    visibility = vis,
+    assignability = ass,
+)

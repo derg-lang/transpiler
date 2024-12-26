@@ -49,14 +49,15 @@ data class AstFunction(
 /**
  * All data structures are represented as types, which determines the shape of all data within a program. Types are not
  * values within the program, but represents the shapes of values. This shape is given a [name], and may hold any number
- * of additional [properties].
+ * of additional [fields].
  *
  * @param visibility The visibility of the type, to whom it is possible to access.
  */
 data class AstStruct(
     override val name: String,
     val visibility: Visibility,
-    val properties: List<AstProperty>,
+    val fields: List<AstProperty>,
+    val templates: List<AstTemplate>,
 ) : AstSymbol
 
 /**

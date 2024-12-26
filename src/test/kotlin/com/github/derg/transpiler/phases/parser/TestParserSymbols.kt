@@ -162,6 +162,18 @@ class TestParserStruct
     }
     
     @Test
+    fun `Given template, when parsing, then correctly parsed`()
+    {
+        val generics = listOf(
+            astTemplateStruct(name = "Bar"),
+            astTemplateValue(name = "baz", type = astTypeData("Baz"), default = 42.ast),
+        )
+        val expected = astStructOf(name = "Foo", templates = generics)
+        
+        tester.parse("struct Foo[Bar, baz: Baz = 42] {}").isChain(12, 1).isValue(expected)
+    }
+    
+    @Test
     fun `Given invalid token, when parsing, then correct error`()
     {
         tester.parse("").isBad { ParseError.UnexpectedToken(EndOfFile) }

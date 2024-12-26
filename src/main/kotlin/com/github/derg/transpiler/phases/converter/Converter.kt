@@ -118,7 +118,7 @@ internal fun AstStruct.toHir() = HirStruct(
     id = UUID.randomUUID(),
     name = name,
     visibility = visibility,
-    fields = properties.map { it.toHir() },
+    fields = fields.map { it.toHir() },
     methods = emptyList(),
     generics = emptyList(),
 )

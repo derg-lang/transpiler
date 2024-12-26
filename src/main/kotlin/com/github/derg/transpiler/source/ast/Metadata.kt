@@ -70,8 +70,9 @@ sealed interface AstTemplate
      *
      * @param name The name of the parameter.
      * @param type The type the compile-time value must be adhering to.
+     * @param default The default value which should be used unless something else is specified.
      */
-    data class Value(val name: String, val type: AstType) : AstTemplate
+    data class Value(val name: String, val type: AstType, val default: AstValue?) : AstTemplate
 }
 
 /**
