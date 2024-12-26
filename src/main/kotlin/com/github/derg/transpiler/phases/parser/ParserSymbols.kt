@@ -21,7 +21,7 @@ fun constantParserOf(): Parser<AstConstant> =
 private fun constantPatternOf() = ParserSequence(
     "visibility" to visibilityParserOf(),
     "assignability" to ParserSymbol(Symbol.VALUE),
-    "name" to ParserName(),
+    "name" to ParserIdentifier(),
     "type" to typeParserOf(Symbol.COLON),
     "op" to ParserSymbol(Symbol.ASSIGN),
     "value" to expressionParserOf(),
@@ -43,7 +43,7 @@ fun functionParserOf(): Parser<AstFunction> =
 private fun functionPatternOf() = ParserSequence(
     "visibility" to visibilityParserOf(),
     "fun" to ParserSymbol(Symbol.FUN),
-    "name" to ParserName(),
+    "name" to ParserIdentifier(),
     "open_parenthesis" to ParserSymbol(Symbol.OPEN_PARENTHESIS),
     "parameters" to ParserRepeating(parameterParserOf(), ParserSymbol(Symbol.COMMA)),
     "close_parenthesis" to ParserSymbol(Symbol.CLOSE_PARENTHESIS),
@@ -72,7 +72,7 @@ fun structParserOf(): Parser<AstStruct> =
 private fun structPatternOf() = ParserSequence(
     "visibility" to visibilityParserOf(),
     "type" to ParserSymbol(Symbol.TYPE),
-    "name" to ParserName(),
+    "name" to ParserIdentifier(),
     "open_brace" to ParserSymbol(Symbol.OPEN_BRACE),
     "properties" to ParserRepeating(propertyParserOf()),
     "close_brace" to ParserSymbol(Symbol.CLOSE_BRACE),
@@ -93,7 +93,7 @@ fun variableParserOf(): Parser<AstVariable> =
 private fun variablePatternOf() = ParserSequence(
     "visibility" to visibilityParserOf(),
     "assignability" to assignabilityParserOf(),
-    "name" to ParserName(),
+    "name" to ParserIdentifier(),
     "type" to ParserOptional(typeParserOf(Symbol.COLON)),
     "op" to ParserSymbol(Symbol.ASSIGN),
     "value" to expressionParserOf(),

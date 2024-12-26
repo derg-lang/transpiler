@@ -128,7 +128,7 @@ private fun loadParserOf(): Parser<AstValue> =
     ParserPattern(::loadPatternOf, ::loadOutcomeOf)
 
 private fun loadPatternOf() = ParserSequence(
-    "name" to ParserName(),
+    "name" to ParserIdentifier(),
     "params" to ParserOptional(ParserSequence(
         "open" to ParserSymbol(Symbol.OPEN_BRACKET),
         "params" to ParserRepeating(argumentParserOf(), ParserSymbol(Symbol.COMMA)),
@@ -146,7 +146,7 @@ internal fun callParserOf(): Parser<AstValue> =
     ParserPattern(::callPatternOf, ::callOutcomeOf)
 
 private fun callPatternOf() = ParserSequence(
-    "name" to ParserName(),
+    "name" to ParserIdentifier(),
     "open" to ParserSymbol(Symbol.OPEN_PARENTHESIS),
     "params" to ParserRepeating(argumentParserOf(), ParserSymbol(Symbol.COMMA)),
     "close" to ParserSymbol(Symbol.CLOSE_PARENTHESIS),

@@ -59,7 +59,7 @@ fun nameParserOf(symbol: Symbol): Parser<String> =
     ParserPattern({ namePatternOf(symbol) }, { it["name"] })
 
 private fun namePatternOf(symbol: Symbol) =
-    ParserSequence("symbol" to ParserSymbol(symbol), "name" to ParserName())
+    ParserSequence("symbol" to ParserSymbol(symbol), "name" to ParserIdentifier())
 
 /**
  * Parses a symbol followed by an expression.
@@ -114,7 +114,7 @@ fun argumentParserOf(): Parser<AstArgument> =
 
 private fun argumentPatternOf() = ParserAnyOf(
     ParserSequence("expr" to expressionParserOf()),
-    ParserSequence("name" to ParserName(), "sym" to ParserSymbol(Symbol.ASSIGN), "expr" to expressionParserOf()),
+    ParserSequence("name" to ParserIdentifier(), "sym" to ParserSymbol(Symbol.ASSIGN), "expr" to expressionParserOf()),
 )
 
 private fun argumentOutcomeOf(values: Parsers): AstArgument =
@@ -128,7 +128,7 @@ fun parameterParserOf(): Parser<AstParameter> =
 
 private fun parameterPatternOf() = ParserSequence(
     "passability" to passabilityParserOf(),
-    "name" to ParserName(),
+    "name" to ParserIdentifier(),
     "type" to typeParserOf(Symbol.COLON),
     "value" to ParserOptional(valueParserOf(Symbol.ASSIGN)),
 )
@@ -149,7 +149,7 @@ fun propertyParserOf(): Parser<AstProperty> =
 private fun propertyPatternOf() = ParserSequence(
     "visibility" to visibilityParserOf(),
     "assignability" to assignabilityParserOf(),
-    "name" to ParserName(),
+    "name" to ParserIdentifier(),
     "type" to typeParserOf(Symbol.COLON),
     "value" to ParserOptional(valueParserOf(Symbol.ASSIGN)),
 )
@@ -216,7 +216,7 @@ fun typeParserOf(symbol: Symbol): Parser<AstType> =
 private fun typePatternOf(symbol: Symbol) = ParserSequence(
     "colon" to ParserSymbol(symbol),
     "mutability" to mutabilityParserOf(),
-    "name" to ParserName(),
+    "name" to ParserIdentifier(),
 )
 
 private fun typeOutcomeOf(values: Parsers) = AstType(
