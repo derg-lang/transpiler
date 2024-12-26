@@ -8,7 +8,7 @@ import com.github.derg.transpiler.utils.*
 /**
  * Parses a single identifier from the token stream.
  */
-class ParserName : Parser<String>
+class ParserIdentifier : Parser<String>
 {
     private var name: String? = null
     
@@ -151,7 +151,5 @@ object ParserEnd : Parser<Unit>
     
     override fun skipable(): Boolean = false
     override fun produce() = Unit
-    override fun reset()
-    {
-    }
+    override fun reset() = Unit
 }

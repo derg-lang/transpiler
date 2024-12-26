@@ -7,7 +7,7 @@ import org.junit.jupiter.api.*
 
 class TestParserIdentifier
 {
-    private val tester = Tester { ParserName() }
+    private val tester = Tester { ParserIdentifier() }
     
     @Test
     fun `Given valid token, when parsing, then correct product`()

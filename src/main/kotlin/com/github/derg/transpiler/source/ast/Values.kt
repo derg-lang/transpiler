@@ -1,6 +1,7 @@
 package com.github.derg.transpiler.source.ast
 
 import com.github.derg.transpiler.source.*
+import com.github.derg.transpiler.utils.*
 import java.math.*
 
 /**
@@ -22,14 +23,14 @@ sealed interface AstValue
  * The symbol which is loaded can be specialized with any number of compile-time [parameters]. These parameters
  * parameterize the loaded object, permitting the user to generalize the object over various types and values.
  */
-data class AstLoad(val name: String, val parameters: List<AstArgument>) : AstValue
+data class AstLoad(val name: String, val parameters: List<NamedMaybe<AstValue>>) : AstValue
 
 /**
  * All procedure calls may either refer to a function with the specified [instance] being invoked, or the function
  * operator being invoked on an instance with the given [instance]. Every procedure call is permitted an arbitrary
  * number of runtime [parameters].
  */
-data class AstCall(val instance: AstValue, val parameters: List<AstArgument>) : AstValue
+data class AstCall(val instance: AstValue, val parameters: List<NamedMaybe<AstValue>>) : AstValue
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Constants

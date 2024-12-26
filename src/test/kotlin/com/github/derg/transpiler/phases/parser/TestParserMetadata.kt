@@ -55,3 +55,32 @@ class TestParserSegment
         tester.parse("use").isWip(1).isBad { ParseError.UnexpectedToken(EndOfFile) }
     }
 }
+
+class TestParserType
+{
+    private val tester = Tester { typeParserOf() }
+    
+    @Test
+    fun `Given name, when parsing, then correctly parsed`()
+    {
+        tester.parse("Type").isOk(1).isDone().isValue(astTypeData(name = "Type"))
+    }
+    
+    @Test
+    fun `Given mutability, when parsing, then correctly parsed`()
+    {
+        tester.parse("    Foo").isOk(1).isDone().isValue(astTypeData(name = "Foo", mutability = Mutability.IMMUTABLE))
+        tester.parse("mut Foo").isWip(1).isOk(1).isDone().isValue(astTypeData(name = "Foo", mutability = Mutability.MUTABLE))
+    }
+    
+    @Test
+    fun `Given generics, when parsing, then correctly parsed`()
+    {
+        val parameters = listOf(
+            astParamStatic(name = null, value = "Bar".astLoad()),
+            astParamStatic(name = "baz", value = 42.ast),
+        )
+        
+        tester.parse("Foo[Bar, baz = 42]").isOk(1).isWip(6).isOk(1).isDone().isValue(astTypeData(name = "Foo", parameters = parameters))
+    }
+}

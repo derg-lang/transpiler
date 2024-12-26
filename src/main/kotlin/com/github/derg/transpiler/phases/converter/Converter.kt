@@ -20,11 +20,15 @@ fun convert(program: AstProgram) = HirProgram(
 /**
  *
  */
-private fun AstType.toHir() = HirType.Structure(
-    name = name,
-    mutability = mutability,
-    parameters = emptyList(),
-)
+private fun AstType.toHir(): HirType = when (this)
+{
+    is AstType.Function  -> HirType.Function(value = value?.toHir(), error = error?.toHir(), parameters = parameters.map { it.toHir() })
+    is AstType.Structure -> HirType.Structure(name = name, mutability = mutability, parameters = parameters.map { it.toHir() })
+    is AstType.Union     -> HirType.Union(types = types.map { it.toHir() }.toSet())
+}
+
+private fun AstParameterStatic.toHir() = HirParameterStatic(name = name, value = value.toHir())
+private fun AstParameterDynamic.toHir() = HirParameterDynamic(name = name, type = type.toHir(), passability = passability)
 
 /**
  *
@@ -136,8 +140,8 @@ internal fun AstVariable.toHir() = HirVariable(
  */
 internal fun AstValue.toHir(): HirValue = when (this)
 {
-    is AstCall         -> HirCall(instance.toHir(), parameters.map { it.name to it.expression.toHir() })
-    is AstLoad         -> HirLoad(name, parameters.map { it.name to it.expression.toHir() })
+    is AstCall         -> HirCall(instance.toHir(), parameters.map { (name, value) -> name to value.toHir() })
+    is AstLoad         -> HirLoad(name, parameters.map { (name, value) -> name to value.toHir() })
     is AstBool         -> HirBool(value)
     is AstInteger      -> HirInteger(value, literal)
     is AstDecimal      -> HirDecimal(value, literal)

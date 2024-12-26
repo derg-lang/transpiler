@@ -15,7 +15,7 @@ sealed interface ThirType
      * callable object, enabling it to be invoked as a function. Note that this only encodes the type information, not
      * anything about the value itself.
      *
-     * Example syntax: `fun(Bool, Int32): Error -> Int32`
+     * Example syntax: `fun(name: borrow mut Type): Error -> Int32`
      *
      * @param value The type which is permitted to be returned as a value.
      * @param error The type which is permitted to be returned as an error.
@@ -59,7 +59,7 @@ sealed interface ThirType
  * structures, functions, unions, and any other customizable object. These types are used to determine which
  * compile-time parameters may be passed to other objects.
  */
-sealed interface ThirParameterStatic
+sealed interface ThirTemplate
 {
     /**
      * A specific type which must be provided by the user. The type can be used to generalize which types a function or
@@ -69,7 +69,7 @@ sealed interface ThirParameterStatic
      *
      * @param name The name of the parameter.
      */
-    data class Type(val name: String) : ThirParameterStatic
+    data class Type(val name: String) : ThirTemplate
     
     /**
      * A specific value which must be provided by the user. The value can be used to generalize some property of a
@@ -80,8 +80,20 @@ sealed interface ThirParameterStatic
      * @param name The name of the parameter.
      * @param type The type the compile-time value must be adhering to.
      */
-    data class Value(val name: String, val type: ThirType) : ThirParameterStatic
+    data class Value(val name: String, val type: ThirType) : ThirTemplate
 }
+
+/**
+ * The static parameter type describes something which can be accepted to customize other objects such as data
+ * structures, functions, unions, and any other customizable object. These types are used to determine which
+ * compile-time parameters may be passed to other objects.
+ *
+ * Example syntax: `name = Int32`
+ *
+ * @param name The name of the parameter.
+ * @param value The value associated with the compile-time parameter.
+ */
+data class ThirParameterStatic(val name: String?, val value: ThirValue)
 
 /**
  * The dynamic parameter type describes something which can be accepted when invoking a function. These types are used

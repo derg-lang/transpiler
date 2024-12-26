@@ -1,6 +1,7 @@
 package com.github.derg.transpiler.source.ast
 
 import com.github.derg.transpiler.source.*
+import com.github.derg.transpiler.utils.*
 import java.util.*
 
 /////////////////////
@@ -17,6 +18,21 @@ val Any.ast: AstValue
         is String   -> AstText(this, STR_LIT_NAME)
         else        -> throw IllegalArgumentException("Value $this does not represent a valid ast value")
     }
+
+//////////////////
+// Type helpers //
+//////////////////
+
+fun astTypeData(
+    name: String = UUID.randomUUID().toString(),
+    mutability: Mutability = Mutability.IMMUTABLE,
+    parameters: List<AstParameterStatic> = emptyList(),
+) = AstType.Structure(name = name, mutability = mutability, parameters = parameters)
+
+fun astParamStatic(
+    name: String? = null,
+    value: AstValue = 0.ast,
+) = AstParameterStatic(name = name, value = value)
 
 ////////////////////////
 // Expression helpers //
@@ -51,8 +67,8 @@ infix fun Any.astCatchHandle(that: Any) = AstCatch(this.ast, that.ast, Capture.H
 fun String.astLoad(vararg parameters: Any) = AstLoad(this, parameters.map { it.astArg })
 fun AstValue.astCall(vararg parameters: Any) = AstCall(this, parameters.map { it.astArg })
 
-val Any.astArg: AstArgument
-    get() = if (this is Pair<*, *>) AstArgument(first as String, (second as Any).ast) else AstArgument(null, ast)
+val Any.astArg: NamedMaybe<AstValue>
+    get() = if (this is Pair<*, *>) (first as String) to (second as Any).ast else null to ast
 
 ///////////////////////
 // Statement helpers //
@@ -85,7 +101,7 @@ fun astConstOf(
     vis: Visibility = Visibility.PRIVATE,
 ) = AstConstant(
     name = name,
-    type = AstType(type, Mutability.IMMUTABLE),
+    type = AstType.Structure(type, Mutability.IMMUTABLE, emptyList()),
     value = value.ast,
     visibility = vis,
 )
@@ -126,7 +142,7 @@ fun astPropOf(
     ass: Assignability = Assignability.FINAL,
 ) = AstProperty(
     name = name,
-    type = AstType(type, mut),
+    type = AstType.Structure(type, mut, emptyList()),
     value = value?.ast,
     visibility = vis,
     assignability = ass,
@@ -144,7 +160,7 @@ fun astVarOf(
     ass: Assignability = Assignability.FINAL,
 ) = AstVariable(
     name = name,
-    type = type?.let { AstType(it, mut) },
+    type = type?.let { AstType.Structure(it, mut, emptyList()) },
     value = value.ast,
     visibility = vis,
     assignability = ass,
@@ -162,8 +178,8 @@ fun astFunOf(
     statements: List<AstInstruction> = emptyList(),
 ) = AstFunction(
     name = name,
-    valueType = valType?.let { AstType(it, Mutability.IMMUTABLE) },
-    errorType = errType?.let { AstType(it, Mutability.IMMUTABLE) },
+    valueType = valType?.let { AstType.Structure(it, Mutability.IMMUTABLE, emptyList()) },
+    errorType = errType?.let { AstType.Structure(it, Mutability.IMMUTABLE, emptyList()) },
     parameters = params,
     visibility = vis,
     statements = statements,
@@ -180,7 +196,7 @@ fun astParOf(
     mut: Mutability = Mutability.IMMUTABLE,
 ) = AstParameter(
     name = name,
-    type = AstType(type, mut),
+    type = AstType.Structure(type, mut, emptyList()),
     value = value?.ast,
     passability = pas,
 )

@@ -36,7 +36,7 @@ private fun assignmentParserOf(): Parser<AstInstruction> =
     ParserPattern(::assignmentPatternOf, ::assignmentOutcomeOf)
 
 private fun assignmentPatternOf() = ParserSequence(
-    "name" to ParserName(),
+    "name" to ParserIdentifier(),
     "op" to ParserSymbol(
         Symbol.ASSIGN,
         Symbol.ASSIGN_PLUS,
