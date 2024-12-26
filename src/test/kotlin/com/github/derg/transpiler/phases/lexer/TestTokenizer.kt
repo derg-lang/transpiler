@@ -220,12 +220,12 @@ class TestTokenizer
             fun `Given type definition, when tokenizing, then correct sequence`()
             {
                 val expected = listOf(
-                    localizedOf(0, 4, Keyword(TYPE)),
-                    localizedOf(5, 1, Identifier("t")),
-                    localizedOf(6, 1, Keyword(SEMICOLON)),
+                    localizedOf(0, 6, Keyword(STRUCT)),
+                    localizedOf(7, 1, Identifier("t")),
+                    localizedOf(8, 1, Keyword(SEMICOLON)),
                 )
                 
-                assertEquals(expected, tokenize("type t;"))
+                assertEquals(expected, tokenize("struct t;"))
             }
         }
     }

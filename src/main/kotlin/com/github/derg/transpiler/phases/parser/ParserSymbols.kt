@@ -72,7 +72,7 @@ fun structParserOf(): Parser<AstStruct> =
 
 private fun structPatternOf() = ParserSequence(
     "visibility" to visibilityParserOf(),
-    "type" to ParserSymbol(Symbol.TYPE),
+    "struct" to ParserSymbol(Symbol.STRUCT),
     "name" to ParserIdentifier(),
     "open_brace" to ParserSymbol(Symbol.OPEN_BRACE),
     "properties" to ParserRepeating(propertyParserOf()),

@@ -120,53 +120,53 @@ class TestParserStruct
     fun `Given valid segment, when parsing, then correctly parsed`()
     {
         // Basic structure must be correctly parsed
-        tester.parse("type Foo {}").isChain(3, 1).isValue(astStructOf("Foo"))
+        tester.parse("struct Foo {}").isChain(3, 1).isValue(astStructOf("Foo"))
         
         // Properties must be correctly parsed
-        tester.parse("type Foo { val a: Bar }").isChain(7, 1)
+        tester.parse("struct Foo { val a: Bar }").isChain(7, 1)
             .isValue(astStructOf("Foo", props = listOf(astPropOf("a", type = "Bar", ass = Assignability.FINAL))))
-        tester.parse("type Foo { var a: Bar }").isChain(7, 1)
+        tester.parse("struct Foo { var a: Bar }").isChain(7, 1)
             .isValue(astStructOf("Foo", props = listOf(astPropOf("a", type = "Bar", ass = Assignability.ASSIGNABLE))))
-        tester.parse("type Foo { ref a: Bar }").isChain(7, 1)
+        tester.parse("struct Foo { ref a: Bar }").isChain(7, 1)
             .isValue(astStructOf("Foo", props = listOf(astPropOf("a", type = "Bar", ass = Assignability.REFERENCE))))
         
-        tester.parse("type Foo { val a: mut Bar }").isChain(8, 1)
+        tester.parse("struct Foo { val a: mut Bar }").isChain(8, 1)
             .isValue(astStructOf("Foo", props = listOf(astPropOf("a", type = "Bar", mut = Mutability.MUTABLE))))
-        tester.parse("type Foo { val a:     Bar }").isChain(7, 1)
+        tester.parse("struct Foo { val a:     Bar }").isChain(7, 1)
             .isValue(astStructOf("Foo", props = listOf(astPropOf("a", type = "Bar", mut = Mutability.IMMUTABLE))))
         
-        tester.parse("type Foo { exported  val a: Bar }").isChain(8, 1)
+        tester.parse("struct Foo { exported  val a: Bar }").isChain(8, 1)
             .isValue(astStructOf("Foo", props = listOf(astPropOf("a", type = "Bar", vis = Visibility.EXPORTED))))
-        tester.parse("type Foo { public    val a: Bar }").isChain(8, 1)
+        tester.parse("struct Foo { public    val a: Bar }").isChain(8, 1)
             .isValue(astStructOf("Foo", props = listOf(astPropOf("a", type = "Bar", vis = Visibility.PUBLIC))))
-        tester.parse("type Foo { protected val a: Bar }").isChain(8, 1)
+        tester.parse("struct Foo { protected val a: Bar }").isChain(8, 1)
             .isValue(astStructOf("Foo", props = listOf(astPropOf("a", type = "Bar", vis = Visibility.PROTECTED))))
-        tester.parse("type Foo { private   val a: Bar }").isChain(8, 1)
+        tester.parse("struct Foo { private   val a: Bar }").isChain(8, 1)
             .isValue(astStructOf("Foo", props = listOf(astPropOf("a", type = "Bar", vis = Visibility.PRIVATE))))
-        tester.parse("type Foo {           val a: Bar }").isChain(7, 1)
+        tester.parse("struct Foo {           val a: Bar }").isChain(7, 1)
             .isValue(astStructOf("Foo", props = listOf(astPropOf("a", type = "Bar", vis = Visibility.PRIVATE))))
         
-        tester.parse("type Foo { val a: Bar val b: Baz }").isChain(11, 1)
+        tester.parse("struct Foo { val a: Bar val b: Baz }").isChain(11, 1)
             .isValue(astStructOf("Foo", props = listOf(astPropOf("a", type = "Bar"), astPropOf("b", type = "Baz"))))
         
         // Default values for properties must be supported
-        tester.parse("type Foo { val a: Bar = 1 }").isChain(9, 1)
+        tester.parse("struct Foo { val a: Bar = 1 }").isChain(9, 1)
             .isValue(astStructOf("Foo", props = listOf(astPropOf("a", type = "Bar", value = 1))))
         
         // Visibility must be correctly parsed
-        tester.parse("exported  type Foo {}").isChain(4, 1).isValue(astStructOf("Foo", vis = Visibility.EXPORTED))
-        tester.parse("public    type Foo {}").isChain(4, 1).isValue(astStructOf("Foo", vis = Visibility.PUBLIC))
-        tester.parse("protected type Foo {}").isChain(4, 1).isValue(astStructOf("Foo", vis = Visibility.PROTECTED))
-        tester.parse("private   type Foo {}").isChain(4, 1).isValue(astStructOf("Foo", vis = Visibility.PRIVATE))
-        tester.parse("          type Foo {}").isChain(3, 1).isValue(astStructOf("Foo", vis = Visibility.PRIVATE))
+        tester.parse("exported  struct Foo {}").isChain(4, 1).isValue(astStructOf("Foo", vis = Visibility.EXPORTED))
+        tester.parse("public    struct Foo {}").isChain(4, 1).isValue(astStructOf("Foo", vis = Visibility.PUBLIC))
+        tester.parse("protected struct Foo {}").isChain(4, 1).isValue(astStructOf("Foo", vis = Visibility.PROTECTED))
+        tester.parse("private   struct Foo {}").isChain(4, 1).isValue(astStructOf("Foo", vis = Visibility.PRIVATE))
+        tester.parse("          struct Foo {}").isChain(3, 1).isValue(astStructOf("Foo", vis = Visibility.PRIVATE))
     }
     
     @Test
     fun `Given invalid token, when parsing, then correct error`()
     {
         tester.parse("").isBad { ParseError.UnexpectedToken(EndOfFile) }
-        tester.parse("type").isWip(1).isBad { ParseError.UnexpectedToken(EndOfFile) }
-        tester.parse("type Foo {").isWip(3).isBad { ParseError.UnexpectedToken(EndOfFile) }
+        tester.parse("struct").isWip(1).isBad { ParseError.UnexpectedToken(EndOfFile) }
+        tester.parse("struct Foo {").isWip(3).isBad { ParseError.UnexpectedToken(EndOfFile) }
     }
 }
 
