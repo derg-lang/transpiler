@@ -4,53 +4,6 @@ import com.github.derg.transpiler.source.*
 import com.github.derg.transpiler.source.ast.*
 
 /**
- * Determines the visibility from the provided [symbol].
- */
-fun visibilityOf(symbol: Symbol?): Visibility = when (symbol)
-{
-    Symbol.EXPORTED  -> Visibility.EXPORTED
-    Symbol.PRIVATE   -> Visibility.PRIVATE
-    Symbol.PROTECTED -> Visibility.PROTECTED
-    Symbol.PUBLIC    -> Visibility.PUBLIC
-    null             -> Visibility.PRIVATE
-    else             -> throw IllegalStateException("Illegal symbol $symbol when parsing visibility")
-}
-
-/**
- * Determines the mutability from the provided [symbol].
- */
-fun mutabilityOf(symbol: Symbol?): Mutability = when (symbol)
-{
-    Symbol.MUTABLE -> Mutability.MUTABLE
-    null           -> Mutability.IMMUTABLE
-    else           -> throw IllegalStateException("Illegal symbol $symbol when parsing mutability")
-}
-
-/**
- * Determines the passability from the provided [symbol].
- */
-fun passabilityOf(symbol: Symbol?): Passability = when (symbol)
-{
-    Symbol.IN     -> Passability.IN
-    Symbol.OUT    -> Passability.OUT
-    Symbol.MOVE   -> Passability.MOVE
-    Symbol.BORROW -> Passability.BORROW
-    null          -> Passability.IN
-    else          -> throw IllegalStateException("Illegal symbol $symbol when parsing passability")
-}
-
-/**
- * Determines the assignability from the provided [symbol].
- */
-fun assignabilityOf(symbol: Symbol): Assignability = when (symbol)
-{
-    Symbol.VALUE     -> Assignability.FINAL
-    Symbol.VARYING   -> Assignability.ASSIGNABLE
-    Symbol.REFERENCE -> Assignability.REFERENCE
-    else             -> throw IllegalStateException("Illegal symbol $symbol when parsing assignability")
-}
-
-/**
  * Parses a symbol followed by an identifier. This operation is commonly used to specify optional type information or
  * to provide an optional name after a specific [symbol]. The output of the parser will always be the name of the found
  * identifier.
@@ -79,6 +32,16 @@ fun visibilityParserOf(): Parser<Visibility> =
 private fun visibilityPatternOf() =
     ParserOptional(ParserSymbol(Symbol.EXPORTED, Symbol.PRIVATE, Symbol.PROTECTED, Symbol.PUBLIC))
 
+private fun visibilityOf(symbol: Symbol?): Visibility = when (symbol)
+{
+    Symbol.EXPORTED  -> Visibility.EXPORTED
+    Symbol.PRIVATE   -> Visibility.PRIVATE
+    Symbol.PROTECTED -> Visibility.PROTECTED
+    Symbol.PUBLIC    -> Visibility.PUBLIC
+    null             -> Visibility.PRIVATE
+    else             -> throw IllegalStateException("Illegal symbol $symbol when parsing visibility")
+}
+
 /**
  * Parses a mutability from the token stream.
  */
@@ -87,6 +50,13 @@ fun mutabilityParserOf(): Parser<Mutability> =
 
 private fun mutabilityPatternOf() =
     ParserOptional(ParserSymbol(Symbol.MUTABLE))
+
+private fun mutabilityOf(symbol: Symbol?): Mutability = when (symbol)
+{
+    Symbol.MUTABLE -> Mutability.MUTABLE
+    null           -> Mutability.IMMUTABLE
+    else           -> throw IllegalStateException("Illegal symbol $symbol when parsing mutability")
+}
 
 /**
  * Parses a passability from the token stream.
@@ -97,6 +67,16 @@ fun passabilityParserOf(): Parser<Passability> =
 private fun passabilityPatternOf() =
     ParserOptional(ParserSymbol(Symbol.IN, Symbol.BORROW, Symbol.OUT, Symbol.MOVE))
 
+private fun passabilityOf(symbol: Symbol?): Passability = when (symbol)
+{
+    Symbol.IN     -> Passability.IN
+    Symbol.OUT    -> Passability.OUT
+    Symbol.MOVE   -> Passability.MOVE
+    Symbol.BORROW -> Passability.BORROW
+    null          -> Passability.IN
+    else          -> throw IllegalStateException("Illegal symbol $symbol when parsing passability")
+}
+
 /**
  * Parses an assignability from the token stream.
  */
@@ -105,6 +85,14 @@ fun assignabilityParserOf(): Parser<Assignability> =
 
 private fun assignabilityPatternOf() =
     ParserSymbol(Symbol.VALUE, Symbol.VARYING, Symbol.REFERENCE)
+
+private fun assignabilityOf(symbol: Symbol): Assignability = when (symbol)
+{
+    Symbol.VALUE     -> Assignability.FINAL
+    Symbol.VARYING   -> Assignability.ASSIGNABLE
+    Symbol.REFERENCE -> Assignability.REFERENCE
+    else             -> throw IllegalStateException("Illegal symbol $symbol when parsing assignability")
+}
 
 /**
  * Parses a function call argument from the token stream.
