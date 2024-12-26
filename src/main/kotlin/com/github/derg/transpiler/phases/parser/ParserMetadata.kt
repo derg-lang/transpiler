@@ -117,7 +117,8 @@ fun parameterParserOf(): Parser<AstParameter> =
 private fun parameterPatternOf() = ParserSequence(
     "passability" to passabilityParserOf(),
     "name" to ParserIdentifier(),
-    "type" to typeParserOf(Symbol.COLON),
+    "colon" to ParserSymbol(Symbol.COLON),
+    "type" to typeParserOf(),
     "value" to ParserOptional(valueParserOf(Symbol.ASSIGN)),
 )
 
@@ -138,7 +139,8 @@ private fun propertyPatternOf() = ParserSequence(
     "visibility" to visibilityParserOf(),
     "assignability" to assignabilityParserOf(),
     "name" to ParserIdentifier(),
-    "type" to typeParserOf(Symbol.COLON),
+    "colon" to ParserSymbol(Symbol.COLON),
+    "type" to typeParserOf(),
     "value" to ParserOptional(valueParserOf(Symbol.ASSIGN)),
 )
 
@@ -198,11 +200,10 @@ private fun segmentOutcomeOf(values: Parsers) = AstSegment(
 /**
  * Parses a type from the token stream.
  */
-fun typeParserOf(symbol: Symbol): Parser<AstType> =
-    ParserPattern({ typePatternOf(symbol) }, ::typeOutcomeOf)
+fun typeParserOf(): Parser<AstType> =
+    ParserPattern(::typePatternOf, ::typeOutcomeOf)
 
-private fun typePatternOf(symbol: Symbol) = ParserSequence(
-    "colon" to ParserSymbol(symbol),
+private fun typePatternOf() = ParserSequence(
     "mutability" to mutabilityParserOf(),
     "name" to ParserIdentifier(),
 )
@@ -211,3 +212,15 @@ private fun typeOutcomeOf(values: Parsers) = AstType(
     name = values["name"],
     mutability = values["mutability"],
 )
+
+/**
+ * Parses an optional type from the token stream. The type must be located after the given [symbol].
+ */
+fun optionalTypeParserOf(symbol: Symbol): Parser<AstType?> =
+    ParserPattern({ optionalTypePatternOf(symbol) }, ::optionalTypeOutcomeOf)
+
+private fun optionalTypePatternOf(symbol: Symbol) =
+    ParserOptional(ParserSequence("symbol" to ParserSymbol(symbol), "type" to typeParserOf()))
+
+private fun optionalTypeOutcomeOf(values: Parsers?): AstType? =
+    values?.get("type")
