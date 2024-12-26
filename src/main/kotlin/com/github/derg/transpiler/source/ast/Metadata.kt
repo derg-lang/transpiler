@@ -3,18 +3,6 @@ package com.github.derg.transpiler.source.ast
 import com.github.derg.transpiler.source.*
 
 /**
- * In order to invoke any sort of function, sometimes arguments must be provided. Arguments consist of a single
- * [expression] which specifies which value they have, and optionally the [name] of the parameters the [expression] is
- * associated with. Arguments must be specified in the correct order, although the ordering may be ignored if the
- * arguments are named instead.
- */
-// TODO: Remove me.
-data class AstArgument(
-    val name: String?,
-    val expression: AstValue,
-)
-
-/**
  * All expressions are granted exactly one type of all possibilities. Certain symbols within the codebase, such as
  * variables, parameters, fields, functions, and so on have their own types. The type information can be used to verify
  * that the program is well-typed, avoiding errors such as passing the wrong type as a function parameter.

@@ -140,8 +140,8 @@ internal fun AstVariable.toHir() = HirVariable(
  */
 internal fun AstValue.toHir(): HirValue = when (this)
 {
-    is AstCall         -> HirCall(instance.toHir(), parameters.map { it.name to it.expression.toHir() })
-    is AstLoad         -> HirLoad(name, parameters.map { it.name to it.expression.toHir() })
+    is AstCall         -> HirCall(instance.toHir(), parameters.map { (name, value) -> name to value.toHir() })
+    is AstLoad         -> HirLoad(name, parameters.map { (name, value) -> name to value.toHir() })
     is AstBool         -> HirBool(value)
     is AstInteger      -> HirInteger(value, literal)
     is AstDecimal      -> HirDecimal(value, literal)

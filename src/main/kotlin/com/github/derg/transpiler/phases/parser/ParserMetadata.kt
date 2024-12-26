@@ -2,6 +2,7 @@ package com.github.derg.transpiler.phases.parser
 
 import com.github.derg.transpiler.source.*
 import com.github.derg.transpiler.source.ast.*
+import com.github.derg.transpiler.utils.*
 
 /**
  * Parses a symbol followed by an identifier. This operation is commonly used to specify optional type information or
@@ -97,7 +98,7 @@ private fun assignabilityOf(symbol: Symbol): Assignability = when (symbol)
 /**
  * Parses a function call argument from the token stream.
  */
-fun argumentParserOf(): Parser<AstArgument> =
+fun argumentParserOf(): Parser<NamedMaybe<AstValue>> =
     ParserPattern(::argumentPatternOf, ::argumentOutcomeOf)
 
 private fun argumentPatternOf() = ParserAnyOf(
@@ -105,8 +106,8 @@ private fun argumentPatternOf() = ParserAnyOf(
     ParserSequence("name" to ParserIdentifier(), "sym" to ParserSymbol(Symbol.ASSIGN), "expr" to expressionParserOf()),
 )
 
-private fun argumentOutcomeOf(values: Parsers): AstArgument =
-    AstArgument(values["name"], values["expr"])
+private fun argumentOutcomeOf(values: Parsers): NamedMaybe<AstValue> =
+    values.get<String?>("name") to values["expr"]
 
 /**
  * Parses a function parameter definition from the token stream.
