@@ -87,7 +87,7 @@ private fun registerStruct(name: String) = HirStruct(
     visibility = Visibility.EXPORTED,
     fields = emptyList(),
     methods = emptyList(),
-    generics = emptyList(),
+    templates = emptyList(),
 ).also(Builtin.GLOBAL_SCOPE::register)
 
 /**
@@ -127,7 +127,6 @@ private fun registerInfixOp(operator: Symbol, parameter: HirType, value: HirType
     ),
     visibility = Visibility.EXPORTED,
     instructions = emptyList(),
-    generics = emptyList(),
     variables = emptyList(),
     parameters = listOf(paramOf("lhs", parameter), paramOf("rhs", parameter)),
 ).also(Builtin.GLOBAL_SCOPE::register)
@@ -148,7 +147,6 @@ private fun registerPrefixOp(operator: Symbol, parameter: HirType, value: HirTyp
     ),
     visibility = Visibility.EXPORTED,
     instructions = emptyList(),
-    generics = emptyList(),
     variables = emptyList(),
     parameters = listOf(paramOf("rhs", parameter)),
 ).also(Builtin.GLOBAL_SCOPE::register)

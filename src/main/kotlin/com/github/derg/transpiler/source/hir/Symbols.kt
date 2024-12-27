@@ -26,7 +26,6 @@ data class HirConcept(
     
     // Symbols present within the object
     val fields: List<HirField>,
-    val generics: List<HirGeneric>,
     val functions: List<HirFunction>,
 ) : HirSymbol
 
@@ -41,7 +40,6 @@ data class HirFunction(
     val instructions: List<HirInstruction>,
     
     // Symbols present within the object
-    val generics: List<HirGeneric>,
     val variables: List<HirVariable>,
     val parameters: List<HirParameter>,
 ) : HirSymbol
@@ -74,7 +72,6 @@ data class HirMethod(
     val instructions: List<HirInstruction>,
     
     // Symbols present within the object
-    val generics: List<HirGeneric>,
     val variables: List<HirVariable>,
     val parameters: List<HirParameter>,
 ) : HirSymbol
@@ -90,7 +87,7 @@ data class HirStruct(
     // Symbols present within the object
     val fields: List<HirField>,
     val methods: List<HirMethod>,
-    val generics: List<HirGeneric>,
+    val templates: List<HirTemplate>,
 ) : HirSymbol
 
 val HirStruct.constructor get() = HirFunction(
@@ -103,7 +100,6 @@ val HirStruct.constructor get() = HirFunction(
     ),
     visibility = visibility,
     instructions = listOf(HirReturnValue(HirRecord(id, fields.associate { it.id to HirLoad(it.name, emptyList()) }))),
-    generics = emptyList(),
     variables = emptyList(),
     parameters = fields.map { HirParameter(UUID.randomUUID(), it.name, it.type, it.value, Passability.MOVE) },
 )
@@ -149,18 +145,6 @@ data class HirField(
     val value: HirValue?,
     val visibility: Visibility,
     val assignability: Assignability,
-) : HirSymbol
-
-/**
- * Type parameters represents a generic type used in a construct. These parameters are used to generalize across a whole
- * range of types, rather than just a single type. Generics may be constrained by any number of [concepts].
- */
-data class HirGeneric(
-    override val id: UUID,
-    override val name: String,
-    val type: HirType?,
-    val value: HirValue?,
-    val concepts: List<String>,
 ) : HirSymbol
 
 /**

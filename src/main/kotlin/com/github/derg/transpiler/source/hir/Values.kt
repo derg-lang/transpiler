@@ -16,12 +16,12 @@ sealed interface HirValue
 
 /**
  * Loads the value bound to the identifier with the given [name]. The identifier may refer to either a value bound to
- * any memory address, or any named symbol. When referring to a function, [generics] may be used to disambiguate which
+ * any memory address, or any named symbol. When referring to a function, [parameters] may be used to disambiguate which
  * instance is intended.
  */
 data class HirLoad(
     val name: String,
-    val generics: List<NamedMaybe<HirValue>>,
+    val parameters: List<NamedMaybe<HirValue>>,
 ) : HirValue
 
 /**

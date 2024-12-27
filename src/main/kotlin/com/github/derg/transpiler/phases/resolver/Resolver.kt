@@ -186,7 +186,6 @@ private class PreparerSymbol(symbols: SymbolTable, private val table: TypeTable,
         is HirConstant  -> TODO()
         is HirField     -> handle(symbol)
         is HirFunction  -> handle(symbol)
-        is HirGeneric   -> TODO()
         is HirLiteral   -> handle(symbol)
         is HirMethod    -> TODO()
         is HirParameter -> handle(symbol)
@@ -231,7 +230,6 @@ private class PreparerSymbol(symbols: SymbolTable, private val table: TypeTable,
     {
         prepare(symbol.fields)
 //        prepare(symbol.methods)
-//        prepare(symbol.generics)
         return Unit.toSuccess()
     }
     

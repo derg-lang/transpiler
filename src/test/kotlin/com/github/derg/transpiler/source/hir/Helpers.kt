@@ -23,6 +23,16 @@ val Any.hir: HirValue
 // Type helpers //
 //////////////////
 
+fun hirTemplateStruct(
+    name: String = UUID.randomUUID().toString(),
+) = HirTemplate.Type(name = name)
+
+fun hirTemplateValue(
+    name: String = UUID.randomUUID().toString(),
+    type: HirType,
+    default: HirValue? = null,
+) = HirTemplate.Value(name = name, type = type, default = default)
+
 fun hirTypeData(
     struct: HirStruct = Builtin.INT32,
     mutability: Mutability = Mutability.IMMUTABLE,
@@ -131,7 +141,6 @@ fun hirFunOf(
     type = HirType.Function(value, error, params.map { HirParameterDynamic(it.name, it.type, it.value, Passability.IN) }),
     visibility = Visibility.PRIVATE,
     instructions = instructions,
-    generics = emptyList(),
     variables = emptyList(),
     parameters = params,
 )
@@ -167,14 +176,14 @@ fun hirStructOf(
     name: String = UUID.randomUUID().toString(),
     fields: List<HirField> = emptyList(),
     methods: List<HirMethod> = emptyList(),
-    generics: List<HirGeneric> = emptyList(),
+    templates: List<HirTemplate> = emptyList(),
 ) = HirStruct(
     id = UUID.randomUUID(),
     name = name,
     visibility = Visibility.PRIVATE,
     fields = fields,
     methods = methods,
-    generics = generics,
+    templates = templates,
 )
 
 fun hirVarOf(
