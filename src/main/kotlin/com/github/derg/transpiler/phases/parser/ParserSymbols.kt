@@ -25,7 +25,7 @@ private fun constantPatternOf() = ParserSequence(
     "colon" to ParserSymbol(Symbol.COLON),
     "type" to typeParserOf(),
     "op" to ParserSymbol(Symbol.ASSIGN),
-    "value" to expressionParserOf(),
+    "value" to ParserExpression(),
 )
 
 private fun constantOutcomeOf(values: Parsers) = AstConstant(
@@ -97,7 +97,7 @@ private fun variablePatternOf() = ParserSequence(
     "name" to ParserIdentifier(),
     "type" to optionalTypeParserOf(Symbol.COLON),
     "op" to ParserSymbol(Symbol.ASSIGN),
-    "value" to expressionParserOf(),
+    "value" to ParserExpression(),
 )
 
 private fun variableOutcomeOf(values: Parsers) = AstVariable(

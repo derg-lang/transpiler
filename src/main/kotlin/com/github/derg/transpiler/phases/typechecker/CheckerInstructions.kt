@@ -1,5 +1,6 @@
 package com.github.derg.transpiler.phases.typechecker
 
+import com.github.derg.transpiler.phases.resolver.*
 import com.github.derg.transpiler.source.hir.*
 import com.github.derg.transpiler.source.thir.*
 import com.github.derg.transpiler.utils.*
@@ -8,7 +9,7 @@ import com.github.derg.transpiler.utils.*
  * The instruction checker ensures that all instructions within some contexts are valid. The instructions are expected
  * to output the [value] and [error] types, if they are specified. For some instructions, the types are not applicable.
  */
-internal class CheckerInstruction(private val value: ThirType?, private val error: ThirType?)
+internal class CheckerInstruction(private val symbols: SymbolTable, private val value: ThirType?, private val error: ThirType?)
 {
     /**
      * Performs type-checking on the instruction [node]. If there are any type errors detected, an error is returned.
@@ -35,6 +36,7 @@ internal class CheckerInstruction(private val value: ThirType?, private val erro
         // TODO: Support generics.
         // TODO: Support mutable types.
         // TODO: Support union types.
+        val value = symbols.variables[node.symbolId]?.type
         if (value != node.expression.value)
             return TypeError.AssignWrongType(node.expression).toFailure()
     

@@ -1,5 +1,6 @@
 package com.github.derg.transpiler.phases.typechecker
 
+import com.github.derg.transpiler.phases.resolver.*
 import com.github.derg.transpiler.phases.typechecker.TypeError.*
 import com.github.derg.transpiler.source.hir.*
 import com.github.derg.transpiler.source.thir.*
@@ -8,14 +9,15 @@ import org.junit.jupiter.api.*
 
 class TestCheckerInstructions
 {
+    private val symbols = SymbolTable()
     private val bool = thirTypeData(Builtin.BOOL.id)
     private val int32 = thirTypeData(Builtin.INT32.id)
     
     @Nested
     inner class Assign
     {
-        private val checker = CheckerInstruction(value = bool, error = null)
-        private val variable = thirVarOf(type = bool)
+        private val checker = CheckerInstruction(symbols = symbols, value = null, error = null)
+        private val variable = thirVarOf(type = bool).also { symbols.variables[it.id] = it }
         
         @Test
         fun `Given valid type, when checking, then correct outcome`()
@@ -71,7 +73,7 @@ class TestCheckerInstructions
     @Nested
     inner class Branch
     {
-        private val checker = CheckerInstruction(value = null, error = null)
+        private val checker = CheckerInstruction(symbols = symbols, value = null, error = null)
         
         @Test
         fun `Given valid type, when checking, then correct outcome`()
@@ -127,7 +129,7 @@ class TestCheckerInstructions
     @Nested
     inner class Evaluate
     {
-        private val checker = CheckerInstruction(value = null, error = null)
+        private val checker = CheckerInstruction(symbols = symbols, value = null, error = null)
         
         @Test
         fun `Given no type, when checking, then correct outcome`()
@@ -175,9 +177,9 @@ class TestCheckerInstructions
     @Nested
     inner class Return
     {
-        private val checkerEmpty = CheckerInstruction(value = null, error = null)
-        private val checkerValue = CheckerInstruction(value = bool, error = null)
-        private val checkerError = CheckerInstruction(value = null, error = bool)
+        private val checkerEmpty = CheckerInstruction(symbols = symbols, value = null, error = null)
+        private val checkerValue = CheckerInstruction(symbols = symbols, value = bool, error = null)
+        private val checkerError = CheckerInstruction(symbols = symbols, value = null, error = bool)
         
         @Test
         fun `Given no type, when checking, then correct outcome`()
@@ -201,8 +203,8 @@ class TestCheckerInstructions
     @Nested
     inner class ReturnValue
     {
-        private val checkerEmpty = CheckerInstruction(value = null, error = null)
-        private val checkerValue = CheckerInstruction(value = bool, error = null)
+        private val checkerEmpty = CheckerInstruction(symbols = symbols, value = null, error = null)
+        private val checkerValue = CheckerInstruction(symbols = symbols, value = bool, error = null)
         
         @Test
         fun `Given valid type, when checking, then correct outcome`()
@@ -266,8 +268,8 @@ class TestCheckerInstructions
     @Nested
     inner class ReturnError
     {
-        private val checkerEmpty = CheckerInstruction(value = null, error = null)
-        private val checkerError = CheckerInstruction(value = null, error = bool)
+        private val checkerEmpty = CheckerInstruction(symbols = symbols, value = null, error = null)
+        private val checkerError = CheckerInstruction(symbols = symbols, value = null, error = bool)
         
         @Test
         fun `Given valid type, when checking, then correct outcome`()

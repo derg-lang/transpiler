@@ -22,7 +22,7 @@ fun valueParserOf(symbol: Symbol): Parser<AstValue> =
     ParserPattern({ valuePatternOf(symbol) }, { it["expression"] })
 
 private fun valuePatternOf(symbol: Symbol) =
-    ParserSequence("symbol" to ParserSymbol(symbol), "expression" to expressionParserOf())
+    ParserSequence("symbol" to ParserSymbol(symbol), "expression" to ParserExpression())
 
 /**
  * Parses a visibility from the token stream.
@@ -102,8 +102,8 @@ fun argumentParserOf(): Parser<NamedMaybe<AstValue>> =
     ParserPattern(::argumentPatternOf, ::argumentOutcomeOf)
 
 private fun argumentPatternOf() = ParserAnyOf(
-    ParserSequence("expr" to expressionParserOf()),
-    ParserSequence("name" to ParserIdentifier(), "sym" to ParserSymbol(Symbol.ASSIGN), "expr" to expressionParserOf()),
+    ParserSequence("expr" to ParserExpression()),
+    ParserSequence("name" to ParserIdentifier(), "sym" to ParserSymbol(Symbol.ASSIGN), "expr" to ParserExpression()),
 )
 
 private fun argumentOutcomeOf(values: Parsers): NamedMaybe<AstValue> =

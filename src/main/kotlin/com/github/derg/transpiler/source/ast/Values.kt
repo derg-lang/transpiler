@@ -32,6 +32,13 @@ data class AstLoad(val name: String, val parameters: List<NamedMaybe<AstValue>>)
  */
 data class AstCall(val instance: AstValue, val parameters: List<NamedMaybe<AstValue>>) : AstValue
 
+/**
+ * Various data structures can have any number of attributes associated with them. These attributes can be accessed on
+ * any valid [instance] expression. Both attributes and methods may be accessed through the [field] expression; only
+ * methods can also be parameterized with compile-time parameters, however.
+ */
+data class AstMember(val instance: AstValue, val field: AstLoad) : AstValue
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Constants
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

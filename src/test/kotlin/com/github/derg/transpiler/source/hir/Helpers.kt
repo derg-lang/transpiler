@@ -82,15 +82,16 @@ infix fun Any.hirCatchRaise(that: Any) = HirCatch(this.hir, that.hir, Capture.RA
 infix fun Any.hirCatchReturn(that: Any) = HirCatch(this.hir, that.hir, Capture.RETURN)
 infix fun Any.hirCatchHandle(that: Any) = HirCatch(this.hir, that.hir, Capture.HANDLE)
 
-val HirSymbol.hirLoad: HirValue get() = HirLoad(name, emptyList())
-fun HirFunction.hirCall(vararg parameters: Any) = HirCall(hirLoad, parameters.map { null hirArg it })
+fun HirSymbol.hirLoad(vararg parameters: Any) = HirLoad(name, parameters.map { null hirArg it })
+fun HirValue.hirCall(vararg parameters: Any) = HirCall(this, parameters.map { null hirArg it })
+fun HirValue.hirMember(field: HirLoad) = HirMember(this, field)
 infix fun String?.hirArg(that: Any) = NamedMaybe(this, that.hir)
 
 ///////////////////////
 // Statement helpers //
 ///////////////////////
 
-infix fun HirVariable.hirAssign(that: Any) = HirAssign(hirLoad, that.hir)
+infix fun HirVariable.hirAssign(that: Any) = HirAssign(this.hirLoad(), that.hir)
 
 val Any.hirEval get() = HirEvaluate(hir)
 val Any.hirReturnError get() = HirReturnError(hir)

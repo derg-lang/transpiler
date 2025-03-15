@@ -141,7 +141,8 @@ internal fun AstVariable.toHir() = HirVariable(
 internal fun AstValue.toHir(): HirValue = when (this)
 {
     is AstCall         -> HirCall(instance.toHir(), parameters.map { (name, value) -> name to value.toHir() })
-    is AstLoad         -> HirLoad(name, parameters.map { (name, value) -> name to value.toHir() })
+    is AstLoad         -> toHirLoad()
+    is AstMember       -> HirMember(instance.toHir(), field.toHirLoad())
     is AstBool         -> HirBool(value)
     is AstInteger      -> HirInteger(value, literal)
     is AstDecimal      -> HirDecimal(value, literal)
@@ -167,6 +168,8 @@ internal fun AstValue.toHir(): HirValue = when (this)
     is AstXor          -> HirXor(lhs.toHir(), rhs.toHir())
     is AstWhen         -> TODO()
 }
+
+private fun AstLoad.toHirLoad() = HirLoad(name, parameters.map { (name, value) -> name to value.toHir() })
 
 /**
  * Converts [this] statement from AST to HIR. The data structure will be encoded with appropriate default information

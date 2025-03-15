@@ -12,7 +12,7 @@ fun check(table: SymbolTable): Result<Unit, TypeError>
 {
     for (function in table.functions.values)
     {
-        val checker = CheckerInstruction(function.type.value, function.type.error)
+        val checker = CheckerInstruction(table, function.type.value, function.type.error)
         
         function.instructions.mapUntilError { checker.check(it) }.valueOr { return it.toFailure() }
     }

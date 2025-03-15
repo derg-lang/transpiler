@@ -3,6 +3,7 @@ package com.github.derg.transpiler.source.hir
 import com.github.derg.transpiler.source.*
 import com.github.derg.transpiler.utils.*
 import java.math.*
+import java.util.*
 
 /**
  *
@@ -24,19 +25,6 @@ data class HirLoad(
 ) : HirValue
 
 /**
- * Retrieves the value of the given [field] from the given [instance]. The object may be an object which exists on the
- * stack or heap. When referring to a method, [generics] may be used to disambiguate which method is intended.
- */
-// TODO: Should objects within modules be accessible via this value? Possibly yes, to unify instance and module access.
-//       In doing so, the syntax could be simplified, using only `foo.bar`, instead of also including `foo::bar`. The
-//       downside being name resolution becomes much more finicky as modules cannot have the same names as other items.
-data class HirRead(
-    val instance: HirValue,
-    val field: String,
-    val generics: List<NamedMaybe<HirType>>,
-) : HirValue
-
-/**
  * Invokes the callable [instance] using the provided [parameters]. The arguments are specified in the same order in
  * which they appear in source code. In some cases, the callable cannot be resolved without additional information about
  * the callable template specialization.
@@ -44,6 +32,24 @@ data class HirRead(
 data class HirCall(
     val instance: HirValue,
     val parameters: List<NamedMaybe<HirValue>>,
+) : HirValue
+
+/**
+ * Retrieves the value of the given [field] from the given [instance]. The object may be an object which exists on the
+ * stack or heap.
+ */
+data class HirMember(
+    val instance: HirValue,
+    val field: HirLoad,
+) : HirValue
+
+/**
+ * An instance of a structure fo the given [symbolId], containing a selection of values in its [fields]. All values are
+ * associated with a specific field.
+ */
+data class HirRecord(
+    val symbolId: UUID,
+    val fields: Map<UUID, HirValue>,
 ) : HirValue
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

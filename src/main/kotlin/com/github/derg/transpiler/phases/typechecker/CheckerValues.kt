@@ -17,6 +17,8 @@ internal class CheckerValue
         is ThirCall       -> handle(node)
         is ThirCatch      -> handle(node)
         is ThirLoad       -> handle(node)
+        is ThirMember     -> handle(node)
+        is ThirRecord     -> Unit.toSuccess()
         is ThirConstBool  -> Unit.toSuccess()
         is ThirConstInt32 -> Unit.toSuccess()
         is ThirConstInt64 -> Unit.toSuccess()
@@ -65,6 +67,12 @@ internal class CheckerValue
     }
     
     private fun handle(node: ThirLoad): Result<Unit, TypeError>
+    {
+        // TODO: Implement me.
+        return Unit.toSuccess()
+    }
+    
+    private fun handle(node: ThirMember): Result<Unit, TypeError>
     {
         // TODO: Implement me.
         return Unit.toSuccess()

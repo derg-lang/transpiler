@@ -45,7 +45,7 @@ private fun assignmentPatternOf() = ParserSequence(
         Symbol.ASSIGN_DIVIDE,
         Symbol.ASSIGN_MODULO,
     ),
-    "rhs" to expressionParserOf(),
+    "rhs" to ParserExpression(),
 )
 
 private fun assignmentOutcomeOf(values: Parsers): AstInstruction =
@@ -59,7 +59,7 @@ private fun branchParserOf(): Parser<AstInstruction> =
 
 private fun branchPatternOf() = ParserSequence(
     "if" to ParserSymbol(Symbol.IF),
-    "predicate" to expressionParserOf(),
+    "predicate" to ParserExpression(),
     "success" to scopeParserOf(),
     "failure" to ParserOptional(ParserPattern(::branchElsePatternOf, ::branchElseOutcomeOf), emptyList()),
 )
@@ -81,7 +81,7 @@ private fun raiseParserOf(): Parser<AstInstruction> =
 
 private fun raisePatternOf() = ParserSequence(
     "symbol" to ParserSymbol(Symbol.RAISE),
-    "expression" to expressionParserOf(),
+    "expression" to ParserExpression(),
 )
 
 private fun raiseOutcomeOf(values: Parsers): AstReturnError =
@@ -95,7 +95,7 @@ private fun returnParserOf(): Parser<AstInstruction> =
 
 private fun returnPatternOf() = ParserSequence(
     "symbol" to ParserSymbol(Symbol.RETURN),
-    "expression" to expressionParserOf(),
+    "expression" to ParserExpression(),
 )
 
 private fun returnOutcomeOf(values: Parsers): AstInstruction
@@ -111,4 +111,4 @@ private fun returnOutcomeOf(values: Parsers): AstInstruction
  */
 // TODO: Not a correct implementation of the parser - must also function with error handling
 private fun invokeParserOf(): Parser<AstInstruction> =
-    ParserPattern(::callParserOf) { AstEvaluate(it) }
+    ParserPattern(::ParserExpression) { AstEvaluate(it) }
