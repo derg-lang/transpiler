@@ -40,7 +40,7 @@ internal class ResolverSymbol(private val symbols: SymbolTable, private val type
             id = node.id,
             name = node.name,
             type = types.fields[node.id]!!,
-            value = node.value?.let { ResolverValue(types, scope).resolve(it) }?.valueOr { return it.toFailure() },
+            value = node.value?.let { ResolverValue(symbols, types, scope).resolve(it) }?.valueOr { return it.toFailure() },
             visibility = node.visibility,
             assignability = node.assignability,
         )
@@ -52,20 +52,20 @@ internal class ResolverSymbol(private val symbols: SymbolTable, private val type
     private fun handle(node: HirFunction): Result<ThirSymbol, ResolveError>
     {
         val inner = Scope(scope)
-    
+
 //        node.generics.forEach { inner.register(it) }
-        node.variables.forEach { inner.register(it) }
         node.parameters.forEach { inner.register(it) }
+        node.variables.forEach { inner.register(it) }
 //        node.generics.mapUntilError { handle(it) }.onFailure { return it.toFailure() }
-        node.variables.mapUntilError { handle(it) }.onFailure { return it.toFailure() }
         node.parameters.mapUntilError { handle(it) }.onFailure { return it.toFailure() }
+        node.variables.mapUntilError { handle(it) }.onFailure { return it.toFailure() }
         
         val symbol = ThirFunction(
             id = node.id,
             name = node.name,
             type = types.functions[node.id]!!,
             visibility = node.visibility,
-            instructions = node.instructions.mapUntilError { ResolverInstruction(types, inner).resolve(it) }.valueOr { return it.toFailure() },
+            instructions = node.instructions.mapUntilError { ResolverInstruction(symbols, types, inner).resolve(it) }.valueOr { return it.toFailure() },
             genericIds = node.generics.map { it.id },
             variableIds = node.variables.map { it.id },
             parameterIds = node.parameters.map { it.id },
@@ -78,7 +78,7 @@ internal class ResolverSymbol(private val symbols: SymbolTable, private val type
     private fun handle(node: HirLiteral): Result<ThirSymbol, ResolveError>
     {
         val inner = Scope(scope)
-
+        
         node.variables.forEach { inner.register(it) }
         inner.register(node.parameter)
         node.variables.mapUntilError { handle(it) }.onFailure { return it.toFailure() }
@@ -89,7 +89,7 @@ internal class ResolverSymbol(private val symbols: SymbolTable, private val type
             name = node.name,
             type = types.literals[node.id]!!,
             visibility = node.visibility,
-            instructions = node.instructions.mapUntilError { ResolverInstruction(types, inner).resolve(it) }.valueOr { return it.toFailure() },
+            instructions = node.instructions.mapUntilError { ResolverInstruction(symbols, types, inner).resolve(it) }.valueOr { return it.toFailure() },
             genericIds = emptyList(),
             variableIds = node.variables.map { it.id },
             parameterIds = listOf(node.parameter.id),
@@ -105,7 +105,7 @@ internal class ResolverSymbol(private val symbols: SymbolTable, private val type
             id = node.id,
             name = node.name,
             type = types.parameters[node.id]!!,
-            value = node.value?.let { ResolverValue(types, scope).resolve(it) }?.valueOr { return it.toFailure() },
+            value = node.value?.let { ResolverValue(symbols, types, scope).resolve(it) }?.valueOr { return it.toFailure() },
             passability = node.passability,
         )
         

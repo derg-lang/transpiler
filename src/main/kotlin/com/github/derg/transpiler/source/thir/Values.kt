@@ -40,6 +40,18 @@ data class ThirCall(
 ) : ThirValue
 
 /**
+ *
+ */
+data class ThirMember(
+    override val value: ThirType?,
+    val instance: ThirValue,
+    val fieldId: UUID,
+) : ThirValue
+{
+    override val error: Nothing? get() = null
+}
+
+/**
  * Represents the outcome of capturing an error in [lhs], and replacing the error case with the value in [rhs].
  * Depending on the [capture] mode, the resulting value is used either in the original expression in place of the
  * success value, or raised/returned from the callable object.

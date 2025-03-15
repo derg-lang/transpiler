@@ -354,7 +354,7 @@ class TestResolverSymbol
         {
             val function = hirFunOf(value = null).also { scope.register(it) }
             
-            val input = hirVarOf(value = function.hirCall())
+            val input = hirVarOf(value = function.hirLoad().hirCall())
             val expected = TypeMissing(input.name, input.value)
             
             assertFailure(expected, run(input))

@@ -34,7 +34,7 @@ private fun BigInteger.toInt64(): Result<ThirConstInt64, ResolveError>
  * All value resolution takes place before the symbol table has been constructed. This implies that the symbol table
  * cannot be used while resolving values.
  */
-internal class ResolverValue(private val types: TypeTable, private val scope: Scope)
+internal class ResolverValue(private val symbols: SymbolTable, private val types: TypeTable, private val scope: Scope)
 {
     /**
      * Converts the value indicated by the [node] to a typed version. This operation converts all raw names into the
@@ -57,6 +57,7 @@ internal class ResolverValue(private val types: TypeTable, private val scope: Sc
         is HirLe      -> handleInfix(Symbol.LESS_EQUAL, node.lhs, node.rhs)
         is HirLoad    -> handleLoad(node)
         is HirLt      -> handleInfix(Symbol.LESS, node.lhs, node.rhs)
+        is HirMember  -> handleMember(node)
         is HirMinus   -> handlePrefix(Symbol.MINUS, node.rhs)
         is HirMod     -> handleInfix(Symbol.MODULO, node.lhs, node.rhs)
         is HirMul     -> handleInfix(Symbol.MULTIPLY, node.lhs, node.rhs)
@@ -64,7 +65,6 @@ internal class ResolverValue(private val types: TypeTable, private val scope: Sc
         is HirNot     -> handlePrefix(Symbol.NOT, node.rhs)
         is HirOr      -> handleInfix(Symbol.OR, node.lhs, node.rhs)
         is HirPlus    -> handlePrefix(Symbol.PLUS, node.rhs)
-        is HirRead    -> TODO()
         is HirSub     -> handleInfix(Symbol.MINUS, node.lhs, node.rhs)
         is HirText    -> TODO()
         is HirXor     -> handleInfix(Symbol.XOR, node.lhs, node.rhs)
@@ -245,6 +245,19 @@ internal class ResolverValue(private val types: TypeTable, private val scope: Sc
             symbolId = candidate.id,
             generics = emptyList(),
         ).toSuccess()
+    }
+    
+    private fun handleMember(node: HirMember): Result<ThirValue, ResolveError>
+    {
+        val instance = resolve(node.instance).valueOr { return it.toFailure() }
+        
+        val value = instance.value
+        if (value !is ThirType.Structure)
+            return ResolveError.Placeholder.toFailure()
+        
+        val symbol = symbols.structs[value.symbolId] ?: TODO()
+        val field = symbol.fieldIds.map { symbols.fields[it] ?: TODO() }.singleOrNull { it.name == node.field.name } ?: TODO()
+        return ThirMember(value = field.type, instance = instance, fieldId = field.id).toSuccess()
     }
     
     private fun handle(node: NamedMaybe<HirValue>): Result<NamedMaybe<ThirValue>, ResolveError>

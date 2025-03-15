@@ -19,15 +19,27 @@ private const val SOURCE = """
     fun fibonacci(n: __builtin_i32) -> __builtin_i32
     {
         var result = 0
-        
+
         if n <= 0
             result = 0
         else if n == 1 || n == 2
             result = 1
         else
             result = fibonacci(n - 2) + fibonacci(n - 1)
-        
+
         return result
+    }
+    
+    type Test
+    {
+        val foo: __builtin_i32
+        val bar: __builtin_i32 = 42
+    }
+    
+    fun test(input: Test)
+    {
+        val a: __builtin_i32 = input.foo
+        val b: __builtin_i32 = input.bar
     }
 """
 
@@ -47,6 +59,7 @@ fun main(args: Array<String>)
     val end = OffsetDateTime.now()
     
     println("Functions: \n\t" + thir.functions.values.joinToString("\n\t") { it.toString() })
+    println("Structures: \n\t" + thir.structs.values.joinToString("\n\t") { it.toString() })
     println("Outcome of program is '$outcome'")
     println("Program took ${Duration.between(start, end)} seconds")
 }

@@ -123,6 +123,7 @@ class Interpreter(private val symbols: SymbolTable)
         is ThirConstInt32 -> value
         is ThirConstInt64 -> value
         is ThirLoad       -> frame[value.symbolId]
+        is ThirMember     -> TODO()
     }
 }
 

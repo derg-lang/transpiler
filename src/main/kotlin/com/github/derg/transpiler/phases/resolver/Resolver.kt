@@ -131,16 +131,16 @@ internal class ResolutionEngine
      * the scope are
      */
     fun prepare(scope: Scope): Result<Unit, ResolveError> =
-        PreparerSymbol(types, scope).prepare(scope.symbols).resolve()
+        PreparerSymbol(symbols, types, scope).prepare(scope.symbols).resolve()
     
     fun resolve(scope: Scope, node: HirSymbol): Result<ThirSymbol, ResolveError> =
         ResolverSymbol(symbols, types, scope).resolve(node)
     
     fun resolve(scope: Scope, node: HirValue): Result<ThirValue, ResolveError> =
-        ResolverValue(types, scope).resolve(node)
+        ResolverValue(symbols, types, scope).resolve(node)
     
     fun resolve(scope: Scope, node: HirInstruction): Result<ThirInstruction, ResolveError> =
-        ResolverInstruction(types, scope).resolve(node)
+        ResolverInstruction(symbols, types, scope).resolve(node)
 }
 
 /**
@@ -150,10 +150,10 @@ internal class ResolutionEngine
  * Note that type-checking is not performed at this phase. We only make sure that the type information is generates for
  * all symbols which need such information.
  */
-private class PreparerSymbol(private val table: TypeTable, scope: Scope)
+private class PreparerSymbol(symbols: SymbolTable, private val table: TypeTable, scope: Scope)
 {
-    private val types = ResolverType(scope)
-    private val values = ResolverValue(table, scope)
+    private val typeResolver = ResolverType(scope)
+    private val valueResolver = ResolverValue(symbols, table, scope)
     
     // Collection of symbols which remains to be processed, in the exact order they should be processed.
     private val queue = ArrayDeque<HirSymbol>()
@@ -196,24 +196,24 @@ private class PreparerSymbol(private val table: TypeTable, scope: Scope)
     
     private fun handle(symbol: HirField): Result<Unit, ResolveError>
     {
-        table.fields[symbol.id] = types.resolve(symbol.type).valueOr { return it.toFailure() }
+        table.fields[symbol.id] = typeResolver.resolve(symbol.type).valueOr { return it.toFailure() }
         
         return Unit.toSuccess()
     }
     
     private fun handle(symbol: HirFunction): Result<Unit, ResolveError>
     {
-        table.functions[symbol.id] = types.resolve(symbol.type).valueOr { return it.toFailure() }
+        table.functions[symbol.id] = typeResolver.resolve(symbol.type).valueOr { return it.toFailure() }
 
 //        prepare(symbol.generics)
-        prepare(symbol.variables)
         prepare(symbol.parameters)
+        prepare(symbol.variables)
         return Unit.toSuccess()
     }
     
     private fun handle(symbol: HirLiteral): Result<Unit, ResolveError>
     {
-        table.literals[symbol.id] = types.resolve(symbol.type).valueOr { return it.toFailure() }
+        table.literals[symbol.id] = typeResolver.resolve(symbol.type).valueOr { return it.toFailure() }
 
 //        prepare(symbol.variables)
         prepare(listOf(symbol.parameter))
@@ -222,7 +222,7 @@ private class PreparerSymbol(private val table: TypeTable, scope: Scope)
     
     private fun handle(symbol: HirParameter): Result<Unit, ResolveError>
     {
-        table.parameters[symbol.id] = types.resolve(symbol.type).valueOr { return it.toFailure() }
+        table.parameters[symbol.id] = typeResolver.resolve(symbol.type).valueOr { return it.toFailure() }
         
         return Unit.toSuccess()
     }
@@ -237,10 +237,10 @@ private class PreparerSymbol(private val table: TypeTable, scope: Scope)
     
     private fun handle(symbol: HirVariable): Result<Unit, ResolveError>
     {
-        val type = symbol.type?.let { types.resolve(it) }?.valueOr { return it.toFailure() }
-        val value = values.resolve(symbol.value).valueOr { return it.toFailure() }
+        val type = symbol.type?.let { typeResolver.resolve(it) }?.valueOr { return it.toFailure() }
+        val value = valueResolver.resolve(symbol.value).mapValue { it.value }.valueOr { type ?: return it.toFailure() }
         
-        table.variables[symbol.id] = type ?: value.value ?: return ResolveError.TypeMissing(symbol.name, symbol.value).toFailure()
+        table.variables[symbol.id] = type ?: value ?: return ResolveError.TypeMissing(symbol.name, symbol.value).toFailure()
         
         return Unit.toSuccess()
     }

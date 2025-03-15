@@ -12,9 +12,9 @@ import com.github.derg.transpiler.utils.*
  * All instruction resolution takes place before the symbol table has been constructed. This implies that the symbol
  * table cannot be used while resolving instructions.
  */
-internal class ResolverInstruction(private val types: TypeTable, private val scope: Scope)
+internal class ResolverInstruction(symbols: SymbolTable, private val types: TypeTable, private val scope: Scope)
 {
-    private val values = ResolverValue(types, scope)
+    private val values = ResolverValue(symbols, types, scope)
     
     /**
      * Converts the instruction indicated by the [node] to a typed version. This operation converts all raw names into

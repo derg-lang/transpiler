@@ -117,7 +117,7 @@ class TestResolverInstruction
         {
             val function = registerFun("fun")
             
-            assertSuccess(function.thirCall().thirEval, run(function.hirCall().hirEval))
+            assertSuccess(function.thirCall().thirEval, run(function.hirLoad().hirCall().hirEval))
         }
     }
     

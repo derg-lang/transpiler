@@ -152,7 +152,7 @@ class TestResolverValue
         {
             val function = registerFun("fun")
             
-            assertSuccess(function.thirCall(), run(function.hirCall()))
+            assertSuccess(function.thirCall(), run(function.hirLoad().hirCall()))
         }
         
         @Test
@@ -160,7 +160,7 @@ class TestResolverValue
         {
             val function = registerFun("fun", Builtin.INT32_TYPE)
             
-            assertSuccess(function.thirCall(1), run(function.hirCall(1)))
+            assertSuccess(function.thirCall(1), run(function.hirLoad().hirCall(1)))
         }
         
         @Test
@@ -169,7 +169,7 @@ class TestResolverValue
             val function = registerFun("fun", Builtin.INT32_TYPE)
             val expected = ArgumentMismatch(function.name, listOf(null hirArg true))
             
-            assertFailure(expected, run(function.hirCall(true)))
+            assertFailure(expected, run(function.hirLoad().hirCall(true)))
         }
         
         @Test
@@ -202,7 +202,7 @@ class TestResolverValue
             )
             val expected = AmbiguousFunction(functions[0].name, listOf(null hirArg true))
             
-            assertFailure(expected, run(functions[0].hirCall(true)))
+            assertFailure(expected, run(functions[0].hirLoad().hirCall(true)))
         }
         
         @Test
@@ -471,7 +471,7 @@ class TestResolverValue
             val symbol = registerFun("foo")
             val expected = UnknownVariable(symbol.name)
             
-            assertFailure(expected, run(symbol.hirLoad))
+            assertFailure(expected, run(symbol.hirLoad()))
         }
         
         @Test
@@ -480,7 +480,7 @@ class TestResolverValue
             val symbol = registerVar("foo")
             val expected = ThirLoad(value = Builtin.INT32.asThir(), symbolId = symbol.id, generics = emptyList())
             
-            assertSuccess(expected, run(symbol.hirLoad))
+            assertSuccess(expected, run(symbol.hirLoad()))
         }
         
         @Test
@@ -489,7 +489,31 @@ class TestResolverValue
             val symbol = registerParam("foo")
             val expected = ThirLoad(value = Builtin.INT32.asThir(), symbolId = symbol.id, generics = emptyList())
             
-            assertSuccess(expected, run(symbol.hirLoad))
+            assertSuccess(expected, run(symbol.hirLoad()))
+        }
+    }
+    
+    @Nested
+    inner class Member
+    {
+        private val field = hirFieldOf(type = Builtin.BOOL_TYPE).also(scope::register)
+        private val struct = hirStructOf(fields = listOf(field)).also(scope::register)
+        private val factory = hirFunOf(value = hirTypeData(struct)).also(scope::register)
+        
+        @Test
+        fun `Given instance of struct, when accessing member, then correct outcome`()
+        {
+            engine.prepare(scope).valueOrDie()
+            engine.resolve(scope, struct).valueOrDie()
+            
+            val type = thirTypeCall(value = struct.asThir())
+            val instance = ThirLoad(value = type, symbolId = factory.id, generics = emptyList())
+            val call = ThirCall(value = struct.asThir(), error = null, instance = instance, parameters = emptyList())
+
+            val input = factory.hirLoad().hirCall().hirMember(field.hirLoad())
+            val expected = ThirMember(Builtin.BOOL.asThir(), call, field.id)
+
+            assertSuccess(expected, run(input))
         }
     }
     
