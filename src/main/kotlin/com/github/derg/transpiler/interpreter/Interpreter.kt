@@ -70,51 +70,6 @@ class Interpreter(private val symbols: SymbolTable)
         return evaluateInstructions(frame, instructions)
     }
     
-    private fun evaluateCall(frame: StackFrame, value: ThirCall): ThirValue
-    {
-        val symbol = symbols.functions[(value.instance as ThirLoad).symbolId]
-            ?: throw IllegalArgumentException("No function for value '$value'")
-        val parameters = value.parameters.map { evaluateExpression(frame, it) }
-        
-        // Forgive me Father, for I have sinned.
-        return when (symbol.id)
-        {
-            Builtin.BOOL_AND.id  -> ThirConstBool((evaluateExpression(frame, parameters[0]) as ThirConstBool).raw && (evaluateExpression(frame, parameters[1]) as ThirConstBool).raw)
-            Builtin.BOOL_EQ.id   -> ThirConstBool((evaluateExpression(frame, parameters[0]) as ThirConstBool).raw == (evaluateExpression(frame, parameters[1]) as ThirConstBool).raw)
-            Builtin.BOOL_NE.id   -> ThirConstBool((evaluateExpression(frame, parameters[0]) as ThirConstBool).raw != (evaluateExpression(frame, parameters[1]) as ThirConstBool).raw)
-            Builtin.BOOL_NOT.id  -> ThirConstBool(!(evaluateExpression(frame, parameters[0]) as ThirConstBool).raw)
-            Builtin.BOOL_OR.id   -> ThirConstBool((evaluateExpression(frame, parameters[0]) as ThirConstBool).raw || (evaluateExpression(frame, parameters[1]) as ThirConstBool).raw)
-            Builtin.BOOL_XOR.id  -> ThirConstBool((evaluateExpression(frame, parameters[0]) as ThirConstBool).raw xor (evaluateExpression(frame, parameters[1]) as ThirConstBool).raw)
-            Builtin.INT32_ADD.id -> ThirConstInt32((evaluateExpression(frame, parameters[0]) as ThirConstInt32).raw + (evaluateExpression(frame, parameters[1]) as ThirConstInt32).raw)
-            Builtin.INT32_DIV.id -> ThirConstInt32((evaluateExpression(frame, parameters[0]) as ThirConstInt32).raw / (evaluateExpression(frame, parameters[1]) as ThirConstInt32).raw)
-            Builtin.INT32_EQ.id  -> ThirConstBool((evaluateExpression(frame, parameters[0]) as ThirConstInt32).raw == (evaluateExpression(frame, parameters[1]) as ThirConstInt32).raw)
-            Builtin.INT32_GE.id  -> ThirConstBool((evaluateExpression(frame, parameters[0]) as ThirConstInt32).raw >= (evaluateExpression(frame, parameters[1]) as ThirConstInt32).raw)
-            Builtin.INT32_GT.id  -> ThirConstBool((evaluateExpression(frame, parameters[0]) as ThirConstInt32).raw > (evaluateExpression(frame, parameters[1]) as ThirConstInt32).raw)
-            Builtin.INT32_LE.id  -> ThirConstBool((evaluateExpression(frame, parameters[0]) as ThirConstInt32).raw <= (evaluateExpression(frame, parameters[1]) as ThirConstInt32).raw)
-            Builtin.INT32_LT.id  -> ThirConstBool((evaluateExpression(frame, parameters[0]) as ThirConstInt32).raw < (evaluateExpression(frame, parameters[1]) as ThirConstInt32).raw)
-            Builtin.INT32_MOD.id -> ThirConstInt32((evaluateExpression(frame, parameters[0]) as ThirConstInt32).raw % (evaluateExpression(frame, parameters[1]) as ThirConstInt32).raw)
-            Builtin.INT32_MUL.id -> ThirConstInt32((evaluateExpression(frame, parameters[0]) as ThirConstInt32).raw * (evaluateExpression(frame, parameters[1]) as ThirConstInt32).raw)
-            Builtin.INT32_NE.id  -> ThirConstBool((evaluateExpression(frame, parameters[0]) as ThirConstInt32).raw != (evaluateExpression(frame, parameters[1]) as ThirConstInt32).raw)
-            Builtin.INT32_NEG.id -> ThirConstInt32(-(evaluateExpression(frame, parameters[0]) as ThirConstInt32).raw)
-            Builtin.INT32_POS.id -> ThirConstInt32((evaluateExpression(frame, parameters[0]) as ThirConstInt32).raw)
-            Builtin.INT32_SUB.id -> ThirConstInt32((evaluateExpression(frame, parameters[0]) as ThirConstInt32).raw - (evaluateExpression(frame, parameters[1]) as ThirConstInt32).raw)
-            Builtin.INT64_ADD.id -> ThirConstInt64((evaluateExpression(frame, parameters[0]) as ThirConstInt64).raw + (evaluateExpression(frame, parameters[1]) as ThirConstInt64).raw)
-            Builtin.INT64_DIV.id -> ThirConstInt64((evaluateExpression(frame, parameters[0]) as ThirConstInt64).raw / (evaluateExpression(frame, parameters[1]) as ThirConstInt64).raw)
-            Builtin.INT64_EQ.id  -> ThirConstBool((evaluateExpression(frame, parameters[0]) as ThirConstInt64).raw == (evaluateExpression(frame, parameters[1]) as ThirConstInt64).raw)
-            Builtin.INT64_GE.id  -> ThirConstBool((evaluateExpression(frame, parameters[0]) as ThirConstInt64).raw >= (evaluateExpression(frame, parameters[1]) as ThirConstInt64).raw)
-            Builtin.INT64_GT.id  -> ThirConstBool((evaluateExpression(frame, parameters[0]) as ThirConstInt64).raw > (evaluateExpression(frame, parameters[1]) as ThirConstInt64).raw)
-            Builtin.INT64_LE.id  -> ThirConstBool((evaluateExpression(frame, parameters[0]) as ThirConstInt64).raw <= (evaluateExpression(frame, parameters[1]) as ThirConstInt64).raw)
-            Builtin.INT64_LT.id  -> ThirConstBool((evaluateExpression(frame, parameters[0]) as ThirConstInt64).raw < (evaluateExpression(frame, parameters[1]) as ThirConstInt64).raw)
-            Builtin.INT64_MOD.id -> ThirConstInt64((evaluateExpression(frame, parameters[0]) as ThirConstInt64).raw % (evaluateExpression(frame, parameters[1]) as ThirConstInt64).raw)
-            Builtin.INT64_MUL.id -> ThirConstInt64((evaluateExpression(frame, parameters[0]) as ThirConstInt64).raw * (evaluateExpression(frame, parameters[1]) as ThirConstInt64).raw)
-            Builtin.INT64_NE.id  -> ThirConstBool((evaluateExpression(frame, parameters[0]) as ThirConstInt64).raw != (evaluateExpression(frame, parameters[1]) as ThirConstInt64).raw)
-            Builtin.INT64_NEG.id -> ThirConstInt64(-(evaluateExpression(frame, parameters[0]) as ThirConstInt64).raw)
-            Builtin.INT64_POS.id -> ThirConstInt64((evaluateExpression(frame, parameters[0]) as ThirConstInt64).raw)
-            Builtin.INT64_SUB.id -> ThirConstInt64((evaluateExpression(frame, parameters[0]) as ThirConstInt64).raw - (evaluateExpression(frame, parameters[1]) as ThirConstInt64).raw)
-            else                 -> pushFrame { evaluate(it, symbol, parameters).valueOrNull() ?: TODO() }
-        }
-    }
-    
     private fun evaluateExpression(frame: StackFrame, value: ThirValue): ThirValue = when (value)
     {
         is ThirCall       -> evaluateCall(frame, value)
@@ -123,7 +78,56 @@ class Interpreter(private val symbols: SymbolTable)
         is ThirConstInt32 -> value
         is ThirConstInt64 -> value
         is ThirLoad       -> frame[value.symbolId]
-        is ThirMember     -> TODO()
+        is ThirMember     -> (evaluateExpression(frame, value.instance) as ThirRecord).fields[value.fieldId]!!
+        is ThirRecord     -> value.apply { fields.forEach { (id, value) -> fields[id] = evaluateExpression(frame, value) } }
+    }
+    
+    private fun evaluateCall(frame: StackFrame, value: ThirCall): ThirValue
+    {
+        val symbol = symbols.functions[(value.instance as ThirLoad).symbolId]
+            ?: throw IllegalArgumentException("No function for value '$value'")
+        
+        // Forgive me Father, for I have sinned...
+        val parameters = value.parameters.map { evaluateExpression(frame, it) }
+        val a = parameters.getOrNull(0)
+        val b = parameters.getOrNull(1)
+        
+        return when (symbol.id)
+        {
+            Builtin.BOOL_AND.id  -> ThirConstBool((a as ThirConstBool).raw && (b as ThirConstBool).raw)
+            Builtin.BOOL_EQ.id   -> ThirConstBool((a as ThirConstBool).raw == (b as ThirConstBool).raw)
+            Builtin.BOOL_NE.id   -> ThirConstBool((a as ThirConstBool).raw != (b as ThirConstBool).raw)
+            Builtin.BOOL_NOT.id  -> ThirConstBool(!(a as ThirConstBool).raw)
+            Builtin.BOOL_OR.id   -> ThirConstBool((a as ThirConstBool).raw || (b as ThirConstBool).raw)
+            Builtin.BOOL_XOR.id  -> ThirConstBool((a as ThirConstBool).raw xor (b as ThirConstBool).raw)
+            Builtin.INT32_ADD.id -> ThirConstInt32((a as ThirConstInt32).raw + (b as ThirConstInt32).raw)
+            Builtin.INT32_DIV.id -> ThirConstInt32((a as ThirConstInt32).raw / (b as ThirConstInt32).raw)
+            Builtin.INT32_EQ.id  -> ThirConstBool((a as ThirConstInt32).raw == (b as ThirConstInt32).raw)
+            Builtin.INT32_GE.id  -> ThirConstBool((a as ThirConstInt32).raw >= (b as ThirConstInt32).raw)
+            Builtin.INT32_GT.id  -> ThirConstBool((a as ThirConstInt32).raw > (b as ThirConstInt32).raw)
+            Builtin.INT32_LE.id  -> ThirConstBool((a as ThirConstInt32).raw <= (b as ThirConstInt32).raw)
+            Builtin.INT32_LT.id  -> ThirConstBool((a as ThirConstInt32).raw < (b as ThirConstInt32).raw)
+            Builtin.INT32_MOD.id -> ThirConstInt32((a as ThirConstInt32).raw % (b as ThirConstInt32).raw)
+            Builtin.INT32_MUL.id -> ThirConstInt32((a as ThirConstInt32).raw * (b as ThirConstInt32).raw)
+            Builtin.INT32_NE.id  -> ThirConstBool((a as ThirConstInt32).raw != (b as ThirConstInt32).raw)
+            Builtin.INT32_NEG.id -> ThirConstInt32(-(a as ThirConstInt32).raw)
+            Builtin.INT32_POS.id -> ThirConstInt32((a as ThirConstInt32).raw)
+            Builtin.INT32_SUB.id -> ThirConstInt32((a as ThirConstInt32).raw - (b as ThirConstInt32).raw)
+            Builtin.INT64_ADD.id -> ThirConstInt64((a as ThirConstInt64).raw + (b as ThirConstInt64).raw)
+            Builtin.INT64_DIV.id -> ThirConstInt64((a as ThirConstInt64).raw / (b as ThirConstInt64).raw)
+            Builtin.INT64_EQ.id  -> ThirConstBool((a as ThirConstInt64).raw == (b as ThirConstInt64).raw)
+            Builtin.INT64_GE.id  -> ThirConstBool((a as ThirConstInt64).raw >= (b as ThirConstInt64).raw)
+            Builtin.INT64_GT.id  -> ThirConstBool((a as ThirConstInt64).raw > (b as ThirConstInt64).raw)
+            Builtin.INT64_LE.id  -> ThirConstBool((a as ThirConstInt64).raw <= (b as ThirConstInt64).raw)
+            Builtin.INT64_LT.id  -> ThirConstBool((a as ThirConstInt64).raw < (b as ThirConstInt64).raw)
+            Builtin.INT64_MOD.id -> ThirConstInt64((a as ThirConstInt64).raw % (b as ThirConstInt64).raw)
+            Builtin.INT64_MUL.id -> ThirConstInt64((a as ThirConstInt64).raw * (b as ThirConstInt64).raw)
+            Builtin.INT64_NE.id  -> ThirConstBool((a as ThirConstInt64).raw != (b as ThirConstInt64).raw)
+            Builtin.INT64_NEG.id -> ThirConstInt64(-(a as ThirConstInt64).raw)
+            Builtin.INT64_POS.id -> ThirConstInt64((a as ThirConstInt64).raw)
+            Builtin.INT64_SUB.id -> ThirConstInt64((a as ThirConstInt64).raw - (b as ThirConstInt64).raw)
+            else                 -> pushFrame { evaluate(it, symbol, parameters).valueOrNull() ?: TODO() }
+        }
     }
 }
 

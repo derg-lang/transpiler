@@ -11,9 +11,17 @@ import java.time.Duration
 import java.time.OffsetDateTime
 
 private const val SOURCE = """
+    type Test
+    {
+        val foo: __builtin_i32
+        val bar: __builtin_i32
+    }
+    
     fun main() -> __builtin_i32
     {
-        return fibonacci(25)
+        val test = Test(foo = 2, bar = 23)
+        
+        return fibonacci(test.foo + test.bar)
     }
     
     fun fibonacci(n: __builtin_i32) -> __builtin_i32
@@ -28,18 +36,6 @@ private const val SOURCE = """
             result = fibonacci(n - 2) + fibonacci(n - 1)
 
         return result
-    }
-    
-    type Test
-    {
-        val foo: __builtin_i32
-        val bar: __builtin_i32 = 42
-    }
-    
-    fun test(input: Test)
-    {
-        val a: __builtin_i32 = input.foo
-        val b: __builtin_i32 = input.bar
     }
 """
 
@@ -61,5 +57,5 @@ fun main(args: Array<String>)
     println("Functions: \n\t" + thir.functions.values.joinToString("\n\t") { it.toString() })
     println("Structures: \n\t" + thir.structs.values.joinToString("\n\t") { it.toString() })
     println("Outcome of program is '$outcome'")
-    println("Program took ${Duration.between(start, end)} seconds")
+    println("Program took ${Duration.between(start, end).toNanos() / 1.0e9} seconds")
 }

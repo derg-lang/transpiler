@@ -3,6 +3,7 @@ package com.github.derg.transpiler.source.hir
 import com.github.derg.transpiler.source.*
 import com.github.derg.transpiler.utils.*
 import java.math.*
+import java.util.*
 
 /**
  *
@@ -40,6 +41,15 @@ data class HirCall(
 data class HirMember(
     val instance: HirValue,
     val field: HirLoad,
+) : HirValue
+
+/**
+ * An instance of a structure fo the given [symbolId], containing a selection of values in its [fields]. All values are
+ * associated with a specific field.
+ */
+data class HirRecord(
+    val symbolId: UUID,
+    val fields: Map<UUID, HirValue>,
 ) : HirValue
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

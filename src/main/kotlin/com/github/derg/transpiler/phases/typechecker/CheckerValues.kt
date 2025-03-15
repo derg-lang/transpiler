@@ -18,6 +18,7 @@ internal class CheckerValue
         is ThirCatch      -> handle(node)
         is ThirLoad       -> handle(node)
         is ThirMember     -> handle(node)
+        is ThirRecord     -> Unit.toSuccess()
         is ThirConstBool  -> Unit.toSuccess()
         is ThirConstInt32 -> Unit.toSuccess()
         is ThirConstInt64 -> Unit.toSuccess()

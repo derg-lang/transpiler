@@ -47,6 +47,22 @@ data class HirFunction(
 ) : HirSymbol
 
 /**
+ * Literals are special data conversion functions, which allows the developer to convert raw numbers and text literals
+ * into ordinary types.
+ */
+data class HirLiteral(
+    override val id: UUID,
+    override val name: String,
+    val type: HirType.Function,
+    val visibility: Visibility,
+    val instructions: List<HirInstruction>,
+    
+    // Symbols present within the object
+    val variables: List<HirVariable>,
+    val parameter: HirParameter,
+) : HirSymbol
+
+/**
  * Methods are callable subroutines which operate on a specific type, allowing programs to be decomposed into smaller
  * segments.
  */
@@ -64,22 +80,6 @@ data class HirMethod(
 ) : HirSymbol
 
 /**
- * Literals are special data conversion functions, which allows the developer to convert raw numbers and text literals
- * into ordinary types.
- */
-data class HirLiteral(
-    override val id: UUID,
-    override val name: String,
-    val type: HirType.Function,
-    val visibility: Visibility,
-    val instructions: List<HirInstruction>,
-    
-    // Symbols present within the object
-    val variables: List<HirVariable>,
-    val parameter: HirParameter,
-) : HirSymbol
-
-/**
  * Data structures represents a collection of properties. It does not provide any additional functionality.
  */
 data class HirStruct(
@@ -92,6 +92,21 @@ data class HirStruct(
     val methods: List<HirMethod>,
     val generics: List<HirGeneric>,
 ) : HirSymbol
+
+val HirStruct.constructor get() = HirFunction(
+    id = id,
+    name = name,
+    type = HirType.Function(
+        value = HirType.Structure(name, Mutability.MUTABLE, emptyList()),
+        error = null,
+        parameters = fields.map { HirParameterDynamic(it.name, it.type, Passability.MOVE) },
+    ),
+    visibility = visibility,
+    instructions = listOf(HirReturnValue(HirRecord(id, fields.associate { it.id to HirLoad(it.name, emptyList()) }))),
+    generics = emptyList(),
+    variables = emptyList(),
+    parameters = fields.map { HirParameter(UUID.randomUUID(), it.name, it.type, it.value, Passability.MOVE) },
+)
 
 /**
  * Closures are anonymous callable subroutines which allows values from the surroundings to be captured.

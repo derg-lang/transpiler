@@ -40,12 +40,23 @@ data class ThirCall(
 ) : ThirValue
 
 /**
- *
+ * Accesses a specific [fieldId] within the structure referenced to by the [instance].
  */
 data class ThirMember(
-    override val value: ThirType?,
+    override val value: ThirType,
     val instance: ThirValue,
     val fieldId: UUID,
+) : ThirValue
+{
+    override val error: Nothing? get() = null
+}
+
+/**
+ * Instance of a structure.
+ */
+data class ThirRecord(
+    override val value: ThirType,
+    val fields: MutableMap<UUID, ThirValue>,
 ) : ThirValue
 {
     override val error: Nothing? get() = null

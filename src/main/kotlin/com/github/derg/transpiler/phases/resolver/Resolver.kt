@@ -19,7 +19,7 @@ fun resolve(program: HirProgram): Result<SymbolTable, ResolveError>
     // TODO: Obviously find a better way to access the contents of the package. The engine should take care of the heavy
     //       lifting, going through the modules and segments. The order in which modules are handled does matter - we
     //       must ensure that modules which depends on others, are resolved last.
-    program.applications.single().structs.forEach { inner.register(it) }
+    program.applications.single().structs.forEach { inner.register(it); inner.register(it.constructor) }
     program.applications.single().functions.forEach { inner.register(it) }
     
     // Make sure that all symbols present within the package are handled appropriately.

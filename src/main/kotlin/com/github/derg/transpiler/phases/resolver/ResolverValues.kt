@@ -65,6 +65,7 @@ internal class ResolverValue(private val symbols: SymbolTable, private val types
         is HirNot     -> handlePrefix(Symbol.NOT, node.rhs)
         is HirOr      -> handleInfix(Symbol.OR, node.lhs, node.rhs)
         is HirPlus    -> handlePrefix(Symbol.PLUS, node.rhs)
+        is HirRecord  -> handleRecord(node)
         is HirSub     -> handleInfix(Symbol.MINUS, node.lhs, node.rhs)
         is HirText    -> TODO()
         is HirXor     -> handleInfix(Symbol.XOR, node.lhs, node.rhs)
@@ -263,5 +264,16 @@ internal class ResolverValue(private val symbols: SymbolTable, private val types
     private fun handle(node: NamedMaybe<HirValue>): Result<NamedMaybe<ThirValue>, ResolveError>
     {
         return resolve(node.second).mapValue { node.first to it }
+    }
+    
+    private fun handleRecord(node: HirRecord): Result<ThirValue, ResolveError>
+    {
+        val symbol = symbols.structs[node.symbolId] ?: TODO()
+        val fields = node.fields.mapValues { (_, value) -> resolve(value).valueOr { return it.toFailure() } }
+        
+        return ThirRecord(
+            value = ThirType.Structure(symbol.id, Mutability.MUTABLE, emptyList()),
+            fields = fields.toMutableMap(),
+        ).toSuccess()
     }
 }
