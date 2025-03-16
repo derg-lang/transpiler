@@ -120,4 +120,19 @@ sealed interface TypeError
      * The return statement has an [expression] which evaluates to an error, when no return error was expected.
      */
     data class ReturnContainsError(val expression: ThirValue) : TypeError
+    
+    /**
+     * The while loop [predicate] evaluates to no type at all.
+     */
+    data class WhileMissingValue(val predicate: ThirValue) : TypeError
+    
+    /**
+     * The while loop [predicate] did not evaluate to a boolean type, which is required by the loop predicate.
+     */
+    data class WhileWrongType(val predicate: ThirValue) : TypeError
+    
+    /**
+     * The while loop [predicate] is evaluated to a possible error type, which is not permitted.
+     */
+    data class WhileContainsError(val predicate: ThirValue) : TypeError
 }

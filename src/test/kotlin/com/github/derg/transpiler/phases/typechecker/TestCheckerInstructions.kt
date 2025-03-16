@@ -50,7 +50,7 @@ class TestCheckerInstructions
             
             assertFailure(AssignMissingValue(input), checker.check(variable.thirAssign(input)))
         }
-    
+        
         @Test
         fun `Given valid value, when checking, then correct outcome`()
         {
@@ -65,7 +65,7 @@ class TestCheckerInstructions
         {
             val instance = thirFunOf(value = thirTypeFun(bool), error = int32).thirCall()
             val input = instance.thirCall(value = bool, error = null)
-    
+            
             assertFailure(CallContainsError(instance), checker.check(variable.thirAssign(input)))
         }
     }
@@ -106,22 +106,22 @@ class TestCheckerInstructions
             
             assertFailure(BranchMissingValue(input), checker.check(input.thirBranch()))
         }
-    
+        
         @Test
         fun `Given valid value, when checking, then correct outcome`()
         {
             val instance = thirFunOf(value = thirTypeFun(bool), error = null).thirCall()
             val input = instance.thirCall(value = bool, error = null)
-        
+            
             assertSuccess(Unit, checker.check(input.thirBranch()))
         }
-    
+        
         @Test
         fun `Given invalid value, when checking, then correct error`()
         {
             val instance = thirFunOf(value = thirTypeFun(bool), error = int32).thirCall()
             val input = instance.thirCall(value = bool, error = null)
-        
+            
             assertFailure(CallContainsError(instance), checker.check(input.thirBranch()))
         }
     }
@@ -154,22 +154,22 @@ class TestCheckerInstructions
             
             assertFailure(EvaluateContainsError(input), checker.check(input.thirEval))
         }
-    
+        
         @Test
         fun `Given valid value, when checking, then correct outcome`()
         {
             val instance = thirFunOf(value = thirTypeFun(), error = null).thirCall()
             val input = instance.thirCall(value = null, error = null)
-        
+            
             assertSuccess(Unit, checker.check(input.thirEval))
         }
-    
+        
         @Test
         fun `Given invalid value, when checking, then correct error`()
         {
             val instance = thirFunOf(value = thirTypeFun(), error = int32).thirCall()
             val input = instance.thirCall(value = null, error = null)
-        
+            
             assertFailure(CallContainsError(instance), checker.check(input.thirEval))
         }
     }
@@ -245,22 +245,22 @@ class TestCheckerInstructions
             
             assertFailure(ReturnContainsValue(input), checkerEmpty.check(input.thirReturnValue))
         }
-    
+        
         @Test
         fun `Given valid value, when checking, then correct outcome`()
         {
             val instance = thirFunOf(value = thirTypeFun(bool), error = null).thirCall()
             val input = instance.thirCall(value = bool, error = null)
-        
+            
             assertSuccess(Unit, checkerValue.check(input.thirReturnValue))
         }
-    
+        
         @Test
         fun `Given invalid value, when checking, then correct error`()
         {
             val instance = thirFunOf(value = thirTypeFun(bool), error = int32).thirCall()
             val input = instance.thirCall(value = bool, error = null)
-        
+            
             assertFailure(CallContainsError(instance), checkerValue.check(input.thirReturnValue))
         }
     }
@@ -310,23 +310,79 @@ class TestCheckerInstructions
             
             assertFailure(ReturnContainsValue(input), checkerEmpty.check(input.thirReturnError))
         }
-    
+        
         @Test
         fun `Given valid value, when checking, then correct outcome`()
         {
             val instance = thirFunOf(value = thirTypeFun(bool), error = null).thirCall()
             val input = instance.thirCall(value = bool, error = null)
-        
+            
             assertSuccess(Unit, checkerError.check(input.thirReturnError))
         }
-    
+        
         @Test
         fun `Given invalid value, when checking, then correct error`()
         {
             val instance = thirFunOf(value = thirTypeFun(bool), error = int32).thirCall()
             val input = instance.thirCall(value = bool, error = null)
-        
+            
             assertFailure(CallContainsError(instance), checkerError.check(input.thirReturnError))
+        }
+    }
+    
+    @Nested
+    inner class While
+    {
+        private val checker = CheckerInstruction(symbols = symbols, value = null, error = null)
+        
+        @Test
+        fun `Given valid type, when checking, then correct outcome`()
+        {
+            val input = thirFunOf(value = bool).thirCall()
+            
+            assertSuccess(Unit, checker.check(input.thirWhile()))
+        }
+        
+        @Test
+        fun `Given invalid type, when checking, then correct error`()
+        {
+            val input = thirFunOf(value = thirTypeStruct()).thirCall()
+            
+            assertFailure(WhileWrongType(input), checker.check(input.thirWhile()))
+        }
+        
+        @Test
+        fun `Given error type, when checking, then correct error`()
+        {
+            val input = thirFunOf(value = bool, error = bool).thirCall()
+            
+            assertFailure(WhileContainsError(input), checker.check(input.thirWhile()))
+        }
+        
+        @Test
+        fun `Given no type, when checking, then correct error`()
+        {
+            val input = thirFunOf(value = null).thirCall()
+            
+            assertFailure(WhileMissingValue(input), checker.check(input.thirWhile()))
+        }
+        
+        @Test
+        fun `Given valid value, when checking, then correct outcome`()
+        {
+            val instance = thirFunOf(value = thirTypeFun(bool), error = null).thirCall()
+            val input = instance.thirCall(value = bool, error = null)
+            
+            assertSuccess(Unit, checker.check(input.thirWhile()))
+        }
+        
+        @Test
+        fun `Given invalid value, when checking, then correct error`()
+        {
+            val instance = thirFunOf(value = thirTypeFun(bool), error = int32).thirCall()
+            val input = instance.thirCall(value = bool, error = null)
+            
+            assertFailure(CallContainsError(instance), checker.check(input.thirWhile()))
         }
     }
 }
