@@ -142,4 +142,20 @@ class TestResolverInstruction
             assertSuccess(1.thirReturnError, run(1.hirReturnError))
         }
     }
+    
+    @Nested
+    inner class While
+    {
+        @Test
+        fun `Given valid predicate, when resolving, then correct outcome`()
+        {
+            assertSuccess(true.thirWhile(), run(true.hirWhile()))
+        }
+        
+        @Test
+        fun `Given instructions, when resolving, then correct outcome`()
+        {
+            assertSuccess(false.thirWhile(ThirReturn), run(false.hirWhile(HirReturn)))
+        }
+    }
 }

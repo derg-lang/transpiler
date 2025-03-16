@@ -33,6 +33,13 @@ data class HirBranch(
 data class HirEvaluate(val expression: HirValue) : HirInstruction
 
 /**
+ * Loops are a control flow construct which iterates over the [expression] until all elements in the expression has been
+ * looped over. The [identifier] denotes the name of the variable which holds the current element in the loop. The
+ * [instructions] will be repeatedly executed until no more elements remains in the loop.
+ */
+data class HirFor(val identifier: String, val expression: HirValue, val instructions: List<HirInstruction>) : HirInstruction
+
+/**
  * Exist the current function call, returning control flow to whoever called the function in the first place.
  */
 data object HirReturn : HirInstruction
@@ -48,3 +55,9 @@ data class HirReturnError(val expression: HirValue) : HirInstruction
  * return value of the function is provided by the given [expression].
  */
 data class HirReturnValue(val expression: HirValue) : HirInstruction
+
+/**
+ * While loops are a control flow construct which iterates until the [predicate] evaluates to false. The [instructions]
+ * will be repeatedly executed until no more elements remains in the loop.
+ */
+data class HirWhile(val predicate: HirValue, val instructions: List<HirInstruction>) : HirInstruction

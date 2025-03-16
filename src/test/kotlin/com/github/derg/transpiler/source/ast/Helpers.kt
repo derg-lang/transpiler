@@ -94,7 +94,7 @@ infix fun String.astAssignDiv(that: Any) = AstAssignDivide(this, that.ast)
 
 val Any.astReturnError get() = AstReturnError(ast)
 val Any.astReturnValue get() = AstReturnValue(ast)
-val AstValue.astEval get() = AstEvaluate(this)
+val Any.astEval get() = AstEvaluate(ast)
 
 fun astInvokeOf(expression: Any) = AstEvaluate(expression.ast)
 
@@ -120,10 +120,27 @@ fun astIfOf(predicate: Any, success: List<AstInstruction>, failure: List<AstInst
     AstBranch(predicate.ast, success, failure)
 
 /**
- * Generates a branch expression from the provided input parameters.
+ * Generates a for loop statement from the provided input parameters.
+ */
+fun astForOf(
+    identifier: String = UUID.randomUUID().toString(),
+    expression: Any,
+    instructions: List<AstInstruction> = emptyList(),
+) = AstFor(identifier, expression.ast, instructions)
+
+/**
+ * Generates a when expression from the provided input parameters.
  */
 fun astWhenOf(expression: Any, vararg branches: Pair<Any, Any>, default: Any? = null) =
     AstWhen(expression.ast, branches.map { it.first.ast to it.second.ast }, default?.ast)
+
+/**
+ * Generates a while loop statement from the provided input parameters.
+ */
+fun astWhileOf(
+    expression: Any,
+    instructions: List<AstInstruction> = emptyList(),
+) = AstWhile(expression.ast, instructions)
 
 ////////////////////
 // Symbol helpers //

@@ -39,6 +39,13 @@ data class AstBranch(val predicate: AstValue, val success: List<AstInstruction>,
 data class AstEvaluate(val expression: AstValue) : AstInstruction
 
 /**
+ * For loops are a control flow construct which iterates over the [expression] until all elements in the expression has
+ * been looped over. The [identifier] denotes the name of the variable which holds the current element in the loop. The
+ * [instructions] will be repeatedly executed until no more elements remains in the loop.
+ */
+data class AstFor(val identifier: String, val expression: AstValue, val instructions: List<AstInstruction>) : AstInstruction
+
+/**
  * Specifies that the execution flow should exit the current function, returning control flow back to the caller. Note
  * that the function cannot be exited in this manner if the function expects a return value.
  */
@@ -58,3 +65,9 @@ data class AstReturnError(val expression: AstValue) : AstInstruction
  * value from a function indicates usually that the function has succeeded in producing a usable value.
  */
 data class AstReturnValue(val expression: AstValue) : AstInstruction
+
+/**
+ * While loops are a control flow construct which iterates until the [predicate] evaluates to false. The [instructions]
+ * will be repeatedly executed until no more elements remains in the loop.
+ */
+data class AstWhile(val predicate: AstValue, val instructions: List<AstInstruction>) : AstInstruction

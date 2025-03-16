@@ -25,8 +25,10 @@ fun statementParserOf(): Parser<AstInstruction> = ParserAnyOf(
     assignmentParserOf(),
     branchParserOf(),
     invokeParserOf(),
+    forParserOf(),
     raiseParserOf(),
     returnParserOf(),
+    whileParserOf(),
 )
 
 /**
@@ -74,6 +76,23 @@ private fun branchElseOutcomeOf(values: Parsers): List<AstInstruction> =
     values["scope"]
 
 /**
+ * Parses a for loop from the token stream.
+ */
+private fun forParserOf(): Parser<AstInstruction> =
+    ParserPattern(::forPatternOf, ::forOutcomeOf)
+
+private fun forPatternOf() = ParserSequence(
+    "for" to ParserSymbol(Symbol.FOR),
+    "identifier" to ParserIdentifier(),
+    "in" to ParserSymbol(Symbol.IN),
+    "expression" to ParserExpression(),
+    "scope" to scopeParserOf(),
+)
+
+private fun forOutcomeOf(values: Parsers): AstFor =
+    AstFor(values["identifier"], values["expression"], values["scope"])
+
+/**
  * Parses a single raise control flow from the token stream.
  */
 private fun raiseParserOf(): Parser<AstInstruction> =
@@ -104,6 +123,21 @@ private fun returnOutcomeOf(values: Parsers): AstInstruction
     // TODO: The magic string `_` should not be used. Use the type-information of the function to remove it
     return if (expression == AstLoad("_", emptyList())) AstReturn else AstReturnValue(expression)
 }
+
+/**
+ * Parses a while loop from the token stream.
+ */
+private fun whileParserOf(): Parser<AstInstruction> =
+    ParserPattern(::whilePatternOf, ::whileOutcomeOf)
+
+private fun whilePatternOf() = ParserSequence(
+    "while" to ParserSymbol(Symbol.WHILE),
+    "expression" to ParserExpression(),
+    "scope" to scopeParserOf(),
+)
+
+private fun whileOutcomeOf(values: Parsers): AstWhile =
+    AstWhile(values["expression"], values["scope"])
 
 /**
  * Parses a single expression statement from the token stream. Note that the parser does not implement analysis to

@@ -12,7 +12,7 @@ import org.junit.jupiter.api.*
 private fun <Type> Tester<Type>.isChain(preOkCount: Int = 0, wipCount: Int = 0, postOkCount: Int = 0): Tester<Type> =
     isOk(preOkCount).isWip(wipCount).isOk(postOkCount).isDone()
 
-class TestParserStatement
+class TestParserInstructions
 {
     private val tester = Tester { statementParserOf() }
     
@@ -33,6 +33,11 @@ class TestParserStatement
             .isValue(astIfOf(1, success = listOf("a" astAssign 2)))
         tester.parse("if 1 {} else a = 2").isWip(3).isOk(1).isWip(1).isOk(1).isWip(1).isOk(1).isDone()
             .isValue(astIfOf(1, success = emptyList(), failure = listOf("a" astAssign 2)))
+        
+        tester.parse("for a in b {}").isChain(0, 5, 1).isValue(astForOf("a", "b".astLoad(), emptyList()))
+        tester.parse("for a in b 0").isChain(0, 4, 1).isValue(astForOf("a", "b".astLoad(), listOf(0.astEval)))
+        tester.parse("while a {}").isChain(0, 3, 1).isValue(astWhileOf("a".astLoad(), emptyList()))
+        tester.parse("while a 0").isChain(0, 2, 1).isValue(astWhileOf("a".astLoad(), listOf(0.astEval)))
         
         tester.parse("raise 1").isChain(0, 1, 1).isValue(1.astReturnError)
         tester.parse("return 1").isChain(0, 1, 1).isValue(1.astReturnValue)

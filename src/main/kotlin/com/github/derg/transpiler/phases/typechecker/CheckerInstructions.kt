@@ -22,6 +22,7 @@ internal class CheckerInstruction(private val symbols: SymbolTable, private val 
         is ThirReturn      -> handle(node)
         is ThirReturnError -> handle(node)
         is ThirReturnValue -> handle(node)
+        is ThirWhile       -> handle(node)
     }
     
     private fun handle(node: ThirAssign): Result<Unit, TypeError>
@@ -39,7 +40,7 @@ internal class CheckerInstruction(private val symbols: SymbolTable, private val 
         val value = symbols.variables[node.symbolId]?.type
         if (value != node.expression.value)
             return TypeError.AssignWrongType(node.expression).toFailure()
-    
+        
         return CheckerValue().check(node.expression)
     }
     
@@ -53,7 +54,7 @@ internal class CheckerInstruction(private val symbols: SymbolTable, private val 
         val value = node.predicate.value ?: return TypeError.BranchMissingValue(node.predicate).toFailure()
         if (value !is ThirType.Structure || value.symbolId != Builtin.BOOL.id)
             return TypeError.BranchWrongType(node.predicate).toFailure()
-    
+        
         return CheckerValue().check(node.predicate)
     }
     
@@ -66,7 +67,7 @@ internal class CheckerInstruction(private val symbols: SymbolTable, private val 
         // Evaluations are not permitted to contain value types.
         if (node.expression.value != null)
             return TypeError.EvaluateContainsValue(node.expression).toFailure()
-    
+        
         return CheckerValue().check(node.expression)
     }
     
@@ -97,7 +98,7 @@ internal class CheckerInstruction(private val symbols: SymbolTable, private val 
         // TODO: Support union types.
         if (value != node.expression.value)
             return TypeError.ReturnWrongType(node.expression).toFailure()
-    
+        
         return CheckerValue().check(node.expression)
     }
     
@@ -119,7 +120,21 @@ internal class CheckerInstruction(private val symbols: SymbolTable, private val 
         // TODO: Support union types.
         if (error != node.expression.value)
             return TypeError.ReturnWrongType(node.expression).toFailure()
-    
+        
         return CheckerValue().check(node.expression)
+    }
+    
+    private fun handle(node: ThirWhile): Result<Unit, TypeError>
+    {
+        // Predicates are not permitted to contain error types.
+        if (node.predicate.error != null)
+            return TypeError.WhileContainsError(node.predicate).toFailure()
+        
+        // The value type must be boolean.
+        val value = node.predicate.value ?: return TypeError.WhileMissingValue(node.predicate).toFailure()
+        if (value !is ThirType.Structure || value.symbolId != Builtin.BOOL.id)
+            return TypeError.WhileWrongType(node.predicate).toFailure()
+        
+        return CheckerValue().check(node.predicate)
     }
 }

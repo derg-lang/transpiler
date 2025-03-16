@@ -45,3 +45,9 @@ data class ThirReturnError(val expression: ThirValue) : ThirInstruction
  * return value of the function is provided by the given [expression].
  */
 data class ThirReturnValue(val expression: ThirValue) : ThirInstruction
+
+/**
+ * While loops are a control flow construct which iterates until the [predicate] evaluates to false. The [instructions]
+ * will be repeatedly executed until no more elements remains in the loop.
+ */
+data class ThirWhile(val predicate: ThirValue, val instructions: List<ThirInstruction>) : ThirInstruction

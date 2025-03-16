@@ -143,6 +143,8 @@ fun Any.thirBranch(
     failure: List<ThirInstruction> = emptyList(),
 ) = ThirBranch(thir, success, failure)
 
+fun Any.thirWhile(vararg instructions: ThirInstruction) = ThirWhile(thir, instructions.toList())
+
 ////////////////////
 // Symbol helpers //
 ////////////////////
