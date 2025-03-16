@@ -25,6 +25,7 @@ fun statementParserOf(): Parser<AstInstruction> = ParserAnyOf(
     assignmentParserOf(),
     branchParserOf(),
     invokeParserOf(),
+    forParserOf(),
     raiseParserOf(),
     returnParserOf(),
 )
@@ -72,6 +73,23 @@ private fun branchElsePatternOf() =
 
 private fun branchElseOutcomeOf(values: Parsers): List<AstInstruction> =
     values["scope"]
+
+/**
+ * Parses a for loop from the token stream.
+ */
+private fun forParserOf(): Parser<AstInstruction> =
+    ParserPattern(::forPatternOf, ::forOutcomeOf)
+
+private fun forPatternOf() = ParserSequence(
+    "for" to ParserSymbol(Symbol.FOR),
+    "identifier" to ParserIdentifier(),
+    "in" to ParserSymbol(Symbol.IN),
+    "expression" to ParserExpression(),
+    "scope" to scopeParserOf(),
+)
+
+private fun forOutcomeOf(values: Parsers): AstFor =
+    AstFor(values["identifier"], values["expression"], values["scope"])
 
 /**
  * Parses a single raise control flow from the token stream.

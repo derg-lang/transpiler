@@ -190,6 +190,7 @@ internal fun AstInstruction.toHir(): HirInstruction = when (this)
     is AstAssignAdd      -> HirAssignAdd(HirLoad(name, emptyList()), expression.toHir())
     is AstBranch         -> HirBranch(predicate.toHir(), success.map { it.toHir() }, failure.map { it.toHir() })
     is AstEvaluate       -> HirEvaluate(expression.toHir())
+    is AstFor            -> TODO()
     is AstReturn         -> HirReturn
     is AstReturnError    -> HirReturnError(expression.toHir())
     is AstReturnValue    -> HirReturnValue(expression.toHir())
