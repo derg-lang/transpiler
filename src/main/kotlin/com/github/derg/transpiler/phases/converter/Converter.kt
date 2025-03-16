@@ -27,6 +27,12 @@ private fun AstType.toHir(): HirType = when (this)
     is AstType.Union     -> HirType.Union(types = types.map { it.toHir() }.toSet())
 }
 
+private fun AstTemplate.toHir(): HirTemplate = when (this)
+{
+    is AstTemplate.Type  -> HirTemplate.Type(name = name)
+    is AstTemplate.Value -> HirTemplate.Value(name = name, type = type.toHir(), default = default?.toHir())
+}
+
 private fun AstParameterStatic.toHir() = HirParameterStatic(name = name, value = value.toHir())
 private fun AstParameterDynamic.toHir() = HirParameterDynamic(name = name, type = type.toHir(), value = null, passability = passability)
 
@@ -54,7 +60,6 @@ internal fun AstFunction.toHir() = HirFunction(
     ),
     visibility = visibility,
     instructions = statements.map { it.toHir() },
-    generics = emptyList(),
     variables = statements.filterIsInstance<AstVariable>().map { it.toHir() },
     parameters = parameters.map { it.toHir() },
 )
@@ -118,9 +123,9 @@ internal fun AstStruct.toHir() = HirStruct(
     id = UUID.randomUUID(),
     name = name,
     visibility = visibility,
-    fields = properties.map { it.toHir() },
+    fields = fields.map { it.toHir() },
     methods = emptyList(),
-    generics = emptyList(),
+    templates = templates.map { it.toHir() },
 )
 
 /**

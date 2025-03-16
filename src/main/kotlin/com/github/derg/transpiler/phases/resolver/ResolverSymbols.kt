@@ -26,7 +26,6 @@ internal class ResolverSymbol(private val symbols: SymbolTable, private val type
         is HirConstant  -> TODO()
         is HirField     -> handle(node)
         is HirFunction  -> handle(node)
-        is HirGeneric   -> TODO()
         is HirLiteral   -> handle(node)
         is HirMethod    -> TODO()
         is HirParameter -> handle(node)
@@ -66,7 +65,7 @@ internal class ResolverSymbol(private val symbols: SymbolTable, private val type
             type = types.functions[node.id]!!,
             visibility = node.visibility,
             instructions = node.instructions.mapUntilError { ResolverInstruction(symbols, types, inner).resolve(it) }.valueOr { return it.toFailure() },
-            genericIds = node.generics.map { it.id },
+            genericIds = emptyList(),
             variableIds = node.variables.map { it.id },
             parameterIds = node.parameters.map { it.id },
         )
@@ -117,7 +116,6 @@ internal class ResolverSymbol(private val symbols: SymbolTable, private val type
     {
         node.fields.mapUntilError { handle(it) }.onFailure { return it.toFailure() }
 //        node.methods.mapUntilError { handle(it) }.onFailure { return it.toFailure() }
-//        node.generics.mapUntilError { handle(it) }.onFailure { return it.toFailure() }
         
         val symbol = ThirStruct(
             id = node.id,
@@ -125,7 +123,6 @@ internal class ResolverSymbol(private val symbols: SymbolTable, private val type
             visibility = node.visibility,
             fieldIds = node.fields.map { it.id }.toSet(),
             methodIds = node.methods.map { it.id }.toSet(),
-            genericIds = node.generics.map { it.id }.toSet(),
         )
         
         symbols.structs[symbol.id] = symbol

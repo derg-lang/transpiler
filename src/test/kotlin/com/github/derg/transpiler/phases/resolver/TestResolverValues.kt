@@ -7,6 +7,7 @@ import com.github.derg.transpiler.source.thir.*
 import com.github.derg.transpiler.utils.*
 import org.junit.jupiter.api.*
 import java.math.*
+import java.util.*
 
 /**
  * Generates a thir-representation of the struct.
@@ -73,6 +74,9 @@ class TestResolverValue
     
     private fun registerParam(name: String): HirParameter =
         hirParamOf(name = name).also(scope::register)
+    
+    private fun registerStruct(name: String): HirStruct =
+        hirStructOf(name = name).also(scope::register)
     
     /**
      * Converts the [value] if possible, ensuring that all global scopes are registered into the engine before
@@ -487,16 +491,16 @@ class TestResolverValue
         fun `Given variable, when resolving, then correct outcome`()
         {
             val symbol = registerVar("foo")
-            val expected = ThirLoad(value = Builtin.INT32.asThir(), symbolId = symbol.id, generics = emptyList())
+            val expected = ThirLoad(value = Builtin.INT32.asThir(), symbolId = symbol.id, parameters = emptyList())
             
             assertSuccess(expected, run(symbol.hirLoad()))
         }
-        
+    
         @Test
         fun `Given parameter, when resolving, then correct outcome`()
         {
             val symbol = registerParam("foo")
-            val expected = ThirLoad(value = Builtin.INT32.asThir(), symbolId = symbol.id, generics = emptyList())
+            val expected = ThirLoad(value = Builtin.INT32.asThir(), symbolId = symbol.id, parameters = emptyList())
             
             assertSuccess(expected, run(symbol.hirLoad()))
         }
@@ -516,7 +520,7 @@ class TestResolverValue
             engine.resolve(scope, struct).valueOrDie()
             
             val type = thirTypeFun(value = struct.asThir())
-            val instance = ThirLoad(value = type, symbolId = factory.id, generics = emptyList())
+            val instance = ThirLoad(value = type, symbolId = factory.id, parameters = emptyList())
             val call = ThirCall(value = struct.asThir(), error = null, instance = instance, parameters = emptyList())
             
             val input = factory.hirLoad().hirCall().hirMember(field.hirLoad())

@@ -72,8 +72,9 @@ fun structParserOf(): Parser<AstStruct> =
 
 private fun structPatternOf() = ParserSequence(
     "visibility" to visibilityParserOf(),
-    "type" to ParserSymbol(Symbol.TYPE),
+    "struct" to ParserSymbol(Symbol.STRUCT),
     "name" to ParserIdentifier(),
+    "templates" to ParserOptional(templateParserOf()),
     "open_brace" to ParserSymbol(Symbol.OPEN_BRACE),
     "properties" to ParserRepeating(propertyParserOf()),
     "close_brace" to ParserSymbol(Symbol.CLOSE_BRACE),
@@ -82,7 +83,8 @@ private fun structPatternOf() = ParserSequence(
 private fun structOutcomeOf(values: Parsers) = AstStruct(
     name = values["name"],
     visibility = values["visibility"],
-    properties = values["properties"],
+    fields = values["properties"],
+    templates = values["templates"] ?: emptyList(),
 )
 
 /**
@@ -107,3 +109,38 @@ private fun variableOutcomeOf(values: Parsers) = AstVariable(
     visibility = values["visibility"],
     assignability = values["assignability"],
 )
+
+/**
+ * Parses a template declaration.
+ */
+private fun templateParserOf(): Parser<List<AstTemplate>> =
+    ParserPattern(::templatePatternOf) { it["params"] }
+
+private fun templatePatternOf() = ParserSequence(
+    "open" to ParserSymbol(Symbol.OPEN_BRACKET),
+    "params" to ParserRepeating(
+        ParserAnyOf(
+            ParserPattern(::templateStructPatternOf, ::templateStructOutcomeOf),
+            ParserPattern(::templateValuePatternOf, ::templateValueOutcomeOf)
+        ),
+        ParserSymbol(Symbol.COMMA),
+    ),
+    "close" to ParserSymbol(Symbol.CLOSE_BRACKET),
+)
+
+private fun templateStructPatternOf() = ParserSequence(
+    "name" to ParserIdentifier(),
+)
+
+private fun templateValuePatternOf() = ParserSequence(
+    "name" to ParserIdentifier(),
+    "colon" to ParserSymbol(Symbol.COLON),
+    "type" to typeParserOf(),
+    "default" to ParserOptional(valueParserOf(Symbol.ASSIGN)),
+)
+
+private fun templateStructOutcomeOf(values: Parsers): AstTemplate =
+    AstTemplate.Type(name = values["name"])
+
+private fun templateValueOutcomeOf(values: Parsers): AstTemplate =
+    AstTemplate.Value(name = values["name"], type = values["type"], default = values["default"])

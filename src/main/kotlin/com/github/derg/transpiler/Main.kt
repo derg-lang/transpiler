@@ -11,7 +11,7 @@ import java.time.Duration
 import java.time.OffsetDateTime
 
 private const val SOURCE = """
-    type Test
+    struct Test[Foo, baz: __builtin_i32 = 7]
     {
         val foo: __builtin_i32 = 2
         val bar: __builtin_i32

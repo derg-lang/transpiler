@@ -106,7 +106,6 @@ data class ThirStruct(
     // Symbols present within the object
     val fieldIds: Set<UUID>,
     val methodIds: Set<UUID>,
-    val genericIds: Set<UUID>,
 ) : ThirSymbol
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

@@ -17,12 +17,12 @@ sealed interface ThirValue
 
 /**
  * Represents a value read from memory, or any other named location. The value is read from the location defined by the
- * [symbolId], utilizing the given [generics] to disambiguate which specialization to load.
+ * [symbolId], utilizing the given [parameters] to disambiguate which specialization to load.
  */
 data class ThirLoad(
     override val value: ThirType,
     val symbolId: UUID,
-    val generics: List<ThirType>,
+    val parameters: List<ThirParameterStatic>,
 ) : ThirValue
 {
     override val error: Nothing? get() = null

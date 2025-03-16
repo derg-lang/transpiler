@@ -212,14 +212,12 @@ fun thirStructOf(
     name: String = UUID.randomUUID().toString(),
     fields: Set<UUID> = emptySet(),
     methods: Set<UUID> = emptySet(),
-    generics: Set<UUID> = emptySet(),
 ) = ThirStruct(
     id = id,
     name = name,
     visibility = Visibility.PRIVATE,
     fieldIds = fields,
     methodIds = methods,
-    genericIds = generics,
 )
 
 fun thirVarOf(

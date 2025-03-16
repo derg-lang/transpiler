@@ -267,7 +267,7 @@ internal class ResolverValue(private val symbols: SymbolTable, private val types
         return ThirLoad(
             value = type.valueOr { return it.toFailure() },
             symbolId = candidate.id,
-            generics = emptyList(),
+            parameters = emptyList(),
         ).toSuccess()
     }
     
