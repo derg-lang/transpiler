@@ -22,6 +22,7 @@ internal class CheckerInstruction(private val symbols: SymbolTable, private val 
         is ThirReturn      -> handle(node)
         is ThirReturnError -> handle(node)
         is ThirReturnValue -> handle(node)
+        is ThirWhile       -> TODO()
     }
     
     private fun handle(node: ThirAssign): Result<Unit, TypeError>

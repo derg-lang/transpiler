@@ -61,6 +61,7 @@ class Interpreter(private val symbols: SymbolTable)
             is ThirReturn      -> return Evaluation(null.toSuccess(), true)
             is ThirReturnError -> return Evaluation(evaluateExpression(frame, instruction.expression).toFailure(), true)
             is ThirReturnValue -> return Evaluation(evaluateExpression(frame, instruction.expression).toSuccess(), true)
+            is ThirWhile       -> TODO()
         }
         return Evaluation(null.toSuccess(), false)
     }

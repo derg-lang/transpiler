@@ -112,6 +112,8 @@ fun Any.hirBranch(
     failure: List<HirInstruction> = emptyList(),
 ) = HirBranch(hir, success, failure)
 
+fun Any.hirWhile(vararg instructions: HirInstruction) = HirWhile(hir, instructions.toList())
+
 ////////////////////
 // Symbol helpers //
 ////////////////////

@@ -31,9 +31,11 @@ internal class ResolverInstruction(symbols: SymbolTable, private val types: Type
         is HirAssignAdd      -> TODO()
         is HirBranch         -> handle(node)
         is HirEvaluate       -> handle(node)
+        is HirFor            -> TODO()
         is HirReturn         -> ThirReturn.toSuccess()
         is HirReturnError    -> values.resolve(node.expression).mapValue { ThirReturnError(it) }
         is HirReturnValue    -> values.resolve(node.expression).mapValue { ThirReturnValue(it) }
+        is HirWhile          -> handle(node)
     }
     
     private fun handle(node: HirAssign): Result<ThirInstruction, ResolveError>
@@ -69,5 +71,13 @@ internal class ResolverInstruction(symbols: SymbolTable, private val types: Type
         val expression = values.resolve(node.expression).valueOr { return it.toFailure() }
         
         return ThirEvaluate(expression).toSuccess()
+    }
+    
+    private fun handle(node: HirWhile): Result<ThirInstruction, ResolveError>
+    {
+        val predicate = values.resolve(node.predicate).valueOr { return it.toFailure() }
+        val instructions = node.instructions.mapUntilError { resolve(it) }.valueOr { return it.toFailure() }
+        
+        return ThirWhile(predicate, instructions).toSuccess()
     }
 }
