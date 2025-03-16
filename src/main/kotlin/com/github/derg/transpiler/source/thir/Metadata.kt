@@ -103,6 +103,7 @@ data class ThirParameterStatic(val name: String?, val value: ThirValue)
  *
  * @param name The name of the parameter.
  * @param type The type of possible values which can be used as the parameter.
+ * @param value The value associated with the runtime parameter.
  * @param passability The method used to pass the parameter into the function.
  */
-data class ThirParameterDynamic(val name: String, val type: ThirType, val passability: Passability)
+data class ThirParameterDynamic(val name: String, val type: ThirType, val value: ThirValue?, val passability: Passability)

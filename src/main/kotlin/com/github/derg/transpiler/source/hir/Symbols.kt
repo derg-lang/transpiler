@@ -99,7 +99,7 @@ val HirStruct.constructor get() = HirFunction(
     type = HirType.Function(
         value = HirType.Structure(name, Mutability.MUTABLE, emptyList()),
         error = null,
-        parameters = fields.map { HirParameterDynamic(it.name, it.type, Passability.MOVE) },
+        parameters = fields.map { HirParameterDynamic(it.name, it.type, it.value, Passability.MOVE) },
     ),
     visibility = visibility,
     instructions = listOf(HirReturnValue(HirRecord(id, fields.associate { it.id to HirLoad(it.name, emptyList()) }))),

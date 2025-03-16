@@ -28,7 +28,7 @@ private fun AstType.toHir(): HirType = when (this)
 }
 
 private fun AstParameterStatic.toHir() = HirParameterStatic(name = name, value = value.toHir())
-private fun AstParameterDynamic.toHir() = HirParameterDynamic(name = name, type = type.toHir(), passability = passability)
+private fun AstParameterDynamic.toHir() = HirParameterDynamic(name = name, type = type.toHir(), value = null, passability = passability)
 
 /**
  *
@@ -50,7 +50,7 @@ internal fun AstFunction.toHir() = HirFunction(
     type = HirType.Function(
         value = valueType?.toHir(),
         error = errorType?.toHir(),
-        parameters = parameters.map { HirParameterDynamic(it.name, it.type.toHir(), it.passability) },
+        parameters = parameters.map { HirParameterDynamic(it.name, it.type.toHir(), it.value?.toHir(), it.passability) },
     ),
     visibility = visibility,
     instructions = statements.map { it.toHir() },

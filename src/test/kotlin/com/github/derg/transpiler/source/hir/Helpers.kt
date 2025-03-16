@@ -48,7 +48,7 @@ fun hirTypeCall(
 ) = HirType.Function(
     value = value,
     error = error,
-    parameters = parameters.map { HirParameterDynamic("", it, Passability.IN) },
+    parameters = parameters.map { HirParameterDynamic("", it, null, Passability.IN) },
 )
 
 fun hirTypeUnion(vararg types: HirType) = HirType.Union(types.toSet())
@@ -83,7 +83,7 @@ infix fun Any.hirCatchReturn(that: Any) = HirCatch(this.hir, that.hir, Capture.R
 infix fun Any.hirCatchHandle(that: Any) = HirCatch(this.hir, that.hir, Capture.HANDLE)
 
 fun HirSymbol.hirLoad(vararg parameters: Any) = HirLoad(name, parameters.map { null hirArg it })
-fun HirValue.hirCall(vararg parameters: Any) = HirCall(this, parameters.map { null hirArg it })
+fun HirValue.hirCall(vararg parameters: Pair<String?, Any>) = HirCall(this, parameters.map { it.first hirArg it.second })
 fun HirValue.hirMember(field: HirLoad) = HirMember(this, field)
 infix fun String?.hirArg(that: Any) = NamedMaybe(this, that.hir)
 
@@ -128,7 +128,7 @@ fun hirFunOf(
 ) = HirFunction(
     id = UUID.randomUUID(),
     name = name,
-    type = HirType.Function(value, error, params.map { HirParameterDynamic(it.name, it.type, Passability.IN) }),
+    type = HirType.Function(value, error, params.map { HirParameterDynamic(it.name, it.type, it.value, Passability.IN) }),
     visibility = Visibility.PRIVATE,
     instructions = instructions,
     generics = emptyList(),
@@ -144,7 +144,7 @@ fun hirLitOf(
 ) = HirLiteral(
     id = UUID.randomUUID(),
     name = name,
-    type = HirType.Function(value, null, listOf(HirParameterDynamic("", param.type as HirType.Structure, Passability.IN))),
+    type = HirType.Function(value, null, listOf(HirParameterDynamic(param.name, param.type, param.value, Passability.IN))),
     visibility = Visibility.PRIVATE,
     instructions = instructions,
     variables = emptyList(),

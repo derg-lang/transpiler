@@ -18,13 +18,18 @@ private fun HirStruct.asThir() = ThirType.Structure(
 )
 
 /**
- * Generates a thir-representation of the function.
+ * Generates a thir-representation of the value.
  */
-private fun HirFunction.asThir() = ThirType.Function(
-    value = null,
-    error = null,
-    parameters = emptyList(),
-)
+private fun HirValue.asThir(): ThirValue = when (this)
+{
+    is HirInteger -> when (literal)
+    {
+        INT32_LIT_NAME -> ThirConstInt32(value.toInt())
+        INT64_LIT_NAME -> ThirConstInt64(value.toLong())
+        else           -> throw IllegalStateException("Integer of type '$literal' is not supported in these tests")
+    }
+    else          -> throw IllegalStateException("Not supported in the unit tests")
+}
 
 /**
  * Simulates what a thir call on [this] function would be given the list of [parameters]. The function is assumed
@@ -33,7 +38,7 @@ private fun HirFunction.asThir() = ThirType.Function(
 private fun HirFunction.thirCall(vararg parameters: Any): ThirValue
 {
     val inputs = parameters.map { it.thir }
-    val params = this.parameters.zip(inputs).map { ThirParameterDynamic(it.first.name, it.second.value!!, Passability.IN) }
+    val params = this.parameters.zip(inputs).map { thirTypeParam(name = it.first.name, type = it.second.value!!, value = it.first.value?.asThir()) }
     val type = ThirType.Function(null, null, params)
     
     return ThirCall(null, null, ThirLoad(type, id, emptyList()), inputs)
@@ -43,7 +48,7 @@ private fun HirLiteral.thirCall(parameter: Any): ThirValue
 {
     val input = parameter.thir
     val output = ThirType.Structure(Builtin.INT32.id, Mutability.IMMUTABLE, emptyList())
-    val type = ThirType.Function(output, null, listOf(ThirParameterDynamic("", input.value as ThirType.Structure, Passability.IN)))
+    val type = ThirType.Function(output, null, listOf(thirTypeParam(name = "", type = input.value!!, value = this.parameter.value?.asThir())))
     
     return ThirCall(output, null, ThirLoad(type, id, emptyList()), listOf(input))
 }
@@ -61,7 +66,7 @@ class TestResolverValue
         hirFunOf(name = name, params = parameters.map { hirParamOf(type = it) }).also(scope::register)
     
     private fun registerLit(name: String, parameter: HirType): HirLiteral =
-        hirLitOf(name = name, param = hirParamOf(type = parameter)).also(scope::register)
+        hirLitOf(name = name, param = hirParamOf(name = "", type = parameter)).also(scope::register)
     
     private fun registerVar(name: String): HirVariable =
         hirVarOf(name = name).also(scope::register)
@@ -160,7 +165,7 @@ class TestResolverValue
         {
             val function = registerFun("fun", Builtin.INT32_TYPE)
             
-            assertSuccess(function.thirCall(1), run(function.hirLoad().hirCall(1)))
+            assertSuccess(function.thirCall(1), run(function.hirLoad().hirCall(null to 1)))
         }
         
         @Test
@@ -169,19 +174,7 @@ class TestResolverValue
             val function = registerFun("fun", Builtin.INT32_TYPE)
             val expected = ArgumentMismatch(function.name, listOf(null hirArg true))
             
-            assertFailure(expected, run(function.hirLoad().hirCall(true)))
-        }
-        
-        @Test
-        @Disabled // TODO: Find a way to implement this test in a sane manner.
-        fun `Given parameter without value type, when resolving, then correct error`()
-        {
-        }
-        
-        @Test
-        @Disabled // TODO: Find a way to implement this test in a sane manner.
-        fun `Given parameter with error type, when resolving, then correct error`()
-        {
+            assertFailure(expected, run(function.hirLoad().hirCall(null to true)))
         }
         
         @Test
@@ -202,25 +195,41 @@ class TestResolverValue
             )
             val expected = AmbiguousFunction(functions[0].name, listOf(null hirArg true))
             
-            assertFailure(expected, run(functions[0].hirLoad().hirCall(true)))
+            assertFailure(expected, run(functions[0].hirLoad().hirCall(null to true)))
         }
         
         @Test
-        @Disabled // TODO: Find a way to write this test in a pretty way.
         fun `Given named parameters, when resolving, then correct outcome`()
         {
-//            assertSuccess(f.thirCall(1, "2" to 2L), converter(f.name.astCall(1, "2" to 2L)))
-//            assertSuccess(f.thirCall("1" to 1, "2" to 2L), converter(f.name.astCall("1" to 1, "2" to 2L)))
-//            assertSuccess(f.thirCall("1" to 1, "2" to 2L), converter(f.name.astCall("2" to 2L, "1" to 1)))
+            val params = listOf(hirParamOf("a"), hirParamOf("b"))
+            val function = hirFunOf(params = params).also { scope.register(it) }
+            
+            assertSuccess(function.thirCall(1, 2), run(function.hirLoad().hirCall(null to 1, null to 2)))
+            assertSuccess(function.thirCall(1, 2), run(function.hirLoad().hirCall(null to 1, "b" to 2)))
+            assertSuccess(function.thirCall(1, 2), run(function.hirLoad().hirCall("a" to 1, "b" to 2)))
+            assertSuccess(function.thirCall(1, 2), run(function.hirLoad().hirCall("b" to 2, "a" to 1)))
         }
         
         @Test
-        @Disabled // TODO: Find a way to write this test in a pretty way.
         fun `Given named parameters before unnamed, when resolving, then correct error`()
         {
-//            val expected = ArgumentMisnamed(f.name, listOf(("2" to 2L).thirArg, 1.thirArg))
-//
-//            assertFailure(expected, converter(f.name.astCall("2" to 2L, 1)))
+            val params = listOf(hirParamOf("a"), hirParamOf("b"))
+            val function = hirFunOf(params = params).also { scope.register(it) }
+            val expected = ArgumentMisnamed(function.name, listOf("a" hirArg 1, null hirArg 2))
+            
+            assertFailure(expected, run(function.hirLoad().hirCall("a" to 1, null to 2)))
+        }
+        
+        @Test
+        fun `Given omitted parameter with default value, when resolving, then correct outcome`()
+        {
+            val params = listOf(hirParamOf(name = "a", value = 1.hir), hirParamOf(name = "b", value = 2.hir))
+            val function = hirFunOf(params = params).also { scope.register(it) }
+            
+            assertSuccess(function.thirCall(1, 2), run(function.hirLoad().hirCall()))
+            assertSuccess(function.thirCall(5, 2), run(function.hirLoad().hirCall(null to 5)))
+            assertSuccess(function.thirCall(5, 2), run(function.hirLoad().hirCall("a" to 5)))
+            assertSuccess(function.thirCall(1, 5), run(function.hirLoad().hirCall("b" to 5)))
         }
     }
     
@@ -506,13 +515,13 @@ class TestResolverValue
             engine.prepare(scope).valueOrDie()
             engine.resolve(scope, struct).valueOrDie()
             
-            val type = thirTypeCall(value = struct.asThir())
+            val type = thirTypeFun(value = struct.asThir())
             val instance = ThirLoad(value = type, symbolId = factory.id, generics = emptyList())
             val call = ThirCall(value = struct.asThir(), error = null, instance = instance, parameters = emptyList())
-
+            
             val input = factory.hirLoad().hirCall().hirMember(field.hirLoad())
             val expected = ThirMember(Builtin.BOOL.asThir(), call, field.id)
-
+            
             assertSuccess(expected, run(input))
         }
     }

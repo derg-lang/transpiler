@@ -22,7 +22,7 @@ val Any.thir: ThirValue
 // Type helpers //
 //////////////////
 
-fun thirTypeData(
+fun thirTypeStruct(
     struct: ThirStruct,
     mutability: Mutability = Mutability.IMMUTABLE,
 ) = ThirType.Structure(
@@ -31,7 +31,7 @@ fun thirTypeData(
     parameters = emptyList(),
 )
 
-fun thirTypeData(
+fun thirTypeStruct(
     symbolId: UUID = UUID.randomUUID(),
     mutability: Mutability = Mutability.IMMUTABLE,
 ) = ThirType.Structure(
@@ -40,14 +40,26 @@ fun thirTypeData(
     parameters = emptyList(),
 )
 
-fun thirTypeCall(
+fun thirTypeFun(
     value: ThirType? = null,
     error: ThirType? = null,
     parameters: List<ThirType> = emptyList(),
 ) = ThirType.Function(
     value = value,
     error = error,
-    parameters = parameters.map { ThirParameterDynamic("", it, Passability.IN) },
+    parameters = parameters.map { thirTypeParam(type = it) },
+)
+
+fun thirTypeParam(
+    name: String = UUID.randomUUID().toString(),
+    type: ThirType,
+    value: ThirValue? = null,
+    passability: Passability = Passability.IN,
+) = ThirParameterDynamic(
+    name = name,
+    type = type,
+    value = value,
+    passability = passability,
 )
 
 ////////////////////////
@@ -64,7 +76,7 @@ private fun op(function: HirFunction, value: HirStruct, error: HirStruct?, varar
     
     val valueType = ThirType.Structure(value.id, Mutability.IMMUTABLE, emptyList())
     val errorType = error?.let { ThirType.Structure(it.id, Mutability.IMMUTABLE, emptyList()) }
-    val callable = ThirType.Function(valueType, errorType, params.mapIndexed { i, p -> ThirParameterDynamic(names[i]!!, p.value!!, Passability.IN) })
+    val callable = ThirType.Function(valueType, errorType, params.mapIndexed { i, p -> thirTypeParam(type = p.value!!, name = names[i]!!) })
     val instance = ThirLoad(callable, function.id, emptyList())
     
     return ThirCall(valueType, errorType, instance, params.toList())
@@ -158,7 +170,7 @@ fun thirFunOf(
 ) = ThirFunction(
     id = id,
     name = name,
-    type = ThirType.Function(value, error, params.map { ThirParameterDynamic(it.name, it.type, Passability.IN) }),
+    type = ThirType.Function(value, error, params.map { thirTypeParam(name = it.name, type = it.type) }),
     visibility = Visibility.PRIVATE,
     instructions = emptyList(),
     genericIds = emptyList(),
@@ -169,12 +181,12 @@ fun thirFunOf(
 fun thirLitOf(
     id: UUID = UUID.randomUUID(),
     name: String = UUID.randomUUID().toString(),
-    value: ThirType = thirTypeData(Builtin.INT32.id),
+    value: ThirType = thirTypeStruct(Builtin.INT32.id),
     param: ThirParameter = thirParamOf(),
 ) = ThirFunction(
     id = id,
     name = name,
-    type = ThirType.Function(value, null, listOf(ThirParameterDynamic("", param.type as ThirType.Structure, Passability.IN))),
+    type = ThirType.Function(value, null, listOf(thirTypeParam(name = param.name, type = param.type))),
     visibility = Visibility.PRIVATE,
     instructions = emptyList(),
     genericIds = emptyList(),
@@ -185,7 +197,7 @@ fun thirLitOf(
 fun thirParamOf(
     id: UUID = UUID.randomUUID(),
     name: String = UUID.randomUUID().toString(),
-    type: ThirType = thirTypeData(Builtin.INT32.id),
+    type: ThirType = thirTypeStruct(Builtin.INT32.id),
     value: ThirValue? = null,
 ) = ThirParameter(
     id = id,

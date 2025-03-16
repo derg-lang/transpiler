@@ -13,13 +13,13 @@ import java.time.OffsetDateTime
 private const val SOURCE = """
     type Test
     {
-        val foo: __builtin_i32
+        val foo: __builtin_i32 = 2
         val bar: __builtin_i32
     }
     
     fun main() -> __builtin_i32
     {
-        val test = Test(foo = 2, bar = 23)
+        val test = Test(bar = 23)
         
         return fibonacci(test.foo + test.bar)
     }

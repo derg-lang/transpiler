@@ -9,7 +9,7 @@ import com.github.derg.transpiler.utils.*
  * resolution, no assumptions are required. In order to resolve a type properly, the struct with the appropriate name
  * must be visible from the scope.
  */
-internal class ResolverType(private val scope: Scope)
+internal class ResolverType(private val symbols: SymbolTable, private val types: TypeTable, private val scope: Scope)
 {
     /**
      * Resolves the [type] information to the typed representation if possible. Types may only be resolved if the
@@ -53,6 +53,11 @@ internal class ResolverType(private val scope: Scope)
         return ThirType.Union(types.toSet()).simplify().toSuccess()
     }
     
-    private fun resolve(parameter: HirParameterDynamic): Result<ThirParameterDynamic, ResolveError> =
-        resolve(parameter.type).mapValue { ThirParameterDynamic(parameter.name, it, parameter.passability) }
+    private fun resolve(parameter: HirParameterDynamic): Result<ThirParameterDynamic, ResolveError>
+    {
+        val type = resolve(parameter.type).valueOr { return it.toFailure() }
+        val value = parameter.value?.let { ResolverValue(symbols, types, scope).resolve(it) }?.valueOr { return it.toFailure() }
+        
+        return ThirParameterDynamic(parameter.name, type, value, parameter.passability).toSuccess()
+    }
 }

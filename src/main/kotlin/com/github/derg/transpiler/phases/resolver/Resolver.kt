@@ -152,7 +152,7 @@ internal class ResolutionEngine
  */
 private class PreparerSymbol(symbols: SymbolTable, private val table: TypeTable, scope: Scope)
 {
-    private val typeResolver = ResolverType(scope)
+    private val typeResolver = ResolverType(symbols, table, scope)
     private val valueResolver = ResolverValue(symbols, table, scope)
     
     // Collection of symbols which remains to be processed, in the exact order they should be processed.
