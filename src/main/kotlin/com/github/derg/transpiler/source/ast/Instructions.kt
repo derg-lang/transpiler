@@ -65,3 +65,9 @@ data class AstReturnError(val expression: AstValue) : AstInstruction
  * value from a function indicates usually that the function has succeeded in producing a usable value.
  */
 data class AstReturnValue(val expression: AstValue) : AstInstruction
+
+/**
+ * While loops are a control flow construct which iterates until the [predicate] evaluates to false. The [instructions]
+ * will be repeatedly executed until no more elements remains in the loop.
+ */
+data class AstWhile(val predicate: AstValue, val instructions: List<AstInstruction>) : AstInstruction

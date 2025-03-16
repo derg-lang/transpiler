@@ -195,4 +195,5 @@ internal fun AstInstruction.toHir(): HirInstruction = when (this)
     is AstReturnError    -> HirReturnError(expression.toHir())
     is AstReturnValue    -> HirReturnValue(expression.toHir())
     is AstVariable       -> HirAssign(HirLoad(name, emptyList()), value.toHir())
+    is AstWhile          -> TODO()
 }

@@ -134,6 +134,14 @@ fun astForOf(
 fun astWhenOf(expression: Any, vararg branches: Pair<Any, Any>, default: Any? = null) =
     AstWhen(expression.ast, branches.map { it.first.ast to it.second.ast }, default?.ast)
 
+/**
+ * Generates a while loop statement from the provided input parameters.
+ */
+fun astWhileOf(
+    expression: Any,
+    instructions: List<AstInstruction> = emptyList(),
+) = AstWhile(expression.ast, instructions)
+
 ////////////////////
 // Symbol helpers //
 ////////////////////

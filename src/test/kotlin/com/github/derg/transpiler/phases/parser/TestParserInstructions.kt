@@ -36,6 +36,8 @@ class TestParserInstructions
         
         tester.parse("for a in b {}").isChain(0, 5, 1).isValue(astForOf("a", "b".astLoad(), emptyList()))
         tester.parse("for a in b 0").isChain(0, 4, 1).isValue(astForOf("a", "b".astLoad(), listOf(0.astEval)))
+        tester.parse("while a {}").isChain(0, 3, 1).isValue(astWhileOf("a".astLoad(), emptyList()))
+        tester.parse("while a 0").isChain(0, 2, 1).isValue(astWhileOf("a".astLoad(), listOf(0.astEval)))
         
         tester.parse("raise 1").isChain(0, 1, 1).isValue(1.astReturnError)
         tester.parse("return 1").isChain(0, 1, 1).isValue(1.astReturnValue)
