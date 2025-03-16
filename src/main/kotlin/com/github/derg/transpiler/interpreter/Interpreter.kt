@@ -9,8 +9,11 @@ import kotlin.collections.ArrayDeque
 
 /**
  * An outcome of evaluation.
+ *
+ * @param outcome The value the expression was evaluated to.
+ * @param return Whether the current function call should immediately return or not.
  */
-private typealias Evaluation = Result<ThirValue?, ThirValue?>
+private data class Evaluation(val outcome: Result<ThirValue?, ThirValue?>, val `return`: Boolean)
 
 /**
  * Super-basic interpreter which can run some code, but not all. This is an early prototype of what an interpreter could
@@ -27,7 +30,7 @@ class Interpreter(private val symbols: SymbolTable)
     {
         val main = symbols.functions[entrypoint] ?: throw IllegalArgumentException("Function with id '$entrypoint' does not exist")
         
-        return pushFrame { evaluate(it, main, emptyList()) }
+        return pushFrame { evaluate(it, main, emptyList()) }.outcome
     }
     
     /**
@@ -53,13 +56,13 @@ class Interpreter(private val symbols: SymbolTable)
         for (instruction in instructions) when (instruction)
         {
             is ThirAssign      -> frame[instruction.symbolId] = evaluateExpression(frame, instruction.expression)
-            is ThirBranch      -> evaluateBranch(frame, instruction)
+            is ThirBranch      -> evaluateBranch(frame, instruction).also { if (it.`return`) return it }
             is ThirEvaluate    -> evaluateExpression(frame, instruction.expression)
-            is ThirReturn      -> return null.toSuccess()
-            is ThirReturnError -> return evaluateExpression(frame, instruction.expression).toFailure()
-            is ThirReturnValue -> return evaluateExpression(frame, instruction.expression).toSuccess()
+            is ThirReturn      -> return Evaluation(null.toSuccess(), true)
+            is ThirReturnError -> return Evaluation(evaluateExpression(frame, instruction.expression).toFailure(), true)
+            is ThirReturnValue -> return Evaluation(evaluateExpression(frame, instruction.expression).toSuccess(), true)
         }
-        return null.toSuccess()
+        return Evaluation(null.toSuccess(), false)
     }
     
     private fun evaluateBranch(frame: StackFrame, instruction: ThirBranch): Evaluation
@@ -126,7 +129,7 @@ class Interpreter(private val symbols: SymbolTable)
             Builtin.INT64_NEG.id -> ThirConstInt64(-(a as ThirConstInt64).raw)
             Builtin.INT64_POS.id -> ThirConstInt64((a as ThirConstInt64).raw)
             Builtin.INT64_SUB.id -> ThirConstInt64((a as ThirConstInt64).raw - (b as ThirConstInt64).raw)
-            else                 -> pushFrame { evaluate(it, symbol, parameters).valueOrNull() ?: TODO() }
+            else                 -> pushFrame { evaluate(it, symbol, parameters).outcome.valueOrNull() ?: TODO() }
         }
     }
 }
