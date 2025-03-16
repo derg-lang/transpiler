@@ -26,16 +26,12 @@ private const val SOURCE = """
     
     fun fibonacci(n: __builtin_i32) -> __builtin_i32
     {
-        var result = 0
-
         if n <= 0
-            result = 0
+            return 0
         else if n == 1 || n == 2
-            result = 1
+            return 1
         else
-            result = fibonacci(n - 2) + fibonacci(n - 1)
-
-        return result
+            return fibonacci(n - 2) + fibonacci(n - 1)
     }
 """
 
