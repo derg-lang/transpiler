@@ -61,7 +61,7 @@ class Interpreter(private val symbols: SymbolTable)
             is ThirReturn      -> return Evaluation(null.toSuccess(), true)
             is ThirReturnError -> return Evaluation(evaluateExpression(frame, instruction.expression).toFailure(), true)
             is ThirReturnValue -> return Evaluation(evaluateExpression(frame, instruction.expression).toSuccess(), true)
-            is ThirWhile       -> TODO()
+            is ThirWhile       -> evaluateWhile(frame, instruction.predicate, instruction.instructions)?.also { if (it.`return`) return it }
         }
         return Evaluation(null.toSuccess(), false)
     }
@@ -132,6 +132,13 @@ class Interpreter(private val symbols: SymbolTable)
             Builtin.INT64_SUB.id -> ThirConstInt64((a as ThirConstInt64).raw - (b as ThirConstInt64).raw)
             else                 -> pushFrame { evaluate(it, symbol, parameters).outcome.valueOrNull() ?: TODO() }
         }
+    }
+    
+    private fun evaluateWhile(frame: StackFrame, predicate: ThirValue, instructions: List<ThirInstruction>): Evaluation?
+    {
+        while ((evaluateExpression(frame, predicate) as ThirConstBool).raw)
+            evaluateInstructions(frame, instructions).also { if (it.`return`) return it }
+        return null
     }
 }
 
