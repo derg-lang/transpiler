@@ -22,6 +22,7 @@ internal class CheckerValue
         is ThirConstBool  -> Unit.toSuccess()
         is ThirConstInt32 -> Unit.toSuccess()
         is ThirConstInt64 -> Unit.toSuccess()
+        is ThirConstStr   -> Unit.toSuccess()
     }
     
     private fun handle(node: ThirCall): Result<Unit, TypeError>

@@ -13,7 +13,6 @@ const val STR_LIT_NAME = "s"
  * into the compiler. These data structures cannot be represented in source code as libraries without great effort and
  * poor support.
  */
-const val VOID_TYPE_NAME = "__builtin_void"
 const val BOOL_TYPE_NAME = "__builtin_bool"
 const val INT32_TYPE_NAME = "__builtin_i32"
 const val INT64_TYPE_NAME = "__builtin_i64"

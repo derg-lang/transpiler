@@ -63,10 +63,12 @@ object Builtin
     val INT64_POS = registerPrefixOp(Symbol.PLUS, INT64_TYPE, INT64_TYPE, null)
     val INT64_SUB = registerInfixOp(Symbol.MINUS, INT64_TYPE, INT64_TYPE, null)
     
-    // TODO: Support strings somehow
     val STR = registerStruct(STR_TYPE_NAME)
     val STR_TYPE = typeOf(STR)
     val STR_LIT = registerLiteral(STR_LIT_NAME, STR_TYPE)
+    val STR_EQ = registerInfixOp(Symbol.EQUAL, STR_TYPE, BOOL_TYPE, null)
+    val STR_NE = registerInfixOp(Symbol.NOT_EQUAL, STR_TYPE, BOOL_TYPE, null)
+    val STR_ADD = registerInfixOp(Symbol.PLUS, STR_TYPE, STR_TYPE, null)
 }
 
 /**

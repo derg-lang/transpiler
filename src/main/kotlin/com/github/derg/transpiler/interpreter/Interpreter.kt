@@ -81,6 +81,7 @@ class Interpreter(private val symbols: SymbolTable)
         is ThirConstBool  -> value
         is ThirConstInt32 -> value
         is ThirConstInt64 -> value
+        is ThirConstStr   -> value
         is ThirLoad       -> frame[value.symbolId]
         is ThirMember     -> (evaluateExpression(frame, value.instance) as ThirRecord).fields[value.fieldId]!!
         is ThirRecord     -> value.apply { fields.forEach { (id, value) -> fields[id] = evaluateExpression(frame, value) } }
@@ -130,6 +131,9 @@ class Interpreter(private val symbols: SymbolTable)
             Builtin.INT64_NEG.id -> ThirConstInt64(-(a as ThirConstInt64).raw)
             Builtin.INT64_POS.id -> ThirConstInt64((a as ThirConstInt64).raw)
             Builtin.INT64_SUB.id -> ThirConstInt64((a as ThirConstInt64).raw - (b as ThirConstInt64).raw)
+            Builtin.STR_EQ.id    -> ThirConstBool((a as ThirConstStr).raw == (b as ThirConstStr).raw)
+            Builtin.STR_NE.id    -> ThirConstBool((a as ThirConstStr).raw != (b as ThirConstStr).raw)
+            Builtin.STR_ADD.id   -> ThirConstStr((a as ThirConstStr).raw + (b as ThirConstStr).raw)
             else                 -> pushFrame { evaluate(it, symbol, parameters).outcome.valueOrNull() ?: TODO() }
         }
     }

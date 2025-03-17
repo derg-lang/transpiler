@@ -99,3 +99,12 @@ data class ThirConstInt64(val raw: Long) : ThirValue
     override val value: ThirType get() = ThirType.Structure(Builtin.INT64.id, Mutability.IMMUTABLE, emptyList())
     override val error: Nothing? get() = null
 }
+
+/**
+ * Unicode character sequences.
+ */
+data class ThirConstStr(val raw: String) : ThirValue
+{
+    override val value: ThirType get() = ThirType.Structure(Builtin.STR.id, Mutability.IMMUTABLE, emptyList())
+    override val error: Nothing? get() = null
+}
