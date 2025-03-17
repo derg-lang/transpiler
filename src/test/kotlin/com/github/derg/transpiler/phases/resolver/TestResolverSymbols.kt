@@ -11,7 +11,7 @@ import org.junit.jupiter.api.Assertions.*
 /**
  * Generates a thir-representation of the struct.
  */
-private fun HirStruct.asThir() = ThirType.Structure(
+private fun HirStruct.asThir() = ThirType.Variable(
     symbolId = id,
     mutability = Mutability.IMMUTABLE,
     parameters = emptyList(),
@@ -221,7 +221,7 @@ class TestResolverSymbol
         @Test
         fun `Given unknown type, when resolving, then correct error`()
         {
-            val input = hirParamOf(type = hirTypeData("invalid"))
+            val input = hirParamOf(type = hirTypeVar("invalid"))
             val expected = UnknownStruct("invalid")
             
             assertFailure(expected, run(input))
@@ -230,7 +230,7 @@ class TestResolverSymbol
         @Test
         fun `Given ambiguous type, when resolving, then correct error`()
         {
-            val type = hirTypeData("ambiguous")
+            val type = hirTypeVar("ambiguous")
             
             hirStructOf(name = type.name).also { scope.register(it) }
             hirStructOf(name = type.name).also { scope.register(it) }
@@ -320,7 +320,7 @@ class TestResolverSymbol
         @Test
         fun `Given unknown type, when resolving, then correct error`()
         {
-            val input = hirVarOf(type = hirTypeData("invalid"))
+            val input = hirVarOf(type = hirTypeVar("invalid"))
             val expected = UnknownStruct("invalid")
             
             assertFailure(expected, run(input))
@@ -329,7 +329,7 @@ class TestResolverSymbol
         @Test
         fun `Given ambiguous type, when resolving, then correct error`()
         {
-            val type = hirTypeData("ambiguous")
+            val type = hirTypeVar("ambiguous")
             
             hirStructOf(name = type.name).also { scope.register(it) }
             hirStructOf(name = type.name).also { scope.register(it) }

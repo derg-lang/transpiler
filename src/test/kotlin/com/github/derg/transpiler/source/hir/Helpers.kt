@@ -33,25 +33,25 @@ fun hirTemplateValue(
     default: HirValue? = null,
 ) = HirTemplate.Value(name = name, type = type, default = default)
 
-fun hirTypeData(
+fun hirTypeVar(
     struct: HirStruct = Builtin.INT32,
     mutability: Mutability = Mutability.IMMUTABLE,
-) = HirType.Structure(
+) = HirType.Variable(
     name = struct.name,
     mutability = mutability,
     parameters = emptyList(),
 )
 
-fun hirTypeData(
+fun hirTypeVar(
     name: String = UUID.randomUUID().toString(),
     mutability: Mutability = Mutability.IMMUTABLE,
-) = HirType.Structure(
+) = HirType.Variable(
     name = name,
     mutability = mutability,
     parameters = emptyList(),
 )
 
-fun hirTypeCall(
+fun hirTypeFun(
     value: HirType? = null,
     error: HirType? = null,
     parameters: List<HirType> = emptyList(),

@@ -17,12 +17,12 @@ internal class ResolverType(private val symbols: SymbolTable, private val types:
      */
     fun resolve(type: HirType): Result<ThirType, ResolveError> = when (type)
     {
-        is HirType.Function  -> resolve(type)
-        is HirType.Structure -> resolve(type)
-        is HirType.Union     -> resolve(type)
+        is HirType.Function -> resolve(type)
+        is HirType.Variable -> resolve(type)
+        is HirType.Union    -> resolve(type)
     }
     
-    fun resolve(type: HirType.Structure): Result<ThirType.Structure, ResolveError>
+    fun resolve(type: HirType.Variable): Result<ThirType.Variable, ResolveError>
     {
         // TODO: This way of resolving the typed information does not take generics into consideration. We need to match
         //       all provided generics towards all potential candidates, taking names and ordering into consideration.
@@ -34,7 +34,7 @@ internal class ResolverType(private val symbols: SymbolTable, private val types:
             else -> return ResolveError.AmbiguousStruct(type.name).toFailure()
         }
         
-        return ThirType.Structure(symbolId = candidate.id, mutability = type.mutability, parameters = emptyList()).toSuccess()
+        return ThirType.Variable(symbolId = candidate.id, mutability = type.mutability, parameters = emptyList()).toSuccess()
     }
     
     fun resolve(type: HirType.Function): Result<ThirType.Function, ResolveError>

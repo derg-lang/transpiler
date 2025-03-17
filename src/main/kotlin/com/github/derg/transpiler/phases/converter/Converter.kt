@@ -22,9 +22,9 @@ fun convert(program: AstProgram) = HirProgram(
  */
 private fun AstType.toHir(): HirType = when (this)
 {
-    is AstType.Function  -> HirType.Function(value = value?.toHir(), error = error?.toHir(), parameters = parameters.map { it.toHir() })
-    is AstType.Structure -> HirType.Structure(name = name, mutability = mutability, parameters = parameters.map { it.toHir() })
-    is AstType.Union     -> HirType.Union(types = types.map { it.toHir() }.toSet())
+    is AstType.Function -> HirType.Function(value = value?.toHir(), error = error?.toHir(), parameters = parameters.map { it.toHir() })
+    is AstType.Variable -> HirType.Variable(name = name, mutability = mutability, parameters = parameters.map { it.toHir() })
+    is AstType.Union    -> HirType.Union(types = types.map { it.toHir() }.toSet())
 }
 
 private fun AstTemplate.toHir(): HirTemplate = when (this)

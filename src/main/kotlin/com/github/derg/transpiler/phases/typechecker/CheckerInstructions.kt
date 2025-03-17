@@ -52,7 +52,7 @@ internal class CheckerInstruction(private val symbols: SymbolTable, private val 
         
         // The value type must be boolean.
         val value = node.predicate.value ?: return TypeError.BranchMissingValue(node.predicate).toFailure()
-        if (value !is ThirType.Structure || value.symbolId != Builtin.BOOL.id)
+        if (value !is ThirType.Variable || value.symbolId != Builtin.BOOL.id)
             return TypeError.BranchWrongType(node.predicate).toFailure()
         
         return CheckerValue().check(node.predicate)
@@ -132,7 +132,7 @@ internal class CheckerInstruction(private val symbols: SymbolTable, private val 
         
         // The value type must be boolean.
         val value = node.predicate.value ?: return TypeError.WhileMissingValue(node.predicate).toFailure()
-        if (value !is ThirType.Structure || value.symbolId != Builtin.BOOL.id)
+        if (value !is ThirType.Variable || value.symbolId != Builtin.BOOL.id)
             return TypeError.WhileWrongType(node.predicate).toFailure()
         
         return CheckerValue().check(node.predicate)

@@ -23,16 +23,16 @@ sealed interface HirType
     data class Function(val value: HirType?, val error: HirType?, val parameters: List<HirParameterDynamic>) : HirType
     
     /**
-     * The structure represents a specific layout of data in memory. This type is used to represent a specific data
+     * The variable type represents a specific layout of data in memory. This type is used to represent a specific data
      * structure which has been declared within the code. Data structures are basic containers of data.
      *
      * Example syntax: `mut List[Int32]`
      *
-     * @param name The name of the structure.
+     * @param name The name of the structure representing the value's memory layout.
      * @param mutability The type of mutation which is permitted on the type.
      * @param parameters The types of all the compile-time parameters the structure accepts.
      */
-    data class Structure(val name: String, val mutability: Mutability, val parameters: List<HirParameterStatic>) : HirType
+    data class Variable(val name: String, val mutability: Mutability, val parameters: List<HirParameterStatic>) : HirType
     
     /**
      * The union type describes a collection of types. This type encodes the meaning that a value must be exactly one of

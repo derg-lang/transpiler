@@ -23,19 +23,10 @@ val Any.thir: ThirValue
 // Type helpers //
 //////////////////
 
-fun thirTypeStruct(
-    struct: ThirStruct,
-    mutability: Mutability = Mutability.IMMUTABLE,
-) = ThirType.Structure(
-    symbolId = struct.id,
-    mutability = mutability,
-    parameters = emptyList(),
-)
-
-fun thirTypeStruct(
+fun thirTypeVar(
     symbolId: UUID = UUID.randomUUID(),
     mutability: Mutability = Mutability.IMMUTABLE,
-) = ThirType.Structure(
+) = ThirType.Variable(
     symbolId = symbolId,
     mutability = mutability,
     parameters = emptyList(),
@@ -75,8 +66,8 @@ private fun op(function: HirFunction, value: HirStruct, error: HirStruct?, varar
 {
     val names = if (params.size == 1) mutableMapOf(0 to "rhs") else mutableMapOf(0 to "lhs", 1 to "rhs")
     
-    val valueType = ThirType.Structure(value.id, Mutability.IMMUTABLE, emptyList())
-    val errorType = error?.let { ThirType.Structure(it.id, Mutability.IMMUTABLE, emptyList()) }
+    val valueType = ThirType.Variable(value.id, Mutability.IMMUTABLE, emptyList())
+    val errorType = error?.let { ThirType.Variable(it.id, Mutability.IMMUTABLE, emptyList()) }
     val callable = ThirType.Function(valueType, errorType, params.mapIndexed { i, p -> thirTypeParam(type = p.value!!, name = names[i]!!) })
     val instance = ThirLoad(callable, function.id, emptyList())
     
@@ -187,7 +178,7 @@ fun thirFunOf(
 fun thirLitOf(
     id: UUID = UUID.randomUUID(),
     name: String = UUID.randomUUID().toString(),
-    value: ThirType = thirTypeStruct(Builtin.INT32.id),
+    value: ThirType = thirTypeVar(Builtin.INT32.id),
     param: ThirParameter = thirParamOf(),
 ) = ThirFunction(
     id = id,
@@ -203,7 +194,7 @@ fun thirLitOf(
 fun thirParamOf(
     id: UUID = UUID.randomUUID(),
     name: String = UUID.randomUUID().toString(),
-    type: ThirType = thirTypeStruct(Builtin.INT32.id),
+    type: ThirType = thirTypeVar(Builtin.INT32.id),
     value: ThirValue? = null,
 ) = ThirParameter(
     id = id,

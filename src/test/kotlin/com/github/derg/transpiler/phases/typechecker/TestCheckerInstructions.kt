@@ -10,8 +10,8 @@ import org.junit.jupiter.api.*
 class TestCheckerInstructions
 {
     private val symbols = SymbolTable()
-    private val bool = thirTypeStruct(Builtin.BOOL.id)
-    private val int32 = thirTypeStruct(Builtin.INT32.id)
+    private val bool = thirTypeVar(Builtin.BOOL.id)
+    private val int32 = thirTypeVar(Builtin.INT32.id)
     
     @Nested
     inner class Assign
@@ -30,7 +30,7 @@ class TestCheckerInstructions
         @Test
         fun `Given invalid type, when checking, then correct error`()
         {
-            val input = thirFunOf(value = thirTypeStruct()).thirCall()
+            val input = thirFunOf(value = thirTypeVar()).thirCall()
             
             assertFailure(AssignWrongType(input), checker.check(variable.thirAssign(input)))
         }
@@ -86,7 +86,7 @@ class TestCheckerInstructions
         @Test
         fun `Given invalid type, when checking, then correct error`()
         {
-            val input = thirFunOf(value = thirTypeStruct()).thirCall()
+            val input = thirFunOf(value = thirTypeVar()).thirCall()
             
             assertFailure(BranchWrongType(input), checker.check(input.thirBranch()))
         }
@@ -142,7 +142,7 @@ class TestCheckerInstructions
         @Test
         fun `Given value type, when checking, then correct error`()
         {
-            val input = thirFunOf(value = thirTypeStruct(), error = null).thirCall()
+            val input = thirFunOf(value = thirTypeVar(), error = null).thirCall()
             
             assertFailure(EvaluateContainsValue(input), checker.check(input.thirEval))
         }
@@ -150,7 +150,7 @@ class TestCheckerInstructions
         @Test
         fun `Given error type, when checking, then correct error`()
         {
-            val input = thirFunOf(value = null, error = thirTypeStruct()).thirCall()
+            val input = thirFunOf(value = null, error = thirTypeVar()).thirCall()
             
             assertFailure(EvaluateContainsError(input), checker.check(input.thirEval))
         }
@@ -346,7 +346,7 @@ class TestCheckerInstructions
         @Test
         fun `Given invalid type, when checking, then correct error`()
         {
-            val input = thirFunOf(value = thirTypeStruct()).thirCall()
+            val input = thirFunOf(value = thirTypeVar()).thirCall()
             
             assertFailure(WhileWrongType(input), checker.check(input.thirWhile()))
         }

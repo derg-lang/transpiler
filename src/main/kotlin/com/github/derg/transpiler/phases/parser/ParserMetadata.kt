@@ -199,31 +199,31 @@ private fun segmentOutcomeOf(values: Parsers) = AstSegment(
 )
 
 /**
- * Parses a type from the token stream.
+ * Parses a variable type from the token stream.
  */
 fun typeParserOf(): Parser<AstType> = ParserAnyOf(
-    ParserPattern(::typeStructPatternOf, ::typeStructOutcomeOf),
+    ParserPattern(::typeVariablePatternOf, ::typeVariableOutcomeOf),
 )
 
-private fun typeStructPatternOf() = ParserSequence(
+private fun typeVariablePatternOf() = ParserSequence(
     "mutability" to mutabilityParserOf(),
     "name" to ParserIdentifier(),
-    "params" to ParserOptional(typeStructParamsPatternOf())
+    "params" to ParserOptional(typeVariableParamsPatternOf())
 )
 
-private fun typeStructParamsPatternOf() = ParserSequence(
+private fun typeVariableParamsPatternOf() = ParserSequence(
     "open" to ParserSymbol(Symbol.OPEN_BRACKET),
     "params" to ParserRepeating(argumentParserOf(), ParserSymbol(Symbol.COMMA)),
     "close" to ParserSymbol(Symbol.CLOSE_BRACKET),
 )
 
-private fun typeStructOutcomeOf(values: Parsers) = AstType.Structure(
+private fun typeVariableOutcomeOf(values: Parsers) = AstType.Variable(
     name = values["name"],
     mutability = values["mutability"],
-    parameters = typeStructParamsOutcomeOf(values["params"]),
+    parameters = typeVariableParamsOutcomeOf(values["params"]),
 )
 
-private fun typeStructParamsOutcomeOf(values: Parsers?): List<AstParameterStatic> =
+private fun typeVariableParamsOutcomeOf(values: Parsers?): List<AstParameterStatic> =
     values?.get<List<NamedMaybe<AstValue>>>("params")?.map { (name, value) -> AstParameterStatic(name, value) } ?: emptyList()
 
 /**

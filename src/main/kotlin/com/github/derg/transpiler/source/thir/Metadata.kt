@@ -24,7 +24,7 @@ sealed interface ThirType
     data class Function(val value: ThirType?, val error: ThirType?, val parameters: List<ThirParameterDynamic>) : ThirType
     
     /**
-     * The structure represents a specific layout of data in memory. This type is used to represent a specific data
+     * The variable type represents a specific layout of data in memory. This type is used to represent a specific data
      * structure which has been declared within the code. Data structures are basic containers of data.
      *
      * Example syntax: `mut List[Int32]`
@@ -33,7 +33,7 @@ sealed interface ThirType
      * @param mutability The type of mutation which is permitted on the type.
      * @param parameters The types of all the compile-time parameters the structure accepts.
      */
-    data class Structure(val symbolId: UUID, val mutability: Mutability, val parameters: List<ThirParameterStatic>) : ThirType
+    data class Variable(val symbolId: UUID, val mutability: Mutability, val parameters: List<ThirParameterStatic>) : ThirType
     
     /**
      * The union type describes a collection of types. This type encodes the meaning that a value must be exactly one of

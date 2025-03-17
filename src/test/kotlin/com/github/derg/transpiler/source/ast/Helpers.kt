@@ -33,11 +33,11 @@ fun astTemplateValue(
     default: AstValue? = null,
 ) = AstTemplate.Value(name = name, type = type, default = default)
 
-fun astTypeData(
+fun astTypeVar(
     name: String = UUID.randomUUID().toString(),
     mutability: Mutability = Mutability.IMMUTABLE,
     parameters: List<AstParameterStatic> = emptyList(),
-) = AstType.Structure(name = name, mutability = mutability, parameters = parameters)
+) = AstType.Variable(name = name, mutability = mutability, parameters = parameters)
 
 fun astParamStatic(
     name: String? = null,
@@ -153,7 +153,7 @@ fun astConstOf(
     vis: Visibility = Visibility.PRIVATE,
 ) = AstConstant(
     name = name,
-    type = AstType.Structure(type, Mutability.IMMUTABLE, emptyList()),
+    type = AstType.Variable(type, Mutability.IMMUTABLE, emptyList()),
     value = value.ast,
     visibility = vis,
 )
@@ -167,8 +167,8 @@ fun astFunOf(
     statements: List<AstInstruction> = emptyList(),
 ) = AstFunction(
     name = name,
-    valueType = valType?.let { AstType.Structure(it, Mutability.IMMUTABLE, emptyList()) },
-    errorType = errType?.let { AstType.Structure(it, Mutability.IMMUTABLE, emptyList()) },
+    valueType = valType?.let { AstType.Variable(it, Mutability.IMMUTABLE, emptyList()) },
+    errorType = errType?.let { AstType.Variable(it, Mutability.IMMUTABLE, emptyList()) },
     parameters = params,
     visibility = vis,
     statements = statements,
@@ -182,7 +182,7 @@ fun astParOf(
     mut: Mutability = Mutability.IMMUTABLE,
 ) = AstParameter(
     name = name,
-    type = AstType.Structure(type, mut, emptyList()),
+    type = AstType.Variable(type, mut, emptyList()),
     value = value?.ast,
     passability = pas,
 )
@@ -196,7 +196,7 @@ fun astPropOf(
     ass: Assignability = Assignability.FINAL,
 ) = AstProperty(
     name = name,
-    type = AstType.Structure(type, mut, emptyList()),
+    type = AstType.Variable(type, mut, emptyList()),
     value = value?.ast,
     visibility = vis,
     assignability = ass,
@@ -223,7 +223,7 @@ fun astVarOf(
     ass: Assignability = Assignability.FINAL,
 ) = AstVariable(
     name = name,
-    type = type?.let { AstType.Structure(it, mut, emptyList()) },
+    type = type?.let { AstType.Variable(it, mut, emptyList()) },
     value = value.ast,
     visibility = vis,
     assignability = ass,

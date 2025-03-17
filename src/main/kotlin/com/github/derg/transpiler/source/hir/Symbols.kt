@@ -94,7 +94,7 @@ val HirStruct.constructor get() = HirFunction(
     id = id,
     name = name,
     type = HirType.Function(
-        value = HirType.Structure(name, Mutability.MUTABLE, emptyList()),
+        value = HirType.Variable(name, Mutability.MUTABLE, emptyList()),
         error = null,
         parameters = fields.map { HirParameterDynamic(it.name, it.type, it.value, Passability.MOVE) },
     ),

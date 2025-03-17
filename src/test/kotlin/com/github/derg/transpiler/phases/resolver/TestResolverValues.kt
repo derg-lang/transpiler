@@ -11,7 +11,7 @@ import java.math.*
 /**
  * Generates a thir-representation of the struct.
  */
-private fun HirStruct.asThir() = ThirType.Structure(
+private fun HirStruct.asThir() = ThirType.Variable(
     symbolId = id,
     mutability = Mutability.IMMUTABLE,
     parameters = emptyList(),
@@ -47,7 +47,7 @@ private fun HirFunction.thirCall(vararg parameters: Any): ThirValue
 private fun HirLiteral.thirCall(parameter: Any): ThirValue
 {
     val input = parameter.thir
-    val output = ThirType.Structure(Builtin.INT32.id, Mutability.IMMUTABLE, emptyList())
+    val output = ThirType.Variable(Builtin.INT32.id, Mutability.IMMUTABLE, emptyList())
     val type = ThirType.Function(output, null, listOf(thirTypeParam(name = "", type = input.value!!, value = this.parameter.value?.asThir())))
     
     return ThirCall(output, null, ThirLoad(type, id, emptyList()), listOf(input))
@@ -512,7 +512,7 @@ class TestResolverValue
     {
         private val field = hirFieldOf(type = Builtin.BOOL_TYPE).also(scope::register)
         private val struct = hirStructOf(fields = listOf(field)).also(scope::register)
-        private val factory = hirFunOf(value = hirTypeData(struct)).also(scope::register)
+        private val factory = hirFunOf(value = hirTypeVar(struct)).also(scope::register)
         
         @Test
         fun `Given instance of struct, when accessing member, then correct outcome`()

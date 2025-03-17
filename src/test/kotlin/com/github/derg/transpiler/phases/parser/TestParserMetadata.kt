@@ -63,14 +63,14 @@ class TestParserType
     @Test
     fun `Given name, when parsing, then correctly parsed`()
     {
-        tester.parse("Type").isOk(1).isDone().isValue(astTypeData(name = "Type"))
+        tester.parse("Type").isOk(1).isDone().isValue(astTypeVar(name = "Type"))
     }
     
     @Test
     fun `Given mutability, when parsing, then correctly parsed`()
     {
-        tester.parse("    Foo").isOk(1).isDone().isValue(astTypeData(name = "Foo", mutability = Mutability.IMMUTABLE))
-        tester.parse("mut Foo").isWip(1).isOk(1).isDone().isValue(astTypeData(name = "Foo", mutability = Mutability.MUTABLE))
+        tester.parse("    Foo").isOk(1).isDone().isValue(astTypeVar(name = "Foo", mutability = Mutability.IMMUTABLE))
+        tester.parse("mut Foo").isWip(1).isOk(1).isDone().isValue(astTypeVar(name = "Foo", mutability = Mutability.MUTABLE))
     }
     
     @Test
@@ -81,6 +81,6 @@ class TestParserType
             astParamStatic(name = "baz", value = 42.ast),
         )
         
-        tester.parse("Foo[Bar, baz = 42]").isOk(1).isWip(6).isOk(1).isDone().isValue(astTypeData(name = "Foo", parameters = parameters))
+        tester.parse("Foo[Bar, baz = 42]").isOk(1).isWip(6).isOk(1).isDone().isValue(astTypeVar(name = "Foo", parameters = parameters))
     }
 }

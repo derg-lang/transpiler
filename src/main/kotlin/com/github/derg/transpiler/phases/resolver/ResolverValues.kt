@@ -217,9 +217,9 @@ internal class ResolverValue(private val symbols: SymbolTable, private val types
         }
         val symbolId = when (parameter.type)
         {
-            is ThirType.Function  -> TODO()
-            is ThirType.Structure -> parameter.type.symbolId
-            is ThirType.Union     -> TODO()
+            is ThirType.Function -> TODO()
+            is ThirType.Variable -> parameter.type.symbolId
+            is ThirType.Union    -> TODO()
         }
         val value = when (symbolId)
         {
@@ -276,7 +276,7 @@ internal class ResolverValue(private val symbols: SymbolTable, private val types
         val instance = resolve(node.instance).valueOr { return it.toFailure() }
         
         val value = instance.value
-        if (value !is ThirType.Structure)
+        if (value !is ThirType.Variable)
             return ResolveError.Placeholder.toFailure()
         
         val symbol = symbols.structs[value.symbolId] ?: TODO()
@@ -295,7 +295,7 @@ internal class ResolverValue(private val symbols: SymbolTable, private val types
         val fields = node.fields.mapValues { (_, value) -> resolve(value).valueOr { return it.toFailure() } }
         
         return ThirRecord(
-            value = ThirType.Structure(symbol.id, Mutability.MUTABLE, emptyList()),
+            value = ThirType.Variable(symbol.id, Mutability.MUTABLE, emptyList()),
             fields = fields.toMutableMap(),
         ).toSuccess()
     }
@@ -326,9 +326,9 @@ internal class ResolverValue(private val symbols: SymbolTable, private val types
         }
         val symbolId = when (parameter.type)
         {
-            is ThirType.Function  -> TODO()
-            is ThirType.Structure -> parameter.type.symbolId
-            is ThirType.Union     -> TODO()
+            is ThirType.Function -> TODO()
+            is ThirType.Variable -> parameter.type.symbolId
+            is ThirType.Union    -> TODO()
         }
         val value = when (symbolId)
         {

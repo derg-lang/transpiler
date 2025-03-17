@@ -75,7 +75,7 @@ object Builtin
 /**
  * Generates a type based on the [struct].
  */
-private fun typeOf(struct: HirStruct) = HirType.Structure(
+private fun typeOf(struct: HirStruct) = HirType.Variable(
     name = struct.name,
     mutability = Mutability.IMMUTABLE,
     parameters = emptyList(),
@@ -117,7 +117,7 @@ private fun registerConsumer(name: String, parameter: HirType) = HirFunction(
  * Defines a new literal with the given [name] and [parameter]. The literal will return the same type as the parameter
  * itself.
  */
-private fun registerLiteral(name: String, parameter: HirType.Structure) = HirLiteral(
+private fun registerLiteral(name: String, parameter: HirType.Variable) = HirLiteral(
     id = UUID.randomUUID(),
     name = name,
     type = HirType.Function(
