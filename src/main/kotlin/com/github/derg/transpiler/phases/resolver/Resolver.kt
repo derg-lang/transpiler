@@ -111,6 +111,11 @@ sealed interface ResolveError
     data class InvalidLiteralInteger(val value: BigInteger) : ResolveError
     
     /**
+     * The literal with the given [value] is outside the allowed dynamic range.
+     */
+    data class InvalidLiteralString(val value: String) : ResolveError
+    
+    /**
      * Used to represent an error which is not yet defined.
      */
     data object Placeholder : ResolveError

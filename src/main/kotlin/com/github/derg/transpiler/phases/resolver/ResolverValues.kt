@@ -67,7 +67,7 @@ internal class ResolverValue(private val symbols: SymbolTable, private val types
         is HirPlus    -> handlePrefix(Symbol.PLUS, node.rhs)
         is HirRecord  -> handleRecord(node)
         is HirSub     -> handleInfix(Symbol.MINUS, node.lhs, node.rhs)
-        is HirText    -> TODO()
+        is HirText    -> handleText(node)
         is HirXor     -> handleInfix(Symbol.XOR, node.lhs, node.rhs)
     }
     
@@ -297,6 +297,55 @@ internal class ResolverValue(private val symbols: SymbolTable, private val types
         return ThirRecord(
             value = ThirType.Structure(symbol.id, Mutability.MUTABLE, emptyList()),
             fields = fields.toMutableMap(),
+        ).toSuccess()
+    }
+    
+    private fun handleText(node: HirText): Result<ThirValue, ResolveError>
+    {
+        // Literals cannot be overloaded on name, as the parameter provided must be a builtin type. We do not know ahead
+        // of time what the raw literal should be converted to, so we require that only a single candidate exists.
+        val candidates = scope.resolve<HirLiteral>(node.literal)
+        val candidate = when (candidates.size)
+        {
+            1    -> candidates.single()
+            0    -> return ResolveError.UnknownLiteral(node.literal).toFailure()
+            else -> return ResolveError.AmbiguousLiteral(node.literal, node).toFailure()
+        }
+        
+        // We must convert the raw literal into a value which can be passed into the literal itself. The parameter must
+        // be a builtin type, as only builtin types can be converted into proper typed constants. The compiler does not
+        // know how to construct instances of user-defined types.
+        // TODO: Replace invalid parameter error with something more appropriate. We must have exactly one parameter,
+        //       and the parameter must be a builtin integer type.
+        val literal = types.literals[candidate.id]!!
+        val parameter = when (literal.parameters.size)
+        {
+            1    -> literal.parameters.single()
+            0    -> TODO()
+            else -> TODO()
+        }
+        val symbolId = when (parameter.type)
+        {
+            is ThirType.Function  -> TODO()
+            is ThirType.Structure -> parameter.type.symbolId
+            is ThirType.Union     -> TODO()
+        }
+        val value = when (symbolId)
+        {
+            Builtin.STR.id -> ThirConstStr(node.value)
+            else           -> return ResolveError.InvalidLiteralParam(node.literal).toFailure()
+        }
+        
+        // For builtin literals, we are done - the builtin literal will always return the same value as passed in, so we
+        // can return what we have. Otherwise, we need to invoke the literal with the appropriate data.
+        if (candidate.id == Builtin.STR_LIT.id)
+            return value.toSuccess()
+        
+        return ThirCall(
+            value = literal.value,
+            error = null,
+            instance = ThirLoad(literal, candidate.id, emptyList()),
+            parameters = listOf(value),
         ).toSuccess()
     }
 }

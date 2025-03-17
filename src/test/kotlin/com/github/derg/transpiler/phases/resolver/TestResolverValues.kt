@@ -7,7 +7,6 @@ import com.github.derg.transpiler.source.thir.*
 import com.github.derg.transpiler.utils.*
 import org.junit.jupiter.api.*
 import java.math.*
-import java.util.*
 
 /**
  * Generates a thir-representation of the struct.
@@ -98,6 +97,7 @@ class TestResolverValue
         {
             assertSuccess(1 thirAdd 2, run(1 hirAdd 2))
             assertSuccess(1L thirAdd 2L, run(1L hirAdd 2L))
+            assertSuccess("a" thirAdd "b", run("a" hirAdd "b"))
         }
         
         @Test
@@ -295,6 +295,7 @@ class TestResolverValue
             assertSuccess(true thirEq false, run(true hirEq false))
             assertSuccess(1 thirEq 2, run(1 hirEq 2))
             assertSuccess(1L thirEq 2L, run(1L hirEq 2L))
+            assertSuccess("a" thirEq "b", run("a" hirEq "b"))
         }
         
         @Test
@@ -495,7 +496,7 @@ class TestResolverValue
             
             assertSuccess(expected, run(symbol.hirLoad()))
         }
-    
+        
         @Test
         fun `Given parameter, when resolving, then correct outcome`()
         {
@@ -646,6 +647,7 @@ class TestResolverValue
             assertSuccess(true thirNe false, run(true hirNe false))
             assertSuccess(1 thirNe 2, run(1 hirNe 2))
             assertSuccess(1L thirNe 2L, run(1L hirNe 2L))
+            assertSuccess("a" thirNe "b", run("a" hirNe "b"))
         }
         
         @Test
@@ -742,6 +744,46 @@ class TestResolverValue
             val expected = ArgumentMismatch(Symbol.MINUS.symbol, listOf(null hirArg true, null hirArg false))
             
             assertFailure(expected, run(true hirSub false))
+        }
+    }
+    
+    @Nested
+    inner class Text
+    {
+        @Test
+        fun `Given builtin types, when resolving, then correct outcome`()
+        {
+            assertSuccess("".thir, run("".hir))
+            assertSuccess("a".thir, run("a".hir))
+            assertSuccess("Hello World!".thir, run("Hello World!".hir))
+            assertSuccess("nøt vålid? bût it ïs!".thir, run("nøt vålid? bût it ïs!".hir))
+        }
+        
+        @Test
+        fun `Given known overload, when resolving, then correct outcome`()
+        {
+            val str = registerLit("foo", Builtin.STR_TYPE)
+            
+            assertSuccess(str.thirCall("b"), run(HirText("b", str.name)))
+        }
+        
+        @Test
+        fun `Given unknown overload, when resolving, then correct error`()
+        {
+            val value = HirText("whatever", "foo")
+            
+            assertFailure(UnknownLiteral("foo"), run(value))
+        }
+        
+        @Test
+        fun `Given ambiguous overload, when resolving, then correct error`()
+        {
+            registerLit("foo", Builtin.BOOL_TYPE)
+            registerLit("foo", Builtin.STR_TYPE)
+            
+            val value = HirText("whatever", "foo")
+            
+            assertFailure(AmbiguousLiteral("foo", value), run(value))
         }
     }
     

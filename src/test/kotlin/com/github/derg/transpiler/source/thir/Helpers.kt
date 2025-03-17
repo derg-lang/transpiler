@@ -15,6 +15,7 @@ val Any.thir: ThirValue
         is Boolean   -> ThirConstBool(this)
         is Int       -> ThirConstInt32(this)
         is Long      -> ThirConstInt64(this)
+        is String    -> ThirConstStr(this)
         else         -> throw IllegalArgumentException("Value $this does not represent a valid thir value")
     }
 
@@ -91,9 +92,11 @@ val Long.thirMinus get() = op(Builtin.INT64_NEG, Builtin.INT64, null, this.thir)
 infix fun Boolean.thirEq(that: Boolean) = op(Builtin.BOOL_EQ, Builtin.BOOL, null, this.thir, that.thir)
 infix fun Int.thirEq(that: Int) = op(Builtin.INT32_EQ, Builtin.BOOL, null, this.thir, that.thir)
 infix fun Long.thirEq(that: Long) = op(Builtin.INT64_EQ, Builtin.BOOL, null, this.thir, that.thir)
+infix fun String.thirEq(that: String) = op(Builtin.STR_EQ, Builtin.BOOL, null, this.thir, that.thir)
 infix fun Boolean.thirNe(that: Boolean) = op(Builtin.BOOL_NE, Builtin.BOOL, null, this.thir, that.thir)
 infix fun Int.thirNe(that: Int) = op(Builtin.INT32_NE, Builtin.BOOL, null, this.thir, that.thir)
 infix fun Long.thirNe(that: Long) = op(Builtin.INT64_NE, Builtin.BOOL, null, this.thir, that.thir)
+infix fun String.thirNe(that: String) = op(Builtin.STR_NE, Builtin.BOOL, null, this.thir, that.thir)
 infix fun Int.thirGe(that: Int) = op(Builtin.INT32_GE, Builtin.BOOL, null, this.thir, that.thir)
 infix fun Long.thirGe(that: Long) = op(Builtin.INT64_GE, Builtin.BOOL, null, this.thir, that.thir)
 infix fun Int.thirGt(that: Int) = op(Builtin.INT32_GT, Builtin.BOOL, null, this.thir, that.thir)
@@ -105,6 +108,7 @@ infix fun Long.thirLt(that: Long) = op(Builtin.INT64_LT, Builtin.BOOL, null, thi
 
 infix fun Int.thirAdd(that: Int) = op(Builtin.INT32_ADD, Builtin.INT32, null, this.thir, that.thir)
 infix fun Long.thirAdd(that: Long) = op(Builtin.INT64_ADD, Builtin.INT64, null, this.thir, that.thir)
+infix fun String.thirAdd(that: String) = op(Builtin.STR_ADD, Builtin.STR, null, this.thir, that.thir)
 infix fun Int.thirSub(that: Int) = op(Builtin.INT32_SUB, Builtin.INT32, null, this.thir, that.thir)
 infix fun Long.thirSub(that: Long) = op(Builtin.INT64_SUB, Builtin.INT64, null, this.thir, that.thir)
 infix fun Int.thirMul(that: Int) = op(Builtin.INT32_MUL, Builtin.INT32, null, this.thir, that.thir)
