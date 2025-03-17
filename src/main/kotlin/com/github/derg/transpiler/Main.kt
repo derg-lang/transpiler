@@ -11,7 +11,7 @@ import java.time.Duration
 import java.time.OffsetDateTime
 
 private const val SOURCE = """
-    struct Test[Foo, baz: __builtin_i32 = 7]
+    struct Test
     {
         val foo: __builtin_i32 = 2
         val bar: __builtin_i32
@@ -20,6 +20,8 @@ private const val SOURCE = """
     fun main() -> __builtin_i32
     {
         val test = Test(bar = 23)
+        
+        __builtin_println("Hello World!")
         
         return fibonacci(test.foo + test.bar)
     }
@@ -50,6 +52,7 @@ fun main(args: Array<String>)
     val outcome = Interpreter(thir).run(entrypoint.id)
     val end = OffsetDateTime.now()
     
+    println("")
     println("Functions: \n\t" + thir.functions.values.joinToString("\n\t") { it.toString() })
     println("Structures: \n\t" + thir.structs.values.joinToString("\n\t") { it.toString() })
     println("Outcome of program is '$outcome'")

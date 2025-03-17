@@ -55,7 +55,7 @@ class Interpreter(private val symbols: SymbolTable)
     {
         for (instruction in instructions) when (instruction)
         {
-            is ThirAssign      -> frame[instruction.symbolId] = evaluateExpression(frame, instruction.expression)
+            is ThirAssign      -> frame[instruction.symbolId] = evaluateExpression(frame, instruction.expression)!!
             is ThirBranch      -> evaluateBranch(frame, instruction).also { if (it.`return`) return it }
             is ThirEvaluate    -> evaluateExpression(frame, instruction.expression)
             is ThirReturn      -> return Evaluation(null.toSuccess(), true)
@@ -74,7 +74,7 @@ class Interpreter(private val symbols: SymbolTable)
         return evaluateInstructions(frame, instructions)
     }
     
-    private fun evaluateExpression(frame: StackFrame, value: ThirValue): ThirValue = when (value)
+    private fun evaluateExpression(frame: StackFrame, value: ThirValue): ThirValue? = when (value)
     {
         is ThirCall       -> evaluateCall(frame, value)
         is ThirCatch      -> TODO()
@@ -84,16 +84,16 @@ class Interpreter(private val symbols: SymbolTable)
         is ThirConstStr   -> value
         is ThirLoad       -> frame[value.symbolId]
         is ThirMember     -> (evaluateExpression(frame, value.instance) as ThirRecord).fields[value.fieldId]!!
-        is ThirRecord     -> value.apply { fields.forEach { (id, value) -> fields[id] = evaluateExpression(frame, value) } }
+        is ThirRecord     -> value.apply { fields.forEach { (id, value) -> fields[id] = evaluateExpression(frame, value)!! } }
     }
     
-    private fun evaluateCall(frame: StackFrame, value: ThirCall): ThirValue
+    private fun evaluateCall(frame: StackFrame, value: ThirCall): ThirValue?
     {
         val symbol = symbols.functions[(value.instance as ThirLoad).symbolId]
             ?: throw IllegalArgumentException("No function for value '$value'")
         
         // Forgive me Father, for I have sinned...
-        val parameters = value.parameters.map { evaluateExpression(frame, it) }
+        val parameters = value.parameters.map { evaluateExpression(frame, it)!! }
         val a = parameters.getOrNull(0)
         val b = parameters.getOrNull(1)
         
@@ -134,6 +134,7 @@ class Interpreter(private val symbols: SymbolTable)
             Builtin.STR_EQ.id    -> ThirConstBool((a as ThirConstStr).raw == (b as ThirConstStr).raw)
             Builtin.STR_NE.id    -> ThirConstBool((a as ThirConstStr).raw != (b as ThirConstStr).raw)
             Builtin.STR_ADD.id   -> ThirConstStr((a as ThirConstStr).raw + (b as ThirConstStr).raw)
+            Builtin.STR_PRINT.id -> null.also { println((a as ThirConstStr).raw) }
             else                 -> pushFrame { evaluate(it, symbol, parameters).outcome.valueOrNull() ?: TODO() }
         }
     }
