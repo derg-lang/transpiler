@@ -69,6 +69,7 @@ object Builtin
     val STR_EQ = registerInfixOp(Symbol.EQUAL, STR_TYPE, BOOL_TYPE, null)
     val STR_NE = registerInfixOp(Symbol.NOT_EQUAL, STR_TYPE, BOOL_TYPE, null)
     val STR_ADD = registerInfixOp(Symbol.PLUS, STR_TYPE, STR_TYPE, null)
+    val STR_PRINT = registerConsumer("__builtin_println", STR_TYPE)
 }
 
 /**
@@ -90,6 +91,26 @@ private fun registerStruct(name: String) = HirStruct(
     fields = emptyList(),
     methods = emptyList(),
     templates = emptyList(),
+).also(Builtin.GLOBAL_SCOPE::register)
+
+/**
+ * Defines a new function with the given [name] and [parameter]. The function will consume the parameter and perform an
+ * arbitrary operation, which is implementation-defined.
+ */
+private fun registerConsumer(name: String, parameter: HirType) = HirFunction(
+    id = UUID.randomUUID(),
+    name = name,
+    type = HirType.Function(
+        value = null,
+        error = null,
+        parameters = listOf(
+            HirParameterDynamic(name = "input", type = parameter, value = null, passability = Passability.IN)
+        ),
+    ),
+    visibility = Visibility.EXPORTED,
+    instructions = emptyList(),
+    variables = emptyList(),
+    parameters = listOf(paramOf("input", parameter)),
 ).also(Builtin.GLOBAL_SCOPE::register)
 
 /**
