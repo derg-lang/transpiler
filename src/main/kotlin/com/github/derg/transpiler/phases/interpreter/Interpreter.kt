@@ -1,4 +1,4 @@
-package com.github.derg.transpiler.interpreter
+package com.github.derg.transpiler.phases.interpreter
 
 import com.github.derg.transpiler.phases.resolver.*
 import com.github.derg.transpiler.source.hir.*
@@ -26,9 +26,10 @@ class Interpreter(private val symbols: SymbolTable)
     /**
      * Runs the program by starting with the [entrypoint] function.
      */
-    fun run(entrypoint: UUID): Result<ThirValue?, ThirValue?>
+    fun run(entrypoint: String): Result<ThirValue?, ThirValue?>
     {
-        val main = symbols.functions[entrypoint] ?: throw IllegalArgumentException("Function with id '$entrypoint' does not exist")
+        val main = symbols.functions.values.singleOrNull { it.name == "main" }
+            ?: throw IllegalArgumentException("Function with id '$entrypoint' does not exist or is ambiguous")
         
         return pushFrame { evaluate(it, main, emptyList()) }.outcome
     }

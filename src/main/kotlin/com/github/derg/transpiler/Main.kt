@@ -1,14 +1,13 @@
 package com.github.derg.transpiler
 
-import com.github.derg.transpiler.interpreter.*
 import com.github.derg.transpiler.phases.converter.*
+import com.github.derg.transpiler.phases.interpreter.*
 import com.github.derg.transpiler.phases.parser.*
 import com.github.derg.transpiler.phases.resolver.*
 import com.github.derg.transpiler.phases.typechecker.*
 import com.github.derg.transpiler.source.ast.*
 import com.github.derg.transpiler.utils.*
-import java.time.Duration
-import java.time.OffsetDateTime
+import java.time.*
 
 private const val SOURCE = """
     struct Test
@@ -47,9 +46,8 @@ fun main(args: Array<String>)
     
     check(thir).valueOrDie()
     
-    val entrypoint = thir.functions.values.first { it.name == "main" }
     val start = OffsetDateTime.now()
-    val outcome = Interpreter(thir).run(entrypoint.id)
+    val outcome = Interpreter(thir).run("main")
     val end = OffsetDateTime.now()
     
     println("")
