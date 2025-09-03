@@ -22,8 +22,7 @@ private fun constantPatternOf() = ParserSequence(
     "visibility" to visibilityParserOf(),
     "assignability" to ParserSymbol(Symbol.VALUE),
     "name" to ParserIdentifier(),
-    "colon" to ParserSymbol(Symbol.COLON),
-    "type" to typeParserOf(),
+    "type" to optionalTypeParserOf(Symbol.COLON),
     "op" to ParserSymbol(Symbol.ASSIGN),
     "value" to ParserExpression(),
 )

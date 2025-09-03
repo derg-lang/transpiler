@@ -23,7 +23,7 @@ sealed interface AstSymbol
  */
 data class AstConstant(
     override val name: String,
-    val type: AstType,
+    val type: AstType?,
     val value: AstValue,
     val visibility: Visibility,
 ) : AstSymbol

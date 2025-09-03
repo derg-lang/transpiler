@@ -21,14 +21,15 @@ class TestParserConstant
     fun `Given valid token, when parsing, then correctly parsed`()
     {
         // Type and value must be correctly parsed
-        tester.parse("val foo: Bar = 42").isChain(5, 1).isValue(astConstOf("foo", type = "Bar", value = 42))
+        tester.parse("val foo      = 1").isChain(3, 1).isValue(astConstOf("foo", type = null, value = 1))
+        tester.parse("val foo: Bar = 2").isChain(5, 1).isValue(astConstOf("foo", type = "Bar", value = 2))
         
         // Visibility must be correctly parsed
-        tester.parse("exported  val foo: Int = 0").isChain(6, 1).isValue(astConstOf("foo", type = "Int", vis = Visibility.EXPORTED))
-        tester.parse("public    val foo: Int = 0").isChain(6, 1).isValue(astConstOf("foo", type = "Int", vis = Visibility.PUBLIC))
-        tester.parse("protected val foo: Int = 0").isChain(6, 1).isValue(astConstOf("foo", type = "Int", vis = Visibility.PROTECTED))
-        tester.parse("private   val foo: Int = 0").isChain(6, 1).isValue(astConstOf("foo", type = "Int", vis = Visibility.PRIVATE))
-        tester.parse("          val foo: Int = 0").isChain(5, 1).isValue(astConstOf("foo", type = "Int", vis = Visibility.PRIVATE))
+        tester.parse("exported  val foo = 0").isChain(4, 1).isValue(astConstOf("foo", vis = Visibility.EXPORTED))
+        tester.parse("public    val foo = 0").isChain(4, 1).isValue(astConstOf("foo", vis = Visibility.PUBLIC))
+        tester.parse("protected val foo = 0").isChain(4, 1).isValue(astConstOf("foo", vis = Visibility.PROTECTED))
+        tester.parse("private   val foo = 0").isChain(4, 1).isValue(astConstOf("foo", vis = Visibility.PRIVATE))
+        tester.parse("          val foo = 0").isChain(3, 1).isValue(astConstOf("foo", vis = Visibility.PRIVATE))
     }
     
     @Test
@@ -36,7 +37,7 @@ class TestParserConstant
     {
         tester.parse("").isBad { ParseError.UnexpectedToken(EndOfFile) }
         tester.parse("val").isWip(1).isBad { ParseError.UnexpectedToken(EndOfFile) }
-        tester.parse("val foo =").isWip(2).isBad { ParseError.UnexpectedToken(Keyword(Symbol.ASSIGN)) }
+        tester.parse("val foo *").isWip(2).isBad { ParseError.UnexpectedToken(Keyword(Symbol.MULTIPLY)) }
     }
 }
 

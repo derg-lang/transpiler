@@ -148,12 +148,12 @@ fun astWhileOf(
 
 fun astConstOf(
     name: String = UUID.randomUUID().toString(),
-    type: String = INT32_TYPE_NAME,
+    type: String? = null,
     value: Any = 0,
     vis: Visibility = Visibility.PRIVATE,
 ) = AstConstant(
     name = name,
-    type = AstType.Variable(type, Mutability.IMMUTABLE, emptyList()),
+    type = type?.let { AstType.Variable(it, Mutability.IMMUTABLE, emptyList()) },
     value = value.ast,
     visibility = vis,
 )

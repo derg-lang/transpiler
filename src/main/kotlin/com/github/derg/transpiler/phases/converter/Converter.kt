@@ -1,5 +1,6 @@
 package com.github.derg.transpiler.phases.converter
 
+import com.github.derg.transpiler.source.*
 import com.github.derg.transpiler.source.ast.*
 import com.github.derg.transpiler.source.hir.*
 import java.util.*
@@ -8,192 +9,165 @@ import java.util.*
  * Converts the provided AST [program] into a HIR program. The input segments are all used to form the single package.
  * Note that segments from another package, must be separately converted into the HIR structure.
  */
-fun convert(program: AstProgram) = HirProgram(
-    applications = program.applications.map { it.toHir() },
-    packages = program.packages.map { it.toHir() },
-)
+fun convert(program: AstSegment): HirDeclaration.SegmentDecl
+{
+    return program.toHir()
+}
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Implementation details
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-/**
- *
- */
-private fun AstType.toHir(): HirType = when (this)
-{
-    is AstType.Function -> HirType.Function(value = value?.toHir(), error = error?.toHir(), parameters = parameters.map { it.toHir() })
-    is AstType.Variable -> HirType.Variable(name = name, mutability = mutability, parameters = parameters.map { it.toHir() })
-    is AstType.Union    -> HirType.Union(types = types.map { it.toHir() }.toSet())
-}
-
-private fun AstTemplate.toHir(): HirTemplate = when (this)
-{
-    is AstTemplate.Type  -> HirTemplate.Type(name = name)
-    is AstTemplate.Value -> HirTemplate.Value(name = name, type = type.toHir(), default = default?.toHir())
-}
-
-private fun AstParameterStatic.toHir() = HirParameterStatic(name = name, value = value.toHir())
-private fun AstParameterDynamic.toHir() = HirParameterDynamic(name = name, type = type.toHir(), value = null, passability = passability)
-
-/**
- *
- */
-internal fun AstConstant.toHir() = HirConstant(
-    id = UUID.randomUUID(),
-    name = name,
-    type = type.toHir(),
-    value = value.toHir(),
-    visibility = visibility,
-)
-
-/**
- *
- */
-internal fun AstFunction.toHir() = HirFunction(
-    id = UUID.randomUUID(),
-    name = name,
-    type = HirType.Function(
-        value = valueType?.toHir(),
-        error = errorType?.toHir(),
-        parameters = parameters.map { HirParameterDynamic(it.name, it.type.toHir(), it.value?.toHir(), it.passability) },
-    ),
-    visibility = visibility,
-    instructions = statements.map { it.toHir() },
-    variables = statements.filterIsInstance<AstVariable>().map { it.toHir() },
-    parameters = parameters.map { it.toHir() },
-)
-
-/**
- *
- */
-internal fun AstModule.toHir() = HirModule(
-    id = UUID.randomUUID(),
-    name = name,
-    segments = segments.map { it.toHir() },
-)
-
-/**
- *
- */
-internal fun AstParameter.toHir() = HirParameter(
-    id = UUID.randomUUID(),
-    name = name,
-    type = type.toHir(),
-    value = value?.toHir(),
-    passability = passability,
-)
-
-/**
- *
- */
-internal fun AstPackage.toHir() = HirPackage(
-    id = UUID.randomUUID(),
-    name = name,
-    modules = modules.map { it.toHir() },
-)
-
-/**
- *
- */
-internal fun AstProperty.toHir() = HirField(
-    id = UUID.randomUUID(),
-    name = name,
-    type = type.toHir(),
-    value = value?.toHir(),
-    visibility = visibility,
-    assignability = assignability,
-)
-
-/**
- *
- */
-internal fun AstSegment.toHir() = HirSegment(
-    imports = imports.toSet(),
-    structs = definitions.filterIsInstance<AstStruct>().map { it.toHir() },
-    concepts = emptyList(),
-    constants = definitions.filterIsInstance<AstConstant>().map { it.toHir() },
-    functions = definitions.filterIsInstance<AstFunction>().map { it.toHir() },
-)
-
-/**
- *
- */
-internal fun AstStruct.toHir() = HirStruct(
-    id = UUID.randomUUID(),
-    name = name,
-    visibility = visibility,
-    fields = fields.map { it.toHir() },
-    methods = emptyList(),
-    templates = templates.map { it.toHir() },
-)
-
-/**
- *
- */
-internal fun AstVariable.toHir() = HirVariable(
+private fun AstConstant.toHir() = HirDeclaration.ConstantDecl(
     id = UUID.randomUUID(),
     name = name,
     type = type?.toHir(),
     value = value.toHir(),
+)
+
+private fun AstFunction.toHir() = HirDeclaration.FunctionDecl(
+    id = UUID.randomUUID(),
+    name = name,
+    visibility = visibility,
+    typeParameters = emptyList(),
+    parameters = parameters.map { it.toHir() },
+    valueType = valueType?.toHir(),
+    errorType = errorType?.toHir(),
+    body = statements.map { it.toHir() },
+)
+
+private fun AstParameter.toHir() = HirDeclaration.ParameterDecl(
+    id = UUID.randomUUID(),
+    name = name,
+    type = type.toHir(),
+    default = value?.toHir(),
+    passability = passability,
+)
+
+private fun AstProperty.toHir() = HirDeclaration.FieldDecl(
+    id = UUID.randomUUID(),
+    name = name,
+    type = type.toHir(),
+    default = value?.toHir(),
+    visibility = visibility,
     assignability = assignability,
 )
+
+private fun AstSegment.toHir() = HirDeclaration.SegmentDecl(
+    id = UUID.randomUUID(),
+    imports = imports,
+    constants = definitions.filterIsInstance<AstConstant>().map { it.toHir() },
+    functions = definitions.filterIsInstance<AstFunction>().map { it.toHir() },
+    structures = definitions.filterIsInstance<AstStruct>().map { it.toHir() },
+)
+
+private fun AstStruct.toHir() = HirDeclaration.StructureDecl(
+    id = UUID.randomUUID(),
+    name = name,
+    typeParameters = templates.map { it.toHir() },
+    fields = fields.map { it.toHir() },
+    visibility = visibility,
+)
+
+private fun AstVariable.toHir() = HirStatement.Variable(
+    name = name,
+    type = type?.toHir(),
+    expression = value.toHir(),
+    assignability = assignability,
+)
+
+private fun AstType.toHir(): HirType = when (this)
+{
+    is AstType.Function -> HirType.Function(value?.toHir(), error?.toHir(), parameters.map { it.toHir() })
+    is AstType.Union    -> TODO()
+    is AstType.Variable -> HirType.Expression(HirExpression.Identifier(UUID.randomUUID(), name, parameters.map { it.name to it.value.toHir() }))
+}
+
+private fun AstTemplate.toHir(): HirDeclaration.TypeParameterDecl = when (this)
+{
+    is AstTemplate.Type  -> HirDeclaration.TypeParameterDecl(UUID.randomUUID(), name, null, null)
+    is AstTemplate.Value -> HirDeclaration.TypeParameterDecl(UUID.randomUUID(), name, type.toHir(), default?.toHir())
+}
+
+private fun AstParameterDynamic.toHir(): HirType.Parameter =
+    HirType.Parameter(name, type.toHir(), null, passability)
 
 /**
  * Converts [this] expression from AST to HIR. The data structure will be encoded with appropriate default information
  * where information is missing in the AST.
  */
-internal fun AstValue.toHir(): HirValue = when (this)
+internal fun AstValue.toHir(): HirExpression = when (this)
 {
-    is AstCall         -> HirCall(instance.toHir(), parameters.map { (name, value) -> name to value.toHir() })
+    is AstCall         -> HirExpression.Call(UUID.randomUUID(), instance.toHir(), parameters.map { (name, value) -> name to value.toHir() })
     is AstLoad         -> toHirLoad()
-    is AstMember       -> HirMember(instance.toHir(), field.toHirLoad())
-    is AstBool         -> HirBool(value)
-    is AstInteger      -> HirInteger(value, literal)
-    is AstDecimal      -> HirDecimal(value, literal)
-    is AstText         -> HirText(value, literal)
-    is AstAdd          -> HirAdd(lhs.toHir(), rhs.toHir())
-    is AstAnd          -> HirAnd(lhs.toHir(), rhs.toHir())
-    is AstCatch        -> HirCatch(lhs.toHir(), rhs.toHir(), capture)
-    is AstDivide       -> HirDiv(lhs.toHir(), rhs.toHir())
-    is AstEqual        -> HirEq(lhs.toHir(), rhs.toHir())
-    is AstGreater      -> HirGt(lhs.toHir(), rhs.toHir())
-    is AstGreaterEqual -> HirGe(lhs.toHir(), rhs.toHir())
-    is AstLess         -> HirLt(lhs.toHir(), rhs.toHir())
-    is AstLessEqual    -> HirLe(lhs.toHir(), rhs.toHir())
-    is AstMinus        -> HirMinus(expression.toHir())
-    is AstModulo       -> HirMod(lhs.toHir(), rhs.toHir())
-    is AstMultiply     -> HirMul(lhs.toHir(), rhs.toHir())
-    is AstNot          -> HirNot(expression.toHir())
-    is AstNotEqual     -> HirNe(lhs.toHir(), rhs.toHir())
-    is AstOr           -> HirOr(lhs.toHir(), rhs.toHir())
-    is AstPlus         -> HirPlus(expression.toHir())
-    is AstSubtract     -> HirSub(lhs.toHir(), rhs.toHir())
+    is AstMember       -> HirExpression.Field(UUID.randomUUID(), instance.toHir(), field.toHirLoad())
+    is AstBool         -> HirExpression.Bool(UUID.randomUUID(), value)
+    is AstInteger      -> HirExpression.Integer(UUID.randomUUID(), value, literal)
+    is AstDecimal      -> HirExpression.Decimal(UUID.randomUUID(), value, literal)
+    is AstText         -> HirExpression.Text(UUID.randomUUID(), value, literal)
+    is AstAdd          -> toHirCall(BinaryOperator.ADD, lhs, rhs)
+    is AstAnd          -> toHirCall(BinaryOperator.AND, lhs, rhs)
+    is AstCatch        -> toHirCall(BinaryOperator.HANDLE, lhs, rhs)
+    is AstDivide       -> toHirCall(BinaryOperator.DIVIDE, lhs, rhs)
+    is AstEqual        -> toHirCall(BinaryOperator.EQUAL, lhs, rhs)
+    is AstGreater      -> toHirCall(BinaryOperator.GREATER, lhs, rhs)
+    is AstGreaterEqual -> toHirCall(BinaryOperator.GREATER_EQUAL, lhs, rhs)
+    is AstLess         -> toHirCall(BinaryOperator.LESS, lhs, rhs)
+    is AstLessEqual    -> toHirCall(BinaryOperator.LESS_EQUAL, lhs, rhs)
+    is AstMinus        -> toHirCall(UnaryOperator.MINUS, expression)
+    is AstModulo       -> toHirCall(BinaryOperator.MODULO, lhs, rhs)
+    is AstMultiply     -> toHirCall(BinaryOperator.MULTIPLY, lhs, rhs)
+    is AstNot          -> toHirCall(UnaryOperator.NOT, expression)
+    is AstNotEqual     -> toHirCall(BinaryOperator.NOT_EQUAL, lhs, rhs)
+    is AstOr           -> toHirCall(BinaryOperator.OR, lhs, rhs)
+    is AstPlus         -> toHirCall(UnaryOperator.PLUS, expression)
+    is AstSubtract     -> toHirCall(BinaryOperator.SUBTRACT, lhs, rhs)
     is AstThreeWay     -> TODO()
-    is AstXor          -> HirXor(lhs.toHir(), rhs.toHir())
+    is AstXor          -> toHirCall(BinaryOperator.XOR, lhs, rhs)
     is AstWhen         -> TODO()
 }
 
-private fun AstLoad.toHirLoad() = HirLoad(name, parameters.map { (name, value) -> name to value.toHir() })
+private fun AstLoad.toHirLoad() =
+    HirExpression.Identifier(UUID.randomUUID(), name, parameters.map { (name, value) -> name to value.toHir() })
+
+// TODO: Replace all AST binary operators with `AstBinary`
+private fun AstValue.toHirCall(operator: BinaryOperator, lhs: AstValue, rhs: AstValue): HirExpression
+{
+    val instance = HirExpression.Identifier(UUID.randomUUID(), operator.symbol, emptyList())
+    return HirExpression.Call(UUID.randomUUID(), instance, listOf(null to lhs.toHir(), null to rhs.toHir()))
+}
+
+// TODO: Replace all AST unary operators with `AstUnary`
+private fun AstValue.toHirCall(operator: UnaryOperator, rhs: AstValue): HirExpression
+{
+    val instance = HirExpression.Identifier(UUID.randomUUID(), operator.symbol, emptyList())
+    return HirExpression.Call(UUID.randomUUID(), instance, listOf(null to rhs.toHir()))
+}
 
 /**
  * Converts [this] statement from AST to HIR. The data structure will be encoded with appropriate default information
  * where information is missing in the AST.
  */
-internal fun AstInstruction.toHir(): HirInstruction = when (this)
+internal fun AstInstruction.toHir(): HirStatement = when (this)
 {
-    is AstAssign         -> HirAssign(HirLoad(name, emptyList()), expression.toHir())
-    is AstAssignDivide   -> HirAssignDivide(HirLoad(name, emptyList()), expression.toHir())
-    is AstAssignSubtract -> HirAssignSubtract(HirLoad(name, emptyList()), expression.toHir())
-    is AstAssignModulo   -> HirAssignModulo(HirLoad(name, emptyList()), expression.toHir())
-    is AstAssignMultiply -> HirAssignMultiply(HirLoad(name, emptyList()), expression.toHir())
-    is AstAssignAdd      -> HirAssignAdd(HirLoad(name, emptyList()), expression.toHir())
-    is AstBranch         -> HirBranch(predicate.toHir(), success.map { it.toHir() }, failure.map { it.toHir() })
-    is AstEvaluate       -> HirEvaluate(expression.toHir())
-    is AstFor            -> HirFor(identifier, expression.toHir(), instructions.map { it.toHir() })
-    is AstReturn         -> HirReturn
-    is AstReturnError    -> HirReturnError(expression.toHir())
-    is AstReturnValue    -> HirReturnValue(expression.toHir())
-    is AstVariable       -> HirAssign(HirLoad(name, emptyList()), value.toHir())
-    is AstWhile          -> HirWhile(predicate.toHir(), instructions.map { it.toHir() })
+    is AstAssign         -> HirStatement.Assign(name.toHirLoad(), expression.toHir(), AssignOperator.EQUAL)
+    is AstAssignDivide   -> HirStatement.Assign(name.toHirLoad(), expression.toHir(), AssignOperator.DIVIDE)
+    is AstAssignSubtract -> HirStatement.Assign(name.toHirLoad(), expression.toHir(), AssignOperator.SUBTRACT)
+    is AstAssignModulo   -> HirStatement.Assign(name.toHirLoad(), expression.toHir(), AssignOperator.MODULO)
+    is AstAssignMultiply -> HirStatement.Assign(name.toHirLoad(), expression.toHir(), AssignOperator.MULTIPLY)
+    is AstAssignAdd      -> HirStatement.Assign(name.toHirLoad(), expression.toHir(), AssignOperator.ADD)
+    is AstBranch         -> HirStatement.If(predicate.toHir(), success.toHir(), failure.toHir())
+    is AstEvaluate       -> HirStatement.Evaluate(expression.toHir())
+    is AstFor            -> HirStatement.For(identifier, expression.toHir(), instructions.toHir())
+    is AstReturn         -> HirStatement.Return
+    is AstReturnError    -> HirStatement.ReturnError(expression.toHir())
+    is AstReturnValue    -> HirStatement.ReturnValue(expression.toHir())
+    is AstVariable       -> toHir()
+    is AstWhile          -> HirStatement.While(predicate.toHir(), instructions.toHir())
 }
+
+private fun String.toHirLoad() =
+    HirExpression.Identifier(UUID.randomUUID(), this, emptyList())
+
+private fun List<AstInstruction>.toHir() =
+    map { it.toHir() }

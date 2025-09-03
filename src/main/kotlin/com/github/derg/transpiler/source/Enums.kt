@@ -159,6 +159,53 @@ enum class Capture
 }
 
 /**
+ * Assign operators are operators which specifies how an expression can be assigned to a binding.
+ */
+enum class AssignOperator(val symbol: String)
+{
+    ADD(Symbol.ASSIGN_PLUS.symbol),
+    DIVIDE(Symbol.ASSIGN_DIVIDE.symbol),
+    EQUAL(Symbol.ASSIGN.symbol),
+    MODULO(Symbol.ASSIGN_MODULO.symbol),
+    MULTIPLY(Symbol.ASSIGN_MULTIPLY.symbol),
+    SUBTRACT(Symbol.ASSIGN_MINUS.symbol),
+}
+
+/**
+ * Binary operators are operations which acts on two expressions.
+ */
+enum class BinaryOperator(val symbol: String)
+{
+    ADD(Symbol.PLUS.symbol),
+    AND(Symbol.AND.symbol),
+    DIVIDE(Symbol.DIVIDE.symbol),
+    EQUAL(Symbol.EQUAL.symbol),
+    GREATER(Symbol.GREATER.symbol),
+    GREATER_EQUAL(Symbol.GREATER_EQUAL.symbol),
+    HANDLE(Symbol.COLON.symbol),
+    LESS(Symbol.LESS.symbol),
+    LESS_EQUAL(Symbol.LESS_EQUAL.symbol),
+    MODULO(Symbol.MODULO.symbol),
+    MULTIPLY(Symbol.MULTIPLY.symbol),
+    NOT_EQUAL(Symbol.NOT_EQUAL.symbol),
+    OR(Symbol.OR.symbol),
+    RAISE(Symbol.EXCLAMATION.symbol),
+    RETURN(Symbol.QUESTION.symbol),
+    SUBTRACT(Symbol.MINUS.symbol),
+    XOR(Symbol.XOR.symbol),
+}
+
+/**
+ * Unary operators are operations which acts on a single expression.
+ */
+enum class UnaryOperator(val symbol: String)
+{
+    MINUS(Symbol.MINUS.symbol),
+    NOT(Symbol.NOT.symbol),
+    PLUS(Symbol.PLUS.symbol),
+}
+
+/**
  * The various symbols which are considered builtin. When parsing source code, these are the character sequences which
  * have special meanings. Commonly for all of them is that identifiers cannot be the same as the [symbol] string itself.
  * These values are typically considered reserved.

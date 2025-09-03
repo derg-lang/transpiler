@@ -1,0 +1,220 @@
+package com.github.derg.transpiler.phases.resolver.workers
+
+import com.github.derg.transpiler.phases.resolver.*
+import com.github.derg.transpiler.source.*
+import com.github.derg.transpiler.source.hir.*
+import com.github.derg.transpiler.source.thir.*
+import com.github.derg.transpiler.utils.*
+import org.junit.jupiter.api.*
+import org.junit.jupiter.api.Assertions.*
+
+class TestConstDefiner
+{
+    private val env = Environment()
+    private val scope = Scope()
+    
+    /**
+     * Registers [this] declaration to the current scope.
+     */
+    private fun <Type : ThirDeclaration> Type.register(): Type =
+        apply { scope.register(id, name) }
+    
+    /**
+     * Declares that [this] declaration actually exists within the environment.
+     */
+    private fun <Type : ThirDeclaration> Type.declare(): Type =
+        apply { env.declarations[id] = this }
+    
+    @Test
+    fun `Given both type and value, when processing, then declared then defined`()
+    {
+        Builtin.INT32.register().declare()
+        
+        val input = hirConstOf(type = INT32_TYPE_NAME.hirIdent().hirType(), value = 1.hir)
+        val expected = thirConstOf(id = input.id, name = input.name, type = ThirType.Int32, value = 1.thir)
+        val worker = ConstDefiner(input, env, scope)
+        
+        assertSuccess(Phase.Declared, worker.process())
+        assertEquals(expected.copy(def = null), env.declarations[input.id])
+        assertSuccess(Phase.Defined, worker.process())
+        assertEquals(expected, env.declarations[input.id])
+    }
+    
+    @Test
+    fun `Given only value, when processing, then declared then defined`()
+    {
+        Builtin.INT32.register().declare()
+        
+        val input = hirConstOf(type = null, value = 1.hir)
+        val expected = thirConstOf(id = input.id, name = input.name, type = ThirType.Int32, value = 1.thir)
+        val worker = ConstDefiner(input, env, scope)
+        
+        assertSuccess(Phase.Declared, worker.process())
+        assertEquals(expected.copy(def = null), env.declarations[input.id])
+        assertSuccess(Phase.Defined, worker.process())
+        assertEquals(expected, env.declarations[input.id])
+    }
+    
+    @Test
+    fun `Given mismatched type and value, when processing, then error`()
+    {
+        Builtin.INT32.register().declare()
+        
+        val input = hirConstOf(type = INT32_TYPE_NAME.hirIdent().hirType(), value = true.hir)
+        val expected = Outcome.MismatchedType(expected = ThirType.Int32, received = ThirType.Bool)
+        val worker = ConstDefiner(input, env, scope)
+        
+        assertSuccess(Phase.Declared, worker.process())
+        assertFailure(expected, ConstDefiner(input, env, scope).process())
+    }
+}
+
+class TestParameterDefiner
+{
+    private val env = Environment()
+    private val scope = Scope()
+    
+    /**
+     * Registers [this] declaration to the current scope.
+     */
+    private fun <Type : ThirDeclaration> Type.register(): Type =
+        apply { scope.register(id, name) }
+    
+    /**
+     * Declares that [this] declaration actually exists within the environment.
+     */
+    private fun <Type : ThirDeclaration> Type.declare(): Type =
+        apply { env.declarations[id] = this }
+    
+    @Test
+    fun `Given both type and default, when processing, then declared then defined`()
+    {
+        Builtin.INT32.register().declare()
+        
+        val input = hirParamOf(type = INT32_TYPE_NAME.hirIdent().hirType(), default = 1.hir)
+        val expected = thirParamOf(id = input.id, name = input.name, type = ThirType.Int32, default = 1.thir)
+        val worker = ParameterDefiner(input, env, scope)
+        
+        assertSuccess(Phase.Declared, worker.process())
+        assertEquals(expected.copy(def = null), env.declarations[input.id])
+        assertSuccess(Phase.Defined, worker.process())
+        assertEquals(expected, env.declarations[input.id])
+    }
+    
+    @Test
+    fun `Given only type, when processing, then declared then defined`()
+    {
+        Builtin.INT32.register().declare()
+        
+        val input = hirParamOf(type = INT32_TYPE_NAME.hirIdent().hirType(), default = null)
+        val expected = thirParamOf(id = input.id, name = input.name, type = ThirType.Int32, default = null)
+        val worker = ParameterDefiner(input, env, scope)
+        
+        assertSuccess(Phase.Declared, worker.process())
+        assertEquals(expected.copy(def = null), env.declarations[input.id])
+        assertSuccess(Phase.Defined, worker.process())
+        assertEquals(expected, env.declarations[input.id])
+    }
+    
+    @Test
+    fun `Given mismatched type and default, when processing, then error`()
+    {
+        Builtin.INT32.register().declare()
+        
+        val input = hirConstOf(type = INT32_TYPE_NAME.hirIdent().hirType(), value = true.hir)
+        val expected = Outcome.MismatchedType(expected = ThirType.Int32, received = ThirType.Bool)
+        val worker = ConstDefiner(input, env, scope)
+        
+        assertSuccess(Phase.Declared, worker.process())
+        assertFailure(expected, ConstDefiner(input, env, scope).process())
+    }
+}
+
+class TestFunctionDefiner
+{
+    private val env = Environment()
+    private val scope = Scope()
+    
+    /**
+     * Registers [this] declaration to the current scope.
+     */
+    private fun <Type : ThirDeclaration> Type.register(): Type =
+        apply { scope.register(id, name) }
+    
+    /**
+     * Declares that [this] declaration actually exists within the environment.
+     */
+    private fun <Type : ThirDeclaration> Type.declare(): Type =
+        apply { env.declarations[id] = this }
+    
+    @Test
+    fun `Given empty, when processing, then declared then defined`()
+    {
+        val input = hirFunOf()
+        val expected = thirFunOf(id = input.id, name = input.name)
+        val worker = FunctionDefiner(input, env, scope)
+        
+        assertSuccess(Phase.Declared, worker.process())
+        assertEquals(expected.copy(def = null), env.declarations[input.id])
+        assertSuccess(Phase.Defined, worker.process())
+        assertEquals(expected, env.declarations[input.id])
+    }
+    
+    @Test
+    fun `Given value type, when processing, then declared then defined`()
+    {
+        Builtin.INT32.register().declare()
+        
+        val input = hirFunOf(valueType = INT32_TYPE_NAME.hirIdent().hirType())
+        val expected = thirFunOf(id = input.id, name = input.name, valueType = ThirType.Int32)
+        val worker = FunctionDefiner(input, env, scope)
+        
+        assertSuccess(Phase.Declared, worker.process())
+        assertEquals(expected.copy(def = null), env.declarations[input.id])
+        assertSuccess(Phase.Defined, worker.process())
+        assertEquals(expected, env.declarations[input.id])
+    }
+    
+    @Test
+    fun `Given error type, when processing, then declared then defined`()
+    {
+        Builtin.INT32.register().declare()
+        
+        val input = hirFunOf(errorType = INT32_TYPE_NAME.hirIdent().hirType())
+        val expected = thirFunOf(id = input.id, name = input.name, errorType = ThirType.Int32)
+        val worker = FunctionDefiner(input, env, scope)
+        
+        assertSuccess(Phase.Declared, worker.process())
+        assertEquals(expected.copy(def = null), env.declarations[input.id])
+        assertSuccess(Phase.Defined, worker.process())
+        assertEquals(expected, env.declarations[input.id])
+    }
+    
+    @Test
+    fun `Given statement, when processing, then declared then defined`()
+    {
+        val input = hirFunOf(statements = listOf(true.hirIf()))
+        val expected = thirFunOf(id = input.id, name = input.name, statements = listOf(true.thirIf()))
+        val worker = FunctionDefiner(input, env, scope)
+        
+        assertSuccess(Phase.Declared, worker.process())
+        assertEquals(expected.copy(def = null), env.declarations[input.id])
+        assertSuccess(Phase.Defined, worker.process())
+        assertEquals(expected, env.declarations[input.id])
+    }
+    
+    @Test
+    fun `Given parameter, when processing, then spawned before declared and defined`()
+    {
+        val parameter = hirParamOf()
+        val input = hirFunOf(parameters = listOf(parameter))
+        val expected = thirFunOf(id = input.id, name = input.name, parameterIds = listOf(parameter.id))
+        val worker = FunctionDefiner(input, env, scope)
+        
+        assertIs<Phase.Spawn>(worker.process().valueOrDie())
+        assertSuccess(Phase.Declared, worker.process())
+        assertEquals(expected.copy(def = null), env.declarations[input.id])
+        assertSuccess(Phase.Defined, worker.process())
+        assertEquals(expected, env.declarations[input.id])
+    }
+}

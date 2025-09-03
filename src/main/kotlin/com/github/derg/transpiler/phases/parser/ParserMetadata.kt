@@ -3,6 +3,7 @@ package com.github.derg.transpiler.phases.parser
 import com.github.derg.transpiler.source.*
 import com.github.derg.transpiler.source.ast.*
 import com.github.derg.transpiler.utils.*
+import java.util.UUID
 
 /**
  * Parses a symbol followed by an identifier. This operation is commonly used to specify optional type information or
@@ -175,7 +176,7 @@ private fun scopeOutcomeOf(values: Parsers): List<AstInstruction>
     
     return when
     {
-        statement != null  -> listOf(statement)
+        statement != null  -> statement.asList()
         statements != null -> statements
         else               -> emptyList()
     }

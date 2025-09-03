@@ -2,200 +2,222 @@ package com.github.derg.transpiler.source.hir
 
 import com.github.derg.transpiler.source.*
 import com.github.derg.transpiler.utils.*
+import java.math.*
 import java.util.*
 
 /////////////////////
 // Literal helpers //
 /////////////////////
 
-val Any.hir: HirValue
+val Any.hir: HirExpression
     get() = when (this)
     {
-        is HirValue -> this
-        is Boolean  -> HirBool(this)
-        is Int      -> HirInteger(toBigInteger(), INT32_LIT_NAME)
-        is Long     -> HirInteger(toBigInteger(), INT64_LIT_NAME)
-        is String   -> HirText(this, STR_LIT_NAME)
-        else        -> throw IllegalArgumentException("Value $this does not represent a valid hir value")
+        is HirExpression -> this
+        is Boolean       -> HirExpression.Bool(UUID.randomUUID(), this)
+        is Int           -> hirIntegerOf(value = toBigInteger(), literal = INT32_LIT_NAME)
+        is Long          -> hirIntegerOf(value = toBigInteger(), literal = INT64_LIT_NAME)
+        is Float         -> hirDecimalOf(value = toBigDecimal(), literal = FLOAT32_LIT_NAME)
+        is Double        -> hirDecimalOf(value = toBigDecimal(), literal = FLOAT64_LIT_NAME)
+        is String        -> HirExpression.Text(UUID.randomUUID(), this, STR_LIT_NAME)
+        else             -> throw IllegalArgumentException("Value $this does not represent a valid hir value")
     }
+
+fun hirDecimalOf(
+    id: UUID = UUID.randomUUID(),
+    value: BigDecimal = BigDecimal.ZERO,
+    literal: String = INT64_LIT_NAME,
+) = HirExpression.Decimal(
+    id = id,
+    value = value,
+    literal = literal,
+)
+
+fun hirIntegerOf(
+    id: UUID = UUID.randomUUID(),
+    value: BigInteger = BigInteger.ZERO,
+    literal: String = INT64_LIT_NAME,
+) = HirExpression.Integer(
+    id = id,
+    value = value,
+    literal = literal,
+)
 
 //////////////////
 // Type helpers //
 //////////////////
 
-fun hirTemplateStruct(
-    name: String = UUID.randomUUID().toString(),
-) = HirTemplate.Type(name = name)
-
-fun hirTemplateValue(
-    name: String = UUID.randomUUID().toString(),
-    type: HirType,
-    default: HirValue? = null,
-) = HirTemplate.Value(name = name, type = type, default = default)
-
-fun hirTypeVar(
-    struct: HirStruct = Builtin.INT32,
-    mutability: Mutability = Mutability.IMMUTABLE,
-) = HirType.Variable(
-    name = struct.name,
-    mutability = mutability,
-    parameters = emptyList(),
-)
-
-fun hirTypeVar(
-    name: String = UUID.randomUUID().toString(),
-    mutability: Mutability = Mutability.IMMUTABLE,
-) = HirType.Variable(
-    name = name,
-    mutability = mutability,
-    parameters = emptyList(),
-)
-
-fun hirTypeFun(
-    value: HirType? = null,
-    error: HirType? = null,
-    parameters: List<HirType> = emptyList(),
-) = HirType.Function(
-    value = value,
-    error = error,
-    parameters = parameters.map { HirParameterDynamic("", it, null, Passability.IN) },
-)
-
-fun hirTypeUnion(vararg types: HirType) = HirType.Union(types.toSet())
+fun HirExpression.hirType() = HirType.Expression(this)
 
 ////////////////////////
 // Expression helpers //
 ////////////////////////
 
-val Any.hirNot: HirValue get() = HirNot(hir)
-val Any.hirPlus: HirValue get() = HirPlus(hir)
-val Any.hirMinus: HirValue get() = HirMinus(hir)
+val Any.hirNot: HirExpression get() = hirUnary(this.hir, UnaryOperator.NOT)
+val Any.hirPlus: HirExpression get() = hirUnary(this.hir, UnaryOperator.PLUS)
+val Any.hirMinus: HirExpression get() = hirUnary(this.hir, UnaryOperator.MINUS)
 
-infix fun Any.hirEq(that: Any): HirValue = HirEq(this.hir, that.hir)
-infix fun Any.hirNe(that: Any): HirValue = HirNe(this.hir, that.hir)
-infix fun Any.hirGe(that: Any): HirValue = HirGe(this.hir, that.hir)
-infix fun Any.hirGt(that: Any): HirValue = HirGt(this.hir, that.hir)
-infix fun Any.hirLe(that: Any): HirValue = HirLe(this.hir, that.hir)
-infix fun Any.hirLt(that: Any): HirValue = HirLt(this.hir, that.hir)
+infix fun Any.hirEq(that: Any) = hirBinary(this.hir, that.hir, BinaryOperator.EQUAL)
+infix fun Any.hirNe(that: Any) = hirBinary(this.hir, that.hir, BinaryOperator.NOT_EQUAL)
+infix fun Any.hirGe(that: Any) = hirBinary(this.hir, that.hir, BinaryOperator.GREATER)
+infix fun Any.hirGt(that: Any) = hirBinary(this.hir, that.hir, BinaryOperator.GREATER_EQUAL)
+infix fun Any.hirLe(that: Any) = hirBinary(this.hir, that.hir, BinaryOperator.LESS)
+infix fun Any.hirLt(that: Any) = hirBinary(this.hir, that.hir, BinaryOperator.LESS_EQUAL)
 
-infix fun Any.hirAdd(that: Any): HirValue = HirAdd(this.hir, that.hir)
-infix fun Any.hirDiv(that: Any): HirValue = HirDiv(this.hir, that.hir)
-infix fun Any.hirMod(that: Any): HirValue = HirMod(this.hir, that.hir)
-infix fun Any.hirMul(that: Any): HirValue = HirMul(this.hir, that.hir)
-infix fun Any.hirSub(that: Any): HirValue = HirSub(this.hir, that.hir)
+infix fun Any.hirAdd(that: Any) = hirBinary(this.hir, that.hir, BinaryOperator.ADD)
+infix fun Any.hirDiv(that: Any) = hirBinary(this.hir, that.hir, BinaryOperator.DIVIDE)
+infix fun Any.hirMod(that: Any) = hirBinary(this.hir, that.hir, BinaryOperator.MODULO)
+infix fun Any.hirMul(that: Any) = hirBinary(this.hir, that.hir, BinaryOperator.MULTIPLY)
+infix fun Any.hirSub(that: Any) = hirBinary(this.hir, that.hir, BinaryOperator.SUBTRACT)
 
-infix fun Any.hirAnd(that: Any): HirValue = HirAnd(this.hir, that.hir)
-infix fun Any.hirOr(that: Any): HirValue = HirOr(this.hir, that.hir)
-infix fun Any.hirXor(that: Any): HirValue = HirXor(this.hir, that.hir)
+infix fun Any.hirAnd(that: Any) = hirBinary(this.hir, that.hir, BinaryOperator.AND)
+infix fun Any.hirOr(that: Any) = hirBinary(this.hir, that.hir, BinaryOperator.OR)
+infix fun Any.hirXor(that: Any) = hirBinary(this.hir, that.hir, BinaryOperator.XOR)
 
-infix fun Any.hirCatchRaise(that: Any) = HirCatch(this.hir, that.hir, Capture.RAISE)
-infix fun Any.hirCatchReturn(that: Any) = HirCatch(this.hir, that.hir, Capture.RETURN)
-infix fun Any.hirCatchHandle(that: Any) = HirCatch(this.hir, that.hir, Capture.HANDLE)
+infix fun Any.hirCatchRaise(that: Any) = hirBinary(this.hir, that.hir, BinaryOperator.RAISE)
+infix fun Any.hirCatchReturn(that: Any) = hirBinary(this.hir, that.hir, BinaryOperator.RETURN)
+infix fun Any.hirCatchHandle(that: Any) = hirBinary(this.hir, that.hir, BinaryOperator.HANDLE)
 
-fun HirSymbol.hirLoad(vararg parameters: Any) = HirLoad(name, parameters.map { null hirArg it })
-fun HirValue.hirCall(vararg parameters: Pair<String?, Any>) = HirCall(this, parameters.map { it.first hirArg it.second })
-fun HirValue.hirMember(field: HirLoad) = HirMember(this, field)
-infix fun String?.hirArg(that: Any) = NamedMaybe(this, that.hir)
+fun String.hirIdent(vararg parameters: NamedMaybe<Any>) = HirExpression.Identifier(UUID.randomUUID(), this, parameters.map { it.first to it.second.hir })
+fun HirExpression.hirCall(vararg parameters: NamedMaybe<Any>) = HirExpression.Call(UUID.randomUUID(), this, parameters.map { it.first to it.second.hir })
+fun HirExpression.hirMember(field: HirExpression.Identifier) = HirExpression.Field(UUID.randomUUID(), this, field)
+
+private fun hirBinary(lhs: HirExpression, rhs: HirExpression, operator: BinaryOperator): HirExpression
+{
+    val instance = HirExpression.Identifier(UUID.randomUUID(), operator.symbol, emptyList())
+    return HirExpression.Call(UUID.randomUUID(), instance, listOf(null to lhs, null to rhs))
+}
+
+private fun hirUnary(rhs: HirExpression, operator: UnaryOperator): HirExpression
+{
+    val instance = HirExpression.Identifier(UUID.randomUUID(), operator.symbol, emptyList())
+    return HirExpression.Call(UUID.randomUUID(), instance, listOf(null to rhs))
+}
 
 ///////////////////////
 // Statement helpers //
 ///////////////////////
 
-infix fun HirVariable.hirAssign(that: Any) = HirAssign(this.hirLoad(), that.hir)
+infix fun Any.hirAssign(that: Any) = HirStatement.Assign(this.hir, that.hir, AssignOperator.EQUAL)
 
-val Any.hirEval get() = HirEvaluate(hir)
-val Any.hirReturnError get() = HirReturnError(hir)
-val Any.hirReturnValue get() = HirReturnValue(hir)
+val Any.hirEval get() = HirStatement.Evaluate(hir)
+val Any.hirReturnError get() = HirStatement.ReturnError(hir)
+val Any.hirReturnValue get() = HirStatement.ReturnValue(hir)
 
-fun Any.hirBranch(
-    success: List<HirInstruction> = emptyList(),
-    failure: List<HirInstruction> = emptyList(),
-) = HirBranch(hir, success, failure)
+fun Any.hirIf(
+    success: List<HirStatement> = emptyList(),
+    failure: List<HirStatement> = emptyList(),
+) = HirStatement.If(hir, success, failure)
 
-fun Any.hirWhile(vararg instructions: HirInstruction) = HirWhile(hir, instructions.toList())
+fun Any.hirWhile(
+    statements: List<HirStatement> = emptyList(),
+) = HirStatement.While(hir, statements)
 
-////////////////////
-// Symbol helpers //
-////////////////////
+/////////////////////////
+// Declaration helpers //
+/////////////////////////
 
-fun hirFieldOf(
+fun hirConstOf(
     name: String = UUID.randomUUID().toString(),
-    type: HirType = Builtin.INT32_TYPE,
-    value: HirValue? = null,
-) = HirField(
+    type: HirType? = INT32_TYPE_NAME.hirIdent().hirType(),
+    value: HirExpression = 0.hir,
+) = HirDeclaration.ConstantDecl(
     id = UUID.randomUUID(),
     name = name,
     type = type,
     value = value,
+)
+
+fun hirFieldOf(
+    name: String = UUID.randomUUID().toString(),
+    type: HirType = INT32_TYPE_NAME.hirIdent().hirType(),
+    default: HirExpression? = null,
+) = HirDeclaration.FieldDecl(
+    id = UUID.randomUUID(),
+    name = name,
+    type = type,
+    default = default,
     visibility = Visibility.PRIVATE,
     assignability = Assignability.FINAL,
 )
 
 fun hirFunOf(
     name: String = UUID.randomUUID().toString(),
-    value: HirType? = null,
-    error: HirType? = null,
-    params: List<HirParameter> = emptyList(),
-    instructions: List<HirInstruction> = emptyList(),
-) = HirFunction(
+    typeParameters: List<HirDeclaration.TypeParameterDecl> = emptyList(),
+    parameters: List<HirDeclaration.ParameterDecl> = emptyList(),
+    valueType: HirType? = null,
+    errorType: HirType? = null,
+    statements: List<HirStatement> = emptyList(),
+) = HirDeclaration.FunctionDecl(
     id = UUID.randomUUID(),
     name = name,
-    type = HirType.Function(value, error, params.map { HirParameterDynamic(it.name, it.type, it.value, Passability.IN) }),
     visibility = Visibility.PRIVATE,
-    instructions = instructions,
-    variables = emptyList(),
-    parameters = params,
+    typeParameters = typeParameters,
+    parameters = parameters,
+    valueType = valueType,
+    errorType = errorType,
+    body = statements,
 )
 
 fun hirLitOf(
     name: String = UUID.randomUUID().toString(),
-    value: HirType = Builtin.INT32_TYPE,
-    param: HirParameter = hirParamOf(),
-    instructions: List<HirInstruction> = emptyList(),
-) = HirLiteral(
+    parameter: HirDeclaration.ParameterDecl = hirParamOf(),
+    valueType: HirType = INT32_TYPE_NAME.hirIdent().hirType(),
+    body: List<HirStatement> = emptyList(),
+) = HirDeclaration.FunctionDecl(
     id = UUID.randomUUID(),
     name = name,
-    type = HirType.Function(value, null, listOf(HirParameterDynamic(param.name, param.type, param.value, Passability.IN))),
     visibility = Visibility.PRIVATE,
-    instructions = instructions,
-    variables = emptyList(),
-    parameter = param,
+    typeParameters = emptyList(),
+    parameters = listOf(parameter),
+    valueType = valueType,
+    errorType = null,
+    body = body,
 )
 
 fun hirParamOf(
     name: String = UUID.randomUUID().toString(),
-    type: HirType = Builtin.INT32_TYPE,
-    value: HirValue? = null,
-) = HirParameter(
+    type: HirType = INT32_TYPE_NAME.hirIdent().hirType(),
+    default: HirExpression? = null,
+) = HirDeclaration.ParameterDecl(
     id = UUID.randomUUID(),
     name = name,
     type = type,
-    value = value,
+    default = default,
     passability = Passability.IN,
+)
+
+fun hirSegmentOf(
+    imports: List<String> = emptyList(),
+    constants: List<HirDeclaration.ConstantDecl> = emptyList(),
+    functions: List<HirDeclaration.FunctionDecl> = emptyList(),
+    structures: List<HirDeclaration.StructureDecl> = emptyList(),
+) = HirDeclaration.SegmentDecl(
+    id = UUID.randomUUID(),
+    imports = imports,
+    constants = constants,
+    functions = functions,
+    structures = structures,
 )
 
 fun hirStructOf(
     name: String = UUID.randomUUID().toString(),
-    fields: List<HirField> = emptyList(),
-    methods: List<HirMethod> = emptyList(),
-    templates: List<HirTemplate> = emptyList(),
-) = HirStruct(
+    typeParameters: List<HirDeclaration.TypeParameterDecl> = emptyList(),
+    fields: List<HirDeclaration.FieldDecl> = emptyList(),
+) = HirDeclaration.StructureDecl(
     id = UUID.randomUUID(),
     name = name,
-    visibility = Visibility.PRIVATE,
+    typeParameters = typeParameters,
     fields = fields,
-    methods = methods,
-    templates = templates,
+    visibility = Visibility.PRIVATE,
 )
 
 fun hirVarOf(
     name: String = UUID.randomUUID().toString(),
     type: HirType? = null,
-    value: Any = 0,
-) = HirVariable(
-    id = UUID.randomUUID(),
+    default: HirExpression = 0.hir,
+) = HirStatement.Variable(
     name = name,
     type = type,
-    value = value.hir,
+    expression = default,
     assignability = Assignability.FINAL,
 )

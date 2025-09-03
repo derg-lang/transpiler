@@ -1,0 +1,4 @@
+fun main() -> __builtin_i32
+{
+    return 42
+}
