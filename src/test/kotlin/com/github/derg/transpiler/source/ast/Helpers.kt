@@ -33,11 +33,9 @@ fun astTemplateValue(
     default: AstValue? = null,
 ) = AstTemplate.Value(name = name, type = type, default = default)
 
-fun astTypeVar(
-    name: String = UUID.randomUUID().toString(),
+fun AstValue.astType(
     mutability: Mutability = Mutability.IMMUTABLE,
-    parameters: List<AstParameterStatic> = emptyList(),
-) = AstType.Variable(name = name, mutability = mutability, parameters = parameters)
+) = AstType.Expression(this, mutability)
 
 fun astParamStatic(
     name: String? = null,
@@ -79,7 +77,7 @@ fun AstValue.astCall(vararg parameters: Any) = AstCall(this, parameters.map { it
 fun AstValue.astMember(field: String) = AstMember(this, field.astLoad())
 
 val Any.astArg: NamedMaybe<AstValue>
-    get() = if (this is Pair<*, *>) (first as String) to (second as Any).ast else null to ast
+    get() = if (this is Pair<*, *>) (first as String?) to (second as Any).ast else null to ast
 
 ///////////////////////
 // Statement helpers //
@@ -153,7 +151,7 @@ fun astConstOf(
     vis: Visibility = Visibility.PRIVATE,
 ) = AstConstant(
     name = name,
-    type = type?.let { AstType.Variable(it, Mutability.IMMUTABLE, emptyList()) },
+    type = type?.astLoad()?.astType(),
     value = value.ast,
     visibility = vis,
 )
@@ -167,8 +165,8 @@ fun astFunOf(
     statements: List<AstInstruction> = emptyList(),
 ) = AstFunction(
     name = name,
-    valueType = valType?.let { AstType.Variable(it, Mutability.IMMUTABLE, emptyList()) },
-    errorType = errType?.let { AstType.Variable(it, Mutability.IMMUTABLE, emptyList()) },
+    valueType = valType?.astLoad()?.astType(),
+    errorType = errType?.astLoad()?.astType(),
     parameters = params,
     visibility = vis,
     statements = statements,
@@ -182,7 +180,7 @@ fun astParOf(
     mut: Mutability = Mutability.IMMUTABLE,
 ) = AstParameter(
     name = name,
-    type = AstType.Variable(type, mut, emptyList()),
+    type = type.astLoad().astType(mut),
     value = value?.ast,
     passability = pas,
 )
@@ -196,7 +194,7 @@ fun astPropOf(
     ass: Assignability = Assignability.FINAL,
 ) = AstProperty(
     name = name,
-    type = AstType.Variable(type, mut, emptyList()),
+    type = type.astLoad().astType(mut),
     value = value?.ast,
     visibility = vis,
     assignability = ass,
@@ -223,7 +221,7 @@ fun astVarOf(
     ass: Assignability = Assignability.FINAL,
 ) = AstVariable(
     name = name,
-    type = type?.let { AstType.Variable(it, mut, emptyList()) },
+    type = type?.astLoad()?.astType(mut),
     value = value.ast,
     visibility = vis,
     assignability = ass,

@@ -167,7 +167,7 @@ class TestParserStruct
     {
         val generics = listOf(
             astTemplateStruct(name = "Bar"),
-            astTemplateValue(name = "baz", type = astTypeVar("Baz"), default = 42.ast),
+            astTemplateValue(name = "baz", type = "Baz".astLoad().astType(), default = 42.ast),
         )
         val expected = astStructOf(name = "Foo", templates = generics)
         

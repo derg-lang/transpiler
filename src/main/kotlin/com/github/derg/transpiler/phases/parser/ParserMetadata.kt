@@ -208,7 +208,7 @@ fun typeParserOf(): Parser<AstType> = ParserAnyOf(
 
 private fun typeVariablePatternOf() = ParserSequence(
     "mutability" to mutabilityParserOf(),
-    "name" to ParserIdentifier(),
+    "value" to ParserExpression(),
     "params" to ParserOptional(typeVariableParamsPatternOf())
 )
 
@@ -218,14 +218,10 @@ private fun typeVariableParamsPatternOf() = ParserSequence(
     "close" to ParserSymbol(Symbol.CLOSE_BRACKET),
 )
 
-private fun typeVariableOutcomeOf(values: Parsers) = AstType.Variable(
-    name = values["name"],
+private fun typeVariableOutcomeOf(values: Parsers) = AstType.Expression(
+    value = values["value"],
     mutability = values["mutability"],
-    parameters = typeVariableParamsOutcomeOf(values["params"]),
 )
-
-private fun typeVariableParamsOutcomeOf(values: Parsers?): List<AstParameterStatic> =
-    values?.get<List<NamedMaybe<AstValue>>>("params")?.map { (name, value) -> AstParameterStatic(name, value) } ?: emptyList()
 
 /**
  * Parses an optional type from the token stream. The type must be located after the given [symbol].

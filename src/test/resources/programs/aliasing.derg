@@ -1,7 +1,12 @@
 val alias_a = __builtin_bool
 val alias_b = __builtin_i32
 
-fun are_equal(lhs: alias_b, rhs: alias_b) -> alias_a
+fun alias_c() -> Type
+{
+    return alias_b
+}
+
+fun are_equal(lhs: alias_b, rhs: alias_c()) -> alias_a
 {
     return lhs == rhs
 }

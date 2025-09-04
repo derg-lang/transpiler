@@ -10,6 +10,17 @@ import com.github.derg.transpiler.source.*
 sealed interface AstType
 {
     /**
+     * The expression type represents a structure with a specific layout of data in memory. This type is used to
+     * represent a data structure which has been declared within the code. Data structures are basic containers of data.
+     *
+     * Example syntax: `mut List[Int32]`
+     *
+     * @param value Any legal expression which may evaluate to a legal type.
+     * @param mutability The type of mutation which is permitted on the type.
+     */
+    data class Expression(val value: AstValue, val mutability: Mutability) : AstType
+    
+    /**
      * The function type describes a function-like object. These types indicate that the object may be used as a
      * callable object, enabling it to be invoked as a function. Note that this only encodes the type information, not
      * anything about the value itself.
@@ -21,18 +32,6 @@ sealed interface AstType
      * @param parameters The types of all the runtime parameters the function accepts.
      */
     data class Function(val value: AstType?, val error: AstType?, val parameters: List<AstParameterDynamic>) : AstType
-    
-    /**
-     * The variable type represents a specific layout of data in memory. This type is used to represent a specific data
-     * structure which has been declared within the code. Data structures are basic containers of data.
-     *
-     * Example syntax: `mut List[Int32]`
-     *
-     * @param name The name of the structure representing the value's memory layout.
-     * @param mutability The type of mutation which is permitted on the type.
-     * @param parameters The types of all the compile-time parameters the structure accepts.
-     */
-    data class Variable(val name: String, val mutability: Mutability, val parameters: List<AstParameterStatic>) : AstType
     
     /**
      * The union type describes a collection of types. This type encodes the meaning that a value must be exactly one of

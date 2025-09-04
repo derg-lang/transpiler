@@ -63,7 +63,13 @@ class TestParserType
     @Test
     fun `Given name, when parsing, then correctly parsed`()
     {
-        tester.parse("Name").isOk(1).isDone().isValue(astTypeVar(name = "Name"))
+        tester.parse("Name").isOk(1).isDone().isValue("Name".astLoad().astType())
+    }
+    
+    @Test
+    fun `Given expression, when parsing, then correctly parsed`()
+    {
+        tester.parse("1 + 2").isOk(1).isWip(1).isOk(1).isDone().isValue((1 astAdd 2).astType())
     }
     
     @Test
@@ -75,18 +81,15 @@ class TestParserType
     @Test
     fun `Given mutability, when parsing, then correctly parsed`()
     {
-        tester.parse("    Foo").isOk(1).isDone().isValue(astTypeVar(name = "Foo", mutability = Mutability.IMMUTABLE))
-        tester.parse("mut Foo").isWip(1).isOk(1).isDone().isValue(astTypeVar(name = "Foo", mutability = Mutability.MUTABLE))
+        tester.parse("    Foo").isOk(1).isDone().isValue("Foo".astLoad().astType(Mutability.IMMUTABLE))
+        tester.parse("mut Foo").isWip(1).isOk(1).isDone().isValue("Foo".astLoad().astType(Mutability.MUTABLE))
     }
     
     @Test
     fun `Given generics, when parsing, then correctly parsed`()
     {
-        val parameters = listOf(
-            astParamStatic(name = null, value = "Bar".astLoad()),
-            astParamStatic(name = "baz", value = 42.ast),
-        )
+        val expected = "Foo".astLoad(null to "Bar".astLoad(), "baz" to 42.ast).astType()
         
-        tester.parse("Foo[Bar, baz = 42]").isOk(1).isWip(6).isOk(1).isDone().isValue(astTypeVar(name = "Foo", parameters = parameters))
+        tester.parse("Foo[Bar, baz = 42]").isOk(1).isWip(6).isOk(1).isDone().isValue(expected)
     }
 }
