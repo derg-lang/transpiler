@@ -3,7 +3,6 @@ package com.github.derg.transpiler.phases.parser
 import com.github.derg.transpiler.source.*
 import com.github.derg.transpiler.source.ast.*
 import com.github.derg.transpiler.utils.*
-import java.util.UUID
 
 /**
  * Parses a symbol followed by an identifier. This operation is commonly used to specify optional type information or
@@ -203,6 +202,7 @@ private fun segmentOutcomeOf(values: Parsers) = AstSegment(
  * Parses a variable type from the token stream.
  */
 fun typeParserOf(): Parser<AstType> = ParserAnyOf(
+    ParserPattern({ ParserSymbol(Symbol.TYPE) }, { AstType.Type }),
     ParserPattern(::typeVariablePatternOf, ::typeVariableOutcomeOf),
 )
 

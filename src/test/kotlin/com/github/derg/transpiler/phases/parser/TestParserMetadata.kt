@@ -63,7 +63,13 @@ class TestParserType
     @Test
     fun `Given name, when parsing, then correctly parsed`()
     {
-        tester.parse("Type").isOk(1).isDone().isValue(astTypeVar(name = "Type"))
+        tester.parse("Name").isOk(1).isDone().isValue(astTypeVar(name = "Name"))
+    }
+    
+    @Test
+    fun `Given type, when parsing, then correctly parsed`()
+    {
+        tester.parse("Type").isOk(1).isDone().isValue(AstType.Type)
     }
     
     @Test

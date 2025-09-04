@@ -273,4 +273,10 @@ sealed interface HirType
      * @param passability The specific mechanism of how the parameter should be passed into the function.
      */
     data class Parameter(val name: String, val type: HirType, val default: HirExpression?, val passability: Passability)
+    
+    /**
+     * Type types, which describe an arbitrary type. These things represent type information, rather than a value
+     * adhering to a specific type.
+     */
+    data object Type : HirType
 }

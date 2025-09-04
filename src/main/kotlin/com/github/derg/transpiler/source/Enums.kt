@@ -234,6 +234,7 @@ enum class Symbol(val symbol: String)
     RAISE("raise"),
     STRUCT("struct"),
     TRUE("true"),
+    TYPE("Type"),
     USE("use"),
     VALUE("val"),
     VARYING("var"),

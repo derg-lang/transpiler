@@ -17,6 +17,7 @@ fun typeDefinerOf(
 {
     is HirType.Expression -> TypeExpressionDefiner(node, env, scope)
     is HirType.Function   -> TODO("Not yet implemented")
+    is HirType.Type       -> TypeTypeDefiner
 }
 
 /**
@@ -51,4 +52,12 @@ internal class TypeExpressionDefiner(node: HirType.Expression, env: Environment,
             else                   -> evaluation.toSuccess()
         }
     }
+}
+
+/**
+ * Converts from a HIR type to a THIR type.
+ */
+internal object TypeTypeDefiner : Worker<ThirType>
+{
+    override fun process(): Result<ThirType, Outcome> = ThirType.Type.toSuccess()
 }

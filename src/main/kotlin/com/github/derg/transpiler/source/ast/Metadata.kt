@@ -43,6 +43,13 @@ sealed interface AstType
      * @param types The types which a value is permitted to take, the value must be exactly one of them.
      */
     data class Union(val types: Set<AstType>) : AstType
+    
+    /**
+     * A type as a first-class citizen. The type of the value is the type information itself, rather than an instance of
+     * a specific type. This can be used to represent a function which returns a type; this is useful during compile
+     * time code execution.
+     */
+    data object Type : AstType
 }
 
 /**

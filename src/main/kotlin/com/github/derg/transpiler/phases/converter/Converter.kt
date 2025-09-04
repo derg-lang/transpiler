@@ -79,6 +79,7 @@ private fun AstVariable.toHir() = HirStatement.Variable(
 private fun AstType.toHir(): HirType = when (this)
 {
     is AstType.Function -> HirType.Function(value?.toHir(), error?.toHir(), parameters.map { it.toHir() })
+    is AstType.Type     -> HirType.Type
     is AstType.Union    -> TODO()
     is AstType.Variable -> HirType.Expression(HirExpression.Identifier(UUID.randomUUID(), name, parameters.map { it.name to it.value.toHir() }))
 }
