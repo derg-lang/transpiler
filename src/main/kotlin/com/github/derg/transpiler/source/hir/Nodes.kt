@@ -140,15 +140,16 @@ sealed interface HirStatement
     data class While(val predicate: HirExpression, val body: List<HirStatement>) : HirStatement
     
     /**
-     * Variables are units which hold a specific [expression] and associates the value with a binding [name]. Variables
-     * may optionally be given a [type], which is verified against the actual type of the expression. If the [type] is
-     * not specified, it is inferred from [expression]. Depending on the [assignability] of the variable, it may either
-     * be assigned a new value or not.
+     * Variables are units which hold a specific [value] and associates the value with a binding [name]. Variables may
+     * optionally be given a [type], which is verified against the actual type of the expression. If the [type] is not
+     * specified, it is inferred from [value]. Depending on the [assignability] of the variable, it may either be
+     * assigned a new value or not.
      */
     data class Variable(
+        val id: UUID,
         val name: String,
         val type: HirType?,
-        val expression: HirExpression,
+        val value: HirExpression,
         val assignability: Assignability,
     ) : HirStatement
 }

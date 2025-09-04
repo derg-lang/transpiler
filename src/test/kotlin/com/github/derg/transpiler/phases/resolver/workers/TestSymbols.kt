@@ -218,3 +218,62 @@ class TestFunctionDefiner
         assertEquals(expected, env.declarations[input.id])
     }
 }
+
+class TestVariableDefiner
+{
+    private val env = Environment()
+    private val scope = Scope()
+    
+    /**
+     * Registers [this] declaration to the current scope.
+     */
+    private fun <Type : ThirDeclaration> Type.register(): Type =
+        apply { scope.register(id, name) }
+    
+    /**
+     * Declares that [this] declaration actually exists within the environment.
+     */
+    private fun <Type : ThirDeclaration> Type.declare(): Type =
+        apply { env.declarations[id] = this }
+    
+    @Test
+    fun `Given both type and value, when processing, then declared and defined`()
+    {
+        Builtin.INT32.register().declare()
+        
+        val input = hirVarOf(type = INT32_TYPE_NAME.hirIdent().hirType(), value = 1.hir)
+        val expected = thirVarOf(id = input.id, name = input.name, type = ThirType.Int32, value = 1.thir)
+        val worker = VariableDefiner(input, env, scope)
+        
+        assertSuccess(Phase.Declared, worker.process())
+        assertEquals(expected, env.declarations[input.id])
+        assertSuccess(Phase.Defined, worker.process())
+        assertEquals(expected, env.declarations[input.id])
+    }
+    
+    @Test
+    fun `Given only value, when processing, then declared and defined`()
+    {
+        Builtin.INT32.register().declare()
+        
+        val input = hirVarOf(type = null, value = 1.hir)
+        val expected = thirVarOf(id = input.id, name = input.name, type = ThirType.Int32, value = 1.thir)
+        val worker = VariableDefiner(input, env, scope)
+        
+        assertSuccess(Phase.Declared, worker.process())
+        assertEquals(expected, env.declarations[input.id])
+        assertSuccess(Phase.Defined, worker.process())
+        assertEquals(expected, env.declarations[input.id])
+    }
+    
+    @Test
+    fun `Given mismatched type and value, when processing, then error`()
+    {
+        Builtin.INT32.register().declare()
+        
+        val input = hirVarOf(type = INT32_TYPE_NAME.hirIdent().hirType(), value = true.hir)
+        val expected = Outcome.MismatchedType(expected = ThirType.Int32, received = ThirType.Bool)
+        
+        assertFailure(expected, VariableDefiner(input, env, scope).process())
+    }
+}

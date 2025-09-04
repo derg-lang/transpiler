@@ -35,9 +35,11 @@ private const val SOURCE = """
 
 fun main(args: Array<String>)
 {
+    val compileStart = OffsetDateTime.now()
     val ast = parse(SOURCE).valueOrDie()
     val hir = convert(ast)
     val thir = resolve(hir).valueOrDie()
+    val compileEnd = OffsetDateTime.now()
     
     // Find the entry point into the program and load the run command.
     val main = thir.declarations.values.last { it.name == "main" }
@@ -45,9 +47,9 @@ fun main(args: Array<String>)
     val entry = ThirExpression.Call(load, emptyList(), load.valueType, load.errorType)
     
     // Run program, timing the duration of it.
-    val start = OffsetDateTime.now()
+    val runStart = OffsetDateTime.now()
     val outcome = Interpreter(thir).evaluate(entry)
-    val end = OffsetDateTime.now()
+    val runEnd = OffsetDateTime.now()
     
     // Analyze the outcome, lets us know what the compiler found in the source code and runtime analytics.
     val constants = thir.declarations.values.filterIsInstance<ThirDeclaration.Function>()
@@ -58,6 +60,8 @@ fun main(args: Array<String>)
     println("Constants: \n\t" + constants.joinToString("\n\t") { it.toString() })
     println("Functions: \n\t" + functions.joinToString("\n\t") { it.toString() })
     println("Structures: \n\t" + structures.joinToString("\n\t") { it.toString() })
+    println("")
     println("Outcome of program is '$outcome'")
-    println("Program took ${Duration.between(start, end).toNanos() / 1.0e9} seconds")
+    println("Program took ${Duration.between(compileStart, compileEnd).toNanos() / 1.0e9} seconds to compile")
+    println("Program took ${Duration.between(runStart, runEnd).toNanos() / 1.0e9} seconds to run")
 }

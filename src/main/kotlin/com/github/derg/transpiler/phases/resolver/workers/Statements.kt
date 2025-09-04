@@ -15,15 +15,26 @@ fun statementDefinerOf(
     scope: Scope,
 ): Worker<ThirStatement> = when (node)
 {
-    is HirStatement.Assign      -> TODO("Not yet implemented")
+    is HirStatement.Assign      -> AssignDefiner(node, env, scope)
     is HirStatement.Evaluate    -> EvaluateDefiner(node, env, scope)
     is HirStatement.For         -> TODO("Not yet implemented")
     is HirStatement.If          -> IfDefiner(node, env, scope)
     is HirStatement.Return      -> ReturnDefiner
     is HirStatement.ReturnError -> ReturnErrorDefiner(node, env, scope)
     is HirStatement.ReturnValue -> ReturnValueDefiner(node, env, scope)
-    is HirStatement.Variable    -> TODO("Not yet implemented")
+    is HirStatement.Variable    -> InitializeDefiner(node, env, scope)
     is HirStatement.While       -> WhileDefiner(node, env, scope)
+}
+
+/**
+ * Issues an initialization statement for the variable node.
+ */
+internal class AssignDefiner(node: HirStatement.Assign, env: Environment, scope: Scope) : Worker<ThirStatement>
+{
+    override fun process(): Result<ThirStatement, Outcome>
+    {
+        TODO("Not yet implemented")
+    }
 }
 
 /**
@@ -80,6 +91,27 @@ internal class IfDefiner(node: HirStatement.If, env: Environment, scope: Scope) 
             success = success!!,
             failure = failure!!,
         ).toSuccess()
+    }
+}
+
+/**
+ * Issues an initialization statement for the variable node.
+ */
+internal class InitializeDefiner(
+    private val node: HirStatement.Variable,
+    private val env: Environment,
+    private val scope: Scope,
+) : Worker<ThirStatement>
+{
+    override fun process(): Result<ThirStatement, Outcome>
+    {
+        val symbol = env.declarations[node.id] as? ThirDeclaration.Variable
+            ?: return Outcome.RequireDefinition(setOf(node.id)).toFailure()
+        
+        scope.register(node.id, node.name)
+        
+        val instance = ThirExpression.Load(node.id, symbol.type)
+        return ThirStatement.Assign(instance, symbol.def!!.value).toSuccess()
     }
 }
 

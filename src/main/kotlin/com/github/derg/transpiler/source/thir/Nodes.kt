@@ -106,6 +106,13 @@ sealed interface ThirExpression
 sealed interface ThirStatement
 {
     /**
+     * Assigns the specified [expression] to the object located under the given [instance]. Note that only a single form
+     * of assignment exists in this layer; other assignment operators are de-sugared into function calls combined with
+     * this one assignment approach.
+     */
+    data class Assign(val instance: ThirExpression, val expression: ThirExpression) : ThirStatement
+    
+    /**
      * Evaluates the [expression], and executes any side effects which may arise as a consequence. The [expression] is
      * not permitted to evaluate to any non-void value or error.
      */
@@ -154,7 +161,7 @@ sealed interface ThirDeclaration
     val type: ThirType
     
     /**
-     * Constants represents values evaluated at compile-time.
+     * Constants represents bindings evaluated at compile-time.
      */
     data class Const(
         override val id: UUID,
@@ -234,6 +241,20 @@ sealed interface ThirDeclaration
     
     data class StructureDef(
         val placeholder: Nothing?,
+    )
+    
+    /**
+     * Variables represents bindings evaluated at run-time.
+     */
+    data class Variable(
+        override val id: UUID,
+        override val name: String,
+        override val type: ThirType,
+        var def: VariableDef?,
+    ) : ThirDeclaration
+    
+    data class VariableDef(
+        val value: ThirExpression,
     )
     
     /**

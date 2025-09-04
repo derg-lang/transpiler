@@ -51,10 +51,12 @@ class Interpreter(private val env: Environment)
         val constants = env.declarations.values.filterIsInstance<ThirDeclaration.Const>()
         val functions = env.declarations.values.filterIsInstance<ThirDeclaration.Function>()
         val structures = env.declarations.values.filterIsInstance<ThirDeclaration.Structure>()
+        val variables = env.declarations.values.filterIsInstance<ThirDeclaration.Variable>()
         
         constants.forEach { it.def?.let { def -> memory[it.id] = def.value } }
         functions.forEach { memory[it.id] = ThirExpression.Load(it.id, it.type) }
         structures.forEach { memory[it.id] = ThirExpression.Type(it.toType()) }
+        variables.forEach { memory[it.id] = ThirExpression.Load(it.id, it.type) }
         
         return execute(expression)
     }
@@ -105,6 +107,7 @@ class Interpreter(private val env: Environment)
     {
         when (statement)
         {
+            is ThirStatement.Assign      -> executeAssign(statement)
             is ThirStatement.Evaluate    -> execute(statement.expression)
             is ThirStatement.If          -> executeIf(statement)
             is ThirStatement.Return      -> throw ReturnException
@@ -112,6 +115,12 @@ class Interpreter(private val env: Environment)
             is ThirStatement.ReturnValue -> throw ReturnValueException(execute(statement.expression).valueOrDie())
             is ThirStatement.While       -> executeWhile(statement)
         }
+    }
+    
+    private fun executeAssign(statement: ThirStatement.Assign)
+    {
+        val instance = execute(statement.instance).valueOrDie() as ThirExpression.Load
+        memory[instance.symbolId] = execute(statement.expression).valueOrDie()!!
     }
     
     private fun executeIf(statement: ThirStatement.If)

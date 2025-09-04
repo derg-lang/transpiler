@@ -1,0 +1,6 @@
+fun main() -> __builtin_i32
+{
+    val foo = 2
+    val bar = 3
+    return foo + bar
+}

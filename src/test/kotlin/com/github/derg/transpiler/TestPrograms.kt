@@ -19,6 +19,7 @@ class TestProgram
         "fibonacci" to 8.thir.toSuccess(),
         "stringify" to "1337".thir.toSuccess(),
         "aliasing" to true.thir.toSuccess(),
+        "variables" to 5.thir.toSuccess(),
     )
     
     @ParameterizedTest

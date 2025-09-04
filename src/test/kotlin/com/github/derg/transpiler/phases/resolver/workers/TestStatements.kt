@@ -5,6 +5,7 @@ import com.github.derg.transpiler.source.hir.*
 import com.github.derg.transpiler.source.thir.*
 import com.github.derg.transpiler.utils.*
 import org.junit.jupiter.api.*
+import org.junit.jupiter.api.Assertions.*
 
 class TestEvaluateDefiner
 {
@@ -138,6 +139,39 @@ class TestIfDefiner
             
             assertSuccess(expected, worker.process())
         }
+    }
+}
+
+class TestInitializeDefiner
+{
+    private val env = Environment()
+    private val scope = Scope()
+    
+    /**
+     * Declares that [this] declaration actually exists within the environment.
+     */
+    private fun <Type : ThirDeclaration> Type.declare(): Type =
+        apply { env.declarations[id] = this }
+    
+    @Test
+    fun `Given unknown variable, when processing, then error`()
+    {
+        val input = hirVarOf(name = "whatever")
+        val expected = Outcome.RequireDefinition(setOf(input.id))
+        
+        assertFailure(expected, InitializeDefiner(input, env, scope).process())
+    }
+    
+    @Test
+    fun `Given defined variable, when processing, then registered in scope`()
+    {
+        val input = hirVarOf(type = Builtin.BOOL.name.hirIdent().hirType(), value = 0.hir)
+        val variable = thirVarOf(id = input.id, name = input.name, type = ThirType.Int32, value = 0.thir).declare()
+        val expected = variable.thirIdent() thirAssign 0
+        
+        assertFalse(variable.id in scope.find(input.name))
+        assertSuccess(expected, InitializeDefiner(input, env, scope).process())
+        assertTrue(variable.id in scope.find(variable.name))
     }
 }
 

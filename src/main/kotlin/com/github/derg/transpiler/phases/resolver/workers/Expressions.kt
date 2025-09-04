@@ -183,6 +183,7 @@ internal class IdentifierDefiner(
             is ThirDeclaration.GenericValue -> symbol.def
             is ThirDeclaration.Parameter    -> symbol.def
             is ThirDeclaration.Structure    -> symbol.def
+            is ThirDeclaration.Variable     -> null
         }
         if (requireDefinition && def == null)
             return Outcome.RequireDefinition(setOf(symbol.id)).toFailure()
@@ -262,6 +263,7 @@ internal class CallDefiner(
         is ThirDeclaration.GenericValue -> TODO()
         is ThirDeclaration.Parameter    -> TODO()
         is ThirDeclaration.Structure    -> TODO()
+        is ThirDeclaration.Variable     -> TODO()
     }
     
     private fun resolve(symbol: ThirDeclaration.Function): Result<ThirExpression, Outcome>

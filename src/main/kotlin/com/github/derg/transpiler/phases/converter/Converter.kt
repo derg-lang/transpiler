@@ -70,9 +70,10 @@ private fun AstStruct.toHir() = HirDeclaration.StructureDecl(
 )
 
 private fun AstVariable.toHir() = HirStatement.Variable(
+    id = UUID.randomUUID(),
     name = name,
     type = type?.toHir(),
-    expression = value.toHir(),
+    value = value.toHir(),
     assignability = assignability,
 )
 

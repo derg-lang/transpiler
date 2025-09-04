@@ -115,7 +115,7 @@ fun ThirDeclaration.Function.thirCall(vararg parameters: Any) = ThirExpression.C
 // Statement helpers //
 ///////////////////////
 
-//infix fun ThirVariable.thirAssign(that: Any) = ThirAssign(id, that.thir)
+infix fun ThirExpression.thirAssign(that: Any) = ThirStatement.Assign(this, that.thir)
 
 val Any.thirEval get() = ThirStatement.Evaluate(thir)
 val Any.thirReturnError get() = ThirStatement.ReturnError(thir)
@@ -193,4 +193,16 @@ fun thirStructOf(
     genericValueIds = genericValueIds,
     fieldIds = fieldIds,
     def = ThirDeclaration.StructureDef(null),
+)
+
+fun thirVarOf(
+    id: UUID = UUID.randomUUID(),
+    name: String = UUID.randomUUID().toString(),
+    type: ThirType = ThirType.Int32,
+    value: ThirExpression = ThirExpression.Int32(0),
+) = ThirDeclaration.Variable(
+    id = id,
+    name = name,
+    type = type,
+    def = ThirDeclaration.VariableDef(value = value),
 )

@@ -214,10 +214,11 @@ fun hirStructOf(
 fun hirVarOf(
     name: String = UUID.randomUUID().toString(),
     type: HirType? = null,
-    default: HirExpression = 0.hir,
+    value: HirExpression = 0.hir,
 ) = HirStatement.Variable(
+    id = UUID.randomUUID(),
     name = name,
     type = type,
-    expression = default,
+    value = value,
     assignability = Assignability.FINAL,
 )
