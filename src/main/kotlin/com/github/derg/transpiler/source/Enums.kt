@@ -134,28 +134,29 @@ enum class Passability
 }
 
 /**
- * How a captured error should be handled, when handled inline in an expression. The captured error will be accessible
- * as a temporary binding, allowing the developer to transform it in any way they need before the program continues.
+ * Catch operators are operations which converts failures to successes, or vice versa. They may impact control flow. The
+ * captured value will be accessible as a temporary binding, allowing the developer to transform it in any way they need
+ * before the program continues.
  */
-enum class Capture
+enum class CatchOperator
 {
     /**
-     * The error is transformed into a value, and used instead of the success value which would otherwise be used. The
-     * computed value is used as a default value when an error has occurred.
+     * Whenever an expression evaluates to a failure, the failure value is transformed into a success value based on the
+     * fallback expression. The final evaluation is then used, as if the failure had never occurred.
      */
     HANDLE,
     
     /**
-     * The error is transformed into a value, which is then returned from the callable object as an error. This
-     * operation is equivalent to capturing the error, transforming it, and then raising it.
+     * Whenever an expression evaluates to a failure, the failure value is transformed into another failure value based
+     * on the fallback expression. The final evaluation is automatically returned from the function as a failure value.
      */
-    RAISE,
+    RETURN_ERROR,
     
     /**
-     * The error is transformed into a value, which is then returned from the callable object as a success. This
-     * operation is equivalent to capturing the error, transforming it, and then returning it.
+     * Whenever an expression evaluates to a success, the success value is transformed into another success value based
+     * on the fallback expression. The final evaluation is automatically returned from the function as a success value.
      */
-    RETURN,
+    RETURN_VALUE,
 }
 
 /**
@@ -182,15 +183,12 @@ enum class BinaryOperator(val symbol: String)
     EQUAL(Symbol.EQUAL.symbol),
     GREATER(Symbol.GREATER.symbol),
     GREATER_EQUAL(Symbol.GREATER_EQUAL.symbol),
-    HANDLE(Symbol.COLON.symbol),
     LESS(Symbol.LESS.symbol),
     LESS_EQUAL(Symbol.LESS_EQUAL.symbol),
     MODULO(Symbol.MODULO.symbol),
     MULTIPLY(Symbol.MULTIPLY.symbol),
     NOT_EQUAL(Symbol.NOT_EQUAL.symbol),
     OR(Symbol.OR.symbol),
-    RAISE(Symbol.EXCLAMATION.symbol),
-    RETURN(Symbol.QUESTION.symbol),
     SUBTRACT(Symbol.MINUS.symbol),
     XOR(Symbol.XOR.symbol),
 }
@@ -249,11 +247,13 @@ enum class Symbol(val symbol: String)
     COLON(":"),
     COMMA(","),
     EXCLAMATION("!"),
+    EXCLAMATION_COLON("!:"),
     OPEN_BRACE("{"),
     OPEN_BRACKET("["),
     OPEN_PARENTHESIS("("),
     PERIOD("."),
     QUESTION("?"),
+    QUESTION_COLON("?:"),
     SEMICOLON(";"),
     
     // Assignment operators

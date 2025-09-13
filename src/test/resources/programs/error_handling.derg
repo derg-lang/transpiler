@@ -1,0 +1,11 @@
+fun fallible(should_fail: __builtin_bool): __builtin_str
+{
+    if should_fail
+        raise "uh-oh"
+}
+
+fun main(): __builtin_str -> __builtin_i32
+{
+    fallible(true) ?: "failed"
+    return 42
+}

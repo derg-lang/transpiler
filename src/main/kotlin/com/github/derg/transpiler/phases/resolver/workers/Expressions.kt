@@ -41,6 +41,7 @@ fun expressionDefinerOf(
 {
     is HirExpression.Bool       -> BoolDefiner(node)
     is HirExpression.Call       -> CallDefiner(node, env, scope, requireDefinition)
+    is HirExpression.Catch      -> CatchDefiner(node, env, scope, requireDefinition)
     is HirExpression.Decimal    -> DecimalDefiner(node)
     is HirExpression.Field      -> TODO("Not yet implemented")
     is HirExpression.Identifier -> IdentifierDefiner(node, env, scope, typeHint, requireDefinition)
@@ -328,5 +329,44 @@ internal class CallDefiner(
             valueType = symbol.valueType,
             errorType = symbol.errorType,
         ).toSuccess()
+    }
+}
+
+/**
+ * Converts from a HIR catch to a THIR catch.
+ */
+internal class CatchDefiner(
+    private val node: HirExpression.Catch,
+    env: Environment,
+    parentScope: Scope,
+    requireDefinition: Boolean,
+) : Worker<ThirExpression>
+{
+    private val lhsWorker = expressionDefinerOf(node.lhs, env, parentScope, null, requireDefinition)
+    private val rhsWorker = expressionDefinerOf(node.rhs, env, parentScope, null, requireDefinition)
+    
+    private var lhs: ThirExpression? = null
+    private var rhs: ThirExpression? = null
+    
+    override fun process(): Result<ThirExpression, Outcome>
+    {
+        if (lhs == null)
+            lhs = lhsWorker.process().valueOr { return it.toFailure() }
+        if (rhs == null)
+            rhs = rhsWorker.process().valueOr { return it.toFailure() }
+        
+        // TODO: We need to find some way to verify that the return values here correspond to the function signature.
+        if (lhs!!.valueType == ThirType.Void && node.operator == CatchOperator.HANDLE)
+            return Outcome.RequireType.toFailure()
+        if (lhs!!.errorType == ThirType.Void)
+            return Outcome.RequireType.toFailure()
+        if (rhs!!.valueType == ThirType.Void && node.operator == CatchOperator.HANDLE)
+            return Outcome.RequireType.toFailure()
+        if (rhs!!.errorType != ThirType.Void)
+            return Outcome.MismatchedType(ThirType.Void, rhs!!.errorType).toFailure()
+        if (rhs!!.valueType != lhs!!.valueType && node.operator == CatchOperator.HANDLE)
+            return Outcome.MismatchedType(lhs!!.valueType, rhs!!.valueType).toFailure()
+        
+        return ThirExpression.Catch(lhs!!, rhs!!, node.operator).toSuccess()
     }
 }

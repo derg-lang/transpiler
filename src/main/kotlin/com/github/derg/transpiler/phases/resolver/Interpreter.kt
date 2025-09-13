@@ -1,5 +1,6 @@
 package com.github.derg.transpiler.phases.resolver
 
+import com.github.derg.transpiler.source.*
 import com.github.derg.transpiler.source.thir.*
 import com.github.derg.transpiler.utils.*
 import java.util.*
@@ -141,6 +142,7 @@ class Interpreter(private val env: Environment)
     {
         is ThirExpression.Bool    -> expression.toSuccess()
         is ThirExpression.Call    -> invoke(expression)
+        is ThirExpression.Catch   -> execute(expression)
         is ThirExpression.Float32 -> expression.toSuccess()
         is ThirExpression.Float64 -> expression.toSuccess()
         is ThirExpression.Int32   -> expression.toSuccess()
@@ -148,6 +150,28 @@ class Interpreter(private val env: Environment)
         is ThirExpression.Load    -> (stack.last()[expression.symbolId] ?: memory[expression.symbolId]).toSuccess()
         is ThirExpression.Str     -> expression.toSuccess()
         is ThirExpression.Type    -> expression.toSuccess()
+    }
+    
+    private fun execute(expression: ThirExpression.Catch): Result<ThirExpression?, ThirExpression?>
+    {
+        val lhs = evaluate(expression.lhs)
+        
+        when
+        {
+            lhs.isSuccess && expression.operator == CatchOperator.HANDLE       -> return lhs.valueOrNull()!!.toSuccess()
+            lhs.isSuccess && expression.operator == CatchOperator.RETURN_ERROR -> return lhs.valueOrNull()!!.toSuccess()
+            lhs.isFailure && expression.operator == CatchOperator.RETURN_VALUE -> return lhs.errorOrNull()!!.toSuccess()
+        }
+        
+        // TODO: Find a way to make use of the `it` parameter.
+        val rhs = execute(expression.rhs).valueOrDie()
+        
+        when (expression.operator)
+        {
+            CatchOperator.HANDLE       -> return rhs.toSuccess()
+            CatchOperator.RETURN_ERROR -> throw ReturnErrorException(rhs)
+            CatchOperator.RETURN_VALUE -> throw ReturnValueException(rhs)
+        }
     }
     
     /**

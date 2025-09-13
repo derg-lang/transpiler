@@ -99,9 +99,9 @@ infix fun Boolean.thirAnd(that: Boolean) = op(Builtin.BOOL_AND, this.thir, that.
 infix fun Boolean.thirOr(that: Boolean) = op(Builtin.BOOL_OR, this.thir, that.thir)
 infix fun Boolean.thirXor(that: Boolean) = op(Builtin.BOOL_XOR, this.thir, that.thir)
 
-//infix fun Any.thirCatchRaise(that: Any) = ThirCatch(this.thir, that.thir, Capture.RAISE)
-//infix fun Any.thirCatchReturn(that: Any) = ThirCatch(this.thir, that.thir, Capture.RETURN)
-//infix fun Any.thirCatchHandle(that: Any) = ThirCatch(this.thir, that.thir, Capture.HANDLE)
+infix fun Any.thirCatch(that: Any) = ThirExpression.Catch(this.thir, that.thir, CatchOperator.HANDLE)
+infix fun Any.thirCatchError(that: Any) = ThirExpression.Catch(this.thir, that.thir, CatchOperator.RETURN_ERROR)
+infix fun Any.thirCatchValue(that: Any) = ThirExpression.Catch(this.thir, that.thir, CatchOperator.RETURN_VALUE)
 
 fun ThirDeclaration.thirIdent(): ThirExpression = ThirExpression.Load(id, type)
 fun ThirDeclaration.Function.thirCall(vararg parameters: Any) = ThirExpression.Call(

@@ -34,6 +34,16 @@ open class ArgumentProvider(vararg arguments: Any) : ArgumentsProvider
 }
 
 /**
+ * Asserts that the [actual] results evaluates to a successful outcome.
+ */
+fun <Type, Error> assertSuccess(actual: Result<Type, Error>, message: String? = null)
+{
+    val error = actual.errorOrNull() ?: return
+    
+    fail<Unit> { "Expected a success value, but received $error: $message" }
+}
+
+/**
  * Asserts that the [actual] results evaluates to a successful outcome containing the [expected] value.
  */
 fun <Type, Error> assertSuccess(expected: Type, actual: Result<Type, Error>, message: String? = null)
@@ -47,6 +57,16 @@ fun <Type, Error> assertSuccess(expected: Type, actual: Result<Type, Error>, mes
 fun <Type, Error> assertNotSuccess(expected: Type, actual: Result<Type, Error>, message: String? = null)
 {
     assertNotEquals(expected.toSuccess(), actual, message)
+}
+
+/**
+ * Asserts that the [actual] results evaluates to an unsuccessful outcome.
+ */
+fun <Type, Value> assertFailure(actual: Result<Value, Type>, message: String? = null)
+{
+    val error = actual.valueOrNull() ?: return
+    
+    fail<Unit> { "Expected a failure value, but received $error: $message" }
 }
 
 /**

@@ -68,9 +68,9 @@ infix fun Any.astAnd(that: Any) = AstAnd(this.ast, that.ast)
 infix fun Any.astOr(that: Any) = AstOr(this.ast, that.ast)
 infix fun Any.astXor(that: Any) = AstXor(this.ast, that.ast)
 
-infix fun Any.astCatchRaise(that: Any) = AstCatch(this.ast, that.ast, Capture.RAISE)
-infix fun Any.astCatchReturn(that: Any) = AstCatch(this.ast, that.ast, Capture.RETURN)
-infix fun Any.astCatchHandle(that: Any) = AstCatch(this.ast, that.ast, Capture.HANDLE)
+infix fun Any.astCatch(that: Any) = AstCatch(this.ast, that.ast, CatchOperator.HANDLE)
+infix fun Any.astCatchError(that: Any) = AstCatch(this.ast, that.ast, CatchOperator.RETURN_ERROR)
+infix fun Any.astCatchValue(that: Any) = AstCatch(this.ast, that.ast, CatchOperator.RETURN_VALUE)
 
 fun String.astLoad(vararg parameters: Any) = AstLoad(this, parameters.map { it.astArg })
 fun AstValue.astCall(vararg parameters: Any) = AstCall(this, parameters.map { it.astArg })

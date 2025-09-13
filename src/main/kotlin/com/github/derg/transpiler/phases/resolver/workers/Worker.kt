@@ -56,6 +56,13 @@ sealed interface Outcome
      */
     data class NoOverloadAvailable(val name: String, val errors: List<Outcome>) : Outcome
     
+    // Catch-related errors.
+    
+    /**
+     * A catch clause expected a value type, but received nothing.
+     */
+    data object RequireType : Outcome
+    
     // Identifier-related errors.
     
     /**

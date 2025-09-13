@@ -74,8 +74,9 @@ class TestParserExpression
         tester.parse("-1").isChain(0, 1, 1).isValue(1.astMinus)
         
         // Error
-        tester.parse("1 ! 2").isChain(1, 1, 1).isValue(1 astCatchRaise 2)
-        tester.parse("1 ? 2").isChain(1, 1, 1).isValue(1 astCatchReturn 2)
+        tester.parse("1 : 2").isChain(1, 1, 1).isValue(1 astCatch 2)
+        tester.parse("1 !: 2").isChain(1, 1, 1).isValue(1 astCatchValue 2)
+        tester.parse("1 ?: 2").isChain(1, 1, 1).isValue(1 astCatchError 2)
         
         // When
         tester.parse("when 1 2 -> 3").isChain(0, 4, 1).isValue(astWhenOf(1, 2 to 3))
@@ -104,8 +105,8 @@ class TestParserExpression
         tester.parse("1 ++ 2").step(4).isDone().isValue(1 astAdd 2.astPlus)
         tester.parse("~1 * -2").step(5).isDone().isValue(1.astNot astMul 2.astMinus)
         tester.parse("-(1 * 2)").step(6).isDone().isValue((1 astMul 2).astMinus)
-        tester.parse("1 ! 2 + 3").step(5).isDone().isValue(1 astCatchRaise (2 astAdd 3))
-        tester.parse("1 ? 2 + 3").step(5).isDone().isValue(1 astCatchReturn (2 astAdd 3))
+        tester.parse("1 !: 2 + 3").step(5).isDone().isValue(1 astCatchValue (2 astAdd 3))
+        tester.parse("1 ?: 2 + 3").step(5).isDone().isValue(1 astCatchError (2 astAdd 3))
         
         // Accesses
         tester.parse("(f)()").step(5).isDone().isValue("f".astLoad().astCall()).resets()

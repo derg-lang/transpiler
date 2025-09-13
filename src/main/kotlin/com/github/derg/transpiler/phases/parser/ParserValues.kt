@@ -31,9 +31,6 @@ private enum class BinaryOperator(val apply: (AstValue, AstValue) -> AstValue, v
     SUB(::AstSubtract, 1),
     TW(::AstThreeWay, 2),
     XOR(::AstXor, 6),
-    // TODO: Please refactor these into something more sane :(
-    EXCLAMATION({ lhs, rhs -> AstCatch(lhs, rhs, Capture.RAISE) }, 7),
-    QUESTION({ lhs, rhs -> AstCatch(lhs, rhs, Capture.RETURN) }, 7),
 }
 
 private enum class UnaryOperator(val apply: (AstValue) -> AstValue)
@@ -94,7 +91,8 @@ internal class ParserExpression : Parser<AstValue>
     override fun parse(token: Token): Result<ParseOk, ParseError>
     {
         // If we are not currently preoccupied with parsing a sub-expression, we need to determine what we are parsing.
-        // At this point, we must find a valid value, or something which starts off as a unary operator.
+        // At this point, we must find a valid value, or something which starts off as an access, unary, or catch
+        // operator.
         if (inner == null) when (token)
         {
             is Identifier -> inner = loadParserOf()
@@ -129,31 +127,33 @@ internal class ParserExpression : Parser<AstValue>
         var done = false
         if (token is Keyword) when (token.type)
         {
-            Symbol.PERIOD           -> this.inner = memberParserOf(inner.produce())
-            Symbol.OPEN_PARENTHESIS -> this.inner = callParserOf(inner.produce())
-            Symbol.AND              -> consumeSubExpression().also { binary.add(BinaryOperator.AND) }
-            Symbol.DIVIDE           -> consumeSubExpression().also { binary.add(BinaryOperator.DIV) }
-            Symbol.EQUAL            -> consumeSubExpression().also { binary.add(BinaryOperator.EQ) }
-            Symbol.EXCLAMATION      -> consumeSubExpression().also { binary.add(BinaryOperator.EXCLAMATION) }
-            Symbol.GREATER          -> consumeSubExpression().also { binary.add(BinaryOperator.GT) }
-            Symbol.GREATER_EQUAL    -> consumeSubExpression().also { binary.add(BinaryOperator.GE) }
-            Symbol.LESS             -> consumeSubExpression().also { binary.add(BinaryOperator.LT) }
-            Symbol.LESS_EQUAL       -> consumeSubExpression().also { binary.add(BinaryOperator.LE) }
-            Symbol.MINUS            -> consumeSubExpression().also { binary.add(BinaryOperator.SUB) }
-            Symbol.MODULO           -> consumeSubExpression().also { binary.add(BinaryOperator.MOD) }
-            Symbol.MULTIPLY         -> consumeSubExpression().also { binary.add(BinaryOperator.MUL) }
-            Symbol.NOT_EQUAL        -> consumeSubExpression().also { binary.add(BinaryOperator.NE) }
-            Symbol.OR               -> consumeSubExpression().also { binary.add(BinaryOperator.OR) }
-            Symbol.PLUS             -> consumeSubExpression().also { binary.add(BinaryOperator.ADD) }
-            Symbol.QUESTION         -> consumeSubExpression().also { binary.add(BinaryOperator.QUESTION) }
-            Symbol.THREE_WAY        -> consumeSubExpression().also { binary.add(BinaryOperator.TW) }
-            Symbol.XOR              -> consumeSubExpression().also { binary.add(BinaryOperator.XOR) }
-            else                    -> consumeSubExpression().also { done = true }
+            Symbol.PERIOD            -> this.inner = memberParserOf(inner.produce())
+            Symbol.OPEN_PARENTHESIS  -> this.inner = callParserOf(inner.produce())
+            Symbol.COLON             -> this.inner = catchParserOf(inner.produce(), CatchOperator.HANDLE)
+            Symbol.EXCLAMATION_COLON -> this.inner = catchParserOf(inner.produce(), CatchOperator.RETURN_VALUE)
+            Symbol.QUESTION_COLON    -> this.inner = catchParserOf(inner.produce(), CatchOperator.RETURN_ERROR)
+            Symbol.AND               -> consumeSubExpression().also { binary.add(BinaryOperator.AND) }
+            Symbol.DIVIDE            -> consumeSubExpression().also { binary.add(BinaryOperator.DIV) }
+            Symbol.EQUAL             -> consumeSubExpression().also { binary.add(BinaryOperator.EQ) }
+            Symbol.GREATER           -> consumeSubExpression().also { binary.add(BinaryOperator.GT) }
+            Symbol.GREATER_EQUAL     -> consumeSubExpression().also { binary.add(BinaryOperator.GE) }
+            Symbol.LESS              -> consumeSubExpression().also { binary.add(BinaryOperator.LT) }
+            Symbol.LESS_EQUAL        -> consumeSubExpression().also { binary.add(BinaryOperator.LE) }
+            Symbol.MINUS             -> consumeSubExpression().also { binary.add(BinaryOperator.SUB) }
+            Symbol.MODULO            -> consumeSubExpression().also { binary.add(BinaryOperator.MOD) }
+            Symbol.MULTIPLY          -> consumeSubExpression().also { binary.add(BinaryOperator.MUL) }
+            Symbol.NOT_EQUAL         -> consumeSubExpression().also { binary.add(BinaryOperator.NE) }
+            Symbol.OR                -> consumeSubExpression().also { binary.add(BinaryOperator.OR) }
+            Symbol.PLUS              -> consumeSubExpression().also { binary.add(BinaryOperator.ADD) }
+            Symbol.THREE_WAY         -> consumeSubExpression().also { binary.add(BinaryOperator.TW) }
+            Symbol.XOR               -> consumeSubExpression().also { binary.add(BinaryOperator.XOR) }
+            else                     -> consumeSubExpression().also { done = true }
         }
         else
             consumeSubExpression().also { done = true }
         
-        // If we did not encounter more work to be done, we are finished. Otherwise, we must
+        // If we did not encounter more work to be done, we are finished. Otherwise, we must wait until the inner parser
+        // has provided additional information to us.
         return if (done) ParseOk.Finished.toSuccess() else ParseOk.Incomplete.toSuccess()
     }
     
@@ -202,9 +202,20 @@ private fun callParserOf(instance: AstValue): Parser<AstValue> =
     ParserPattern(::callPatternOf) { AstCall(instance, it["params"]) }
 
 private fun callPatternOf() = ParserSequence(
-    // NOTE: We are omitting the open parenthesis since it is consumed by the expression parser instead.
+    // NOTE: We are omitting the open parenthesis since it is consumed by the expression parser.
     "params" to ParserRepeating(argumentParserOf(), ParserSymbol(Symbol.COMMA)),
     "close" to ParserSymbol(Symbol.CLOSE_PARENTHESIS),
+)
+
+/**
+ * Parses a catch expression from the token stream.
+ */
+private fun catchParserOf(instance: AstValue, operator: CatchOperator): Parser<AstValue> =
+    ParserPattern(::catchPatternOf) { AstCatch(instance, it["expression"], operator) }
+
+private fun catchPatternOf() = ParserSequence(
+    // NOTE: We are omitting the catch symbol since it is consumed by the expression parser.
+    "expression" to ParserExpression(),
 )
 
 /**

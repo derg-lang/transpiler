@@ -20,6 +20,7 @@ class TestProgram
         "stringify" to "1337".thir.toSuccess(),
         "aliasing" to true.thir.toSuccess(),
         "variables" to 5.thir.toSuccess(),
+        "error_handling" to "failed".thir.toFailure(),
     )
     
     @ParameterizedTest

@@ -46,6 +46,13 @@ sealed interface HirExpression : HirNode
     data class Call(override val id: UUID, val instance: HirExpression, val parameters: List<NamedMaybe<HirExpression>>) : HirExpression
     
     /**
+     * Performs a catch on the [lhs] expression, replacing the failure value in the [lhs] with the success value of the
+     * [rhs] expression handling the failure. Otherwise, the [rhs] expression is returner as a success or a failure
+     * expression.
+     */
+    data class Catch(override val id: UUID, val lhs: HirExpression, val rhs: HirExpression, val operator: CatchOperator) : HirExpression
+    
+    /**
      * Retrieves the value of the given [identifier] from the given [instance]. The object may be an object which exists
      * on the stack or heap.
      */

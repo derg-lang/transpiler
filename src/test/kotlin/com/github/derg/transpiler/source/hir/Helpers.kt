@@ -73,9 +73,9 @@ infix fun Any.hirAnd(that: Any) = hirBinary(this.hir, that.hir, BinaryOperator.A
 infix fun Any.hirOr(that: Any) = hirBinary(this.hir, that.hir, BinaryOperator.OR)
 infix fun Any.hirXor(that: Any) = hirBinary(this.hir, that.hir, BinaryOperator.XOR)
 
-infix fun Any.hirCatchRaise(that: Any) = hirBinary(this.hir, that.hir, BinaryOperator.RAISE)
-infix fun Any.hirCatchReturn(that: Any) = hirBinary(this.hir, that.hir, BinaryOperator.RETURN)
-infix fun Any.hirCatchHandle(that: Any) = hirBinary(this.hir, that.hir, BinaryOperator.HANDLE)
+infix fun Any.hirCatch(that: Any) = HirExpression.Catch(UUID.randomUUID(), this.hir, that.hir, CatchOperator.HANDLE)
+infix fun Any.hirCatchError(that: Any) = HirExpression.Catch(UUID.randomUUID(), this.hir, that.hir, CatchOperator.RETURN_ERROR)
+infix fun Any.hirCatchValue(that: Any) = HirExpression.Catch(UUID.randomUUID(), this.hir, that.hir, CatchOperator.RETURN_VALUE)
 
 fun String.hirIdent(vararg parameters: NamedMaybe<Any>) = HirExpression.Identifier(UUID.randomUUID(), this, parameters.map { it.first to it.second.hir })
 fun HirExpression.hirCall(vararg parameters: NamedMaybe<Any>) = HirExpression.Call(UUID.randomUUID(), this, parameters.map { it.first to it.second.hir })
@@ -97,7 +97,7 @@ private fun hirUnary(rhs: HirExpression, operator: UnaryOperator): HirExpression
 // Statement helpers //
 ///////////////////////
 
-infix fun Any.hirAssign(that: Any) = HirStatement.Assign(this.hir, that.hir, AssignOperator.EQUAL)
+private fun hirAssign(lhs: HirExpression, rhs: HirExpression) = HirStatement.Assign(lhs, rhs, AssignOperator.EQUAL)
 
 val Any.hirEval get() = HirStatement.Evaluate(hir)
 val Any.hirReturnError get() = HirStatement.ReturnError(hir)

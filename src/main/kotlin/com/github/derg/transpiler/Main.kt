@@ -13,16 +13,16 @@ private const val SOURCE = """
         val foo: __builtin_i32 = 2
         val bar: __builtin_i32
     }
-    
+
     fun main() -> __builtin_i32
     {
         val test = Test(bar = 23)
-        
+
         __builtin_println("Hello World!")
-        
-        return fibonacci(25)
+
+        return fibonacci(test.foo + test.bar)
     }
-    
+
     fun fibonacci(n: __builtin_i32) -> __builtin_i32
     {
         if n <= 0

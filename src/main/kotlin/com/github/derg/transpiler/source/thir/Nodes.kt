@@ -97,6 +97,17 @@ sealed interface ThirExpression
         override val valueType: ThirType,
         override val errorType: ThirType,
     ) : ThirExpression
+    
+    /**
+     * Performs a catch on the [lhs] expression, replacing the failure value in the [lhs] with the success value of the
+     * [rhs] expression handling the failure. Otherwise, the [rhs] expression is returner as a success or a failure
+     * expression.
+     */
+    data class Catch(val lhs: ThirExpression, val rhs: ThirExpression, val operator: CatchOperator) : ThirExpression
+    {
+        override val valueType: ThirType get() = lhs.valueType
+        override val errorType: ThirType get() = ThirType.Void
+    }
 }
 
 /**

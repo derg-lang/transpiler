@@ -8,6 +8,8 @@ import org.junit.jupiter.api.Assertions.*
 class TestConverter
 {
     // TODO: Writing these tests are quite difficult since the various HIR nodes have a unique id, the AST nodes do not.
+    //       For the time being, they can serve as a sort of compile-time test, ensuring that the code at least is
+    //       valid.
     @Disabled
     @Test
     fun `Given expression, when converting, then correct outcome`()
@@ -37,8 +39,8 @@ class TestConverter
         assertEquals(1.hirMinus, 1.astMinus.toHir())
         assertEquals(1.hirPlus, 1.astPlus.toHir())
         
-        assertEquals(1 hirCatchHandle 2, (1 astCatchHandle 2).toHir())
-        assertEquals(1 hirCatchRaise 2, (1 astCatchRaise 2).toHir())
-        assertEquals(1 hirCatchReturn 2, (1 astCatchReturn 2).toHir())
+        assertEquals(1 hirCatch 2, (1 astCatch 2).toHir())
+        assertEquals(1 hirCatchError 2.hirReturnValue, (1 astCatchError 2.astReturnValue).toHir())
+        assertEquals(1 hirCatchValue 2.hirReturnValue, (1 astCatchValue 2.astReturnValue).toHir())
     }
 }

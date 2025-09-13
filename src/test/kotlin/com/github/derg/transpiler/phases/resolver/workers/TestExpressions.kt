@@ -506,3 +506,126 @@ class TestCallDefiner
         }
     }
 }
+
+class TestCatchDefiner
+{
+    private val env = Environment()
+    private val scope = Scope()
+    
+    /**
+     * Registers [this] declaration to the current scope.
+     */
+    private fun <Type : ThirDeclaration> Type.register(): Type =
+        apply { scope.register(id, name) }
+    
+    /**
+     * Declares that [this] declaration actually exists within the environment.
+     */
+    private fun <Type : ThirDeclaration> Type.declare(): Type =
+        apply { env.declarations[id] = this }
+    
+    @Nested
+    inner class Handle
+    {
+        @Test
+        fun `Given no lhs or rhs value type, when processing, then failure`()
+        {
+            val lhs = thirFunOf(valueType = ThirType.Void, errorType = ThirType.Bool).register().declare()
+            val rhs = thirFunOf(valueType = ThirType.Void, errorType = ThirType.Void).register().declare()
+            
+            val worker = CatchDefiner(lhs.name.hirIdent().hirCall() hirCatch rhs.name.hirIdent().hirCall(), env, scope, false)
+            val expected = Outcome.RequireType
+            
+            assertFailure(expected, worker.process())
+        }
+        
+        @Test
+        fun `Given no lhs error type, when processing, then failure`()
+        {
+            val lhs = thirFunOf(valueType = ThirType.Int32, errorType = ThirType.Void).register().declare()
+            
+            val worker = CatchDefiner(lhs.name.hirIdent().hirCall() hirCatch 0, env, scope, false)
+            val expected = Outcome.RequireType
+            
+            assertFailure(expected, worker.process())
+        }
+        
+        @Test
+        fun `Given rhs error type, when processing, then failure`()
+        {
+            val lhs = thirFunOf(valueType = ThirType.Int32, errorType = ThirType.Bool).register().declare()
+            val rhs = thirFunOf(valueType = ThirType.Int32, errorType = ThirType.Str).register().declare()
+            
+            val worker = CatchDefiner(lhs.name.hirIdent().hirCall() hirCatch rhs.name.hirIdent().hirCall(), env, scope, false)
+            val expected = Outcome.MismatchedType(ThirType.Void, ThirType.Str)
+            
+            assertFailure(expected, worker.process())
+        }
+        
+        @Test
+        fun `Given no rhs value type, when processing, then failure`()
+        {
+            val lhs = thirFunOf(valueType = ThirType.Int32, errorType = ThirType.Bool).register().declare()
+            val rhs = thirFunOf(valueType = ThirType.Void, errorType = ThirType.Void).register().declare()
+            
+            val worker = CatchDefiner(lhs.name.hirIdent().hirCall() hirCatch rhs.name.hirIdent().hirCall(), env, scope, false)
+            val expected = Outcome.RequireType
+            
+            assertFailure(expected, worker.process())
+        }
+        
+        @Test
+        fun `Given mismatching lhs and rhs value type, when processing, then failure`()
+        {
+            val lhs = thirFunOf(valueType = ThirType.Int32, errorType = ThirType.Bool).register().declare()
+            val rhs = thirFunOf(valueType = ThirType.Str, errorType = ThirType.Void).register().declare()
+            
+            val worker = CatchDefiner(lhs.name.hirIdent().hirCall() hirCatch rhs.name.hirIdent().hirCall(), env, scope, false)
+            val expected = Outcome.MismatchedType(lhs.valueType, rhs.valueType)
+            
+            assertFailure(expected, worker.process())
+        }
+        
+        @Test
+        fun `Given matching lhs and rhs type and no rhs error type, when processing, then success`()
+        {
+            val lhs = thirFunOf(valueType = ThirType.Int32, errorType = ThirType.Bool).register().declare()
+            val rhs = thirFunOf(valueType = ThirType.Int32, errorType = ThirType.Void).register().declare()
+            
+            val worker = CatchDefiner(lhs.name.hirIdent().hirCall() hirCatch rhs.name.hirIdent().hirCall(), env, scope, false)
+            val expected = lhs.thirCall() thirCatch rhs.thirCall()
+            
+            assertSuccess(expected, worker.process())
+        }
+    }
+    
+    @Nested
+    inner class CatchValue
+    {
+        @Test
+        fun `Given no lhs value type but valid rhs, when processing, then success`()
+        {
+            val lhs = thirFunOf(valueType = ThirType.Void, errorType = ThirType.Bool).register().declare()
+            
+            val worker = CatchDefiner(lhs.name.hirIdent().hirCall() hirCatchValue 0, env, scope, false)
+            val expected = lhs.thirCall() thirCatchValue 0
+            
+            assertSuccess(expected, worker.process())
+        }
+    }
+    
+    @Nested
+    inner class CatchError
+    {
+        @Test
+        fun `Given no lhs value type but valid rhs, when processing, then success`()
+        {
+            val lhs = thirFunOf(valueType = ThirType.Void, errorType = ThirType.Bool).register().declare()
+            
+            val worker = CatchDefiner(lhs.name.hirIdent().hirCall() hirCatchError 0, env, scope, false)
+            val expected = lhs.thirCall() thirCatchError 0
+            
+            assertSuccess(expected, worker.process())
+        }
+    }
+}
