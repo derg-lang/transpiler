@@ -151,6 +151,8 @@ class TestParserStruct
             .isValue(astStructOf("Foo", props = listOf(astPropOf("a", type = "Bar"), astPropOf("b", type = "Baz"))))
         
         // Default values for properties must be supported
+        tester.parse("struct Foo { val a      = 1 }").isChain(7, 1)
+            .isValue(astStructOf("Foo", props = listOf(astPropOf("a", type = null, value = 1))))
         tester.parse("struct Foo { val a: Bar = 1 }").isChain(9, 1)
             .isValue(astStructOf("Foo", props = listOf(astPropOf("a", type = "Bar", value = 1))))
         

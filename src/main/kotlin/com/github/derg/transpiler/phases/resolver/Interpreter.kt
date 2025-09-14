@@ -140,16 +140,18 @@ class Interpreter(private val env: Environment)
     
     private fun execute(expression: ThirExpression): Result<ThirExpression?, ThirExpression?> = when (expression)
     {
-        is ThirExpression.Bool    -> expression.toSuccess()
-        is ThirExpression.Call    -> invoke(expression)
-        is ThirExpression.Catch   -> execute(expression)
-        is ThirExpression.Float32 -> expression.toSuccess()
-        is ThirExpression.Float64 -> expression.toSuccess()
-        is ThirExpression.Int32   -> expression.toSuccess()
-        is ThirExpression.Int64   -> expression.toSuccess()
-        is ThirExpression.Load    -> (stack.last()[expression.symbolId] ?: memory[expression.symbolId]).toSuccess()
-        is ThirExpression.Str     -> expression.toSuccess()
-        is ThirExpression.Type    -> expression.toSuccess()
+        is ThirExpression.Bool     -> expression.toSuccess()
+        is ThirExpression.Call     -> invoke(expression)
+        is ThirExpression.Catch    -> execute(expression)
+        is ThirExpression.Float32  -> expression.toSuccess()
+        is ThirExpression.Float64  -> expression.toSuccess()
+        is ThirExpression.Int32    -> expression.toSuccess()
+        is ThirExpression.Int64    -> expression.toSuccess()
+        is ThirExpression.Load     -> (stack.last()[expression.symbolId] ?: memory[expression.symbolId]).toSuccess()
+        is ThirExpression.Str      -> expression.toSuccess()
+        is ThirExpression.Type     -> expression.toSuccess()
+        is ThirExpression.Instance -> expression.toSuccess()
+        is ThirExpression.Field    -> execute(expression).toSuccess()
     }
     
     private fun execute(expression: ThirExpression.Catch): Result<ThirExpression?, ThirExpression?>
@@ -172,6 +174,12 @@ class Interpreter(private val env: Environment)
             CatchOperator.RETURN_ERROR -> throw ReturnErrorException(rhs)
             CatchOperator.RETURN_VALUE -> throw ReturnValueException(rhs)
         }
+    }
+    
+    private fun execute(expression: ThirExpression.Field): ThirExpression
+    {
+        val instance = execute(expression.instance).valueOrDie().instance
+        return instance.fields[expression.fieldId]!!
     }
     
     /**
@@ -258,4 +266,5 @@ class Interpreter(private val env: Environment)
     private val ThirExpression?.float32: Float get() = (this as ThirExpression.Float32).raw
     private val ThirExpression?.float64: Double get() = (this as ThirExpression.Float64).raw
     private val ThirExpression?.str: String get() = (this as ThirExpression.Str).raw
+    private val ThirExpression?.instance: ThirExpression.Instance get() = this as ThirExpression.Instance
 }

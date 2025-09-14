@@ -95,7 +95,7 @@ data class AstParameter(
  */
 data class AstProperty(
     val name: String,
-    val type: AstType,
+    val type: AstType?,
     val value: AstValue?,
     val visibility: Visibility,
     val assignability: Assignability,

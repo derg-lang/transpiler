@@ -150,6 +150,75 @@ internal class ParameterDefiner(
 }
 
 /**
+ * Converts a HIR field into a THIR declaration.
+ */
+internal class FieldDefiner(
+    private val node: HirDeclaration.FieldDecl,
+    private val env: Environment,
+    private val scope: Scope,
+) : Worker<Phase>
+{
+    private val typeWorker: Worker<ThirType>? = node.type?.let { typeDefinerOf(it, env, scope) }
+    private var valueWorker: Worker<ThirExpression>? = null
+    
+    private var type: ThirType? = null
+    private var value: ThirExpression? = null
+    
+    override fun process(): Result<Phase, Outcome>
+    {
+        // Fields are not required to have type information associated with them. When we have the type information,
+        // however, we can declare the symbol before attempting to deduce the expression value of it. If we have enough
+        // information to declare the symbol, we will do so immediately after deducing the type.
+        if (type == null)
+            type = typeWorker?.process()?.valueOr { return it.toFailure() }
+        
+        if (node.id !in env.declarations && type != null)
+        {
+            env.declarations[node.id] = declare(type!!)
+            return Phase.Declared.toSuccess()
+        }
+        
+        // Whether we have the type information or not, we need to resolve the expression as well. After the expression
+        // has been resolved, we need to repeat the declaration step in case it did not happen due to missing type
+        // information.
+        if (valueWorker == null)
+            valueWorker = node.default?.let { expressionDefinerOf(it, env, scope, type, false) }
+        if (value == null)
+            value = valueWorker!!.process().valueOr { return it.toFailure() }
+        if (type == null)
+        {
+            if (value!!.valueType == ThirType.Void)
+                return Outcome.RequireType.toFailure()
+            type = value!!.valueType
+        }
+        
+        if (node.id !in env.declarations)
+        {
+            env.declarations[node.id] = declare(type!!)
+            return Phase.Declared.toSuccess()
+        }
+        
+        // Once the symbol has been thoroughly declared, and we have the value of the symbol, we are ready to define it
+        // and call it a day!
+        if (value!!.valueType != type)
+            return Outcome.MismatchedType(expected = type!!, received = value!!.valueType).toFailure()
+        if (value!!.errorType != ThirType.Void)
+            return Outcome.MismatchedType(expected = ThirType.Void, received = value!!.errorType).toFailure()
+        
+        val symbol = env.declarations[node.id]!! as ThirDeclaration.Field
+        symbol.def = ThirDeclaration.FieldDef(default = value!!)
+        return Phase.Defined.toSuccess()
+    }
+    
+    private fun declare(type: ThirType) = ThirDeclaration.Field(
+        id = node.id,
+        name = node.name,
+        type = type,
+        def = null,
+    )
+}
+
+/**
  * Converts a HIR function into a THIR declaration.
  */
 internal class FunctionDefiner(
@@ -231,7 +300,59 @@ internal class FunctionDefiner(
 }
 
 /**
- * Converts from a HIR if statement to a THIR statement.
+ * Converts from a HIR structure to a THIR declaration.
+ */
+internal class StructureDefiner(
+    private val node: HirDeclaration.StructureDecl,
+    private val env: Environment,
+    parentScope: Scope,
+) : Worker<Phase>
+{
+    // TODO: Create a new scope from the parent instead.
+    val scope = parentScope.apply()
+    {
+        node.fields.forEach { register(it.id, it.name) }
+    }
+    
+    private var hasSpawnedChildren = false
+    
+    override fun process(): Result<Phase, Outcome>
+    {
+        // Structures which have a non-zero number of fields must ensure that all the fields are worked on as well. We
+        // spawn new workers for each and every field, letting them all run in parallel.
+        if (!hasSpawnedChildren)
+        {
+            hasSpawnedChildren = true
+            val fields = node.fields.associate { it.id to FieldDefiner(it, env, scope) }
+            if (fields.isNotEmpty())
+                return Phase.Spawn(fields).toSuccess()
+        }
+        
+        if (node.id !in env.declarations)
+        {
+            env.declarations[node.id] = declare()
+            return Phase.Declared.toSuccess()
+        }
+        
+        // Once the symbol has been thoroughly declared, and we have all statements, we are ready to define it and call
+        // it a day!
+        val symbol = env.declarations[node.id]!! as ThirDeclaration.Structure
+        symbol.def = ThirDeclaration.StructureDef(placeholder = null)
+        return Phase.Defined.toSuccess()
+    }
+    
+    private fun declare() = ThirDeclaration.Structure(
+        id = node.id,
+        name = node.name,
+        genericTypeIds = emptyList(),
+        genericValueIds = emptyList(),
+        fieldIds = node.fields.map { it.id },
+        def = null,
+    )
+}
+
+/**
+ * Converts from a HIR variable to a THIR declaration.
  */
 internal class VariableDefiner(
     private val node: HirStatement.Variable,
@@ -320,6 +441,7 @@ internal class SegmentDefiner(
         hasSpawnedChildren = true
         val constants = node.constants.associate { it.id to ConstDefiner(it, env, scope) }
         val functions = node.functions.associate { it.id to FunctionDefiner(it, env, scope) }
-        return Phase.Spawn(constants + functions).toSuccess()
+        val structures = node.structures.associate { it.id to StructureDefiner(it, env, scope) }
+        return Phase.Spawn(constants + functions + structures).toSuccess()
     }
 }

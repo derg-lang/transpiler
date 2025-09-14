@@ -56,6 +56,11 @@ sealed interface Outcome
      */
     data class NoOverloadAvailable(val name: String, val errors: List<Outcome>) : Outcome
     
+    /**
+     * The [received] type is not of a structure type.
+     */
+    data class InvalidStructure(val received: ThirType) : Outcome
+    
     // Catch-related errors.
     
     /**

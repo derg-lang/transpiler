@@ -187,14 +187,14 @@ fun astParOf(
 
 fun astPropOf(
     name: String = UUID.randomUUID().toString(),
-    type: String,
+    type: String? = null,
     value: Any? = null,
     vis: Visibility = Visibility.PRIVATE,
     mut: Mutability = Mutability.IMMUTABLE,
     ass: Assignability = Assignability.FINAL,
 ) = AstProperty(
     name = name,
-    type = type.astLoad().astType(mut),
+    type = type?.astLoad()?.astType(mut),
     value = value?.ast,
     visibility = vis,
     assignability = ass,

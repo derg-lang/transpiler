@@ -21,6 +21,7 @@ class TestProgram
         "aliasing" to true.thir.toSuccess(),
         "variables" to 5.thir.toSuccess(),
         "error_handling" to "failed".thir.toFailure(),
+        "structures" to 5.thir.toSuccess(),
     )
     
     @ParameterizedTest

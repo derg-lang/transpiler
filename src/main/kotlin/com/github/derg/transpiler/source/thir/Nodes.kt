@@ -1,6 +1,7 @@
 package com.github.derg.transpiler.source.thir
 
 import com.github.derg.transpiler.source.*
+import com.github.derg.transpiler.source.hir.*
 import java.util.*
 
 /**
@@ -81,9 +82,26 @@ sealed interface ThirExpression
     }
     
     /**
+     * Instance of a structure.
+     */
+    data class Instance(val symbolId: UUID, val fields: MutableMap<UUID, ThirExpression>) : ThirExpression
+    {
+        override val valueType: ThirType get() = ThirType.Structure(symbolId)
+        override val errorType: ThirType get() = ThirType.Void
+    }
+    
+    /**
      * Retrieves a symbol value from memory.
      */
     data class Load(val symbolId: UUID, override val valueType: ThirType) : ThirExpression
+    {
+        override val errorType: ThirType get() = ThirType.Void
+    }
+    
+    /**
+     * Retrieves the value of the given [fieldId] from the given [instance].
+     */
+    data class Field(val instance: ThirExpression, val fieldId: UUID, override val valueType: ThirType) : ThirExpression
     {
         override val errorType: ThirType get() = ThirType.Void
     }

@@ -146,6 +146,18 @@ fun thirConstOf(
     def = ThirDeclaration.ConstDef(value = value),
 )
 
+fun thirFieldOf(
+    id: UUID = UUID.randomUUID(),
+    name: String = UUID.randomUUID().toString(),
+    type: ThirType = ThirType.Int32,
+    default: ThirExpression? = null,
+) = ThirDeclaration.Field(
+    id = id,
+    name = name,
+    type = type,
+    def = ThirDeclaration.FieldDef(default = default),
+)
+
 fun thirFunOf(
     id: UUID = UUID.randomUUID(),
     name: String = UUID.randomUUID().toString(),

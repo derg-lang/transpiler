@@ -219,6 +219,40 @@ class TestFunctionDefiner
     }
 }
 
+class TestStructureDefiner
+{
+    private val env = Environment()
+    private val scope = Scope()
+    
+    @Test
+    fun `Given empty, when processing, then declared then defined`()
+    {
+        val input = hirStructOf()
+        val expected = thirStructOf(id = input.id, name = input.name)
+        val worker = StructureDefiner(input, env, scope)
+        
+        assertSuccess(Phase.Declared, worker.process())
+        assertEquals(expected.copy(def = null), env.declarations[input.id])
+        assertSuccess(Phase.Defined, worker.process())
+        assertEquals(expected, env.declarations[input.id])
+    }
+    
+    @Test
+    fun `Given field, when processing, then spawned before declared and defined`()
+    {
+        val field = hirFieldOf()
+        val input = hirStructOf(fields = listOf(field))
+        val expected = thirStructOf(id = input.id, name = input.name, fieldIds = listOf(field.id))
+        val worker = StructureDefiner(input, env, scope)
+        
+        assertIs<Phase.Spawn>(worker.process().valueOrDie())
+        assertSuccess(Phase.Declared, worker.process())
+        assertEquals(expected.copy(def = null), env.declarations[input.id])
+        assertSuccess(Phase.Defined, worker.process())
+        assertEquals(expected, env.declarations[input.id])
+    }
+}
+
 class TestVariableDefiner
 {
     private val env = Environment()

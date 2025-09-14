@@ -234,6 +234,18 @@ class TestCallDefiner
         apply { def = ThirDeclaration.ParameterDef(default = default) }
     
     /**
+     * Generates a simple field which may be used for testing purposes. The field will not be registered to the
+     * scope, nor will it be declared or defined.
+     */
+    private fun fieldOf(
+        name: String = UUID.randomUUID().toString(),
+        type: ThirType = ThirType.Int32,
+    ) = thirFieldOf(name = name, type = type).apply { def = null }
+    
+    private fun ThirDeclaration.Field.define(default: ThirExpression? = null): ThirDeclaration.Field =
+        apply { def = ThirDeclaration.FieldDef(default = default) }
+    
+    /**
      * Generates a simple function which may be used for testing purposes. The function will not be registered to the
      * scope, nor will it be declared or defined.
      */
@@ -241,6 +253,15 @@ class TestCallDefiner
         name: String = UUID.randomUUID().toString(),
         parameters: List<ThirDeclaration.Parameter> = emptyList(),
     ) = thirFunOf(name = name, parameterIds = parameters.map { it.id }).apply { def = null }
+    
+    /**
+     * Generates a simple structure which may be used for testing purposes. The structure will not be registered to the
+     * scope, nor will it be declared or defined.
+     */
+    private fun structOf(
+        name: String = UUID.randomUUID().toString(),
+        fields: List<ThirDeclaration.Field> = emptyList(),
+    ) = thirStructOf(name = name, fieldIds = fields.map { it.id }).apply { def = null }
     
     /**
      * Registers [this] declaration to the current scope.
@@ -302,7 +323,7 @@ class TestCallDefiner
     }
     
     @Nested
-    inner class `Parameter cases`
+    inner class `Function cases`
     {
         @Test
         fun `Given undeclared required parameter, when processing, then error`()
@@ -501,6 +522,33 @@ class TestCallDefiner
             
             val worker = CallDefiner("fun".hirIdent().hirCall(null to 7), env, scope, false)
             val expected = functions[1].thirCall(7.thir)
+            
+            assertSuccess(expected, worker.process())
+        }
+    }
+    
+    @Nested
+    inner class `Structure cases`
+    {
+        @Test
+        fun `Given structure without fields, when processing, then error`()
+        {
+            val structure = structOf().register().declare()
+            
+            val worker = CallDefiner(structure.name.hirIdent().hirCall(), env, scope, false)
+            val expected = ThirExpression.Instance(symbolId = structure.id, fields = mutableMapOf())
+            
+            assertSuccess(expected, worker.process())
+        }
+        
+        @Test
+        fun `Given structure with one fields with default value, when processing, then error`()
+        {
+            val field = fieldOf().register().declare().define(7.thir)
+            val structure = structOf(fields = listOf(field)).register().declare()
+            
+            val worker = CallDefiner(structure.name.hirIdent().hirCall(), env, scope, false)
+            val expected = ThirExpression.Instance(symbolId = structure.id, fields = mutableMapOf(field.id to 7.thir))
             
             assertSuccess(expected, worker.process())
         }

@@ -43,7 +43,7 @@ fun expressionDefinerOf(
     is HirExpression.Call       -> CallDefiner(node, env, scope, requireDefinition)
     is HirExpression.Catch      -> CatchDefiner(node, env, scope, requireDefinition)
     is HirExpression.Decimal    -> DecimalDefiner(node)
-    is HirExpression.Field      -> TODO("Not yet implemented")
+    is HirExpression.Field      -> FieldAccessDefiner(node, env, scope, typeHint, requireDefinition)
     is HirExpression.Identifier -> IdentifierDefiner(node, env, scope, typeHint, requireDefinition)
     is HirExpression.Integer    -> IntegerDefiner(node)
     is HirExpression.Text       -> StringDefiner(node)
@@ -125,6 +125,43 @@ internal class StringDefiner(private val node: HirExpression.Text) : Worker<Thir
         STR_LIT_NAME -> ThirExpression.Str(node.value).toSuccess()
         // TODO: Remove this else clause by fully defining in the language all possible literals.
         else         -> throw IllegalArgumentException("Unexpected string literal '${node.literal}'")
+    }
+}
+
+/**
+ *
+ */
+internal class FieldAccessDefiner(
+    private val node: HirExpression.Field,
+    private val env: Environment,
+    scope: Scope,
+    typeHint: ThirType?,
+    requireDefinition: Boolean,
+) : Worker<ThirExpression>
+{
+    val worker = expressionDefinerOf(node.instance, env, scope, null, requireDefinition)
+    
+    var instance: ThirExpression? = null
+    
+    override fun process(): Result<ThirExpression, Outcome>
+    {
+        if (instance == null)
+            instance = worker.process().valueOr { return it.toFailure() }
+        
+        val type = instance!!.valueType as? ThirType.Structure
+            ?: return Outcome.InvalidStructure(instance!!.valueType).toFailure()
+        val symbol = env.declarations[type.id] as? ThirDeclaration.Structure
+            ?: return Outcome.RequireDeclaration(setOf(type.id)).toFailure()
+        val field = symbol.fieldIds
+            .mapNotNull { env.declarations[it] as? ThirDeclaration.Field }
+            .singleOrNull { it.name == node.identifier.name }
+            ?: return Outcome.Unhandled("No fields with name '${node.identifier.name}' found").toFailure()
+        
+        return ThirExpression.Field(
+            instance = instance!!,
+            fieldId = field.id,
+            valueType = field.type,
+        ).toSuccess()
     }
 }
 
@@ -263,7 +300,7 @@ internal class CallDefiner(
         is ThirDeclaration.GenericType  -> TODO()
         is ThirDeclaration.GenericValue -> TODO()
         is ThirDeclaration.Parameter    -> TODO()
-        is ThirDeclaration.Structure    -> TODO()
+        is ThirDeclaration.Structure    -> resolve(symbol)
         is ThirDeclaration.Variable     -> TODO()
     }
     
@@ -328,6 +365,22 @@ internal class CallDefiner(
             parameters = outputs.toSortedMap().values.toList(),
             valueType = symbol.valueType,
             errorType = symbol.errorType,
+        ).toSuccess()
+    }
+    
+    private fun resolve(symbol: ThirDeclaration.Structure): Result<ThirExpression, Outcome>
+    {
+        val missing = symbol.fieldIds.filter { it !in env.declarations }
+        if (missing.isNotEmpty())
+            return Outcome.RequireDeclaration(missing.toSet()).toFailure()
+        
+        val fields = symbol.fieldIds
+            .mapNotNull { env.declarations[it] }
+            .filterIsInstance<ThirDeclaration.Field>()
+        
+        return ThirExpression.Instance(
+            symbolId = symbol.id,
+            fields = fields.filter { it.def?.default != null }.associate { it.id to it.def!!.default!! }.toMutableMap(),
         ).toSuccess()
     }
 }

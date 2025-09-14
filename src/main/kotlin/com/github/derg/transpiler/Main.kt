@@ -11,12 +11,12 @@ private const val SOURCE = """
     struct Test
     {
         val foo: __builtin_i32 = 2
-        val bar: __builtin_i32
+        val bar: __builtin_i32 = 23
     }
 
     fun main() -> __builtin_i32
     {
-        val test = Test(bar = 23)
+        val test = Test()
 
         __builtin_println("Hello World!")
 

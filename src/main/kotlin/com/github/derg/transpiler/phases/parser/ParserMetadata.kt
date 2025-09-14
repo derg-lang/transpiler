@@ -140,8 +140,7 @@ private fun propertyPatternOf() = ParserSequence(
     "visibility" to visibilityParserOf(),
     "assignability" to assignabilityParserOf(),
     "name" to ParserIdentifier(),
-    "colon" to ParserSymbol(Symbol.COLON),
-    "type" to typeParserOf(),
+    "type" to optionalTypeParserOf(Symbol.COLON),
     "value" to ParserOptional(valueParserOf(Symbol.ASSIGN)),
 )
 
