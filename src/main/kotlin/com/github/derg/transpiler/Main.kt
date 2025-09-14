@@ -46,22 +46,33 @@ fun main(args: Array<String>)
     val load = ThirExpression.Load(main.id, ThirType.Function(ThirType.Int32, ThirType.Void))
     val entry = ThirExpression.Call(load, emptyList(), load.valueType, load.errorType)
     
+    // Analyze the outcome, lets us know what the compiler found in the source code and runtime analytics.
+    val constants = thir.declarations.values.filterIsInstance<ThirDeclaration.Const>()
+    val functions = thir.declarations.values.filterIsInstance<ThirDeclaration.Function>()
+    val parameters = thir.declarations.values.filterIsInstance<ThirDeclaration.Parameter>()
+    val structures = thir.declarations.values.filterIsInstance<ThirDeclaration.Structure>()
+    val fields = thir.declarations.values.filterIsInstance<ThirDeclaration.Field>()
+    
+    println("")
+    println("Constants: \n\t" + constants.joinToString("\n\t") { it.toString() })
+    println("Functions: \n\t" + functions.joinToString("\n\t") { it.toString() })
+    println("Parameters: \n\t" + parameters.joinToString("\n\t") { it.toString() })
+    println("Structures: \n\t" + structures.joinToString("\n\t") { it.toString() })
+    println("Fields: \n\t" + fields.joinToString("\n\t") { it.toString() })
+    println("")
+    println("===========================================")
+    println("Finished program compilation. Running it...")
+    println("===========================================")
+    println("")
+    
     // Run program, timing the duration of it.
     val runStart = OffsetDateTime.now()
     val outcome = Interpreter(thir).evaluate(entry)
     val runEnd = OffsetDateTime.now()
     
-    // Analyze the outcome, lets us know what the compiler found in the source code and runtime analytics.
-    val constants = thir.declarations.values.filterIsInstance<ThirDeclaration.Function>()
-    val functions = thir.declarations.values.filterIsInstance<ThirDeclaration.Function>()
-    val structures = thir.declarations.values.filterIsInstance<ThirDeclaration.Function>()
-    
-    println("")
-    println("Constants: \n\t" + constants.joinToString("\n\t") { it.toString() })
-    println("Functions: \n\t" + functions.joinToString("\n\t") { it.toString() })
-    println("Structures: \n\t" + structures.joinToString("\n\t") { it.toString() })
     println("")
     println("Outcome of program is '$outcome'")
     println("Program took ${Duration.between(compileStart, compileEnd).toNanos() / 1.0e9} seconds to compile")
     println("Program took ${Duration.between(runStart, runEnd).toNanos() / 1.0e9} seconds to run")
+    println("")
 }
