@@ -27,7 +27,7 @@ class TestTypeExpressionDefiner
     fun `Given unknown structure identifier, when processing, then error`()
     {
         val structure = thirStructOf()
-        val worker = TypeExpressionDefiner(structure.name.hirIdent().hirType(), env, scope)
+        val worker = TypeExpressionDefiner(structure.name.hirIdent().type, env, scope)
         val expected = Outcome.UnknownIdentifier(structure.name)
         
         assertFailure(expected, worker.process())
@@ -37,7 +37,7 @@ class TestTypeExpressionDefiner
     fun `Given unregistered structure identifier, when processing, then error`()
     {
         val structure = thirStructOf().register()
-        val worker = TypeExpressionDefiner(structure.name.hirIdent().hirType(), env, scope)
+        val worker = TypeExpressionDefiner(structure.name.hirIdent().type, env, scope)
         val expected = Outcome.RequireDeclaration(setOf(structure.id))
         
         assertFailure(expected, worker.process())
@@ -47,8 +47,8 @@ class TestTypeExpressionDefiner
     fun `Given valid structure identifier, when processing, then success`()
     {
         val structure = thirStructOf().register().declare()
-        val worker = TypeExpressionDefiner(structure.name.hirIdent().hirType(), env, scope)
-        val expected = ThirType.Structure(structure.id)
+        val worker = TypeExpressionDefiner(structure.name.hirIdent().type, env, scope)
+        val expected = ThirType.Structure(structure.id, emptyList())
         
         assertSuccess(expected, worker.process())
     }
@@ -56,7 +56,7 @@ class TestTypeExpressionDefiner
     @Test
     fun `Given invalid type expression, when processing, then error`()
     {
-        val worker = TypeExpressionDefiner(0.hir.hirType(), env, scope)
+        val worker = TypeExpressionDefiner(0.hir.type, env, scope)
         val expected = Outcome.Unhandled("Expression 'Int32(raw=0)' evaluated to a non-type value 'Int32(raw=0)'")
         
         assertFailure(expected, worker.process())
@@ -65,10 +65,10 @@ class TestTypeExpressionDefiner
     @Test
     fun `Given const indirection to invalid expression, when processing, then error`()
     {
-        val const = thirConstOf(type = ThirType.Bool, value = true.thir).register().declare()
+        val const = thirConstOf(kind = ThirKind.Value(ThirType.Bool), value = true.thir).register().declare()
         
-        val worker = TypeExpressionDefiner(const.name.hirIdent().hirType(), env, scope)
-        val expected = Outcome.Unhandled("Expression 'Load(symbolId=${const.id}, valueType=Bool)' evaluated to a non-type value 'Bool(raw=true)'")
+        val worker = TypeExpressionDefiner(const.name.hirIdent().type, env, scope)
+        val expected = Outcome.Unhandled("Expression 'Load(symbolId=${const.id}, valueKind=Value(type=Bool))' evaluated to a non-type value 'Bool(raw=true)'")
         
         assertFailure(expected, worker.process())
     }
@@ -77,10 +77,10 @@ class TestTypeExpressionDefiner
     fun `Given const indirection to valid expression, when processing, then success`()
     {
         val structure = thirStructOf().register().declare()
-        val const = thirConstOf(type = ThirType.Type, value = structure.thirIdent()).register().declare()
+        val const = thirConstOf(kind = ThirKind.Type, value = structure.thirLoad()).register().declare()
         
-        val worker = TypeExpressionDefiner(const.name.hirIdent().hirType(), env, scope)
-        val expected = ThirType.Structure(structure.id)
+        val worker = TypeExpressionDefiner(const.name.hirIdent().type, env, scope)
+        val expected = ThirType.Structure(structure.id, emptyList())
         
         assertSuccess(expected, worker.process())
     }
@@ -88,11 +88,22 @@ class TestTypeExpressionDefiner
     @Test
     fun `Given const indirection to undefined expression, when processing, then error`()
     {
-        val const = thirConstOf(type = ThirType.Type).copy(def = null).register().declare()
+        val const = thirConstOf(kind = ThirKind.Type).copy(def = null).register().declare()
         
-        val worker = TypeExpressionDefiner(const.name.hirIdent().hirType(), env, scope)
+        val worker = TypeExpressionDefiner(const.name.hirIdent().type, env, scope)
         val expected = Outcome.RequireDefinition(setOf(const.id))
-        
+    
         assertFailure(expected, worker.process())
+    }
+    
+    @Test
+    fun `Given type parameter, when processing, then success`()
+    {
+        val generic = thirParamOf().register().declare()
+        
+        val worker = TypeExpressionDefiner(generic.name.hirIdent().type, env, scope)
+        val expected = ThirType.TypeParameterRef(generic.id)
+        
+        assertSuccess(expected, worker.process())
     }
 }

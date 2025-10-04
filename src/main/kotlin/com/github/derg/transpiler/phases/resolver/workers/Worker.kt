@@ -32,6 +32,71 @@ sealed interface Outcome
     // Hard errors, all these should fail compilation //
     ////////////////////////////////////////////////////
     
+    /**
+     * A binding's value kind evaluated to the nothing kind.
+     */
+    data object BindingHasNoValue : Outcome
+    
+    /**
+     * A binding's error kind did not evaluate to the nothing kind.
+     */
+    data class BindingHasError(val errorKind: ThirKind) : Outcome
+    
+    /**
+     * A binding's value kind did not evaluate to the binding's kind.
+     */
+    data class BindingWrongKind(val expected: ThirKind, val actual: ThirKind) : Outcome
+    
+    /**
+     * A binding's value type did not evaluate to the binding's type.
+     */
+    data class BindingWrongType(val expected: ThirType, val actual: ThirType) : Outcome
+    
+    /**
+     * The left-hand side of the catch expression evaluated to the nothing kind.
+     */
+    data object CatchLeftHasNoError : Outcome
+    
+    /**
+     * The right-hand side of the catch expression did not evaluate to the nothing kind.
+     */
+    data class CatchRightHasError(val errorKind: ThirKind) : Outcome
+    
+    /**
+     * The left-hand and right-hand side kinds did not match each other in a handle catch.
+     */
+    data class CatchHandleKindMismatch(val expected: ThirKind, val actual: ThirKind) : Outcome
+    
+    /**
+     * The evaluation statement's error did not evaluate to the nothing kind.
+     */
+    data class EvaluationHasError(val errorKind: ThirKind) : Outcome
+    
+    /**
+     * The evaluation statement's value did not evaluate to the nothing kind.
+     */
+    data class EvaluationHasValue(val errorKind: ThirKind) : Outcome
+    
+    /**
+     * An if/while predicate type-checked to an error kind other than the nothing kind.
+     */
+    data class PredicateHasError(val errorKind: ThirKind) : Outcome
+    
+    /**
+     * An if/while predicate type-checked to a value kind other than the value kind.
+     */
+    data class PredicateWrongKind(val valueKind: ThirKind) : Outcome
+    
+    /**
+     * An if/while predicate type-checked to a value type other than the bool type.
+     */
+    data class PredicateWrongType(val valueType: ThirType) : Outcome
+    
+    /**
+     * The raise/return statement's error did not evaluate to the nothing kind.
+     */
+    data class ReturnHasError(val errorKind: ThirKind) : Outcome
+    
     // Call-related errors.
     
     /**
@@ -45,10 +110,10 @@ sealed interface Outcome
     data class UnexpectedParameter(val name: String?, val value: HirExpression) : Outcome
     
     /**
-     * A function call could not be resolved due to a mismatched type conflict. The function [expected] a certain type,
+     * A function call could not be resolved due to a mismatched kind conflict. The function [expected] a certain kind,
      * but [received] a different one.
      */
-    data class MismatchedType(val expected: ThirType, val received: ThirType) : Outcome
+    data class MismatchedKind(val expected: ThirKind, val received: ThirKind) : Outcome
     
     /**
      * A symbol with the given [name] was attempted invoked. No overloads of the name compatible with the parameter
@@ -60,13 +125,6 @@ sealed interface Outcome
      * The [received] type is not of a structure type.
      */
     data class InvalidStructure(val received: ThirType) : Outcome
-    
-    // Catch-related errors.
-    
-    /**
-     * A catch clause expected a value type, but received nothing.
-     */
-    data object RequireType : Outcome
     
     // Identifier-related errors.
     

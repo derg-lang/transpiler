@@ -23,24 +23,8 @@ val Any.ast: AstValue
 // Type helpers //
 //////////////////
 
-fun astTemplateStruct(
-    name: String = UUID.randomUUID().toString(),
-) = AstTemplate.Type(name = name)
-
-fun astTemplateValue(
-    name: String = UUID.randomUUID().toString(),
-    type: AstType,
-    default: AstValue? = null,
-) = AstTemplate.Value(name = name, type = type, default = default)
-
-fun AstValue.astType(
-    mutability: Mutability = Mutability.IMMUTABLE,
-) = AstType.Expression(this, mutability)
-
-fun astParamStatic(
-    name: String? = null,
-    value: AstValue = 0.ast,
-) = AstParameterStatic(name = name, value = value)
+val AstValue.type: AstType get() = AstType.Expression(this)
+val AstType.kind: AstKind get() = AstKind.Value(this)
 
 ////////////////////////
 // Expression helpers //
@@ -151,7 +135,7 @@ fun astConstOf(
     vis: Visibility = Visibility.PRIVATE,
 ) = AstConstant(
     name = name,
-    type = type?.astLoad()?.astType(),
+    kind = type?.astLoad()?.type?.let { AstKind.Value(it) },
     value = value.ast,
     visibility = vis,
 )
@@ -161,12 +145,14 @@ fun astFunOf(
     valType: String? = null,
     errType: String? = null,
     vis: Visibility = Visibility.PRIVATE,
+    typeParameters: List<AstTypeParameter> = emptyList(),
     params: List<AstParameter> = emptyList(),
     statements: List<AstInstruction> = emptyList(),
 ) = AstFunction(
     name = name,
-    valueType = valType?.astLoad()?.astType(),
-    errorType = errType?.astLoad()?.astType(),
+    valueKind = valType?.astLoad()?.type?.let { AstKind.Value(it) } ?: AstKind.Nothing,
+    errorKind = errType?.astLoad()?.type?.let { AstKind.Value(it) } ?: AstKind.Nothing,
+    typeParameters = typeParameters,
     parameters = params,
     visibility = vis,
     statements = statements,
@@ -174,18 +160,19 @@ fun astFunOf(
 
 fun astParOf(
     name: String,
-    type: String,
+    type: String?,
     value: Any? = null,
     pas: Passability = Passability.IN,
     mut: Mutability = Mutability.IMMUTABLE,
 ) = AstParameter(
     name = name,
-    type = type.astLoad().astType(mut),
+    kind = type?.astLoad()?.type?.let { AstKind.Value(it) },
     value = value?.ast,
+    mutability = mut,
     passability = pas,
 )
 
-fun astPropOf(
+fun astFieldOf(
     name: String = UUID.randomUUID().toString(),
     type: String? = null,
     value: Any? = null,
@@ -194,22 +181,33 @@ fun astPropOf(
     ass: Assignability = Assignability.FINAL,
 ) = AstProperty(
     name = name,
-    type = type?.astLoad()?.astType(mut),
+    kind = type?.astLoad()?.type?.let { AstKind.Value(it) },
     value = value?.ast,
+    mutability = mut,
     visibility = vis,
     assignability = ass,
 )
 
 fun astStructOf(
     name: String = UUID.randomUUID().toString(),
-    vis: Visibility = Visibility.PRIVATE,
+    typeParameters: List<AstTypeParameter> = emptyList(),
     props: List<AstProperty> = emptyList(),
-    templates: List<AstTemplate> = emptyList(),
+    vis: Visibility = Visibility.PRIVATE,
 ) = AstStruct(
     name = name,
-    visibility = vis,
+    typeParameters = typeParameters,
     fields = props,
-    templates = templates,
+    visibility = vis,
+)
+
+fun astTypeParamOf(
+    name: String,
+    kind: AstKind,
+    default: AstValue? = null,
+) = AstTypeParameter(
+    name = name,
+    kind = kind,
+    default = default,
 )
 
 fun astVarOf(
@@ -221,8 +219,9 @@ fun astVarOf(
     ass: Assignability = Assignability.FINAL,
 ) = AstVariable(
     name = name,
-    type = type?.astLoad()?.astType(mut),
+    kind = type?.astLoad()?.type?.let { AstKind.Value(it) },
     value = value.ast,
+    mutability = mut,
     visibility = vis,
     assignability = ass,
 )

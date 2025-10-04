@@ -3,6 +3,30 @@ package com.github.derg.transpiler.source.thir
 import java.util.*
 
 /**
+ * The kind of type an object is.
+ */
+sealed interface ThirKind
+{
+    /**
+     * The kind of nothing. Any symbol which evaluates to this kind cannot ever be permitted to provide any value of any
+     * sort.
+     */
+    data object Nothing : ThirKind
+    
+    /**
+     * The kind of types which are permitted to have values. This is for example "complete" types, such as `double`,
+     * `bool`, `int`, `list<int>`, and so on.
+     */
+    data object Type : ThirKind
+    
+    /**
+     * The kind of values as type parameters. All type parameters of this kind are shaped according to the [type] they
+     * are associated with.
+     */
+    data class Value(val type: ThirType) : ThirKind
+}
+
+/**
  * The types which can be expressed in the type system.
  */
 sealed interface ThirType
@@ -38,27 +62,27 @@ sealed interface ThirType
     data object Str : ThirType
     
     /**
-     * The type of types, indicates a type is passed as value.
+     * The type of function.
      */
-    data object Type : ThirType
+    data class Function(
+        val functionId: UUID,
+        val typeParameters: List<ThirExpression.Canonical>,
+        val valueKind: ThirKind,
+        val errorKind: ThirKind,
+    ) : ThirType
     
     /**
-     * The unit type, indicates an absence of value.
+     * The type of structure.
      */
-    data object Void : ThirType
+    data class Structure(
+        val structureId: UUID,
+        val typeParameters: List<ThirExpression.Canonical>,
+    ) : ThirType
     
     /**
-     * User-defined function.
+     * A value representation for type parameters.
      */
-    data class Function(val valueType: ThirType, val errorType: ThirType) : ThirType
-    
-    /**
-     * User-defined structure of the given [id].
-     */
-    data class Structure(val id: UUID) : ThirType
-    
-    /**
-     * Instance of user-defined structure of the given [id], with the given [types] and [values] wildcards.
-     */
-    data class Instance(val id: UUID, val types: Map<UUID, ThirType>, val values: Map<UUID, ThirExpression>) : ThirType
+    data class TypeParameterRef(
+        val typeParameterId: UUID,
+    ) : ThirType
 }

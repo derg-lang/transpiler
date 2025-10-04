@@ -11,16 +11,23 @@ import kotlin.collections.ArrayDeque
  * returned from a function call.
  */
 private data object ReturnException : Exception()
-private data class ReturnValueException(val value: ThirExpression?) : Exception()
-private data class ReturnErrorException(val error: ThirExpression?) : Exception()
+private data class ReturnValueException(val value: ThirExpression.Canonical?) : Exception()
+private data class ReturnErrorException(val error: ThirExpression.Canonical?) : Exception()
 
 /**
  * The interpreter is responsible for evaluating a program to its simplest form.
  */
 class Interpreter(private val env: Environment)
 {
-    private val memory = mutableMapOf<UUID, ThirExpression>()
-    private val stack = ArrayDeque<MutableMap<UUID, ThirExpression>>().apply { addLast(mutableMapOf()) }
+    private val memory = mutableMapOf<UUID, ThirExpression.Canonical>()
+    private val stack = ArrayDeque<MutableMap<UUID, ThirExpression.Canonical>>().apply { addLast(mutableMapOf()) }
+    
+    private fun ThirDeclaration.Function.toType(): ThirType = ThirType.Function(
+        functionId = id,
+        typeParameters = emptyList(),
+        valueKind = valueKind,
+        errorKind = errorKind,
+    )
     
     private fun ThirDeclaration.Structure.toType(): ThirType = when (id)
     {
@@ -30,7 +37,7 @@ class Interpreter(private val env: Environment)
         Builtin.FLOAT64.id -> ThirType.Float64
         Builtin.STR.id     -> ThirType.Str
         Builtin.BOOL.id    -> ThirType.Bool
-        else               -> ThirType.Structure(id)
+        else               -> ThirType.Structure(id, emptyList()) // TODO: Take into consideration all generics as well.
     }
     
     /**
@@ -47,36 +54,40 @@ class Interpreter(private val env: Environment)
      * depending on the input parameters. If the program raises an error, the error value will be returned as the
      * failure branch.
      */
-    fun evaluate(expression: ThirExpression): Result<ThirExpression?, ThirExpression?>
+    fun evaluate(expression: ThirExpression): Result<ThirExpression.Canonical?, ThirExpression.Canonical?> = when (expression)
     {
-        val constants = env.declarations.values.filterIsInstance<ThirDeclaration.Const>()
-        val functions = env.declarations.values.filterIsInstance<ThirDeclaration.Function>()
-        val structures = env.declarations.values.filterIsInstance<ThirDeclaration.Structure>()
-        val variables = env.declarations.values.filterIsInstance<ThirDeclaration.Variable>()
-        
-        constants.forEach { it.def?.let { def -> memory[it.id] = def.value } }
-        functions.forEach { memory[it.id] = ThirExpression.Load(it.id, it.type) }
-        structures.forEach { memory[it.id] = ThirExpression.Type(it.toType()) }
-        variables.forEach { memory[it.id] = ThirExpression.Load(it.id, it.type) }
-        
-        return execute(expression)
+        is ThirExpression.Bool     -> expression.toSuccess()
+        is ThirExpression.Float32  -> expression.toSuccess()
+        is ThirExpression.Float64  -> expression.toSuccess()
+        is ThirExpression.Int32    -> expression.toSuccess()
+        is ThirExpression.Int64    -> expression.toSuccess()
+        is ThirExpression.Str      -> expression.toSuccess()
+        is ThirExpression.Instance -> expression.toSuccess()
+        is ThirExpression.Type     -> expression.toSuccess()
+        is ThirExpression.Call     -> evaluateCall(expression)
+        is ThirExpression.Catch    -> evaluateCatch(expression)
+        is ThirExpression.Field    -> evaluateField(expression).toSuccess()
+        is ThirExpression.Load     -> evaluateLoad(expression).toSuccess()
     }
     
-    private fun invoke(expression: ThirExpression.Call): Result<ThirExpression?, ThirExpression?>
+    private fun evaluateCall(expression: ThirExpression.Call): Result<ThirExpression.Canonical?, ThirExpression.Canonical?>
     {
-        val instance = execute(expression.instance).valueOr { return it.toFailure() }
-        if (instance !is ThirExpression.Load)
-            throw IllegalStateException("Expected load instruction, but received '$instance' instead")
-        val function = env.declarations[instance.symbolId] as? ThirDeclaration.Function
-            ?: throw IllegalStateException("Expected a valid function with id '${instance.symbolId}")
+        val instance = evaluate(expression.instance).valueOr { return it.toFailure() }
+        val expr = instance as? ThirExpression.Type
+            ?: throw IllegalStateException("Expected a type expression, but received '$instance'")
+        val type = expr.raw as? ThirType.Function
+            ?: throw IllegalStateException("Expected a function type, but received '${expr.raw}'")
+        val function = env.declarations[type.functionId] as? ThirDeclaration.Function
+            ?: throw IllegalStateException("Expected a function, but received '${env.declarations[type.functionId]}'")
         
         // If we are dealing with some builtin function, just deal with it in the trivial manner. No need for stack
         // frames or anything fancy in that case.
         invokeBuiltin(function, expression.parameters).onSuccess { return it.toSuccess() }
         
         // Otherwise, we execute all statements, bailing if we encounter some form of control flow.
-        val frame = mutableMapOf<UUID, ThirExpression>()
-        function.parameterIds.zip(expression.parameters).forEach { frame[it.first] = execute(it.second).valueOrDie()!! }
+        val frame = mutableMapOf<UUID, ThirExpression.Canonical>()
+        (function.parameterIds zip expression.parameters).forEach { frame[it.first] = evaluate(it.second).valueOrDie()!! }
+        (function.typeParameterIds zip type.typeParameters).forEach { frame[it.first] = it.second }
         stack.addLast(frame)
         val outcome = try
         {
@@ -99,62 +110,7 @@ class Interpreter(private val env: Environment)
         return outcome
     }
     
-    private fun execute(statements: List<ThirStatement>)
-    {
-        statements.forEach { execute(it) }
-    }
-    
-    private fun execute(statement: ThirStatement)
-    {
-        when (statement)
-        {
-            is ThirStatement.Assign      -> executeAssign(statement)
-            is ThirStatement.Evaluate    -> execute(statement.expression)
-            is ThirStatement.If          -> executeIf(statement)
-            is ThirStatement.Return      -> throw ReturnException
-            is ThirStatement.ReturnError -> throw ReturnErrorException(execute(statement.expression).valueOrDie())
-            is ThirStatement.ReturnValue -> throw ReturnValueException(execute(statement.expression).valueOrDie())
-            is ThirStatement.While       -> executeWhile(statement)
-        }
-    }
-    
-    private fun executeAssign(statement: ThirStatement.Assign)
-    {
-        val instance = execute(statement.instance).valueOrDie() as ThirExpression.Load
-        memory[instance.symbolId] = execute(statement.expression).valueOrDie()!!
-    }
-    
-    private fun executeIf(statement: ThirStatement.If)
-    {
-        if (execute(statement.predicate).valueOrDie().bool)
-            execute(statement.success)
-        else
-            execute(statement.failure)
-    }
-    
-    private fun executeWhile(statement: ThirStatement.While)
-    {
-        while (execute(statement.predicate).valueOrDie().bool)
-            execute(statement.statements)
-    }
-    
-    private fun execute(expression: ThirExpression): Result<ThirExpression?, ThirExpression?> = when (expression)
-    {
-        is ThirExpression.Bool     -> expression.toSuccess()
-        is ThirExpression.Call     -> invoke(expression)
-        is ThirExpression.Catch    -> execute(expression)
-        is ThirExpression.Float32  -> expression.toSuccess()
-        is ThirExpression.Float64  -> expression.toSuccess()
-        is ThirExpression.Int32    -> expression.toSuccess()
-        is ThirExpression.Int64    -> expression.toSuccess()
-        is ThirExpression.Load     -> (stack.last()[expression.symbolId] ?: memory[expression.symbolId]).toSuccess()
-        is ThirExpression.Str      -> expression.toSuccess()
-        is ThirExpression.Type     -> expression.toSuccess()
-        is ThirExpression.Instance -> expression.toSuccess()
-        is ThirExpression.Field    -> execute(expression).toSuccess()
-    }
-    
-    private fun execute(expression: ThirExpression.Catch): Result<ThirExpression?, ThirExpression?>
+    private fun evaluateCatch(expression: ThirExpression.Catch): Result<ThirExpression.Canonical?, ThirExpression.Canonical?>
     {
         val lhs = evaluate(expression.lhs)
         
@@ -166,7 +122,7 @@ class Interpreter(private val env: Environment)
         }
         
         // TODO: Find a way to make use of the `it` parameter.
-        val rhs = execute(expression.rhs).valueOrDie()
+        val rhs = evaluate(expression.rhs).valueOrDie()
         
         when (expression.operator)
         {
@@ -176,10 +132,72 @@ class Interpreter(private val env: Environment)
         }
     }
     
-    private fun execute(expression: ThirExpression.Field): ThirExpression
+    private fun evaluateField(expression: ThirExpression.Field): ThirExpression.Canonical
     {
-        val instance = execute(expression.instance).valueOrDie().instance
-        return instance.fields[expression.fieldId]!!
+        val structure = evaluate(expression.instance).valueOrDie().instance
+        return evaluate(structure.fields[expression.fieldId]!!).valueOrDie()!!
+    }
+    
+    private fun evaluateLoad(expression: ThirExpression.Load): ThirExpression.Canonical
+    {
+        val stackValue = stack.last()[expression.symbolId]
+        if (stackValue != null)
+            return stackValue
+        
+        val symbol = env.declarations[expression.symbolId]
+            ?: throw IllegalArgumentException("Attempted to load non-existing symbol '${expression.symbolId}'")
+        return when (symbol)
+        {
+            is ThirDeclaration.Const         -> evaluate(symbol.def!!.value).valueOrDie()!!
+            is ThirDeclaration.Field         -> evaluate(symbol.def!!.default!!).valueOrDie()!!
+            is ThirDeclaration.Function      -> ThirExpression.Type(symbol.toType())
+            is ThirDeclaration.Parameter     -> evaluate(symbol.def!!.default!!).valueOrDie()!!
+            is ThirDeclaration.Structure     -> ThirExpression.Type(symbol.toType())
+            is ThirDeclaration.TypeParameter -> evaluate(symbol.def!!.default!!).valueOrDie()!!
+            is ThirDeclaration.Variable      -> evaluate(symbol.def!!.value).valueOrDie()!!
+        }
+    }
+    
+    private fun execute(statements: List<ThirStatement>)
+    {
+        statements.forEach { execute(it) }
+    }
+    
+    private fun execute(statement: ThirStatement)
+    {
+        when (statement)
+        {
+            is ThirStatement.Assign      -> executeAssign(statement)
+            is ThirStatement.Evaluate    -> evaluate(statement.expression)
+            is ThirStatement.If          -> executeIf(statement)
+            is ThirStatement.Return      -> throw ReturnException
+            is ThirStatement.ReturnError -> throw ReturnErrorException(evaluate(statement.expression).valueOrDie())
+            is ThirStatement.ReturnValue -> throw ReturnValueException(evaluate(statement.expression).valueOrDie())
+            is ThirStatement.While       -> executeWhile(statement)
+        }
+    }
+    
+    private fun executeAssign(statement: ThirStatement.Assign)
+    {
+        var instance = statement.instance
+        while (instance !is ThirExpression.Load)
+            instance = evaluate(instance).valueOrDie()!!
+        
+        memory[instance.symbolId] = evaluate(statement.expression).valueOrDie()!!
+    }
+    
+    private fun executeIf(statement: ThirStatement.If)
+    {
+        if (evaluate(statement.predicate).valueOrDie().bool)
+            execute(statement.success)
+        else
+            execute(statement.failure)
+    }
+    
+    private fun executeWhile(statement: ThirStatement.While)
+    {
+        while (evaluate(statement.predicate).valueOrDie().bool)
+            execute(statement.statements)
     }
     
     /**
@@ -187,10 +205,10 @@ class Interpreter(private val env: Environment)
      * [parameters], the function returns the outcome of the operation. Otherwise, if the function could not be
      * interpreted as a builtin function, this method returns an error case.
      */
-    private fun invokeBuiltin(function: ThirDeclaration.Function, parameters: List<ThirExpression>): Result<ThirExpression?, Unit>
+    private fun invokeBuiltin(function: ThirDeclaration.Function, parameters: List<ThirExpression>): Result<ThirExpression.Canonical?, Unit>
     {
-        val lhs = parameters.firstOrNull()?.let { execute(it) }?.valueOrDie()
-        val rhs = parameters.lastOrNull()?.let { execute(it) }?.valueOrDie()
+        val lhs = parameters.firstOrNull()?.let { evaluate(it) }?.valueOrDie()
+        val rhs = parameters.lastOrNull()?.let { evaluate(it) }?.valueOrDie()
         
         return when (function.id)
         {
@@ -211,7 +229,7 @@ class Interpreter(private val env: Environment)
             Builtin.INT32_MOD.id   -> ThirExpression.Int32(lhs.int32 % rhs.int32).toSuccess()
             Builtin.INT32_MUL.id   -> ThirExpression.Int32(lhs.int32 * rhs.int32).toSuccess()
             Builtin.INT32_NEG.id   -> ThirExpression.Int32(-rhs.int32).toSuccess()
-            Builtin.INT32_POS.id   -> ThirExpression.Int32(rhs.int32).toSuccess()
+            Builtin.INT32_POS.id   -> ThirExpression.Int32(+rhs.int32).toSuccess()
             Builtin.INT32_SUB.id   -> ThirExpression.Int32(lhs.int32 - rhs.int32).toSuccess()
             Builtin.INT64_EQ.id    -> ThirExpression.Bool(lhs.int64 == rhs.int64).toSuccess()
             Builtin.INT64_GE.id    -> ThirExpression.Bool(lhs.int64 >= rhs.int64).toSuccess()
@@ -224,7 +242,7 @@ class Interpreter(private val env: Environment)
             Builtin.INT64_MOD.id   -> ThirExpression.Int64(lhs.int64 % rhs.int64).toSuccess()
             Builtin.INT64_MUL.id   -> ThirExpression.Int64(lhs.int64 * rhs.int64).toSuccess()
             Builtin.INT64_NEG.id   -> ThirExpression.Int64(-rhs.int64).toSuccess()
-            Builtin.INT64_POS.id   -> ThirExpression.Int64(rhs.int64).toSuccess()
+            Builtin.INT64_POS.id   -> ThirExpression.Int64(+rhs.int64).toSuccess()
             Builtin.INT64_SUB.id   -> ThirExpression.Int64(lhs.int64 - rhs.int64).toSuccess()
             Builtin.FLOAT32_EQ.id  -> ThirExpression.Bool(lhs.float32 == rhs.float32).toSuccess()
             Builtin.FLOAT32_GE.id  -> ThirExpression.Bool(lhs.float32 >= rhs.float32).toSuccess()
@@ -237,7 +255,7 @@ class Interpreter(private val env: Environment)
             Builtin.FLOAT32_MOD.id -> ThirExpression.Float32(lhs.float32 % rhs.float32).toSuccess()
             Builtin.FLOAT32_MUL.id -> ThirExpression.Float32(lhs.float32 * rhs.float32).toSuccess()
             Builtin.FLOAT32_NEG.id -> ThirExpression.Float32(-rhs.float32).toSuccess()
-            Builtin.FLOAT32_POS.id -> ThirExpression.Float32(rhs.float32).toSuccess()
+            Builtin.FLOAT32_POS.id -> ThirExpression.Float32(+rhs.float32).toSuccess()
             Builtin.FLOAT32_SUB.id -> ThirExpression.Float32(lhs.float32 - rhs.float32).toSuccess()
             Builtin.FLOAT64_EQ.id  -> ThirExpression.Bool(lhs.float64 == rhs.float64).toSuccess()
             Builtin.FLOAT64_GE.id  -> ThirExpression.Bool(lhs.float64 >= rhs.float64).toSuccess()
@@ -250,7 +268,7 @@ class Interpreter(private val env: Environment)
             Builtin.FLOAT64_MOD.id -> ThirExpression.Float64(lhs.float64 % rhs.float64).toSuccess()
             Builtin.FLOAT64_MUL.id -> ThirExpression.Float64(lhs.float64 * rhs.float64).toSuccess()
             Builtin.FLOAT64_NEG.id -> ThirExpression.Float64(-rhs.float64).toSuccess()
-            Builtin.FLOAT64_POS.id -> ThirExpression.Float64(rhs.float64).toSuccess()
+            Builtin.FLOAT64_POS.id -> ThirExpression.Float64(+rhs.float64).toSuccess()
             Builtin.FLOAT64_SUB.id -> ThirExpression.Float64(lhs.float64 - rhs.float64).toSuccess()
             Builtin.STR_EQ.id      -> ThirExpression.Bool(lhs.str == rhs.str).toSuccess()
             Builtin.STR_NE.id      -> ThirExpression.Bool(lhs.str != rhs.str).toSuccess()

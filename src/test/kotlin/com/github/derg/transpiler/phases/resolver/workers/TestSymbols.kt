@@ -30,8 +30,8 @@ class TestConstDefiner
     {
         Builtin.INT32.register().declare()
         
-        val input = hirConstOf(type = INT32_TYPE_NAME.hirIdent().hirType(), value = 1.hir)
-        val expected = thirConstOf(id = input.id, name = input.name, type = ThirType.Int32, value = 1.thir)
+        val input = hirConstOf(kind = INT32_TYPE_NAME.hirIdent().type.kind, value = 1.hir)
+        val expected = thirConstOf(id = input.id, name = input.name, kind = ThirKind.Value(ThirType.Int32), value = 1.thir)
         val worker = ConstDefiner(input, env, scope)
         
         assertSuccess(Phase.Declared, worker.process())
@@ -45,8 +45,8 @@ class TestConstDefiner
     {
         Builtin.INT32.register().declare()
         
-        val input = hirConstOf(type = null, value = 1.hir)
-        val expected = thirConstOf(id = input.id, name = input.name, type = ThirType.Int32, value = 1.thir)
+        val input = hirConstOf(kind = null, value = 1.hir)
+        val expected = thirConstOf(id = input.id, name = input.name, kind = ThirKind.Value(ThirType.Int32), value = 1.thir)
         val worker = ConstDefiner(input, env, scope)
         
         assertSuccess(Phase.Declared, worker.process())
@@ -60,12 +60,12 @@ class TestConstDefiner
     {
         Builtin.INT32.register().declare()
         
-        val input = hirConstOf(type = INT32_TYPE_NAME.hirIdent().hirType(), value = true.hir)
-        val expected = Outcome.MismatchedType(expected = ThirType.Int32, received = ThirType.Bool)
+        val input = hirConstOf(kind = INT32_TYPE_NAME.hirIdent().type.kind, value = true.hir)
+        val expected = Outcome.BindingWrongType(ThirType.Int32, ThirType.Bool)
         val worker = ConstDefiner(input, env, scope)
         
         assertSuccess(Phase.Declared, worker.process())
-        assertFailure(expected, ConstDefiner(input, env, scope).process())
+        assertFailure(expected, worker.process())
     }
 }
 
@@ -91,8 +91,8 @@ class TestParameterDefiner
     {
         Builtin.INT32.register().declare()
         
-        val input = hirParamOf(type = INT32_TYPE_NAME.hirIdent().hirType(), default = 1.hir)
-        val expected = thirParamOf(id = input.id, name = input.name, type = ThirType.Int32, default = 1.thir)
+        val input = hirParamOf(kind = INT32_TYPE_NAME.hirIdent().type.kind, default = 1.hir)
+        val expected = thirParamOf(id = input.id, name = input.name, kind = ThirKind.Value(ThirType.Int32), default = 1.thir)
         val worker = ParameterDefiner(input, env, scope)
         
         assertSuccess(Phase.Declared, worker.process())
@@ -106,8 +106,8 @@ class TestParameterDefiner
     {
         Builtin.INT32.register().declare()
         
-        val input = hirParamOf(type = INT32_TYPE_NAME.hirIdent().hirType(), default = null)
-        val expected = thirParamOf(id = input.id, name = input.name, type = ThirType.Int32, default = null)
+        val input = hirParamOf(kind = INT32_TYPE_NAME.hirIdent().type.kind, default = null)
+        val expected = thirParamOf(id = input.id, name = input.name, kind = ThirKind.Value(ThirType.Int32), default = null)
         val worker = ParameterDefiner(input, env, scope)
         
         assertSuccess(Phase.Declared, worker.process())
@@ -121,12 +121,12 @@ class TestParameterDefiner
     {
         Builtin.INT32.register().declare()
         
-        val input = hirConstOf(type = INT32_TYPE_NAME.hirIdent().hirType(), value = true.hir)
-        val expected = Outcome.MismatchedType(expected = ThirType.Int32, received = ThirType.Bool)
-        val worker = ConstDefiner(input, env, scope)
+        val input = hirParamOf(kind = INT32_TYPE_NAME.hirIdent().type.kind, default = true.hir)
+        val expected = Outcome.BindingWrongType(ThirType.Int32, ThirType.Bool)
+        val worker = ParameterDefiner(input, env, scope)
         
         assertSuccess(Phase.Declared, worker.process())
-        assertFailure(expected, ConstDefiner(input, env, scope).process())
+        assertFailure(expected, worker.process())
     }
 }
 
@@ -165,8 +165,8 @@ class TestFunctionDefiner
     {
         Builtin.INT32.register().declare()
         
-        val input = hirFunOf(valueType = INT32_TYPE_NAME.hirIdent().hirType())
-        val expected = thirFunOf(id = input.id, name = input.name, valueType = ThirType.Int32)
+        val input = hirFunOf(valueKind = INT32_TYPE_NAME.hirIdent().type.kind)
+        val expected = thirFunOf(id = input.id, name = input.name, valueKind = ThirKind.Value(ThirType.Int32))
         val worker = FunctionDefiner(input, env, scope)
         
         assertSuccess(Phase.Declared, worker.process())
@@ -180,8 +180,8 @@ class TestFunctionDefiner
     {
         Builtin.INT32.register().declare()
         
-        val input = hirFunOf(errorType = INT32_TYPE_NAME.hirIdent().hirType())
-        val expected = thirFunOf(id = input.id, name = input.name, errorType = ThirType.Int32)
+        val input = hirFunOf(errorKind = INT32_TYPE_NAME.hirIdent().type.kind)
+        val expected = thirFunOf(id = input.id, name = input.name, errorKind = ThirKind.Value(ThirType.Int32))
         val worker = FunctionDefiner(input, env, scope)
         
         assertSuccess(Phase.Declared, worker.process())
@@ -194,7 +194,7 @@ class TestFunctionDefiner
     fun `Given statement, when processing, then declared then defined`()
     {
         val input = hirFunOf(statements = listOf(true.hirIf()))
-        val expected = thirFunOf(id = input.id, name = input.name, statements = listOf(true.thirIf()))
+        val expected = thirFunOf(id = input.id, name = input.name, statements = listOf(true.thir.thirIf()))
         val worker = FunctionDefiner(input, env, scope)
         
         assertSuccess(Phase.Declared, worker.process())
@@ -275,8 +275,8 @@ class TestVariableDefiner
     {
         Builtin.INT32.register().declare()
         
-        val input = hirVarOf(type = INT32_TYPE_NAME.hirIdent().hirType(), value = 1.hir)
-        val expected = thirVarOf(id = input.id, name = input.name, type = ThirType.Int32, value = 1.thir)
+        val input = hirVarOf(kind = INT32_TYPE_NAME.hirIdent().type.kind, value = 1.hir)
+        val expected = thirVarOf(id = input.id, name = input.name, kind = ThirKind.Value(ThirType.Int32), value = 1.thir)
         val worker = VariableDefiner(input, env, scope)
         
         assertSuccess(Phase.Declared, worker.process())
@@ -290,8 +290,8 @@ class TestVariableDefiner
     {
         Builtin.INT32.register().declare()
         
-        val input = hirVarOf(type = null, value = 1.hir)
-        val expected = thirVarOf(id = input.id, name = input.name, type = ThirType.Int32, value = 1.thir)
+        val input = hirVarOf(kind = null, value = 1.hir)
+        val expected = thirVarOf(id = input.id, name = input.name, kind = ThirKind.Value(ThirType.Int32), value = 1.thir)
         val worker = VariableDefiner(input, env, scope)
         
         assertSuccess(Phase.Declared, worker.process())
@@ -305,8 +305,8 @@ class TestVariableDefiner
     {
         Builtin.INT32.register().declare()
         
-        val input = hirVarOf(type = INT32_TYPE_NAME.hirIdent().hirType(), value = true.hir)
-        val expected = Outcome.MismatchedType(expected = ThirType.Int32, received = ThirType.Bool)
+        val input = hirVarOf(kind = INT32_TYPE_NAME.hirIdent().type.kind, value = true.hir)
+        val expected = Outcome.BindingWrongType(ThirType.Int32, ThirType.Bool)
         
         assertFailure(expected, VariableDefiner(input, env, scope).process())
     }

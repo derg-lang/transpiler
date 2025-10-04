@@ -22,6 +22,7 @@ class TestProgram
         "variables" to 5.thir.toSuccess(),
         "error_handling" to "failed".thir.toFailure(),
         "structures" to 5.thir.toSuccess(),
+        "generics" to "true".thir.toSuccess(),
     )
     
     @ParameterizedTest
@@ -36,6 +37,6 @@ class TestProgram
         val interpreter = Interpreter(thir)
         val main = thir.declarations.values.last { it.name == "main" } as ThirDeclaration.Function
         
-        assertEquals(input.second, interpreter.evaluate(main.thirCall()))
+        assertEquals(input.second, interpreter.evaluate(main.thirLoad().thirCall()))
     }
 }

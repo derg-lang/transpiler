@@ -93,8 +93,7 @@ private fun registerPrimitive(name: String): ThirDeclaration.Structure
     val primitive = ThirDeclaration.Structure(
         id = UUID.randomUUID(),
         name = name,
-        genericTypeIds = emptyList(),
-        genericValueIds = emptyList(),
+        typeParameterIds = emptyList(),
         fieldIds = emptyList(),
         def = ThirDeclaration.StructureDef(null),
     )
@@ -110,23 +109,22 @@ private fun registerBinary(operator: BinaryOperator, inputType: ThirType, output
         id = UUID.randomUUID(),
         name = "lhs",
         passability = Passability.IN,
-        type = inputType,
+        kind = ThirKind.Value(inputType),
         def = ThirDeclaration.ParameterDef(default = null)
     )
     val rhs = ThirDeclaration.Parameter(
         id = UUID.randomUUID(),
         name = "rhs",
         passability = Passability.IN,
-        type = inputType,
+        kind = ThirKind.Value(inputType),
         def = ThirDeclaration.ParameterDef(default = null)
     )
     val function = ThirDeclaration.Function(
         id = UUID.randomUUID(),
         name = operator.symbol,
-        valueType = outputType,
-        errorType = ThirType.Void,
-        genericTypeIds = emptyList(),
-        genericValueIds = emptyList(),
+        valueKind = ThirKind.Value(outputType),
+        errorKind = ThirKind.Nothing,
+        typeParameterIds = emptyList(),
         parameterIds = listOf(lhs.id, rhs.id),
         def = ThirDeclaration.FunctionDef(statements = emptyList())
     )
@@ -145,16 +143,15 @@ private fun registerUnary(operator: UnaryOperator, inputType: ThirType, outputTy
         id = UUID.randomUUID(),
         name = "rhs",
         passability = Passability.IN,
-        type = inputType,
+        kind = ThirKind.Value(inputType),
         def = ThirDeclaration.ParameterDef(default = null)
     )
     val function = ThirDeclaration.Function(
         id = UUID.randomUUID(),
         name = operator.symbol,
-        valueType = outputType,
-        errorType = ThirType.Void,
-        genericTypeIds = emptyList(),
-        genericValueIds = emptyList(),
+        valueKind = ThirKind.Value(outputType),
+        errorKind = ThirKind.Nothing,
+        typeParameterIds = emptyList(),
         parameterIds = listOf(rhs.id),
         def = ThirDeclaration.FunctionDef(statements = emptyList())
     )
@@ -172,16 +169,15 @@ private fun registerConsumer(name: String, inputType: ThirType): ThirDeclaration
         id = UUID.randomUUID(),
         name = "input",
         passability = Passability.IN,
-        type = inputType,
+        kind = ThirKind.Value(inputType),
         def = ThirDeclaration.ParameterDef(default = null)
     )
     val function = ThirDeclaration.Function(
         id = UUID.randomUUID(),
         name = name,
-        valueType = ThirType.Void,
-        errorType = ThirType.Void,
-        genericTypeIds = emptyList(),
-        genericValueIds = emptyList(),
+        valueKind = ThirKind.Nothing,
+        errorKind = ThirKind.Nothing,
+        typeParameterIds = emptyList(),
         parameterIds = listOf(input.id),
         def = ThirDeclaration.FunctionDef(statements = emptyList())
     )

@@ -1,0 +1,16 @@
+fun magic[condition: __builtin_bool]() -> __builtin_str
+{
+    if condition
+        return "true"
+    return "false"
+}
+
+fun more_magic[T: Type](input: T) -> T
+{
+    return input
+}
+
+fun main() -> __builtin_str
+{
+    return magic[more_magic[__builtin_bool](true)]()
+}

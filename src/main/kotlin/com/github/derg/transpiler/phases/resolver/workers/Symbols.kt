@@ -22,198 +22,143 @@ internal sealed interface Phase
     data object Defined : Phase
 }
 
-/**
- * Converts a HIR const into a THIR declaration.
- */
 internal class ConstDefiner(
     private val node: HirDeclaration.ConstantDecl,
     private val env: Environment,
-    private val scope: Scope,
+    scope: Scope,
 ) : Worker<Phase>
 {
-    private val typeWorker: Worker<ThirType>? = node.type?.let { typeDefinerOf(it, env, scope) }
-    private var valueWorker: Worker<ThirExpression>? = null
-    
-    private var type: ThirType? = null
-    private var value: ThirExpression? = null
+    private val worker = TypeExprResolver(node.kind, node.value, env, scope, true)
     
     override fun process(): Result<Phase, Outcome>
     {
-        // Constants are not required to have type information associated with them. When we have the type information,
-        // however, we can declare the symbol before attempting to deduce the expression value of it. If we have enough
-        // information to declare the symbol, we will do so immediately after deducing the type.
-        if (type == null)
-            type = typeWorker?.process()?.valueOr { return it.toFailure() }
-        
-        if (node.id !in env.declarations && type != null)
-        {
-            env.declarations[node.id] = declare(type!!)
-            return Phase.Declared.toSuccess()
-        }
-        
-        // Whether we have the type information or not, we need to resolve the expression as well. After the expression
-        // has been resolved, we need to repeat the declaration step in case it did not happen due to missing type
-        // information.
-        if (valueWorker == null)
-            valueWorker = expressionDefinerOf(node.value, env, scope, type, false)
-        if (value == null)
-            value = valueWorker!!.process().valueOr { return it.toFailure() }
-        if (type == null)
-        {
-            // TODO: This verification logic is not correct. When the value type is void, we return an incorrect error.
-            if (value!!.valueType == ThirType.Void)
-                return Outcome.MismatchedType(expected = ThirType.Void, received = value!!.valueType).toFailure()
-            type = value!!.valueType
-        }
-        
         if (node.id !in env.declarations)
         {
-            env.declarations[node.id] = declare(type!!)
+            val type = worker.resolveDeclaration().valueOr { return it.toFailure() }
+            env.declarations[node.id] = ThirDeclaration.Const(id = node.id, name = node.name, kind = type, def = null)
             return Phase.Declared.toSuccess()
         }
         
-        // Once the symbol has been thoroughly declared, and we have the value of the symbol, we are ready to define it
-        // and call it a day!
-        if (value!!.valueType != type)
-            return Outcome.MismatchedType(expected = type!!, received = value!!.valueType).toFailure()
-        if (value!!.errorType != ThirType.Void)
-            return Outcome.MismatchedType(expected = ThirType.Void, received = value!!.errorType).toFailure()
-        
+        val expr = worker.resolveDefinition().valueOr { return it.toFailure() }
+        val value = Interpreter(env).evaluate(expr!!).valueOrDie()!!
         val symbol = env.declarations[node.id]!! as ThirDeclaration.Const
-        symbol.def = ThirDeclaration.ConstDef(value = value!!)
+        symbol.def = ThirDeclaration.ConstDef(value = value)
         return Phase.Defined.toSuccess()
     }
-    
-    private fun declare(type: ThirType) = ThirDeclaration.Const(
-        id = node.id,
-        name = node.name,
-        type = type,
-        def = null,
-    )
 }
 
-/**
- * Converts a HIR parameter into a THIR declaration.
- */
-internal class ParameterDefiner(
-    private val node: HirDeclaration.ParameterDecl,
-    private val env: Environment,
-    private val scope: Scope,
-) : Worker<Phase>
-{
-    private val typeWorker: Worker<ThirType> = typeDefinerOf(node.type, env, scope)
-    private var defaultWorker: Worker<ThirExpression>? = null
-    
-    private var type: ThirType? = null
-    private var default: ThirExpression? = null
-    
-    override fun process(): Result<Phase, Outcome>
-    {
-        // Parameters cannot be declared without knowing their type and their default value. This information is crucial
-        // when performing function overloading, so we cannot emit a declared parameter when default values are also
-        // involved.
-        if (type == null)
-            type = typeWorker.process().valueOr { return it.toFailure() }
-        if (defaultWorker == null && node.default != null)
-            defaultWorker = expressionDefinerOf(node.default, env, scope, type, false)
-        if (default == null)
-            default = defaultWorker?.process()?.valueOr { return it.toFailure() }
-        
-        if (node.id !in env.declarations)
-        {
-            env.declarations[node.id] = declare(type!!)
-            return Phase.Declared.toSuccess()
-        }
-        
-        // Once the symbol has been thoroughly declared, and we have the value of the symbol, we are ready to define it
-        // and call it a day!
-        if (default != null)
-        {
-            if (default!!.valueType != type)
-                return Outcome.MismatchedType(expected = type!!, received = default!!.valueType).toFailure()
-            if (default!!.errorType != ThirType.Void)
-                return Outcome.MismatchedType(expected = ThirType.Void, received = default!!.errorType).toFailure()
-        }
-        
-        val symbol = env.declarations[node.id]!! as ThirDeclaration.Parameter
-        symbol.def = ThirDeclaration.ParameterDef(default = default)
-        return Phase.Defined.toSuccess()
-    }
-    
-    private fun declare(type: ThirType) = ThirDeclaration.Parameter(
-        id = node.id,
-        name = node.name,
-        passability = node.passability,
-        type = type,
-        def = null,
-    )
-}
-
-/**
- * Converts a HIR field into a THIR declaration.
- */
 internal class FieldDefiner(
     private val node: HirDeclaration.FieldDecl,
     private val env: Environment,
-    private val scope: Scope,
+    scope: Scope,
 ) : Worker<Phase>
 {
-    private val typeWorker: Worker<ThirType>? = node.type?.let { typeDefinerOf(it, env, scope) }
-    private var valueWorker: Worker<ThirExpression>? = null
-    
-    private var type: ThirType? = null
-    private var value: ThirExpression? = null
+    private val worker = TypeExprResolver(node.kind, node.default, env, scope, false)
     
     override fun process(): Result<Phase, Outcome>
     {
-        // Fields are not required to have type information associated with them. When we have the type information,
-        // however, we can declare the symbol before attempting to deduce the expression value of it. If we have enough
-        // information to declare the symbol, we will do so immediately after deducing the type.
-        if (type == null)
-            type = typeWorker?.process()?.valueOr { return it.toFailure() }
-        
-        if (node.id !in env.declarations && type != null)
+        if (node.id !in env.declarations)
         {
-            env.declarations[node.id] = declare(type!!)
+            val type = worker.resolveDeclaration().valueOr { return it.toFailure() }
+            env.declarations[node.id] = ThirDeclaration.Field(id = node.id, name = node.name, kind = type, def = null)
             return Phase.Declared.toSuccess()
         }
         
-        // Whether we have the type information or not, we need to resolve the expression as well. After the expression
-        // has been resolved, we need to repeat the declaration step in case it did not happen due to missing type
-        // information.
-        if (valueWorker == null)
-            valueWorker = node.default?.let { expressionDefinerOf(it, env, scope, type, false) }
-        if (value == null)
-            value = valueWorker!!.process().valueOr { return it.toFailure() }
-        if (type == null)
+        val value = worker.resolveDefinition().valueOr { return it.toFailure() }
+        val symbol = env.declarations[node.id]!! as ThirDeclaration.Field
+        symbol.def = ThirDeclaration.FieldDef(default = value)
+        return Phase.Defined.toSuccess()
+    }
+}
+
+internal class ParameterDefiner(
+    private val node: HirDeclaration.ParameterDecl,
+    private val env: Environment,
+    scope: Scope,
+) : Worker<Phase>
+{
+    private val worker = TypeExprResolver(node.kind, node.default, env, scope, false)
+    
+    override fun process(): Result<Phase, Outcome>
+    {
+        if (node.id !in env.declarations)
         {
-            if (value!!.valueType == ThirType.Void)
-                return Outcome.RequireType.toFailure()
-            type = value!!.valueType
+            val type = worker.resolveDeclaration().valueOr { return it.toFailure() }
+            env.declarations[node.id] = ThirDeclaration.Parameter(id = node.id, name = node.name, passability = node.passability, kind = type, def = null)
+            return Phase.Declared.toSuccess()
         }
+        
+        val value = worker.resolveDefinition().valueOr { return it.toFailure() }
+        val symbol = env.declarations[node.id]!! as ThirDeclaration.Parameter
+        symbol.def = ThirDeclaration.ParameterDef(default = value)
+        return Phase.Defined.toSuccess()
+    }
+}
+
+internal class VariableDefiner(
+    private val node: HirStatement.Variable,
+    private val env: Environment,
+    scope: Scope,
+) : Worker<Phase>
+{
+    private val worker = TypeExprResolver(node.kind, node.value, env, scope, true)
+    
+    override fun process(): Result<Phase, Outcome>
+    {
+        if (node.id in env.declarations)
+            return Phase.Defined.toSuccess()
+        
+        // When processing a variable, we are in the context of processing statements. Thus, we must ensure that the
+        // variable is fully defined during this process.
+        val type = worker.resolveDeclaration().valueOr { return it.toFailure() }
+        val value = worker.resolveDefinition().valueOr { return it.toFailure() }
+        env.declarations[node.id] = ThirDeclaration.Variable(id = node.id, name = node.name, kind = type, def = ThirDeclaration.VariableDef(value!!))
+        return Phase.Declared.toSuccess()
+    }
+}
+
+/**
+ * Converts a HIR type parameter into a THIR declaration.
+ */
+internal class TypeParameterDefiner(
+    private val node: HirDeclaration.TypeParameterDecl,
+    private val env: Environment,
+    private val scope: Scope,
+) : Worker<Phase>
+{
+    private var kindWorker: Worker<ThirKind>? = null
+    private var kindOutcome: ThirKind? = null
+    private var exprWorker: Worker<ThirExpression>? = null
+    private var exprOutcome: ThirExpression? = null
+    
+    override fun process(): Result<Phase, Outcome>
+    {
+        if (kindWorker == null)
+            kindWorker = node.kind.let { KindDefiner(it, env, scope) }
+        if (kindOutcome == null)
+            kindOutcome = kindWorker!!.process().valueOr { return it.toFailure() }
         
         if (node.id !in env.declarations)
         {
-            env.declarations[node.id] = declare(type!!)
+            env.declarations[node.id] = declare(kindOutcome!!)
             return Phase.Declared.toSuccess()
         }
         
-        // Once the symbol has been thoroughly declared, and we have the value of the symbol, we are ready to define it
-        // and call it a day!
-        if (value!!.valueType != type)
-            return Outcome.MismatchedType(expected = type!!, received = value!!.valueType).toFailure()
-        if (value!!.errorType != ThirType.Void)
-            return Outcome.MismatchedType(expected = ThirType.Void, received = value!!.errorType).toFailure()
+        if (exprWorker == null)
+            exprWorker = node.default?.let { expressionDefinerOf(it, env, scope, kindOutcome, true) }
+        if (exprOutcome == null)
+            exprOutcome = exprWorker?.process()?.valueOr { return it.toFailure() }
         
-        val symbol = env.declarations[node.id]!! as ThirDeclaration.Field
-        symbol.def = ThirDeclaration.FieldDef(default = value!!)
+        val value = exprOutcome?.let { Interpreter(env).evaluate(it).valueOrDie()!! }
+        val symbol = env.declarations[node.id]!! as ThirDeclaration.TypeParameter
+        symbol.def = ThirDeclaration.TypeParameterDef(default = value)
         return Phase.Defined.toSuccess()
     }
     
-    private fun declare(type: ThirType) = ThirDeclaration.Field(
+    private fun declare(kind: ThirKind) = ThirDeclaration.TypeParameter(
         id = node.id,
         name = node.name,
-        type = type,
+        kind = kind,
         def = null,
     )
 }
@@ -231,14 +176,15 @@ internal class FunctionDefiner(
     val scope = parentScope.apply()
     {
         node.parameters.forEach { register(it.id, it.name) }
+        node.typeParameters.forEach { register(it.id, it.name) }
     }
     
-    private val valueTypeWorker = node.valueType?.let { typeDefinerOf(it, env, scope) }
-    private val errorTypeWorker = node.errorType?.let { typeDefinerOf(it, env, scope) }
+    private val valueKindWorker = KindDefiner(node.valueKind, env, scope)
+    private val errorKindWorker = KindDefiner(node.errorKind, env, scope)
     private val statementWorker = WorkerList(node.body) { statementDefinerOf(it, env, scope) }
     
-    private var valueType: ThirType? = null
-    private var errorType: ThirType? = null
+    private var valueKind: ThirKind? = null
+    private var errorKind: ThirKind? = null
     private var statements: List<ThirStatement>? = null
     
     private var hasSpawnedChildren = false
@@ -250,24 +196,25 @@ internal class FunctionDefiner(
         if (!hasSpawnedChildren)
         {
             hasSpawnedChildren = true
+            val typeParameters = node.typeParameters.associate { it.id to TypeParameterDefiner(it, env, scope) }
             val parameters = node.parameters.associate { it.id to ParameterDefiner(it, env, scope) }
             val variables = node.body.filterIsInstance<HirStatement.Variable>().associate { it.id to VariableDefiner(it, env, scope) }
-            val children = parameters + variables
+            val children = typeParameters + parameters + variables
             if (children.isNotEmpty())
-                return Phase.Spawn(parameters + variables).toSuccess()
+                return Phase.Spawn(children).toSuccess()
         }
         
         // Function declarations depend primarily on their value and error types. The parameters are crucial as well,
         // although they are treated as their own resource and resolved independently. Thus, to declare the function all
         // we need is the type information.
-        if (valueType == null)
-            valueType = valueTypeWorker?.process()?.valueOr { return it.toFailure() } ?: ThirType.Void
-        if (errorType == null)
-            errorType = errorTypeWorker?.process()?.valueOr { return it.toFailure() } ?: ThirType.Void
+        if (valueKind == null)
+            valueKind = valueKindWorker.process().valueOr { return it.toFailure() }
+        if (errorKind == null)
+            errorKind = errorKindWorker.process().valueOr { return it.toFailure() }
         
         if (node.id !in env.declarations)
         {
-            env.declarations[node.id] = declare(valueType, errorType)
+            env.declarations[node.id] = declare(valueKind, errorKind)
             return Phase.Declared.toSuccess()
         }
         
@@ -287,13 +234,12 @@ internal class FunctionDefiner(
         return Phase.Defined.toSuccess()
     }
     
-    private fun declare(valueType: ThirType?, errorType: ThirType?) = ThirDeclaration.Function(
+    private fun declare(valueKind: ThirKind?, errorKind: ThirKind?) = ThirDeclaration.Function(
         id = node.id,
         name = node.name,
-        valueType = valueType!!,
-        errorType = errorType!!,
-        genericTypeIds = emptyList(),
-        genericValueIds = emptyList(),
+        valueKind = valueKind ?: ThirKind.Nothing,
+        errorKind = errorKind ?: ThirKind.Nothing,
+        typeParameterIds = node.typeParameters.map { it.id },
         parameterIds = node.parameters.map { it.id },
         def = null,
     )
@@ -312,6 +258,7 @@ internal class StructureDefiner(
     val scope = parentScope.apply()
     {
         node.fields.forEach { register(it.id, it.name) }
+        node.typeParameters.forEach { register(it.id, it.name) }
     }
     
     private var hasSpawnedChildren = false
@@ -323,9 +270,11 @@ internal class StructureDefiner(
         if (!hasSpawnedChildren)
         {
             hasSpawnedChildren = true
+            val typeParameters = node.typeParameters.associate { it.id to TypeParameterDefiner(it, env, scope) }
             val fields = node.fields.associate { it.id to FieldDefiner(it, env, scope) }
-            if (fields.isNotEmpty())
-                return Phase.Spawn(fields).toSuccess()
+            val children = typeParameters + fields
+            if (children.isNotEmpty())
+                return Phase.Spawn(children).toSuccess()
         }
         
         if (node.id !in env.declarations)
@@ -344,67 +293,9 @@ internal class StructureDefiner(
     private fun declare() = ThirDeclaration.Structure(
         id = node.id,
         name = node.name,
-        genericTypeIds = emptyList(),
-        genericValueIds = emptyList(),
+        typeParameterIds = emptyList(),
         fieldIds = node.fields.map { it.id },
         def = null,
-    )
-}
-
-/**
- * Converts from a HIR variable to a THIR declaration.
- */
-internal class VariableDefiner(
-    private val node: HirStatement.Variable,
-    private val env: Environment,
-    private val scope: Scope,
-) : Worker<Phase>
-{
-    private val typeWorker: Worker<ThirType>? = node.type?.let { typeDefinerOf(it, env, scope) }
-    private var valueWorker: Worker<ThirExpression>? = null
-    
-    private var type: ThirType? = null
-    private var value: ThirExpression? = null
-    
-    override fun process(): Result<Phase, Outcome>
-    {
-        // When processing a variable, we are in the context of processing statements. Thus, we must ensure that the
-        // variable is fully defined during this process.
-        if (type == null)
-            type = typeWorker?.process()?.valueOr { return it.toFailure() }
-        if (valueWorker == null)
-            valueWorker = expressionDefinerOf(node.value, env, scope, type, true)
-        if (value == null)
-            value = valueWorker!!.process().valueOr { return it.toFailure() }
-        if (type == null)
-        {
-            // TODO: This verification logic is not correct. When the value type is void, we return an incorrect error.
-            if (value!!.valueType == ThirType.Void)
-                return Outcome.MismatchedType(expected = ThirType.Void, received = value!!.valueType).toFailure()
-            type = value!!.valueType
-        }
-        
-        // Once all the resolution is done, we can immediately define the symbol. After that is done, we emit a single
-        // instruction for assigning the value to this variable.
-        if (value!!.valueType != type)
-            return Outcome.MismatchedType(expected = type!!, received = value!!.valueType).toFailure()
-        if (value!!.errorType != ThirType.Void)
-            return Outcome.MismatchedType(expected = ThirType.Void, received = value!!.errorType).toFailure()
-        
-        if (node.id !in env.declarations)
-        {
-            env.declarations[node.id] = declare(type!!, value!!)
-            return Phase.Declared.toSuccess()
-        }
-        
-        return Phase.Defined.toSuccess()
-    }
-    
-    private fun declare(type: ThirType, value: ThirExpression) = ThirDeclaration.Variable(
-        id = node.id,
-        name = node.name,
-        type = type,
-        def = ThirDeclaration.VariableDef(value),
     )
 }
 

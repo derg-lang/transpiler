@@ -63,32 +63,19 @@ class TestParserType
     @Test
     fun `Given name, when parsing, then correctly parsed`()
     {
-        tester.parse("Name").isOk(1).isDone().isValue("Name".astLoad().astType())
+        tester.parse("Name").isOk(1).isDone().isValue("Name".astLoad().type)
     }
     
     @Test
     fun `Given expression, when parsing, then correctly parsed`()
     {
-        tester.parse("1 + 2").isOk(1).isWip(1).isOk(1).isDone().isValue((1 astAdd 2).astType())
-    }
-    
-    @Test
-    fun `Given type, when parsing, then correctly parsed`()
-    {
-        tester.parse("Type").isOk(1).isDone().isValue(AstType.Type)
-    }
-    
-    @Test
-    fun `Given mutability, when parsing, then correctly parsed`()
-    {
-        tester.parse("    Foo").isOk(1).isDone().isValue("Foo".astLoad().astType(Mutability.IMMUTABLE))
-        tester.parse("mut Foo").isWip(1).isOk(1).isDone().isValue("Foo".astLoad().astType(Mutability.MUTABLE))
+        tester.parse("1 + 2").isOk(1).isWip(1).isOk(1).isDone().isValue((1 astAdd 2).type)
     }
     
     @Test
     fun `Given generics, when parsing, then correctly parsed`()
     {
-        val expected = "Foo".astLoad(null to "Bar".astLoad(), "baz" to 42.ast).astType()
+        val expected = "Foo".astLoad(null to "Bar".astLoad(), "baz" to 42.ast).type
         
         tester.parse("Foo[Bar, baz = 42]").isOk(1).isWip(6).isOk(1).isDone().isValue(expected)
     }

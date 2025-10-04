@@ -47,10 +47,10 @@ internal class EvaluateDefiner(node: HirStatement.Evaluate, env: Environment, sc
     override fun process(): Result<ThirStatement, Outcome>
     {
         val expr = worker.process().valueOr { return it.toFailure() }
-        if (expr.valueType != ThirType.Void)
-            return Outcome.MismatchedType(expected = ThirType.Void, received = expr.valueType).toFailure()
-        if (expr.errorType != ThirType.Void)
-            return Outcome.MismatchedType(expected = ThirType.Void, received = expr.errorType).toFailure()
+        if (expr.valueKind != ThirKind.Nothing)
+            return Outcome.EvaluationHasValue(expr.valueKind).toFailure()
+        if (expr.errorKind != ThirKind.Nothing)
+            return Outcome.EvaluationHasError(expr.errorKind).toFailure()
         
         return ThirStatement.Evaluate(expr).toSuccess()
     }
@@ -61,7 +61,7 @@ internal class EvaluateDefiner(node: HirStatement.Evaluate, env: Environment, sc
  */
 internal class IfDefiner(node: HirStatement.If, env: Environment, scope: Scope) : Worker<ThirStatement>
 {
-    private val predicateWorker = expressionDefinerOf(node.predicate, env, scope, ThirType.Bool, false)
+    private val predicateWorker = expressionDefinerOf(node.predicate, env, scope, ThirKind.Value(ThirType.Bool), false)
     private val successWorker = WorkerList(node.success) { statementDefinerOf(it, env, scope) }
     private val failureWorker = WorkerList(node.failure) { statementDefinerOf(it, env, scope) }
     
@@ -74,10 +74,12 @@ internal class IfDefiner(node: HirStatement.If, env: Environment, scope: Scope) 
         if (predicate == null)
         {
             val expression = predicateWorker.process().valueOr { return it.toFailure() }
-            if (expression.valueType != ThirType.Bool)
-                return Outcome.MismatchedType(expected = ThirType.Bool, received = expression.valueType).toFailure()
-            if (expression.errorType != ThirType.Void)
-                return Outcome.MismatchedType(expected = ThirType.Void, received = expression.errorType).toFailure()
+            val kind = expression.valueKind as? ThirKind.Value
+                ?: return Outcome.PredicateWrongKind(expression.valueKind).toFailure()
+            if (kind.type != ThirType.Bool)
+                return Outcome.PredicateWrongType(kind.type).toFailure()
+            if (expression.errorKind !is ThirKind.Nothing)
+                return Outcome.PredicateHasError(expression.errorKind).toFailure()
             
             predicate = expression
         }
@@ -110,7 +112,7 @@ internal class InitializeDefiner(
         
         scope.register(node.id, node.name)
         
-        val instance = ThirExpression.Load(node.id, symbol.type)
+        val instance = ThirExpression.Load(node.id, symbol.kind)
         return ThirStatement.Assign(instance, symbol.def!!.value).toSuccess()
     }
 }
@@ -134,8 +136,8 @@ internal class ReturnErrorDefiner(node: HirStatement.ReturnError, env: Environme
     override fun process(): Result<ThirStatement, Outcome>
     {
         val expr = worker.process().valueOr { return it.toFailure() }
-        if (expr.errorType != ThirType.Void)
-            return Outcome.MismatchedType(expected = ThirType.Void, received = expr.errorType).toFailure()
+        if (expr.errorKind !is ThirKind.Nothing)
+            return Outcome.ReturnHasError(expr.errorKind).toFailure()
         
         return worker.process().mapValue { ThirStatement.ReturnError(it) }
     }
@@ -151,8 +153,8 @@ internal class ReturnValueDefiner(node: HirStatement.ReturnValue, env: Environme
     override fun process(): Result<ThirStatement, Outcome>
     {
         val expr = worker.process().valueOr { return it.toFailure() }
-        if (expr.errorType != ThirType.Void)
-            return Outcome.MismatchedType(expected = ThirType.Void, received = expr.errorType).toFailure()
+        if (expr.errorKind !is ThirKind.Nothing)
+            return Outcome.ReturnHasError(expr.errorKind).toFailure()
         
         return worker.process().mapValue { ThirStatement.ReturnValue(it) }
     }
@@ -174,10 +176,12 @@ internal class WhileDefiner(node: HirStatement.While, env: Environment, scope: S
         if (predicate == null)
         {
             val expression = predicateWorker.process().valueOr { return it.toFailure() }
-            if (expression.valueType != ThirType.Bool)
-                return Outcome.MismatchedType(expected = ThirType.Bool, received = expression.valueType).toFailure()
-            if (expression.errorType != ThirType.Void)
-                return Outcome.MismatchedType(expected = ThirType.Void, received = expression.errorType).toFailure()
+            val kind = expression.valueKind as? ThirKind.Value
+                ?: return Outcome.PredicateWrongKind(expression.valueKind).toFailure()
+            if (kind.type != ThirType.Bool)
+                return Outcome.PredicateWrongType(kind.type).toFailure()
+            if (expression.errorKind !is ThirKind.Nothing)
+                return Outcome.PredicateHasError(expression.errorKind).toFailure()
             
             predicate = expression
         }

@@ -21,7 +21,7 @@ fun convert(program: AstSegment): HirDeclaration.SegmentDecl
 private fun AstConstant.toHir() = HirDeclaration.ConstantDecl(
     id = UUID.randomUUID(),
     name = name,
-    type = type?.toHir(),
+    kind = kind?.toHir(),
     value = value.toHir(),
 )
 
@@ -29,17 +29,17 @@ private fun AstFunction.toHir() = HirDeclaration.FunctionDecl(
     id = UUID.randomUUID(),
     name = name,
     visibility = visibility,
-    typeParameters = emptyList(),
+    typeParameters = typeParameters.map { it.toHir() },
     parameters = parameters.map { it.toHir() },
-    valueType = valueType?.toHir(),
-    errorType = errorType?.toHir(),
+    valueKind = valueKind.toHir(),
+    errorKind = errorKind.toHir(),
     body = statements.map { it.toHir() },
 )
 
 private fun AstParameter.toHir() = HirDeclaration.ParameterDecl(
     id = UUID.randomUUID(),
     name = name,
-    type = type.toHir(),
+    kind = kind?.toHir(),
     default = value?.toHir(),
     passability = passability,
 )
@@ -47,7 +47,7 @@ private fun AstParameter.toHir() = HirDeclaration.ParameterDecl(
 private fun AstProperty.toHir() = HirDeclaration.FieldDecl(
     id = UUID.randomUUID(),
     name = name,
-    type = type?.toHir(),
+    kind = kind?.toHir(),
     default = value?.toHir(),
     visibility = visibility,
     assignability = assignability,
@@ -64,34 +64,40 @@ private fun AstSegment.toHir() = HirDeclaration.SegmentDecl(
 private fun AstStruct.toHir() = HirDeclaration.StructureDecl(
     id = UUID.randomUUID(),
     name = name,
-    typeParameters = templates.map { it.toHir() },
+    typeParameters = typeParameters.map { it.toHir() },
     fields = fields.map { it.toHir() },
     visibility = visibility,
+)
+
+private fun AstTypeParameter.toHir() = HirDeclaration.TypeParameterDecl(
+    id = UUID.randomUUID(),
+    name = name,
+    kind = kind.toHir(),
+    default = default?.toHir(),
 )
 
 private fun AstVariable.toHir() = HirStatement.Variable(
     id = UUID.randomUUID(),
     name = name,
-    type = type?.toHir(),
+    kind = kind?.toHir(),
     value = value.toHir(),
     assignability = assignability,
 )
+
+private fun AstKind.toHir(): HirKind = when (this)
+{
+    is AstKind.Nothing -> HirKind.Nothing
+    is AstKind.Type    -> HirKind.Type
+    is AstKind.Value   -> HirKind.Value(type.toHir())
+}
 
 private fun AstType.toHir(): HirType = when (this)
 {
     is AstType.Expression -> HirType.Expression(value.toHir())
     is AstType.Function   -> HirType.Function(value?.toHir(), error?.toHir(), parameters.map { it.toHir() })
-    is AstType.Type       -> HirType.Type
-    is AstType.Union      -> TODO()
 }
 
-private fun AstTemplate.toHir(): HirDeclaration.TypeParameterDecl = when (this)
-{
-    is AstTemplate.Type  -> HirDeclaration.TypeParameterDecl(UUID.randomUUID(), name, null, null)
-    is AstTemplate.Value -> HirDeclaration.TypeParameterDecl(UUID.randomUUID(), name, type.toHir(), default?.toHir())
-}
-
-private fun AstParameterDynamic.toHir(): HirType.Parameter =
+private fun AstType.Parameter.toHir(): HirType.Parameter =
     HirType.Parameter(name, type.toHir(), null, passability)
 
 /**

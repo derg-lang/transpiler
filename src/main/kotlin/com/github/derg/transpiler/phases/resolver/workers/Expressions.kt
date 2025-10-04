@@ -20,7 +20,7 @@ val FLOAT64_MAX = Double.MAX_VALUE.toBigDecimal()
  * Constructs a worker which is capable of resolving the [node] to a proper THIR expression. The worker will operate in
  * the given [scope], using the information provided through the given [env].
  *
- * If the worker is provided a [typeHint], it will perform two-way type inference. Note that merely providing a type
+ * If the worker is provided a [kindHint], it will perform two-way type inference. Note that merely providing a type
  * hint does not enforce type safety. The implementation does not verify that the type provided from the user matches
  * the type of the resolved expression.
  *
@@ -28,14 +28,14 @@ val FLOAT64_MAX = Double.MAX_VALUE.toBigDecimal()
  * this case, the worker will halt once an undefined symbol is encountered. This mode must be enabled when the
  * expression is to be evaluated during a compilation phase.
  *
- * @param typeHint A hint indicating which type the expression should take after resolution.
+ * @param kindHint A hint indicating which type the expression should take after resolution.
  * @param requireDefinition Whether the expression require all symbol dependencies to be defined before resolution.
  */
 fun expressionDefinerOf(
     node: HirExpression,
     env: Environment,
     scope: Scope,
-    typeHint: ThirType?,
+    kindHint: ThirKind?,
     requireDefinition: Boolean,
 ): Worker<ThirExpression> = when (node)
 {
@@ -43,8 +43,8 @@ fun expressionDefinerOf(
     is HirExpression.Call       -> CallDefiner(node, env, scope, requireDefinition)
     is HirExpression.Catch      -> CatchDefiner(node, env, scope, requireDefinition)
     is HirExpression.Decimal    -> DecimalDefiner(node)
-    is HirExpression.Field      -> FieldAccessDefiner(node, env, scope, typeHint, requireDefinition)
-    is HirExpression.Identifier -> IdentifierDefiner(node, env, scope, typeHint, requireDefinition)
+    is HirExpression.Field      -> FieldAccessDefiner(node, env, scope, kindHint, requireDefinition)
+    is HirExpression.Identifier -> IdentifierDefiner(node, env, scope, kindHint, requireDefinition)
     is HirExpression.Integer    -> IntegerDefiner(node)
     is HirExpression.Text       -> StringDefiner(node)
 }
@@ -135,7 +135,7 @@ internal class FieldAccessDefiner(
     private val node: HirExpression.Field,
     private val env: Environment,
     scope: Scope,
-    typeHint: ThirType?,
+    kindHint: ThirKind?,
     requireDefinition: Boolean,
 ) : Worker<ThirExpression>
 {
@@ -148,10 +148,12 @@ internal class FieldAccessDefiner(
         if (instance == null)
             instance = worker.process().valueOr { return it.toFailure() }
         
-        val type = instance!!.valueType as? ThirType.Structure
-            ?: return Outcome.InvalidStructure(instance!!.valueType).toFailure()
-        val symbol = env.declarations[type.id] as? ThirDeclaration.Structure
-            ?: return Outcome.RequireDeclaration(setOf(type.id)).toFailure()
+        val kind = instance!!.valueKind as? ThirKind.Value
+            ?: return Outcome.Unhandled("Kind of $node is not a value kind").toFailure()
+        val type = kind.type as? ThirType.Structure
+            ?: return Outcome.InvalidStructure(kind.type).toFailure()
+        val symbol = env.declarations[type.structureId] as? ThirDeclaration.Structure
+            ?: return Outcome.RequireDeclaration(setOf(type.structureId)).toFailure()
         val field = symbol.fieldIds
             .mapNotNull { env.declarations[it] as? ThirDeclaration.Field }
             .singleOrNull { it.name == node.identifier.name }
@@ -160,7 +162,7 @@ internal class FieldAccessDefiner(
         return ThirExpression.Field(
             instance = instance!!,
             fieldId = field.id,
-            valueType = field.type,
+            valueKind = field.kind,
         ).toSuccess()
     }
 }
@@ -170,7 +172,7 @@ internal class FieldAccessDefiner(
  * refers to. In order to create a THIR representation of the load, the symbol must be declared, although it does not
  * need to be defined.
  *
- * If the identifier worker should attempt to perform a two-way type inference, a [typeHint] must be provided. Once the
+ * If the identifier worker should attempt to perform a two-way type inference, a [kindHint] must be provided. Once the
  * hint is given, the type hint will be used to filter away all possible candidates whose types do not resolve to the
  * hint.
  *
@@ -182,7 +184,7 @@ internal class IdentifierDefiner(
     private val node: HirExpression.Identifier,
     private val env: Environment,
     private val scope: Scope,
-    private val typeHint: ThirType?,
+    private val kindHint: ThirKind?,
     private val requireDefinition: Boolean,
 ) : Worker<ThirExpression>
 {
@@ -214,19 +216,30 @@ internal class IdentifierDefiner(
         
         val def: Any? = when (symbol)
         {
-            is ThirDeclaration.Const        -> symbol.def
-            is ThirDeclaration.Field        -> symbol.def
-            is ThirDeclaration.Function     -> symbol.def
-            is ThirDeclaration.GenericType  -> symbol.def
-            is ThirDeclaration.GenericValue -> symbol.def
-            is ThirDeclaration.Parameter    -> symbol.def
-            is ThirDeclaration.Structure    -> symbol.def
-            is ThirDeclaration.Variable     -> null
+            is ThirDeclaration.Const         -> symbol.def
+            is ThirDeclaration.Field         -> symbol.def
+            is ThirDeclaration.Function      -> symbol.def
+            is ThirDeclaration.Parameter     -> symbol.def
+            is ThirDeclaration.Structure     -> symbol.def
+            is ThirDeclaration.TypeParameter -> symbol.def
+            is ThirDeclaration.Variable      -> null
         }
         if (requireDefinition && def == null)
             return Outcome.RequireDefinition(setOf(symbol.id)).toFailure()
         
-        return ThirExpression.Load(candidate, symbol.type).toSuccess()
+        
+        
+        val type = when (symbol)
+        {
+            is ThirDeclaration.Const         -> symbol.kind
+            is ThirDeclaration.Field         -> symbol.kind
+            is ThirDeclaration.Function      -> ThirKind.Value(ThirType.Function(symbol.id, emptyList(), symbol.valueKind, symbol.errorKind))
+            is ThirDeclaration.Parameter     -> symbol.kind
+            is ThirDeclaration.Structure     -> ThirKind.Value(ThirType.Structure(symbol.id, emptyList()))
+            is ThirDeclaration.TypeParameter -> symbol.kind
+            is ThirDeclaration.Variable      -> symbol.kind
+        }
+        return ThirExpression.Load(candidate, type).toSuccess()
     }
 }
 
@@ -253,8 +266,6 @@ internal class CallDefiner(
         //       a parameter, not just when we can read it directly from the environment.
         if (node.instance !is HirExpression.Identifier)
             return Outcome.Unsupported("Functions as r-values are not supported yet").toFailure()
-        if (node.instance.typeParameters.isNotEmpty())
-            return Outcome.Unsupported("Type parameters on function identifiers are not supported yet").toFailure()
         
         // In order to resolve a function call, we need to find all possible overloads which are involved. Since we do
         // not know which candidate we will select ahead of time, we require that all candidates are declared before we
@@ -270,7 +281,7 @@ internal class CallDefiner(
         if (candidates.isEmpty())
             return Outcome.UnknownIdentifier(node.instance.name).toFailure()
         
-        val (overloads, errors) = candidates.map { resolve(it) }.partitionOutcomes()
+        val (overloads, errors) = candidates.map { resolve(it, node.instance) }.partitionOutcomes()
         val undeclaredParams = errors.filterIsInstance<Outcome.RequireDeclaration>().flatMap { it.ids }
         if (undeclaredParams.isNotEmpty())
             return Outcome.RequireDeclaration(undeclaredParams.toSet()).toFailure()
@@ -292,79 +303,39 @@ internal class CallDefiner(
      * we know which target we are applying it to - that is, to support use-friendly two-way type inference, we need to
      * know what types the callable expects.
      */
-    private fun resolve(symbol: ThirDeclaration): Result<ThirExpression, Outcome> = when (symbol)
+    private fun resolve(symbol: ThirDeclaration, instance: HirExpression.Identifier): Result<ThirExpression, Outcome> = when (symbol)
     {
-        is ThirDeclaration.Const        -> TODO()
-        is ThirDeclaration.Field        -> TODO()
-        is ThirDeclaration.Function     -> resolve(symbol)
-        is ThirDeclaration.GenericType  -> TODO()
-        is ThirDeclaration.GenericValue -> TODO()
-        is ThirDeclaration.Parameter    -> TODO()
-        is ThirDeclaration.Structure    -> resolve(symbol)
-        is ThirDeclaration.Variable     -> TODO()
+        is ThirDeclaration.Const         -> TODO()
+        is ThirDeclaration.Field         -> TODO()
+        is ThirDeclaration.Function      -> resolve(symbol, instance)
+        is ThirDeclaration.Parameter     -> TODO()
+        is ThirDeclaration.Structure     -> resolve(symbol)
+        is ThirDeclaration.TypeParameter -> TODO()
+        is ThirDeclaration.Variable      -> TODO()
     }
     
-    private fun resolve(symbol: ThirDeclaration.Function): Result<ThirExpression, Outcome>
+    private fun resolve(symbol: ThirDeclaration.Function, instance: HirExpression.Identifier): Result<ThirExpression, Outcome>
     {
-        val missing = symbol.parameterIds.filter { it !in env.declarations }
+        val missing = (symbol.parameterIds + symbol.typeParameterIds).filter { it !in env.declarations }
         if (missing.isNotEmpty())
             return Outcome.RequireDeclaration(missing.toSet()).toFailure()
         
-        val parameters = symbol.parameterIds
-            .mapNotNull { env.declarations[it] }
-            .filterIsInstance<ThirDeclaration.Parameter>()
+        val parameters = symbol.parameterIds.mapNotNull { env.declarations[it] }.filterIsInstance<ThirDeclaration.Parameter>()
+        val typeParameters = symbol.typeParameterIds.mapNotNull { env.declarations[it] }.filterIsInstance<ThirDeclaration.TypeParameter>()
+        val undefined = typeParameters.filter { it.def == null }.map { it.id }
+        if (undefined.isNotEmpty())
+            return Outcome.RequireDefinition(undefined.toSet()).toFailure()
         
-        // TODO: This implementation is a first-order implementation with many features lacking or fully ignored! Note
-        //       that we omit many details simply to get the ball rolling. We can implement the remaining features at a
-        //       more fitting hour.
-        val outputs = mutableMapOf<Int, ThirExpression>()
-        val nameToIndex = parameters.withIndex().associate { it.value.name to it.index }
-        
-        // Process all provided runtime parameters. If we have a name anywhere in the input set, we map from that name
-        // to the appropriate slot in the candidate signature. Otherwise, we use the parameter's position to determine
-        // which slot it should occupy.
-        for ((index, entry) in node.parameters.withIndex())
-        {
-            val (name, value) = entry
-            
-            // All names must match with a parameter from the function. We also cannot accept multiple of the same name
-            // during resolution. If the input does not have a name, we assume its current position in the parameter
-            // list corresponds to the slot it occupies.
-            // TODO: Figure out how to handle variadic parameters at some point in time.
-            val slot = if (name == null) index else nameToIndex[name] ?: return Outcome.UnexpectedParameter(name, value).toFailure()
-            if (slot in outputs)
-                TODO("Named and unnamed parameters are in conflict - '$entry' is not valid")
-            
-            // Now we can slot in the parameter in the appropriate slot.
-            val parameter = parameters.getOrNull(slot) ?: return Outcome.UnexpectedParameter(name, value).toFailure()
-            val expression = expressionDefinerOf(value, env, scope, parameter.type, requireDefinition).process().valueOr { return it.toFailure() }
-            if (expression.valueType != parameter.type)
-                return Outcome.MismatchedType(expected = parameter.type, received = expression.valueType).toFailure()
-            if (expression.errorType != ThirType.Void)
-                return Outcome.MismatchedType(expected = ThirType.Void, received = expression.errorType).toFailure()
-            
-            outputs[slot] = expression
-        }
-        
-        // Any runtime parameter not passed in might be populated with the default values where applicable. We need to
-        // insert all the missing values, if there are any.
-        for ((slot, parameter) in parameters.withIndex())
-        {
-            if (slot in outputs)
-                continue
-            
-            // We only assign the value if we have found a legit default value we can use. If the definition contains a
-            // default value, we resolve it and use it as usual.
-            val definition = parameter.def ?: return Outcome.RequireDefinition(setOf(parameter.id)).toFailure()
-            
-            outputs[slot] = definition.default ?: return Outcome.MissingParameter(parameter.name).toFailure()
-        }
+        val worker = ArgumentResolver(node.parameters, parameters, env, scope, requireDefinition)
+        val foo = TypeArgumentResolver(instance.typeParameters, typeParameters, env, scope, requireDefinition)
+        val bar = foo.process().valueOr { return it.toFailure() }
+        val baz = bar.map { Interpreter(env).evaluate(it).valueOrDie()!! }
         
         return ThirExpression.Call(
-            instance = ThirExpression.Load(symbol.id, symbol.type),
-            parameters = outputs.toSortedMap().values.toList(),
-            valueType = symbol.valueType,
-            errorType = symbol.errorType,
+            instance = ThirExpression.Type(ThirType.Function(symbol.id, baz, symbol.valueKind, symbol.errorKind)),
+            parameters = worker.process().valueOr { return it.toFailure() },
+            valueKind = symbol.valueKind,
+            errorKind = symbol.errorKind,
         ).toSuccess()
     }
     
@@ -374,13 +345,22 @@ internal class CallDefiner(
         if (missing.isNotEmpty())
             return Outcome.RequireDeclaration(missing.toSet()).toFailure()
         
+        val typeParameters = symbol.typeParameterIds
+            .mapNotNull { env.declarations[it] }
+            .filterIsInstance<ThirDeclaration.Parameter>()
         val fields = symbol.fieldIds
             .mapNotNull { env.declarations[it] }
             .filterIsInstance<ThirDeclaration.Field>()
         
+        val undefined = fields.filter { it.def == null }.map { it.id }
+        if (undefined.isNotEmpty())
+            return Outcome.RequireDefinition(undefined.toSet()).toFailure()
+        
+        val baz = typeParameters.map { Interpreter(env).evaluate(it.def!!.default!!).valueOrDie()!! }
+        
         return ThirExpression.Instance(
-            symbolId = symbol.id,
-            fields = fields.filter { it.def?.default != null }.associate { it.id to it.def!!.default!! }.toMutableMap(),
+            fields = fields.associate { it.id to it.def!!.default!! as ThirExpression.Canonical }.toMutableMap(),
+            valueKind = ThirKind.Value(ThirType.Structure(symbol.id, baz)),
         ).toSuccess()
     }
 }
@@ -408,18 +388,27 @@ internal class CatchDefiner(
         if (rhs == null)
             rhs = rhsWorker.process().valueOr { return it.toFailure() }
         
-        // TODO: We need to find some way to verify that the return values here correspond to the function signature.
-        if (lhs!!.valueType == ThirType.Void && node.operator == CatchOperator.HANDLE)
-            return Outcome.RequireType.toFailure()
-        if (lhs!!.errorType == ThirType.Void)
-            return Outcome.RequireType.toFailure()
-        if (rhs!!.valueType == ThirType.Void && node.operator == CatchOperator.HANDLE)
-            return Outcome.RequireType.toFailure()
-        if (rhs!!.errorType != ThirType.Void)
-            return Outcome.MismatchedType(ThirType.Void, rhs!!.errorType).toFailure()
-        if (rhs!!.valueType != lhs!!.valueType && node.operator == CatchOperator.HANDLE)
-            return Outcome.MismatchedType(lhs!!.valueType, rhs!!.valueType).toFailure()
+        val lhsValueKind = lhs!!.valueKind
+        val lhsErrorKind = lhs!!.errorKind
+        val rhsValueKind = rhs!!.valueKind
+        val rhsErrorKind = rhs!!.errorKind
         
+        if (lhsErrorKind is ThirKind.Nothing)
+            return Outcome.CatchLeftHasNoError.toFailure()
+        if (rhsErrorKind !is ThirKind.Nothing)
+            return Outcome.CatchRightHasError(rhsErrorKind).toFailure()
+        
+        if (node.operator == CatchOperator.HANDLE)
+        {
+            if (lhsValueKind is ThirKind.Nothing && rhsValueKind !is ThirKind.Nothing)
+                return Outcome.CatchHandleKindMismatch(lhsValueKind, rhsValueKind).toFailure()
+            if (lhsValueKind is ThirKind.Type && rhsValueKind !is ThirKind.Type)
+                return Outcome.CatchHandleKindMismatch(lhsValueKind, rhsValueKind).toFailure()
+            if (lhsValueKind is ThirKind.Value && rhsValueKind !is ThirKind.Value)
+                return Outcome.CatchHandleKindMismatch(lhsValueKind, rhsValueKind).toFailure()
+            if (lhsValueKind is ThirKind.Value && rhsValueKind is ThirKind.Value && lhsValueKind.type != rhsValueKind.type)
+                return Outcome.Unsupported("Catch unions are not yet supported").toFailure()
+        }
         return ThirExpression.Catch(lhs!!, rhs!!, node.operator).toSuccess()
     }
 }

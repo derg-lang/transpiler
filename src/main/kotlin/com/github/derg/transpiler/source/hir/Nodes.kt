@@ -148,14 +148,14 @@ sealed interface HirStatement
     
     /**
      * Variables are units which hold a specific [value] and associates the value with a binding [name]. Variables may
-     * optionally be given a [type], which is verified against the actual type of the expression. If the [type] is not
+     * optionally be given a [kind], which is verified against the actual type of the expression. If the [kind] is not
      * specified, it is inferred from [value]. Depending on the [assignability] of the variable, it may either be
      * assigned a new value or not.
      */
     data class Variable(
         val id: UUID,
         val name: String,
-        val type: HirType?,
+        val kind: HirKind?,
         val value: HirExpression,
         val assignability: Assignability,
     ) : HirStatement
@@ -168,13 +168,13 @@ sealed interface HirDeclaration : HirNode
 {
     /**
      * Constants are units which hold a specific [value] value and associates the value with a binding [name].
-     * Constants may optionally be given a [type], which is verified against the actual type of the expression. If the
-     * [type] is not specified, it is inferred from its [value].
+     * Constants may optionally be given a [kind], which is verified against the actual type of the expression. If the
+     * [kind] is not specified, it is inferred from its [value].
      */
     data class ConstantDecl(
         override val id: UUID,
         val name: String,
-        val type: HirType?,
+        val kind: HirKind?,
         val value: HirExpression,
     ) : HirDeclaration
     
@@ -184,7 +184,7 @@ sealed interface HirDeclaration : HirNode
     data class FieldDecl(
         override val id: UUID,
         val name: String,
-        val type: HirType?,
+        val kind: HirKind?,
         val default: HirExpression?,
         val visibility: Visibility,
         val assignability: Assignability,
@@ -199,8 +199,8 @@ sealed interface HirDeclaration : HirNode
         val visibility: Visibility,
         val typeParameters: List<TypeParameterDecl>,
         val parameters: List<ParameterDecl>,
-        val valueType: HirType?,
-        val errorType: HirType?,
+        val valueKind: HirKind,
+        val errorKind: HirKind,
         val body: List<HirStatement>,
     ) : HirDeclaration
     
@@ -210,7 +210,7 @@ sealed interface HirDeclaration : HirNode
     data class ParameterDecl(
         override val id: UUID,
         val name: String,
-        val type: HirType,
+        val kind: HirKind?,
         val default: HirExpression?,
         val passability: Passability,
     ) : HirNode
@@ -238,53 +238,12 @@ sealed interface HirDeclaration : HirNode
     ) : HirDeclaration
     
     /**
-     * Type parameters enable a developer to specify type information during compile time. These parameters are used to
-     * refine which generics are used in expressions.
+     * The type parameter represents a specific input expected as a type parameter on a symbol.
      */
     data class TypeParameterDecl(
         override val id: UUID,
         val name: String,
-        val type: HirType?,
+        val kind: HirKind,
         val default: HirExpression?,
     ) : HirNode
-}
-
-/**
- * The base type representation for the type system.
- */
-sealed interface HirType
-{
-    /**
-     * Expressions represents a type which has not yet been computed, or some constant term which should be used as a
-     * compile-time value.
-     *
-     * @param value The value which the type should be considered to be.
-     */
-    data class Expression(val value: HirExpression) : HirType
-    
-    /**
-     * Function types, which describes a callable object. Functions are permitted to return either a value type, or an
-     * error type, never both. Functions are allowed to take an arbitrary number of parameters.
-     *
-     * @param valueType The value type returned by this callable.
-     * @param errorType The error type returned by this callable.
-     * @param parameters The parameters which are acceptable by this callable.
-     */
-    data class Function(val valueType: HirType?, val errorType: HirType?, val parameters: List<Parameter>) : HirType
-    
-    /**
-     * Parameters represents an input into a callable object.
-     *
-     * @param name The name of the parameter.
-     * @param type The type information of the value provided with this parameter.
-     * @param default The default value of the parameter, if any.
-     * @param passability The specific mechanism of how the parameter should be passed into the function.
-     */
-    data class Parameter(val name: String, val type: HirType, val default: HirExpression?, val passability: Passability)
-    
-    /**
-     * Type types, which describe an arbitrary type. These things represent type information, rather than a value
-     * adhering to a specific type.
-     */
-    data object Type : HirType
 }

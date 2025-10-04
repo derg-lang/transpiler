@@ -4,21 +4,33 @@ import com.github.derg.transpiler.phases.resolver.*
 import com.github.derg.transpiler.source.*
 import java.util.*
 
+/**
+ * Registers [this] declaration to the given [scope].
+ */
+fun <Type : ThirDeclaration> Type.register(scope: Scope): Type =
+    apply { scope.register(id, name) }
+
+/**
+ * Declares [this] declaration as something which exists in the given [environment]. Note that if [this] declaration is
+ * defined, it will also be defined in the environment.
+ */
+fun <Type : ThirDeclaration> Type.declare(environment: Environment): Type =
+    apply { environment.declarations[id] = this }
+
 /////////////////////
 // Literal helpers //
 /////////////////////
 
-val Any.thir: ThirExpression
+val Any.thir: ThirExpression.Canonical
     get() = when (this)
     {
-        is ThirExpression -> this
-        is Boolean        -> ThirExpression.Bool(this)
-        is Int            -> ThirExpression.Int32(this)
-        is Long           -> ThirExpression.Int64(this)
-        is Float          -> ThirExpression.Float32(this)
-        is Double         -> ThirExpression.Float64(this)
-        is String         -> ThirExpression.Str(this)
-        else              -> throw IllegalArgumentException("Value $this does not represent a valid thir value")
+        is Boolean -> ThirExpression.Bool(this)
+        is Int     -> ThirExpression.Int32(this)
+        is Long    -> ThirExpression.Int64(this)
+        is Float   -> ThirExpression.Float32(this)
+        is Double  -> ThirExpression.Float64(this)
+        is String  -> ThirExpression.Str(this)
+        else       -> throw IllegalArgumentException("Value $this does not represent a valid thir value")
     }
 
 ////////////////////////
@@ -30,8 +42,8 @@ val Any.thir: ThirExpression
  */
 private fun op(function: ThirDeclaration.Function, vararg parameters: ThirExpression): ThirExpression
 {
-    val instance = ThirExpression.Load(function.id, function.type)
-    return ThirExpression.Call(instance, parameters.toList(), function.valueType, function.errorType)
+    val type = ThirType.Function(function.id, emptyList(), function.valueKind, function.errorKind)
+    return ThirExpression.Call(ThirExpression.Type(type), parameters.toList(), function.valueKind, function.errorKind)
 }
 
 val Boolean.thirNot get() = op(Builtin.BOOL_NOT, this.thir)
@@ -99,36 +111,46 @@ infix fun Boolean.thirAnd(that: Boolean) = op(Builtin.BOOL_AND, this.thir, that.
 infix fun Boolean.thirOr(that: Boolean) = op(Builtin.BOOL_OR, this.thir, that.thir)
 infix fun Boolean.thirXor(that: Boolean) = op(Builtin.BOOL_XOR, this.thir, that.thir)
 
-infix fun Any.thirCatch(that: Any) = ThirExpression.Catch(this.thir, that.thir, CatchOperator.HANDLE)
-infix fun Any.thirCatchError(that: Any) = ThirExpression.Catch(this.thir, that.thir, CatchOperator.RETURN_ERROR)
-infix fun Any.thirCatchValue(that: Any) = ThirExpression.Catch(this.thir, that.thir, CatchOperator.RETURN_VALUE)
+infix fun ThirExpression.thirCatch(that: ThirExpression) = ThirExpression.Catch(this, that, CatchOperator.HANDLE)
+infix fun ThirExpression.thirCatchError(that: ThirExpression) = ThirExpression.Catch(this, that, CatchOperator.RETURN_ERROR)
+infix fun ThirExpression.thirCatchValue(that: ThirExpression) = ThirExpression.Catch(this, that, CatchOperator.RETURN_VALUE)
 
-fun ThirDeclaration.thirIdent(): ThirExpression = ThirExpression.Load(id, type)
-fun ThirDeclaration.Function.thirCall(vararg parameters: Any) = ThirExpression.Call(
-    instance = thirIdent(),
-    parameters = parameters.map { it.thir },
-    valueType = valueType,
-    errorType = errorType,
-)
+fun ThirExpression.thirCall(vararg parameters: ThirExpression): ThirExpression
+{
+    val type = this as? ThirExpression.Type
+        ?: throw IllegalArgumentException("Invoking non-type expressions does not work")
+    val signature = type.raw as? ThirType.Function
+        ?: throw IllegalArgumentException("Invoking non-function expressions does not work")
+    return ThirExpression.Call(this, parameters.toList(), signature.valueKind, signature.errorKind)
+}
+
+fun ThirDeclaration.Function.thirLoad(vararg typeParameters: ThirExpression.Canonical) =
+    ThirExpression.Type(ThirType.Function(id, typeParameters.toList(), valueKind, errorKind))
+
+fun ThirDeclaration.Structure.thirLoad(vararg typeParameters: ThirExpression.Canonical) =
+    ThirExpression.Type(ThirType.Structure(id, typeParameters.toList()))
+
+fun ThirDeclaration.Variable.thirLoad() =
+    ThirExpression.Load(id, kind)
 
 ///////////////////////
 // Statement helpers //
 ///////////////////////
 
-infix fun ThirExpression.thirAssign(that: Any) = ThirStatement.Assign(this, that.thir)
+infix fun ThirExpression.thirAssign(that: ThirExpression) = ThirStatement.Assign(this, that)
 
-val Any.thirEval get() = ThirStatement.Evaluate(thir)
-val Any.thirReturnError get() = ThirStatement.ReturnError(thir)
-val Any.thirReturnValue get() = ThirStatement.ReturnValue(thir)
+val ThirExpression.thirEval get() = ThirStatement.Evaluate(this)
+val ThirExpression.returnError get() = ThirStatement.ReturnError(this)
+val ThirExpression.returnValue get() = ThirStatement.ReturnValue(this)
 
-fun Any.thirIf(
+fun ThirExpression.thirIf(
     success: List<ThirStatement> = emptyList(),
     failure: List<ThirStatement> = emptyList(),
-) = ThirStatement.If(thir, success, failure)
+) = ThirStatement.If(this, success, failure)
 
-fun Any.thirWhile(
+fun ThirExpression.thirWhile(
     statements: List<ThirStatement> = emptyList(),
-) = ThirStatement.While(thir, statements.toList())
+) = ThirStatement.While(this, statements.toList())
 
 ////////////////////
 // Symbol helpers //
@@ -137,43 +159,41 @@ fun Any.thirWhile(
 fun thirConstOf(
     id: UUID = UUID.randomUUID(),
     name: String = UUID.randomUUID().toString(),
-    type: ThirType = ThirType.Int32,
-    value: ThirExpression = ThirExpression.Int32(0),
+    kind: ThirKind = ThirKind.Value(ThirType.Int32),
+    value: ThirExpression.Canonical = ThirExpression.Int32(0),
 ) = ThirDeclaration.Const(
     id = id,
     name = name,
-    type = type,
+    kind = kind,
     def = ThirDeclaration.ConstDef(value = value),
 )
 
 fun thirFieldOf(
     id: UUID = UUID.randomUUID(),
     name: String = UUID.randomUUID().toString(),
-    type: ThirType = ThirType.Int32,
+    kind: ThirKind = ThirKind.Value(ThirType.Int32),
     default: ThirExpression? = null,
 ) = ThirDeclaration.Field(
     id = id,
     name = name,
-    type = type,
+    kind = kind,
     def = ThirDeclaration.FieldDef(default = default),
 )
 
 fun thirFunOf(
     id: UUID = UUID.randomUUID(),
     name: String = UUID.randomUUID().toString(),
-    valueType: ThirType = ThirType.Void,
-    errorType: ThirType = ThirType.Void,
-    genericTypeIds: List<UUID> = emptyList(),
-    genericValueIds: List<UUID> = emptyList(),
+    valueKind: ThirKind = ThirKind.Nothing,
+    errorKind: ThirKind = ThirKind.Nothing,
+    typeParameterIds: List<UUID> = emptyList(),
     parameterIds: List<UUID> = emptyList(),
     statements: List<ThirStatement> = emptyList(),
 ) = ThirDeclaration.Function(
     id = id,
     name = name,
-    valueType = valueType,
-    errorType = errorType,
-    genericTypeIds = genericTypeIds,
-    genericValueIds = genericValueIds,
+    valueKind = valueKind,
+    errorKind = errorKind,
+    typeParameterIds = typeParameterIds,
     parameterIds = parameterIds,
     def = ThirDeclaration.FunctionDef(statements = statements),
 )
@@ -182,39 +202,49 @@ fun thirParamOf(
     id: UUID = UUID.randomUUID(),
     name: String = UUID.randomUUID().toString(),
     passability: Passability = Passability.IN,
-    type: ThirType = ThirType.Int32,
+    kind: ThirKind = ThirKind.Value(ThirType.Int32),
     default: ThirExpression? = null,
 ) = ThirDeclaration.Parameter(
     id = id,
     name = name,
     passability = passability,
-    type = type,
+    kind = kind,
     def = ThirDeclaration.ParameterDef(default = default),
 )
 
 fun thirStructOf(
     id: UUID = UUID.randomUUID(),
     name: String = UUID.randomUUID().toString(),
-    genericTypeIds: List<UUID> = emptyList(),
-    genericValueIds: List<UUID> = emptyList(),
+    typeParameterIds: List<UUID> = emptyList(),
     fieldIds: List<UUID> = emptyList(),
 ) = ThirDeclaration.Structure(
     id = id,
     name = name,
-    genericTypeIds = genericTypeIds,
-    genericValueIds = genericValueIds,
+    typeParameterIds = typeParameterIds,
     fieldIds = fieldIds,
     def = ThirDeclaration.StructureDef(null),
+)
+
+fun thirTypeParamOf(
+    id: UUID = UUID.randomUUID(),
+    name: String = UUID.randomUUID().toString(),
+    kind: ThirKind = ThirKind.Type,
+    default: ThirExpression.Canonical? = null,
+) = ThirDeclaration.TypeParameter(
+    id = id,
+    name = name,
+    kind = kind,
+    def = ThirDeclaration.TypeParameterDef(default = default),
 )
 
 fun thirVarOf(
     id: UUID = UUID.randomUUID(),
     name: String = UUID.randomUUID().toString(),
-    type: ThirType = ThirType.Int32,
+    kind: ThirKind = ThirKind.Value(ThirType.Int32),
     value: ThirExpression = ThirExpression.Int32(0),
 ) = ThirDeclaration.Variable(
     id = id,
     name = name,
-    type = type,
+    kind = kind,
     def = ThirDeclaration.VariableDef(value = value),
 )

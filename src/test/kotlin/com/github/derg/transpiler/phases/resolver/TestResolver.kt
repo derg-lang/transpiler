@@ -14,9 +14,9 @@ class TestResolver
     @Test
     fun `Hmm, what to do`()
     {
-        val input = hirConstOf(type = BOOL_TYPE_NAME.hirIdent().hirType(), value = true.hir)
+        val input = hirConstOf(kind = BOOL_TYPE_NAME.hirIdent().type.kind, value = true.hir)
         val segment = hirSegmentOf(constants = listOf(input))
-        val expected = thirConstOf(id = input.id, name = input.name, type = ThirType.Bool, value = true.thir)
+        val expected = thirConstOf(id = input.id, name = input.name, kind = ThirKind.Value(ThirType.Bool), value = true.thir)
         
         assertSuccess(Unit, resolver.resolve(segment))
         assertEquals(expected, Builtin.environment.declarations[input.id])

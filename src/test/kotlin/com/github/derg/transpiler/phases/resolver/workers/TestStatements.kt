@@ -27,10 +27,10 @@ class TestEvaluateDefiner
     @Test
     fun `Given value type, when processing, then error`()
     {
-        val function = thirFunOf(valueType = ThirType.Int32, errorType = ThirType.Void).register().declare()
+        val function = thirFunOf(valueKind = ThirKind.Value(ThirType.Int32), errorKind = ThirKind.Nothing).register().declare()
         
         val worker = EvaluateDefiner(function.name.hirIdent().hirCall().hirEval, env, scope)
-        val expected = Outcome.MismatchedType(expected = ThirType.Void, received = ThirType.Int32)
+        val expected = Outcome.EvaluationHasValue(ThirKind.Value(ThirType.Int32))
         
         assertFailure(expected, worker.process())
     }
@@ -38,10 +38,10 @@ class TestEvaluateDefiner
     @Test
     fun `Given error type, when processing, then error`()
     {
-        val function = thirFunOf(valueType = ThirType.Void, errorType = ThirType.Int32).register().declare()
+        val function = thirFunOf(valueKind = ThirKind.Nothing, errorKind = ThirKind.Value(ThirType.Int32)).register().declare()
         
         val worker = EvaluateDefiner(function.name.hirIdent().hirCall().hirEval, env, scope)
-        val expected = Outcome.MismatchedType(expected = ThirType.Void, received = ThirType.Int32)
+        val expected = Outcome.EvaluationHasError(ThirKind.Value(ThirType.Int32))
         
         assertFailure(expected, worker.process())
     }
@@ -49,10 +49,10 @@ class TestEvaluateDefiner
     @Test
     fun `Given neither value nor error type, when processing, then successful`()
     {
-        val function = thirFunOf(valueType = ThirType.Void, errorType = ThirType.Void).register().declare()
+        val function = thirFunOf(valueKind = ThirKind.Nothing, errorKind = ThirKind.Nothing).register().declare()
         
         val worker = EvaluateDefiner(function.name.hirIdent().hirCall().hirEval, env, scope)
-        val expected = function.thirCall().thirEval
+        val expected = function.thirLoad().thirCall().thirEval
         
         assertSuccess(expected, worker.process())
     }
@@ -82,7 +82,7 @@ class TestIfDefiner
         fun `Given valid predicate value type, when processing, then success`()
         {
             val worker = IfDefiner(true.hirIf(), env, scope)
-            val expected = true.thirIf()
+            val expected = true.thir.thirIf()
             
             assertSuccess(expected, worker.process())
         }
@@ -91,7 +91,7 @@ class TestIfDefiner
         fun `Given invalid predicate value type, when processing, then error`()
         {
             val worker = IfDefiner(0.hirIf(), env, scope)
-            val expected = Outcome.MismatchedType(expected = ThirType.Bool, received = ThirType.Int32)
+            val expected = Outcome.PredicateWrongType(ThirType.Int32)
             
             assertFailure(expected, worker.process())
         }
@@ -99,10 +99,10 @@ class TestIfDefiner
         @Test
         fun `Given no predicate value type, when processing, then error`()
         {
-            val function = thirFunOf(valueType = ThirType.Void, errorType = ThirType.Void).register().declare()
+            val function = thirFunOf(valueKind = ThirKind.Nothing, errorKind = ThirKind.Nothing).register().declare()
             
             val worker = IfDefiner(function.name.hirIdent().hirCall().hirIf(), env, scope)
-            val expected = Outcome.MismatchedType(expected = ThirType.Bool, received = ThirType.Void)
+            val expected = Outcome.PredicateWrongKind(ThirKind.Nothing)
             
             assertFailure(expected, worker.process())
         }
@@ -110,10 +110,10 @@ class TestIfDefiner
         @Test
         fun `Given any predicate error type, when processing, then error`()
         {
-            val function = thirFunOf(valueType = ThirType.Bool, errorType = ThirType.Int32).register().declare()
+            val function = thirFunOf(valueKind = ThirKind.Value(ThirType.Bool), errorKind = ThirKind.Value(ThirType.Int32)).register().declare()
             
             val worker = IfDefiner(function.name.hirIdent().hirCall().hirIf(), env, scope)
-            val expected = Outcome.MismatchedType(expected = ThirType.Void, received = ThirType.Int32)
+            val expected = Outcome.PredicateHasError(ThirKind.Value(ThirType.Int32))
             
             assertFailure(expected, worker.process())
         }
@@ -126,7 +126,7 @@ class TestIfDefiner
         fun `Given valid success branch statement, when processing, then success`()
         {
             val worker = IfDefiner(true.hirIf(success = listOf(0.hirReturnValue)), env, scope)
-            val expected = true.thirIf(success = listOf(0.thirReturnValue))
+            val expected = true.thir.thirIf(success = listOf(0.thir.returnValue))
             
             assertSuccess(expected, worker.process())
         }
@@ -135,7 +135,7 @@ class TestIfDefiner
         fun `Given valid failure branch statement, when processing, then success`()
         {
             val worker = IfDefiner(true.hirIf(failure = listOf(0.hirReturnValue)), env, scope)
-            val expected = true.thirIf(failure = listOf(0.thirReturnValue))
+            val expected = true.thir.thirIf(failure = listOf(0.thir.returnValue))
             
             assertSuccess(expected, worker.process())
         }
@@ -165,9 +165,9 @@ class TestInitializeDefiner
     @Test
     fun `Given defined variable, when processing, then registered in scope`()
     {
-        val input = hirVarOf(type = Builtin.BOOL.name.hirIdent().hirType(), value = 0.hir)
-        val variable = thirVarOf(id = input.id, name = input.name, type = ThirType.Int32, value = 0.thir).declare()
-        val expected = variable.thirIdent() thirAssign 0
+        val input = hirVarOf(kind = Builtin.BOOL.name.hirIdent().type.kind, value = 0.hir)
+        val variable = thirVarOf(id = input.id, name = input.name, kind = ThirKind.Value(ThirType.Int32), value = 0.thir).declare()
+        val expected = variable.thirLoad() thirAssign 0.thir
         
         assertFalse(variable.id in scope.find(input.name))
         assertSuccess(expected, InitializeDefiner(input, env, scope).process())
@@ -196,7 +196,7 @@ class TestReturnErrorDefiner
     fun `Given valid expression, when processing, then success`()
     {
         val worker = ReturnErrorDefiner(0.hirReturnError, env, scope)
-        val expected = 0.thirReturnError
+        val expected = 0.thir.returnError
         
         assertSuccess(expected, worker.process())
     }
@@ -204,10 +204,10 @@ class TestReturnErrorDefiner
     @Test
     fun `Given any error type, when processing, then error`()
     {
-        val function = thirFunOf(valueType = ThirType.Bool, errorType = ThirType.Int32).register().declare()
+        val function = thirFunOf(valueKind = ThirKind.Value(ThirType.Bool), errorKind = ThirKind.Value(ThirType.Int32)).register().declare()
         
         val worker = ReturnErrorDefiner(function.name.hirIdent().hirCall().hirReturnError, env, scope)
-        val expected = Outcome.MismatchedType(expected = ThirType.Void, received = ThirType.Int32)
+        val expected = Outcome.ReturnHasError(ThirKind.Value(ThirType.Int32))
         
         assertFailure(expected, worker.process())
     }
@@ -234,7 +234,7 @@ class TestReturnValueDefiner
     fun `Given valid expression, when processing, then success`()
     {
         val worker = ReturnValueDefiner(0.hirReturnValue, env, scope)
-        val expected = 0.thirReturnValue
+        val expected = 0.thir.returnValue
         
         assertSuccess(expected, worker.process())
     }
@@ -242,10 +242,10 @@ class TestReturnValueDefiner
     @Test
     fun `Given any error type, when processing, then error`()
     {
-        val function = thirFunOf(valueType = ThirType.Bool, errorType = ThirType.Int32).register().declare()
+        val function = thirFunOf(valueKind = ThirKind.Value(ThirType.Bool), errorKind = ThirKind.Value(ThirType.Int32)).register().declare()
         
         val worker = ReturnValueDefiner(function.name.hirIdent().hirCall().hirReturnValue, env, scope)
-        val expected = Outcome.MismatchedType(expected = ThirType.Void, received = ThirType.Int32)
+        val expected = Outcome.ReturnHasError(ThirKind.Value(ThirType.Int32))
         
         assertFailure(expected, worker.process())
     }
@@ -275,7 +275,7 @@ class TestWhileDefiner
         fun `Given valid predicate value type, when processing, then success`()
         {
             val worker = WhileDefiner(true.hirWhile(), env, scope)
-            val expected = true.thirWhile()
+            val expected = true.thir.thirWhile()
             
             assertSuccess(expected, worker.process())
         }
@@ -284,7 +284,7 @@ class TestWhileDefiner
         fun `Given invalid predicate value type, when processing, then error`()
         {
             val worker = WhileDefiner(0.hirWhile(), env, scope)
-            val expected = Outcome.MismatchedType(expected = ThirType.Bool, received = ThirType.Int32)
+            val expected = Outcome.PredicateWrongType(ThirType.Int32)
             
             assertFailure(expected, worker.process())
         }
@@ -292,10 +292,10 @@ class TestWhileDefiner
         @Test
         fun `Given no predicate value type, when processing, then error`()
         {
-            val function = thirFunOf(valueType = ThirType.Void, errorType = ThirType.Void).register().declare()
+            val function = thirFunOf(valueKind = ThirKind.Nothing, errorKind = ThirKind.Nothing).register().declare()
             
             val worker = WhileDefiner(function.name.hirIdent().hirCall().hirWhile(), env, scope)
-            val expected = Outcome.MismatchedType(expected = ThirType.Bool, received = ThirType.Void)
+            val expected = Outcome.PredicateWrongKind(ThirKind.Nothing)
             
             assertFailure(expected, worker.process())
         }
@@ -303,10 +303,10 @@ class TestWhileDefiner
         @Test
         fun `Given any predicate error type, when processing, then error`()
         {
-            val function = thirFunOf(valueType = ThirType.Bool, errorType = ThirType.Int32).register().declare()
+            val function = thirFunOf(valueKind = ThirKind.Value(ThirType.Bool), errorKind = ThirKind.Value(ThirType.Int32)).register().declare()
             
             val worker = WhileDefiner(function.name.hirIdent().hirCall().hirWhile(), env, scope)
-            val expected = Outcome.MismatchedType(expected = ThirType.Void, received = ThirType.Int32)
+            val expected = Outcome.PredicateHasError(ThirKind.Value(ThirType.Int32))
             
             assertFailure(expected, worker.process())
         }
@@ -319,7 +319,7 @@ class TestWhileDefiner
         fun `Given valid statement, when processing, then success`()
         {
             val worker = WhileDefiner(true.hirWhile(statements = listOf(0.hirReturnValue)), env, scope)
-            val expected = true.thirWhile(statements = listOf(0.thirReturnValue))
+            val expected = true.thir.thirWhile(statements = listOf(0.thir.returnValue))
             
             assertSuccess(expected, worker.process())
         }

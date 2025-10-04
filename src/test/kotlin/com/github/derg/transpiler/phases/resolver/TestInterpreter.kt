@@ -92,16 +92,16 @@ class TestInterpreter
     @Test
     fun `Given custom function, when returning, then correct value is returned`()
     {
-        val nothing = thirFunOf(valueType = ThirType.Void, errorType = ThirType.Void, statements = listOf(ThirStatement.Return))
-        val value = thirFunOf(valueType = ThirType.Int32, errorType = ThirType.Void, statements = listOf(1.thirReturnValue))
-        val error = thirFunOf(valueType = ThirType.Void, errorType = ThirType.Int32, statements = listOf(2.thirReturnError))
+        val nothing = thirFunOf(valueKind = ThirKind.Nothing, errorKind = ThirKind.Nothing, statements = listOf(ThirStatement.Return))
+        val value = thirFunOf(valueKind = ThirKind.Value(ThirType.Int32), errorKind = ThirKind.Nothing, statements = listOf(1.thir.returnValue))
+        val error = thirFunOf(valueKind = ThirKind.Nothing, errorKind = ThirKind.Value(ThirType.Int32), statements = listOf(2.thir.returnError))
         
         interpreter.registerFunction(nothing)
         interpreter.registerFunction(value)
         interpreter.registerFunction(error)
         
-        assertSuccess(null, interpreter.evaluate(nothing.thirCall()))
-        assertSuccess(1.thir, interpreter.evaluate(value.thirCall()))
-        assertFailure(2.thir, interpreter.evaluate(error.thirCall()))
+        assertSuccess(null, interpreter.evaluate(nothing.thirLoad().thirCall()))
+        assertSuccess(1.thir, interpreter.evaluate(value.thirLoad().thirCall()))
+        assertFailure(2.thir, interpreter.evaluate(error.thirLoad().thirCall()))
     }
 }

@@ -1,7 +1,6 @@
 package com.github.derg.transpiler.source.thir
 
 import com.github.derg.transpiler.source.*
-import com.github.derg.transpiler.source.hir.*
 import java.util.*
 
 /**
@@ -15,95 +14,86 @@ import java.util.*
  */
 sealed interface ThirExpression
 {
-    val valueType: ThirType
-    val errorType: ThirType
+    /**
+     * Canonical expressions are reduced to their simplest forms. These are the forms of expressions which are folded
+     * into their simplest representations, or have been evaluated to something which is in its canonical form.
+     */
+    sealed interface Canonical : ThirExpression
+    
+    val valueKind: ThirKind
+    val errorKind: ThirKind
     
     /**
      * Boolean values, `true` and `false`.
      */
-    data class Bool(val raw: Boolean) : ThirExpression
+    data class Bool(val raw: Boolean) : Canonical
     {
-        override val valueType: ThirType get() = ThirType.Bool
-        override val errorType: ThirType get() = ThirType.Void
+        override val valueKind: ThirKind get() = ThirKind.Value(ThirType.Bool)
+        override val errorKind: ThirKind get() = ThirKind.Nothing
     }
     
     /**
      * 32-bit signed integers.
      */
-    data class Int32(val raw: Int) : ThirExpression
+    data class Int32(val raw: Int) : Canonical
     {
-        override val valueType: ThirType get() = ThirType.Int32
-        override val errorType: ThirType get() = ThirType.Void
+        override val valueKind: ThirKind get() = ThirKind.Value(ThirType.Int32)
+        override val errorKind: ThirKind get() = ThirKind.Nothing
     }
     
     /**
      * 64-bit signed integers.
      */
-    data class Int64(val raw: Long) : ThirExpression
+    data class Int64(val raw: Long) : Canonical
     {
-        override val valueType: ThirType get() = ThirType.Int64
-        override val errorType: ThirType get() = ThirType.Void
+        override val valueKind: ThirKind get() = ThirKind.Value(ThirType.Int64)
+        override val errorKind: ThirKind get() = ThirKind.Nothing
     }
     
     /**
      * 32-bit floating point numbers.
      */
-    data class Float32(val raw: Float) : ThirExpression
+    data class Float32(val raw: Float) : Canonical
     {
-        override val valueType: ThirType get() = ThirType.Float32
-        override val errorType: ThirType get() = ThirType.Void
+        override val valueKind: ThirKind get() = ThirKind.Value(ThirType.Float32)
+        override val errorKind: ThirKind get() = ThirKind.Nothing
     }
     
     /**
      * 64-bit floating point numbers.
      */
-    data class Float64(val raw: Double) : ThirExpression
+    data class Float64(val raw: Double) : Canonical
     {
-        override val valueType: ThirType get() = ThirType.Float64
-        override val errorType: ThirType get() = ThirType.Void
+        override val valueKind: ThirKind get() = ThirKind.Value(ThirType.Float64)
+        override val errorKind: ThirKind get() = ThirKind.Nothing
     }
     
     /**
      * Unicode character sequences.
      */
-    data class Str(val raw: String) : ThirExpression
+    data class Str(val raw: String) : Canonical
     {
-        override val valueType: ThirType get() = ThirType.Str
-        override val errorType: ThirType get() = ThirType.Void
+        override val valueKind: ThirKind get() = ThirKind.Value(ThirType.Str)
+        override val errorKind: ThirKind get() = ThirKind.Nothing
     }
     
     /**
-     * Data type.
+     * Data type as a value, used for compile-time computation with type information.
      */
-    data class Type(val raw: ThirType) : ThirExpression
+    data class Type(val raw: ThirType) : Canonical
     {
-        override val valueType: ThirType get() = ThirType.Type
-        override val errorType: ThirType get() = ThirType.Void
+        override val valueKind: ThirKind get() = ThirKind.Type
+        override val errorKind: ThirKind get() = ThirKind.Nothing
     }
     
     /**
      * Instance of a structure.
+     *
+     * @param fields The current values every field of the structure has in this instance.
      */
-    data class Instance(val symbolId: UUID, val fields: MutableMap<UUID, ThirExpression>) : ThirExpression
+    data class Instance(val fields: MutableMap<UUID, Canonical>, override val valueKind: ThirKind) : Canonical
     {
-        override val valueType: ThirType get() = ThirType.Structure(symbolId)
-        override val errorType: ThirType get() = ThirType.Void
-    }
-    
-    /**
-     * Retrieves a symbol value from memory.
-     */
-    data class Load(val symbolId: UUID, override val valueType: ThirType) : ThirExpression
-    {
-        override val errorType: ThirType get() = ThirType.Void
-    }
-    
-    /**
-     * Retrieves the value of the given [fieldId] from the given [instance].
-     */
-    data class Field(val instance: ThirExpression, val fieldId: UUID, override val valueType: ThirType) : ThirExpression
-    {
-        override val errorType: ThirType get() = ThirType.Void
+        override val errorKind: ThirKind get() = ThirKind.Nothing
     }
     
     /**
@@ -112,8 +102,8 @@ sealed interface ThirExpression
     data class Call(
         val instance: ThirExpression,
         val parameters: List<ThirExpression>,
-        override val valueType: ThirType,
-        override val errorType: ThirType,
+        override val valueKind: ThirKind,
+        override val errorKind: ThirKind,
     ) : ThirExpression
     
     /**
@@ -123,8 +113,24 @@ sealed interface ThirExpression
      */
     data class Catch(val lhs: ThirExpression, val rhs: ThirExpression, val operator: CatchOperator) : ThirExpression
     {
-        override val valueType: ThirType get() = lhs.valueType
-        override val errorType: ThirType get() = ThirType.Void
+        override val valueKind: ThirKind get() = lhs.valueKind
+        override val errorKind: ThirKind get() = ThirKind.Nothing
+    }
+    
+    /**
+     * Retrieves the value of the given [fieldId] from the given [instance].
+     */
+    data class Field(val instance: ThirExpression, val fieldId: UUID, override val valueKind: ThirKind) : ThirExpression
+    {
+        override val errorKind: ThirKind get() = ThirKind.Nothing
+    }
+    
+    /**
+     * Retrieves a symbol value from memory.
+     */
+    data class Load(val symbolId: UUID, override val valueKind: ThirKind) : ThirExpression
+    {
+        override val errorKind: ThirKind get() = ThirKind.Nothing
     }
 }
 
@@ -187,7 +193,6 @@ sealed interface ThirDeclaration
 {
     val id: UUID
     val name: String
-    val type: ThirType
     
     /**
      * Constants represents bindings evaluated at compile-time.
@@ -195,12 +200,12 @@ sealed interface ThirDeclaration
     data class Const(
         override val id: UUID,
         override val name: String,
-        override val type: ThirType,
+        val kind: ThirKind,
         var def: ConstDef?,
     ) : ThirDeclaration
     
     data class ConstDef(
-        val value: ThirExpression,
+        val value: ThirExpression.Canonical,
     )
     
     /**
@@ -209,7 +214,7 @@ sealed interface ThirDeclaration
     data class Field(
         override val id: UUID,
         override val name: String,
-        override val type: ThirType,
+        val kind: ThirKind,
         var def: FieldDef?,
     ) : ThirDeclaration
     
@@ -223,16 +228,12 @@ sealed interface ThirDeclaration
     data class Function(
         override val id: UUID,
         override val name: String,
-        val valueType: ThirType,
-        val errorType: ThirType,
-        val genericTypeIds: List<UUID>,
-        val genericValueIds: List<UUID>,
+        val valueKind: ThirKind,
+        val errorKind: ThirKind,
+        val typeParameterIds: List<UUID>,
         val parameterIds: List<UUID>,
         var def: FunctionDef?,
     ) : ThirDeclaration
-    {
-        override val type: ThirType get() = ThirType.Function(valueType, errorType)
-    }
     
     data class FunctionDef(
         val statements: List<ThirStatement>,
@@ -245,7 +246,7 @@ sealed interface ThirDeclaration
         override val id: UUID,
         override val name: String,
         val passability: Passability,
-        override val type: ThirType,
+        val kind: ThirKind,
         var def: ParameterDef?,
     ) : ThirDeclaration
     
@@ -259,17 +260,27 @@ sealed interface ThirDeclaration
     data class Structure(
         override val id: UUID,
         override val name: String,
-        val genericTypeIds: List<UUID>,
-        val genericValueIds: List<UUID>,
+        val typeParameterIds: List<UUID>,
         val fieldIds: List<UUID>,
         var def: StructureDef?,
     ) : ThirDeclaration
-    {
-        override val type: ThirType get() = ThirType.Type
-    }
     
     data class StructureDef(
         val placeholder: Nothing?,
+    )
+    
+    /**
+     * Parameters are values which are passed into functions.
+     */
+    data class TypeParameter(
+        override val id: UUID,
+        override val name: String,
+        val kind: ThirKind,
+        var def: TypeParameterDef?,
+    ) : ThirDeclaration
+    
+    data class TypeParameterDef(
+        val default: ThirExpression.Canonical?,
     )
     
     /**
@@ -278,43 +289,12 @@ sealed interface ThirDeclaration
     data class Variable(
         override val id: UUID,
         override val name: String,
-        override val type: ThirType,
+        val kind: ThirKind,
         var def: VariableDef?,
     ) : ThirDeclaration
     
     data class VariableDef(
         val value: ThirExpression,
-    )
-    
-    /**
-     * Generic type parameter, represents a type known at or computed during compile-time execution.
-     */
-    data class GenericType(
-        override val id: UUID,
-        override val name: String,
-        val conceptIds: List<UUID>,
-        var def: GenericTypeDef?,
-    ) : ThirDeclaration
-    {
-        override val type: ThirType get() = ThirType.Type
-    }
-    
-    data class GenericTypeDef(
-        val default: ThirType?,
-    )
-    
-    /**
-     * Generic expression parameter, represents a value known at or computed during compile-time execution.
-     */
-    data class GenericValue(
-        override val id: UUID,
-        override val name: String,
-        override val type: ThirType,
-        var def: GenericValueDef?,
-    ) : ThirDeclaration
-    
-    data class GenericValueDef(
-        val default: ThirExpression?,
     )
 }
 
@@ -326,7 +306,7 @@ val b = 0
 val b = ThirDeclaration.Const(
     id = UUID.randomUUID(),
     name = "b",
-    type = ThirType.Int32,
+    kind = ThirKind.Value(ThirType.Int32),
     def = ThirDeclaration.ConstDef(
         value = ThirExpression.Int32(0),
     )
@@ -334,20 +314,20 @@ val b = ThirDeclaration.Const(
 val a = ThirDeclaration.Const(
     id = UUID.randomUUID(),
     name = "a",
-    type = ThirType.Int32,
+    kind = ThirKind.Value(ThirType.Int32),
     def = ThirDeclaration.ConstDef(
-        value = ThirExpression.Load(b.id, b.type)
+        value = ThirExpression.Int32(0),
     )
 )
 
 // Here is some code samples involving generics:
 /*
-struct Ptr[Type]
+struct Ptr[Type: __builtin_type]
 {
     // builtin
 }
 
-struct Array[Element, size: Int32]
+struct Array[Element: __builtin_type, size: Int32]
 {
     val data: Ptr[Type = Element]
     val test = size
@@ -357,43 +337,42 @@ val collection: Array[Bool, 17] = magic()
 val foo = 42
 val bar: Array[Str, foo] = magic()
 */
-val ptrType = ThirDeclaration.GenericType(
+val ptrType = ThirDeclaration.TypeParameter(
     id = UUID.randomUUID(),
     name = "Type",
-    conceptIds = emptyList(),
-    def = ThirDeclaration.GenericTypeDef(
+    kind = ThirKind.Type,
+    def = ThirDeclaration.TypeParameterDef(
         default = null,
     )
 )
 val ptr = ThirDeclaration.Structure(
     id = UUID.randomUUID(),
     name = "Ptr",
-    genericTypeIds = listOf(ptrType.id),
-    genericValueIds = emptyList(),
+    typeParameterIds = listOf(ptrType.id),
     fieldIds = emptyList(),
     def = ThirDeclaration.StructureDef(null),
 )
 
-val arrayElement = ThirDeclaration.GenericType(
+val arrayElement = ThirDeclaration.TypeParameter(
     id = UUID.randomUUID(),
     name = "Element",
-    conceptIds = emptyList(),
-    def = ThirDeclaration.GenericTypeDef(
+    kind = ThirKind.Type,
+    def = ThirDeclaration.TypeParameterDef(
         default = null,
     )
 )
-val arraySize = ThirDeclaration.GenericValue(
+val arraySize = ThirDeclaration.TypeParameter(
     id = UUID.randomUUID(),
     name = "size",
-    type = ThirType.Int32,
-    def = ThirDeclaration.GenericValueDef(
+    kind = ThirKind.Value(ThirType.Int32),
+    def = ThirDeclaration.TypeParameterDef(
         default = null,
     )
 )
 val arrayData = ThirDeclaration.Field(
     id = UUID.randomUUID(),
     name = "data",
-    type = ThirType.Instance(ptr.id, mapOf(ptrType.id to ThirType.Structure(arrayElement.id)), emptyMap()),
+    kind = ThirKind.Value(ThirType.Structure(ptr.id, listOf(ThirExpression.Type(ThirType.TypeParameterRef(arrayElement.id))))),
     def = ThirDeclaration.FieldDef(
         default = null,
     )
@@ -401,16 +380,15 @@ val arrayData = ThirDeclaration.Field(
 val arrayTest = ThirDeclaration.Field(
     id = UUID.randomUUID(),
     name = "test",
-    type = ThirType.Int32,
+    kind = ThirKind.Value(ThirType.Int32),
     def = ThirDeclaration.FieldDef(
-        default = ThirExpression.Load(arraySize.id, arraySize.type),
+        default = ThirExpression.Load(arraySize.id, ThirKind.Value(ThirType.Int32)),
     )
 )
 val array = ThirDeclaration.Structure(
     id = UUID.randomUUID(),
     name = "Array",
-    genericTypeIds = listOf(arrayElement.id),
-    genericValueIds = listOf(arraySize.id),
+    typeParameterIds = listOf(arrayElement.id, arraySize.id),
     fieldIds = listOf(arrayData.id, arrayTest.id),
     def = ThirDeclaration.StructureDef(null),
 )
@@ -418,15 +396,15 @@ val array = ThirDeclaration.Structure(
 val collection = ThirDeclaration.Const(
     id = UUID.randomUUID(),
     name = "collection",
-    type = ThirType.Instance(array.id, mapOf(arrayElement.id to ThirType.Bool), mapOf(arraySize.id to ThirExpression.Int32(17))),
+    kind = ThirKind.Value(ThirType.Structure(array.id, listOf(ThirExpression.Type(ThirType.Bool), ThirExpression.Int32(17)))),
     def = ThirDeclaration.ConstDef(
-        value = ThirExpression.Load(UUID.randomUUID(), ThirType.Structure(array.id)),
+        value = ThirExpression.Type(ThirType.Str), // NOTE: Just a placeholder, this is a stand-in for a legal value.
     )
 )
 val foo = ThirDeclaration.Const(
     id = UUID.randomUUID(),
     name = "foo",
-    type = ThirType.Int32,
+    kind = ThirKind.Value(ThirType.Int32),
     def = ThirDeclaration.ConstDef(
         value = ThirExpression.Int32(42),
     )
@@ -434,9 +412,9 @@ val foo = ThirDeclaration.Const(
 val bar = ThirDeclaration.Const(
     id = UUID.randomUUID(),
     name = "bar",
-    type = ThirType.Instance(array.id, mapOf(arrayElement.id to ThirType.Str), mapOf(arraySize.id to ThirExpression.Load(foo.id, foo.type))),
+    kind = ThirKind.Value(ThirType.Structure(array.id, listOf(ThirExpression.Type(ThirType.Str), ThirExpression.Int32(42)))),
     def = ThirDeclaration.ConstDef(
-        value = ThirExpression.Load(UUID.randomUUID(), ThirType.Structure(array.id)),
+        value = ThirExpression.Type(ThirType.Str), // NOTE: Just a placeholder, this is a stand-in for a legal value.
     )
 )
 

@@ -46,7 +46,8 @@ fun hirIntegerOf(
 // Type helpers //
 //////////////////
 
-fun HirExpression.hirType() = HirType.Expression(this)
+val HirExpression.type: HirType.Expression get() = HirType.Expression(this)
+val HirType.kind: HirKind.Value get() = HirKind.Value(this)
 
 ////////////////////////
 // Expression helpers //
@@ -118,23 +119,23 @@ fun Any.hirWhile(
 
 fun hirConstOf(
     name: String = UUID.randomUUID().toString(),
-    type: HirType? = INT32_TYPE_NAME.hirIdent().hirType(),
+    kind: HirKind? = INT32_TYPE_NAME.hirIdent().type.kind,
     value: HirExpression = 0.hir,
 ) = HirDeclaration.ConstantDecl(
     id = UUID.randomUUID(),
     name = name,
-    type = type,
+    kind = kind,
     value = value,
 )
 
 fun hirFieldOf(
     name: String = UUID.randomUUID().toString(),
-    type: HirType = INT32_TYPE_NAME.hirIdent().hirType(),
+    kind: HirKind = INT32_TYPE_NAME.hirIdent().type.kind,
     default: HirExpression? = null,
 ) = HirDeclaration.FieldDecl(
     id = UUID.randomUUID(),
     name = name,
-    type = type,
+    kind = kind,
     default = default,
     visibility = Visibility.PRIVATE,
     assignability = Assignability.FINAL,
@@ -144,8 +145,8 @@ fun hirFunOf(
     name: String = UUID.randomUUID().toString(),
     typeParameters: List<HirDeclaration.TypeParameterDecl> = emptyList(),
     parameters: List<HirDeclaration.ParameterDecl> = emptyList(),
-    valueType: HirType? = null,
-    errorType: HirType? = null,
+    valueKind: HirKind = HirKind.Nothing,
+    errorKind: HirKind = HirKind.Nothing,
     statements: List<HirStatement> = emptyList(),
 ) = HirDeclaration.FunctionDecl(
     id = UUID.randomUUID(),
@@ -153,35 +154,19 @@ fun hirFunOf(
     visibility = Visibility.PRIVATE,
     typeParameters = typeParameters,
     parameters = parameters,
-    valueType = valueType,
-    errorType = errorType,
+    valueKind = valueKind,
+    errorKind = errorKind,
     body = statements,
-)
-
-fun hirLitOf(
-    name: String = UUID.randomUUID().toString(),
-    parameter: HirDeclaration.ParameterDecl = hirParamOf(),
-    valueType: HirType = INT32_TYPE_NAME.hirIdent().hirType(),
-    body: List<HirStatement> = emptyList(),
-) = HirDeclaration.FunctionDecl(
-    id = UUID.randomUUID(),
-    name = name,
-    visibility = Visibility.PRIVATE,
-    typeParameters = emptyList(),
-    parameters = listOf(parameter),
-    valueType = valueType,
-    errorType = null,
-    body = body,
 )
 
 fun hirParamOf(
     name: String = UUID.randomUUID().toString(),
-    type: HirType = INT32_TYPE_NAME.hirIdent().hirType(),
+    kind: HirKind = INT32_TYPE_NAME.hirIdent().type.kind,
     default: HirExpression? = null,
 ) = HirDeclaration.ParameterDecl(
     id = UUID.randomUUID(),
     name = name,
-    type = type,
+    kind = kind,
     default = default,
     passability = Passability.IN,
 )
@@ -211,14 +196,25 @@ fun hirStructOf(
     visibility = Visibility.PRIVATE,
 )
 
+fun hirTypeParamOf(
+    name: String = UUID.randomUUID().toString(),
+    kind: HirKind = HirKind.Type,
+    default: HirExpression? = null,
+) = HirDeclaration.TypeParameterDecl(
+    id = UUID.randomUUID(),
+    name = name,
+    kind = kind,
+    default = default,
+)
+
 fun hirVarOf(
     name: String = UUID.randomUUID().toString(),
-    type: HirType? = null,
+    kind: HirKind? = null,
     value: HirExpression = 0.hir,
 ) = HirStatement.Variable(
     id = UUID.randomUUID(),
     name = name,
-    type = type,
+    kind = kind,
     value = value,
     assignability = Assignability.FINAL,
 )

@@ -66,7 +66,7 @@ internal class Resolver(private val environment: Environment, private val scope:
     {
         // All nodes which have no dependencies on other nodes can be processed. Nodes which have other dependencies,
         // must wait until all their dependencies have been sorted out.
-        val candidates = dependencies.filter { it.value.declarations.isEmpty() }
+        val candidates = dependencies.filter { it.value.declarations.isEmpty() && it.value.definitions.isEmpty() }
         if (candidates.isEmpty())
             return "Found no node without any dependency! This might indicate a recursive issue in the type checker".toFailure()
         
@@ -80,13 +80,13 @@ internal class Resolver(private val environment: Environment, private val scope:
                 is Success -> when (outcome.value)
                 {
                     is Phase.Spawn    -> outcome.value.workers.forEach { registerNewWorker(it.key, it.value) }
-                    is Phase.Declared -> Unit // TODO: Figure out what to do with this one.
-                    is Phase.Defined  -> recordDeclared(nodeId)
+                    is Phase.Declared -> recordDeclared(nodeId)
+                    is Phase.Defined  -> recordDefined(nodeId)
                 }
                 is Failure -> when (outcome.error)
                 {
-                    is Outcome.RequireDeclaration -> recordDependency(nodeId, outcome.error.ids)
-                    is Outcome.RequireDefinition  -> recordDependency(nodeId, outcome.error.ids)
+                    is Outcome.RequireDeclaration -> recordDeclarationDependency(nodeId, outcome.error.ids)
+                    is Outcome.RequireDefinition  -> recordDefinitionDependency(nodeId, outcome.error.ids)
                     else                          -> return outcome.error.toString().toFailure()
                 }
             }
@@ -102,15 +102,26 @@ internal class Resolver(private val environment: Environment, private val scope:
         dependants[nodeId] = Dependency()
     }
     
-    private fun recordDependency(nodeId: UUID, dependsOn: Set<UUID>)
+    private fun recordDeclarationDependency(nodeId: UUID, dependsOn: Set<UUID>)
     {
         dependencies[nodeId]!!.declarations += dependsOn
         dependsOn.forEach { dependants[it]!!.declarations += nodeId }
     }
     
+    private fun recordDefinitionDependency(nodeId: UUID, dependsOn: Set<UUID>)
+    {
+        dependencies[nodeId]!!.definitions += dependsOn
+        dependsOn.forEach { dependants[it]!!.definitions += nodeId }
+    }
+    
     private fun recordDeclared(nodeId: UUID)
     {
         dependants[nodeId]!!.declarations.forEach { dependencies[it]!!.declarations -= nodeId }
+    }
+    
+    private fun recordDefined(nodeId: UUID)
+    {
+        dependants[nodeId]!!.definitions.forEach { dependencies[it]!!.definitions -= nodeId }
         dependants.remove(nodeId)
         dependencies.remove(nodeId)
         workers.remove(nodeId)

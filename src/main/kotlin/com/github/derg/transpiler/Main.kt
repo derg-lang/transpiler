@@ -43,8 +43,8 @@ fun main(args: Array<String>)
     
     // Find the entry point into the program and load the run command.
     val main = thir.declarations.values.last { it.name == "main" }
-    val load = ThirExpression.Load(main.id, ThirType.Function(ThirType.Int32, ThirType.Void))
-    val entry = ThirExpression.Call(load, emptyList(), load.valueType, load.errorType)
+    val type = ThirExpression.Type(ThirType.Function(main.id, emptyList(), ThirKind.Value(ThirType.Int32), ThirKind.Nothing))
+    val call = ThirExpression.Call(type, emptyList(), ThirKind.Value(ThirType.Int32), ThirKind.Nothing)
     
     // Analyze the outcome, lets us know what the compiler found in the source code and runtime analytics.
     val constants = thir.declarations.values.filterIsInstance<ThirDeclaration.Const>()
@@ -67,12 +67,14 @@ fun main(args: Array<String>)
     
     // Run program, timing the duration of it.
     val runStart = OffsetDateTime.now()
-    val outcome = Interpreter(thir).evaluate(entry)
+    val outcome = Interpreter(thir).evaluate(call)
     val runEnd = OffsetDateTime.now()
     
     println("")
+    println("===========================================")
     println("Outcome of program is '$outcome'")
     println("Program took ${Duration.between(compileStart, compileEnd).toNanos() / 1.0e9} seconds to compile")
     println("Program took ${Duration.between(runStart, runEnd).toNanos() / 1.0e9} seconds to run")
+    println("===========================================")
     println("")
 }
