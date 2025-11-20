@@ -1,0 +1,34 @@
+fun stringify(number: __builtin_i32) -> __builtin_str
+{
+    if number >= 10
+        return stringify(number / 10) + digit(number % 10)
+    return digit(number)
+}
+
+fun digit(d: __builtin_i32) -> __builtin_str
+{
+    if d == 9
+        return "9"
+    if d == 8
+        return "8"
+    if d == 7
+        return "7"
+    if d == 6
+        return "6"
+    if d == 5
+        return "5"
+    if d == 4
+        return "4"
+    if d == 3
+        return "3"
+    if d == 2
+        return "2"
+    if d == 1
+        return "1"
+    return "0"
+}
+
+fun main() -> __builtin_str
+{
+    return stringify(1337)
+}

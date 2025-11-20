@@ -4,6 +4,8 @@ package com.github.derg.transpiler.source
  * The names of the literal functions for a wide variety of builtin types. These literals are used across the entire
  * compiler, ensuring that the names of literals are easily accessible for convenience' sake.
  */
+const val FLOAT32_LIT_NAME = "f32"
+const val FLOAT64_LIT_NAME = "f64"
 const val INT32_LIT_NAME = "i32"
 const val INT64_LIT_NAME = "i64"
 const val STR_LIT_NAME = "s"
@@ -14,8 +16,16 @@ const val STR_LIT_NAME = "s"
  * poor support.
  */
 const val BOOL_TYPE_NAME = "__builtin_bool"
+const val FLOAT32_TYPE_NAME = "__builtin_f32"
+const val FLOAT64_TYPE_NAME = "__builtin_f64"
 const val INT32_TYPE_NAME = "__builtin_i32"
 const val INT64_TYPE_NAME = "__builtin_i64"
 const val STR_TYPE_NAME = "__builtin_str"
 
 const val DIVIDE_BY_ZERO_TYPE_NAME = "__builtin_divide_by_zero"
+
+/*
+ * The names of builtin functions. These names are useful to refer to the names of functions which are provided as part
+ * of the compiler itself.
+ */
+const val FUN_PRINTLN_NAME = "__builtin_println"

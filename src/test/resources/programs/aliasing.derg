@@ -1,0 +1,17 @@
+val alias_a = __builtin_bool
+val alias_b = __builtin_i32
+
+fun alias_c() -> Type
+{
+    return alias_b
+}
+
+fun are_equal(lhs: alias_b, rhs: alias_c()) -> alias_a
+{
+    return lhs == rhs
+}
+
+fun main() -> alias_a
+{
+    return are_equal(9001, 9001)
+}

@@ -22,15 +22,14 @@ private fun constantPatternOf() = ParserSequence(
     "visibility" to visibilityParserOf(),
     "assignability" to ParserSymbol(Symbol.VALUE),
     "name" to ParserIdentifier(),
-    "colon" to ParserSymbol(Symbol.COLON),
-    "type" to typeParserOf(),
+    "kind" to optionalKindParserOf(Symbol.COLON),
     "op" to ParserSymbol(Symbol.ASSIGN),
     "value" to ParserExpression(),
 )
 
 private fun constantOutcomeOf(values: Parsers) = AstConstant(
     name = values["name"],
-    type = values["type"],
+    kind = values["kind"],
     value = values["value"],
     visibility = values["visibility"],
 )
@@ -45,11 +44,10 @@ private fun functionPatternOf() = ParserSequence(
     "visibility" to visibilityParserOf(),
     "fun" to ParserSymbol(Symbol.FUN),
     "name" to ParserIdentifier(),
-    "open_parenthesis" to ParserSymbol(Symbol.OPEN_PARENTHESIS),
-    "parameters" to ParserRepeating(parameterParserOf(), ParserSymbol(Symbol.COMMA)),
-    "close_parenthesis" to ParserSymbol(Symbol.CLOSE_PARENTHESIS),
-    "error" to optionalTypeParserOf(Symbol.COLON),
-    "value" to optionalTypeParserOf(Symbol.ARROW),
+    "templates" to ParserOptional(typeParameterListParserOf()),
+    "parameters" to parameterListParserOf(),
+    "error" to optionalKindParserOf(Symbol.COLON),
+    "value" to optionalKindParserOf(Symbol.ARROW),
     "open_brace" to ParserSymbol(Symbol.OPEN_BRACE),
     "statements" to ParserRepeating(statementParserOf()),
     "close_brace" to ParserSymbol(Symbol.CLOSE_BRACE),
@@ -57,8 +55,9 @@ private fun functionPatternOf() = ParserSequence(
 
 private fun functionOutcomeOf(values: Parsers) = AstFunction(
     name = values["name"],
-    valueType = values["value"],
-    errorType = values["error"],
+    valueKind = values["value"] ?: AstKind.Nothing,
+    errorKind = values["error"] ?: AstKind.Nothing,
+    typeParameters = values["templates"] ?: emptyList(),
     parameters = values["parameters"],
     visibility = values["visibility"],
     statements = values["statements"],
@@ -74,17 +73,35 @@ private fun structPatternOf() = ParserSequence(
     "visibility" to visibilityParserOf(),
     "struct" to ParserSymbol(Symbol.STRUCT),
     "name" to ParserIdentifier(),
-    "templates" to ParserOptional(templateParserOf()),
-    "open_brace" to ParserSymbol(Symbol.OPEN_BRACE),
-    "properties" to ParserRepeating(propertyParserOf()),
-    "close_brace" to ParserSymbol(Symbol.CLOSE_BRACE),
+    "type_params" to ParserOptional(typeParameterListParserOf()),
+    "ctor_entries" to ParserOptional(constructorEntryParserOf()),
+    "fields" to ParserOptional(structBodyParserOf()),
 )
 
 private fun structOutcomeOf(values: Parsers) = AstStruct(
     name = values["name"],
+    typeParameters = values["type_params"] ?: emptyList(),
+    ctorEntries = values["ctor_entries"] ?: emptyList(),
+    fields = values["fields"] ?: emptyList(),
     visibility = values["visibility"],
-    fields = values["properties"],
-    templates = values["templates"] ?: emptyList(),
+)
+
+private fun constructorEntryParserOf(): Parser<List<AstConstructorEntry>> =
+    ParserPattern(::constructorEntryPatternOf) { it["entries"] }
+
+private fun constructorEntryPatternOf() = ParserSequence(
+    "open_parenthesis" to ParserSymbol(Symbol.OPEN_PARENTHESIS),
+    "entries" to ParserRepeating(ParserAnyOf(propertyParserOf(), parameterParserOf()), ParserSymbol(Symbol.COMMA)),
+    "close_parenthesis" to ParserSymbol(Symbol.CLOSE_PARENTHESIS),
+)
+
+private fun structBodyParserOf(): Parser<List<AstProperty>> =
+    ParserPattern(::structBodyPatternOf) { it["fields"] }
+
+private fun structBodyPatternOf() = ParserSequence(
+    "open_brace" to ParserSymbol(Symbol.OPEN_BRACE),
+    "fields" to ParserRepeating(propertyParserOf()),
+    "close_brace" to ParserSymbol(Symbol.CLOSE_BRACE),
 )
 
 /**
@@ -95,52 +112,50 @@ fun variableParserOf(): Parser<AstVariable> =
 
 private fun variablePatternOf() = ParserSequence(
     "visibility" to visibilityParserOf(),
+    "mutability" to mutabilityParserOf(),
     "assignability" to assignabilityParserOf(),
     "name" to ParserIdentifier(),
-    "type" to optionalTypeParserOf(Symbol.COLON),
+    "kind" to optionalKindParserOf(Symbol.COLON),
     "op" to ParserSymbol(Symbol.ASSIGN),
     "value" to ParserExpression(),
 )
 
 private fun variableOutcomeOf(values: Parsers) = AstVariable(
     name = values["name"],
-    type = values["type"],
+    kind = values["kind"],
     value = values["value"],
+    mutability = values["mutability"],
     visibility = values["visibility"],
     assignability = values["assignability"],
 )
 
 /**
+ * Parses a list of function parameter definitions from the token stream.
+ */
+private fun typeParameterListParserOf(): Parser<List<AstTypeParameter>> =
+    ParserPattern(::typeParameterListPatternOf) { it["parameters"] }
+
+private fun typeParameterListPatternOf() = ParserSequence(
+    "open_parenthesis" to ParserSymbol(Symbol.OPEN_BRACKET),
+    "parameters" to ParserRepeating(typeParameterParserOf(), ParserSymbol(Symbol.COMMA)),
+    "close_parenthesis" to ParserSymbol(Symbol.CLOSE_BRACKET),
+)
+
+/**
  * Parses a template declaration.
  */
-private fun templateParserOf(): Parser<List<AstTemplate>> =
-    ParserPattern(::templatePatternOf) { it["params"] }
+private fun typeParameterParserOf(): Parser<AstTypeParameter> =
+    ParserPattern(::typeParameterPatternOf, ::typeParameterOutcomeOf)
 
-private fun templatePatternOf() = ParserSequence(
-    "open" to ParserSymbol(Symbol.OPEN_BRACKET),
-    "params" to ParserRepeating(
-        ParserAnyOf(
-            ParserPattern(::templateStructPatternOf, ::templateStructOutcomeOf),
-            ParserPattern(::templateValuePatternOf, ::templateValueOutcomeOf)
-        ),
-        ParserSymbol(Symbol.COMMA),
-    ),
-    "close" to ParserSymbol(Symbol.CLOSE_BRACKET),
-)
-
-private fun templateStructPatternOf() = ParserSequence(
-    "name" to ParserIdentifier(),
-)
-
-private fun templateValuePatternOf() = ParserSequence(
+private fun typeParameterPatternOf() = ParserSequence(
     "name" to ParserIdentifier(),
     "colon" to ParserSymbol(Symbol.COLON),
-    "type" to typeParserOf(),
+    "kind" to kindParserOf(),
     "default" to ParserOptional(valueParserOf(Symbol.ASSIGN)),
 )
 
-private fun templateStructOutcomeOf(values: Parsers): AstTemplate =
-    AstTemplate.Type(name = values["name"])
-
-private fun templateValueOutcomeOf(values: Parsers): AstTemplate =
-    AstTemplate.Value(name = values["name"], type = values["type"], default = values["default"])
+private fun typeParameterOutcomeOf(values: Parsers) = AstTypeParameter(
+    name = values["name"],
+    kind = values["kind"],
+    default = values["default"],
+)

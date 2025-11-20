@@ -187,7 +187,11 @@ data class AstModulo(val lhs: AstValue, val rhs: AstValue) : AstValue
 
 // ERROR OPERATORS
 
-data class AstCatch(val lhs: AstValue, val rhs: AstValue, val capture: Capture) : AstValue
+/**
+ * Performs a catch operation on the [lhs] expression. Depending on the [operator], the [rhs] expression will either
+ * replace the failure value of the [lhs] expression, or return the [rhs] expression as a success or failure value.
+ */
+data class AstCatch(val lhs: AstValue, val rhs: AstValue, val operator: CatchOperator) : AstValue
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Unsorted

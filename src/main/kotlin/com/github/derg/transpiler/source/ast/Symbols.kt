@@ -16,21 +16,26 @@ sealed interface AstSymbol
 }
 
 /**
+ * Constructor entries, used in the primary constructor to reduce the amount of verbosity in defining data structures.
+ */
+sealed interface AstConstructorEntry
+
+/**
  * Constants are units which hold a specific [value] and associates the value with a specific [name]. Constants must be
- * given a [type], which is verified against the actual type of the expression.
+ * given a [kind], which is verified against the actual type of the expression.
  *
  * @param visibility The visibility of the variable, to whom it is possible to access.
  */
 data class AstConstant(
     override val name: String,
-    val type: AstType,
+    val kind: AstKind?,
     val value: AstValue,
     val visibility: Visibility,
 ) : AstSymbol
 
 /**
  * Functions are smaller subroutines of a program which can perform a specialized workload, that are given a [name].
- * Every function may return a [valueType], or raise an [errorType]. The value and error types are not required to be
+ * Every function may return a [valueKind], or raise an [errorKind]. The value and error types are not required to be
  * specified. Functions accept any number of [parameters], which allows different outcomes of invoking the function to
  * take place.
  *
@@ -39,8 +44,9 @@ data class AstConstant(
  */
 data class AstFunction(
     override val name: String,
-    val valueType: AstType?,
-    val errorType: AstType?,
+    val valueKind: AstKind,
+    val errorKind: AstKind,
+    val typeParameters: List<AstTypeParameter>,
     val parameters: List<AstParameter>,
     val visibility: Visibility,
     val statements: List<AstInstruction>,
@@ -55,48 +61,65 @@ data class AstFunction(
  */
 data class AstStruct(
     override val name: String,
-    val visibility: Visibility,
+    val typeParameters: List<AstTypeParameter>,
+    val ctorEntries: List<AstConstructorEntry>,
     val fields: List<AstProperty>,
-    val templates: List<AstTemplate>,
+    val visibility: Visibility,
 ) : AstSymbol
 
 /**
  * Variables are units which hold a specific [value] and associates the value with a specific [name]. Variables may
- * optionally be given a [type], which is verified against the actual type of the expression. If the [type] is not
+ * optionally be given a [kind], which is verified against the actual type of the expression. If the [kind] is not
  * specified, it is inferred from [value].
  *
+ * @param mutability The mutability of the variable, whether it is possible to write to or not.
  * @param visibility The visibility of the variable, to whom it is possible to access.
+ * @param assignability The assignability of the variable, how values are assigned to it.
  */
 data class AstVariable(
     override val name: String,
-    val type: AstType?,
+    val kind: AstKind?,
     val value: AstValue,
+    val mutability: Mutability,
     val visibility: Visibility,
     val assignability: Assignability,
 ) : AstSymbol, AstInstruction
 
 /**
- * Every function may have any number of parameters, each with their own [name], optional [type] information, and
+ * Every function may have any number of parameters, each with their own [name], optional [kind] information, and
  * optional default [value]. The [passability] determines how parameters must be passed into the callable.
  */
 data class AstParameter(
     val name: String,
-    val type: AstType,
+    val kind: AstKind?,
     val value: AstValue?,
+    val mutability: Mutability,
     val passability: Passability,
-)
+) : AstConstructorEntry
 
 /**
- * Types may contain an arbitrary number of properties, each with their own [name], optional [type] information, and
+ * Types may contain an arbitrary number of properties, each with their own [name], optional [kind] information, and
  * optional default [value]. Either a value must be provided, and/or type information.
  *
+ * @param mutability The mutability of the variable, whether it is possible to write to or not.
  * @param visibility The visibility of the variable, to whom it is possible to access.
  * @param assignability The assignability of the variable, how values are assigned to it.
  */
 data class AstProperty(
     val name: String,
-    val type: AstType,
+    val kind: AstKind?,
     val value: AstValue?,
+    val mutability: Mutability,
     val visibility: Visibility,
     val assignability: Assignability,
+) : AstConstructorEntry
+
+/**
+ * Every function and structure may have any number of type parameters, each with their own [name], [kind], and optional
+ * [default] value.
+ */
+data class AstTypeParameter(
+    val name: String,
+    val kind: AstKind,
+    val default: AstValue?,
 )

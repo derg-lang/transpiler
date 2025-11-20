@@ -18,3 +18,8 @@ inline fun <K, T> Map<K, T>.partition(predicate: (Map.Entry<K, T>) -> Boolean): 
     }
     return Pair(first, second)
 }
+
+/**
+ * Generates a list with [this] as the only element.
+ */
+fun <Type> Type.asList(): List<Type> = listOf(this)

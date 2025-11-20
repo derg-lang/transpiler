@@ -110,23 +110,37 @@ private fun argumentOutcomeOf(values: Parsers): NamedMaybe<AstValue> =
     values.get<String?>("name") to values["expr"]
 
 /**
+ * Parses a list of function parameter definitions from the token stream.
+ */
+fun parameterListParserOf(): Parser<List<AstParameter>> =
+    ParserPattern(::parameterListPatternOf) { it["parameters"] }
+
+private fun parameterListPatternOf() = ParserSequence(
+    "open_parenthesis" to ParserSymbol(Symbol.OPEN_PARENTHESIS),
+    "parameters" to ParserRepeating(parameterParserOf(), ParserSymbol(Symbol.COMMA)),
+    "close_parenthesis" to ParserSymbol(Symbol.CLOSE_PARENTHESIS),
+)
+
+/**
  * Parses a function parameter definition from the token stream.
  */
-fun parameterParserOf(): Parser<AstParameter> =
+internal fun parameterParserOf(): Parser<AstParameter> =
     ParserPattern(::parameterPatternOf, ::parameterOutcomeOf)
 
 private fun parameterPatternOf() = ParserSequence(
+    "mutability" to mutabilityParserOf(),
     "passability" to passabilityParserOf(),
     "name" to ParserIdentifier(),
     "colon" to ParserSymbol(Symbol.COLON),
-    "type" to typeParserOf(),
+    "kind" to kindParserOf(),
     "value" to ParserOptional(valueParserOf(Symbol.ASSIGN)),
 )
 
 private fun parameterOutcomeOf(values: Parsers) = AstParameter(
     name = values["name"],
-    type = values["type"],
+    kind = values["kind"],
     value = values["value"],
+    mutability = values["mutability"],
     passability = values["passability"],
 )
 
@@ -138,17 +152,18 @@ fun propertyParserOf(): Parser<AstProperty> =
 
 private fun propertyPatternOf() = ParserSequence(
     "visibility" to visibilityParserOf(),
+    "mutability" to mutabilityParserOf(),
     "assignability" to assignabilityParserOf(),
     "name" to ParserIdentifier(),
-    "colon" to ParserSymbol(Symbol.COLON),
-    "type" to typeParserOf(),
+    "kind" to optionalKindParserOf(Symbol.COLON),
     "value" to ParserOptional(valueParserOf(Symbol.ASSIGN)),
 )
 
 private fun propertyOutcomeOf(values: Parsers) = AstProperty(
     name = values["name"],
-    type = values["type"],
+    kind = values["kind"],
     value = values["value"],
+    mutability = values["mutability"],
     visibility = values["visibility"],
     assignability = values["assignability"],
 )
@@ -175,7 +190,7 @@ private fun scopeOutcomeOf(values: Parsers): List<AstInstruction>
     
     return when
     {
-        statement != null  -> listOf(statement)
+        statement != null  -> statement.asList()
         statements != null -> statements
         else               -> emptyList()
     }
@@ -199,41 +214,42 @@ private fun segmentOutcomeOf(values: Parsers) = AstSegment(
 )
 
 /**
+ * Parses a kind from the token stream.
+ */
+fun kindParserOf(): Parser<AstKind> = ParserAnyOf(
+    ParserPattern({ ParserSymbol(Symbol.TYPE) }, { AstKind.Type }),
+    ParserPattern({ typeParserOf() }, { AstKind.Value(it) }),
+)
+
+/**
  * Parses a type from the token stream.
  */
-fun typeParserOf(): Parser<AstType> = ParserAnyOf(
-    ParserPattern(::typeStructPatternOf, ::typeStructOutcomeOf),
+fun typeParserOf(): Parser<AstType> =
+    ParserPattern(::typePatternOf, ::typeOutcomeOf)
+
+private fun typePatternOf() = ParserSequence(
+    "value" to ParserExpression(),
+    "params" to ParserOptional(typeParametersPatternOf())
 )
 
-private fun typeStructPatternOf() = ParserSequence(
-    "mutability" to mutabilityParserOf(),
-    "name" to ParserIdentifier(),
-    "params" to ParserOptional(typeStructParamsPatternOf())
-)
-
-private fun typeStructParamsPatternOf() = ParserSequence(
+private fun typeParametersPatternOf() = ParserSequence(
     "open" to ParserSymbol(Symbol.OPEN_BRACKET),
     "params" to ParserRepeating(argumentParserOf(), ParserSymbol(Symbol.COMMA)),
     "close" to ParserSymbol(Symbol.CLOSE_BRACKET),
 )
 
-private fun typeStructOutcomeOf(values: Parsers) = AstType.Structure(
-    name = values["name"],
-    mutability = values["mutability"],
-    parameters = typeStructParamsOutcomeOf(values["params"]),
+private fun typeOutcomeOf(values: Parsers) = AstType.Expression(
+    value = values["value"],
 )
 
-private fun typeStructParamsOutcomeOf(values: Parsers?): List<AstParameterStatic> =
-    values?.get<List<NamedMaybe<AstValue>>>("params")?.map { (name, value) -> AstParameterStatic(name, value) } ?: emptyList()
-
 /**
- * Parses an optional type from the token stream. The type must be located after the given [symbol].
+ * Parses an optional kind from the token stream. The kind must be located after the given [symbol].
  */
-fun optionalTypeParserOf(symbol: Symbol): Parser<AstType?> =
-    ParserPattern({ optionalTypePatternOf(symbol) }, ::optionalTypeOutcomeOf)
+fun optionalKindParserOf(symbol: Symbol): Parser<AstKind?> =
+    ParserPattern({ optionalKindPatternOf(symbol) }, ::optionalKindOutcomeOf)
 
-private fun optionalTypePatternOf(symbol: Symbol) =
-    ParserOptional(ParserSequence("symbol" to ParserSymbol(symbol), "type" to typeParserOf()))
+private fun optionalKindPatternOf(symbol: Symbol) =
+    ParserOptional(ParserSequence("symbol" to ParserSymbol(symbol), "kind" to kindParserOf()))
 
-private fun optionalTypeOutcomeOf(values: Parsers?): AstType? =
-    values?.get("type")
+private fun optionalKindOutcomeOf(values: Parsers?): AstKind? =
+    values?.get("kind")

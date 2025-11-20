@@ -37,7 +37,7 @@ class Tester<Type>(factory: () -> Parser<Type>)
      */
     fun step(count: Int): Tester<Type>
     {
-        repeat(count) { assertTrue(parser.parse(next()).isSuccess, "iteration ${it + 1}") }
+        repeat(count) { assertSuccess(parser.parse(next()), "iteration ${it + 1}") }
         return this
     }
     

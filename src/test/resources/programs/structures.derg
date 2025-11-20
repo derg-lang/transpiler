@@ -1,0 +1,11 @@
+struct Data(val param: __builtin_i32)
+{
+    val field: __builtin_i32 = param + 1
+}
+
+fun main() -> __builtin_i32
+{
+    val data = Data(param = 2)
+
+    return data.param + data.field
+}
