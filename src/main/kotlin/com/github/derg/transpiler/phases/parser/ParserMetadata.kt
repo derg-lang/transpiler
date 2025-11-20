@@ -124,7 +124,7 @@ private fun parameterListPatternOf() = ParserSequence(
 /**
  * Parses a function parameter definition from the token stream.
  */
-private fun parameterParserOf(): Parser<AstParameter> =
+internal fun parameterParserOf(): Parser<AstParameter> =
     ParserPattern(::parameterPatternOf, ::parameterOutcomeOf)
 
 private fun parameterPatternOf() = ParserSequence(

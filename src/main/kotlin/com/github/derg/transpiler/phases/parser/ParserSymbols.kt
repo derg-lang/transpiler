@@ -74,16 +74,34 @@ private fun structPatternOf() = ParserSequence(
     "struct" to ParserSymbol(Symbol.STRUCT),
     "name" to ParserIdentifier(),
     "type_params" to ParserOptional(typeParameterListParserOf()),
-    "open_brace" to ParserSymbol(Symbol.OPEN_BRACE),
-    "properties" to ParserRepeating(propertyParserOf()),
-    "close_brace" to ParserSymbol(Symbol.CLOSE_BRACE),
+    "ctor_entries" to ParserOptional(constructorEntryParserOf()),
+    "fields" to ParserOptional(structBodyParserOf()),
 )
 
 private fun structOutcomeOf(values: Parsers) = AstStruct(
     name = values["name"],
-    visibility = values["visibility"],
-    fields = values["properties"],
     typeParameters = values["type_params"] ?: emptyList(),
+    ctorEntries = values["ctor_entries"] ?: emptyList(),
+    fields = values["fields"] ?: emptyList(),
+    visibility = values["visibility"],
+)
+
+private fun constructorEntryParserOf(): Parser<List<AstConstructorEntry>> =
+    ParserPattern(::constructorEntryPatternOf) { it["entries"] }
+
+private fun constructorEntryPatternOf() = ParserSequence(
+    "open_parenthesis" to ParserSymbol(Symbol.OPEN_PARENTHESIS),
+    "entries" to ParserRepeating(ParserAnyOf(propertyParserOf(), parameterParserOf()), ParserSymbol(Symbol.COMMA)),
+    "close_parenthesis" to ParserSymbol(Symbol.CLOSE_PARENTHESIS),
+)
+
+private fun structBodyParserOf(): Parser<List<AstProperty>> =
+    ParserPattern(::structBodyPatternOf) { it["fields"] }
+
+private fun structBodyPatternOf() = ParserSequence(
+    "open_brace" to ParserSymbol(Symbol.OPEN_BRACE),
+    "fields" to ParserRepeating(propertyParserOf()),
+    "close_brace" to ParserSymbol(Symbol.CLOSE_BRACE),
 )
 
 /**

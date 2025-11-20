@@ -8,15 +8,14 @@ import com.github.derg.transpiler.utils.*
 import java.time.*
 
 private const val SOURCE = """
-    struct Test
+    struct Test(val foo: __builtin_i32)
     {
-        val foo: __builtin_i32 = 2
         val bar: __builtin_i32 = 23
     }
 
     fun main() -> __builtin_i32
     {
-        val test = Test()
+        val test = Test(foo = 2)
 
         __builtin_println("Hello World!")
 

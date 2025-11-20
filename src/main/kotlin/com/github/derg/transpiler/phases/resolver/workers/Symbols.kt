@@ -1,6 +1,7 @@
 package com.github.derg.transpiler.phases.resolver.workers
 
 import com.github.derg.transpiler.phases.resolver.*
+import com.github.derg.transpiler.source.*
 import com.github.derg.transpiler.source.hir.*
 import com.github.derg.transpiler.source.thir.*
 import com.github.derg.transpiler.utils.*
@@ -258,6 +259,7 @@ internal class StructureDefiner(
     val scope = parentScope.apply()
     {
         node.fields.forEach { register(it.id, it.name) }
+        node.ctorEntries.forEach { register(it.id, it.name) }
         node.typeParameters.forEach { register(it.id, it.name) }
     }
     
@@ -271,8 +273,9 @@ internal class StructureDefiner(
         {
             hasSpawnedChildren = true
             val typeParameters = node.typeParameters.associate { it.id to TypeParameterDefiner(it, env, scope) }
+            val fieldParameters = node.ctorEntries.filterIsInstance<HirDeclaration.FieldDecl>().associate { it.id to FieldDefiner(it, env, scope) }
             val fields = node.fields.associate { it.id to FieldDefiner(it, env, scope) }
-            val children = typeParameters + fields
+            val children = typeParameters + fieldParameters + fields
             if (children.isNotEmpty())
                 return Phase.Spawn(children).toSuccess()
         }
@@ -294,7 +297,8 @@ internal class StructureDefiner(
         id = node.id,
         name = node.name,
         typeParameterIds = emptyList(),
-        fieldIds = node.fields.map { it.id },
+        ctorEntryIds = node.ctorEntries.map { it.id },
+        fieldIds = node.ctorEntries.filterIsInstance<HirDeclaration.FieldDecl>().map { it.id } + node.fields.map { it.id },
         def = null,
     )
 }

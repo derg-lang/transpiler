@@ -16,6 +16,11 @@ sealed interface AstSymbol
 }
 
 /**
+ * Constructor entries, used in the primary constructor to reduce the amount of verbosity in defining data structures.
+ */
+sealed interface AstConstructorEntry
+
+/**
  * Constants are units which hold a specific [value] and associates the value with a specific [name]. Constants must be
  * given a [kind], which is verified against the actual type of the expression.
  *
@@ -57,6 +62,7 @@ data class AstFunction(
 data class AstStruct(
     override val name: String,
     val typeParameters: List<AstTypeParameter>,
+    val ctorEntries: List<AstConstructorEntry>,
     val fields: List<AstProperty>,
     val visibility: Visibility,
 ) : AstSymbol
@@ -89,7 +95,7 @@ data class AstParameter(
     val value: AstValue?,
     val mutability: Mutability,
     val passability: Passability,
-)
+) : AstConstructorEntry
 
 /**
  * Types may contain an arbitrary number of properties, each with their own [name], optional [kind] information, and
@@ -106,7 +112,7 @@ data class AstProperty(
     val mutability: Mutability,
     val visibility: Visibility,
     val assignability: Assignability,
-)
+) : AstConstructorEntry
 
 /**
  * Every function and structure may have any number of type parameters, each with their own [name], [kind], and optional

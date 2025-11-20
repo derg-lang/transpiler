@@ -261,7 +261,8 @@ sealed interface ThirDeclaration
         override val id: UUID,
         override val name: String,
         val typeParameterIds: List<UUID>,
-        val fieldIds: List<UUID>,
+        val ctorEntryIds: List<UUID>, // The collection of ONLY constructor parameters.
+        val fieldIds: List<UUID>, // The collection of ALL fields, including constructor parameters.
         var def: StructureDef?,
     ) : ThirDeclaration
     
@@ -349,6 +350,7 @@ val ptr = ThirDeclaration.Structure(
     id = UUID.randomUUID(),
     name = "Ptr",
     typeParameterIds = listOf(ptrType.id),
+    ctorEntryIds = emptyList(),
     fieldIds = emptyList(),
     def = ThirDeclaration.StructureDef(null),
 )
@@ -389,6 +391,7 @@ val array = ThirDeclaration.Structure(
     id = UUID.randomUUID(),
     name = "Array",
     typeParameterIds = listOf(arrayElement.id, arraySize.id),
+    ctorEntryIds = emptyList(),
     fieldIds = listOf(arrayData.id, arrayTest.id),
     def = ThirDeclaration.StructureDef(null),
 )

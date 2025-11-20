@@ -167,13 +167,23 @@ sealed interface HirStatement
 sealed interface HirDeclaration : HirNode
 {
     /**
+     * The name for this specific node.
+     */
+    val name: String
+    
+    /**
+     * Constructor entries, used in the primary constructor to reduce the amount of verbosity in defining data structures.
+     */
+    sealed interface ConstructorEntry : HirDeclaration
+    
+    /**
      * Constants are units which hold a specific [value] value and associates the value with a binding [name].
      * Constants may optionally be given a [kind], which is verified against the actual type of the expression. If the
      * [kind] is not specified, it is inferred from its [value].
      */
     data class ConstantDecl(
         override val id: UUID,
-        val name: String,
+        override val name: String,
         val kind: HirKind?,
         val value: HirExpression,
     ) : HirDeclaration
@@ -183,19 +193,19 @@ sealed interface HirDeclaration : HirNode
      */
     data class FieldDecl(
         override val id: UUID,
-        val name: String,
+        override val name: String,
         val kind: HirKind?,
         val default: HirExpression?,
         val visibility: Visibility,
         val assignability: Assignability,
-    ) : HirNode
+    ) : HirDeclaration, ConstructorEntry
     
     /**
      * Functions are callable subroutines which allows a program to be structured into smaller segments.
      */
     data class FunctionDecl(
         override val id: UUID,
-        val name: String,
+        override val name: String,
         val visibility: Visibility,
         val typeParameters: List<TypeParameterDecl>,
         val parameters: List<ParameterDecl>,
@@ -209,11 +219,11 @@ sealed interface HirDeclaration : HirNode
      */
     data class ParameterDecl(
         override val id: UUID,
-        val name: String,
+        override val name: String,
         val kind: HirKind?,
         val default: HirExpression?,
         val passability: Passability,
-    ) : HirNode
+    ) : HirDeclaration, ConstructorEntry
     
     /**
      * A segment represents a single source file of code.
@@ -231,8 +241,9 @@ sealed interface HirDeclaration : HirNode
      */
     data class StructureDecl(
         override val id: UUID,
-        val name: String,
+        override val name: String,
         val typeParameters: List<TypeParameterDecl>,
+        val ctorEntries: List<ConstructorEntry>,
         val fields: List<FieldDecl>,
         val visibility: Visibility,
     ) : HirDeclaration
@@ -242,8 +253,8 @@ sealed interface HirDeclaration : HirNode
      */
     data class TypeParameterDecl(
         override val id: UUID,
-        val name: String,
+        override val name: String,
         val kind: HirKind,
         val default: HirExpression?,
-    ) : HirNode
+    ) : HirDeclaration
 }

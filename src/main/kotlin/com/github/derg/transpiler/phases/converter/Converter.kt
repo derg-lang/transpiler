@@ -65,6 +65,7 @@ private fun AstStruct.toHir() = HirDeclaration.StructureDecl(
     id = UUID.randomUUID(),
     name = name,
     typeParameters = typeParameters.map { it.toHir() },
+    ctorEntries = ctorEntries.map { it.toHir() },
     fields = fields.map { it.toHir() },
     visibility = visibility,
 )
@@ -83,6 +84,12 @@ private fun AstVariable.toHir() = HirStatement.Variable(
     value = value.toHir(),
     assignability = assignability,
 )
+
+private fun AstConstructorEntry.toHir(): HirDeclaration.ConstructorEntry = when (this)
+{
+    is AstParameter -> toHir()
+    is AstProperty  -> toHir()
+}
 
 private fun AstKind.toHir(): HirKind = when (this)
 {

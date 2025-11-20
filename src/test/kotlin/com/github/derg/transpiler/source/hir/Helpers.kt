@@ -187,11 +187,13 @@ fun hirSegmentOf(
 fun hirStructOf(
     name: String = UUID.randomUUID().toString(),
     typeParameters: List<HirDeclaration.TypeParameterDecl> = emptyList(),
+    ctorEntries: List<HirDeclaration.ConstructorEntry> = emptyList(),
     fields: List<HirDeclaration.FieldDecl> = emptyList(),
 ) = HirDeclaration.StructureDecl(
     id = UUID.randomUUID(),
     name = name,
     typeParameters = typeParameters,
+    ctorEntries = ctorEntries,
     fields = fields,
     visibility = Visibility.PRIVATE,
 )

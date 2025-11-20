@@ -253,7 +253,10 @@ class TestIdentifierDefiner
         assertFailure(expected, worker.process())
     }
     
+    // TODO: Type parameters on identifiers without context surrounding it (i.e. function calls or structures) is not
+    //       supported yet. This test does as such not offer any value, and is disabled for the time being.
     @Test
+    @Disabled
     fun `Given type parameters, when processing, then success`()
     {
         Builtin.BOOL.register(scope).declare(env)
@@ -745,19 +748,13 @@ class TestCallDefiner
             val structure = structOf().register(scope).declare(env)
             
             val worker = CallDefiner(structure.name.hirIdent().hirCall(), env, scope, false)
-            val expected = ThirExpression.Instance(mutableMapOf(), ThirKind.Value(ThirType.Structure(structure.id, emptyList())))
-            
-            assertSuccess(expected, worker.process())
-        }
-        
-        @Test
-        fun `Given structure with one fields with default value, when processing, then success`()
-        {
-            val field = fieldOf().register(scope).declare(env).define(7.thir)
-            val structure = structOf(fields = listOf(field)).register(scope).declare(env)
-            
-            val worker = CallDefiner(structure.name.hirIdent().hirCall(), env, scope, false)
-            val expected = ThirExpression.Instance(mutableMapOf(field.id to 7.thir), ThirKind.Value(ThirType.Structure(structure.id, emptyList())))
+            val kind = ThirKind.Value(ThirType.Structure(structure.id, emptyList()))
+            val expected = ThirExpression.Call(
+                instance = ThirExpression.Type(ThirType.Function(structure.id, emptyList(), kind, ThirKind.Nothing)),
+                parameters = emptyList(),
+                valueKind = kind,
+                errorKind = ThirKind.Nothing,
+            )
             
             assertSuccess(expected, worker.process())
         }

@@ -216,11 +216,13 @@ fun thirStructOf(
     id: UUID = UUID.randomUUID(),
     name: String = UUID.randomUUID().toString(),
     typeParameterIds: List<UUID> = emptyList(),
+    ctorEntryIds: List<UUID> = emptyList(),
     fieldIds: List<UUID> = emptyList(),
 ) = ThirDeclaration.Structure(
     id = id,
     name = name,
     typeParameterIds = typeParameterIds,
+    ctorEntryIds = ctorEntryIds,
     fieldIds = fieldIds,
     def = ThirDeclaration.StructureDef(null),
 )

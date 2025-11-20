@@ -94,6 +94,7 @@ private fun registerPrimitive(name: String): ThirDeclaration.Structure
         id = UUID.randomUUID(),
         name = name,
         typeParameterIds = emptyList(),
+        ctorEntryIds = emptyList(),
         fieldIds = emptyList(),
         def = ThirDeclaration.StructureDef(null),
     )

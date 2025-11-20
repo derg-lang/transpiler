@@ -1,12 +1,11 @@
-struct Data
+struct Data(val param: __builtin_i32)
 {
-    val foo = 2
-    val bar = 3
+    val field: __builtin_i32 = param + 1
 }
 
 fun main() -> __builtin_i32
 {
-    val data = Data()
+    val data = Data(param = 2)
 
-    return data.foo + data.bar
+    return data.param + data.field
 }

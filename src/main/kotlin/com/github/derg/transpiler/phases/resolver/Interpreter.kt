@@ -77,37 +77,67 @@ class Interpreter(private val env: Environment)
             ?: throw IllegalStateException("Expected a type expression, but received '$instance'")
         val type = expr.raw as? ThirType.Function
             ?: throw IllegalStateException("Expected a function type, but received '${expr.raw}'")
-        val function = env.declarations[type.functionId] as? ThirDeclaration.Function
-            ?: throw IllegalStateException("Expected a function, but received '${env.declarations[type.functionId]}'")
         
         // If we are dealing with some builtin function, just deal with it in the trivial manner. No need for stack
         // frames or anything fancy in that case.
-        invokeBuiltin(function, expression.parameters).onSuccess { return it.toSuccess() }
+        invokeBuiltin(type.functionId, expression.parameters).onSuccess { return it.toSuccess() }
         
-        // Otherwise, we execute all statements, bailing if we encounter some form of control flow.
-        val frame = mutableMapOf<UUID, ThirExpression.Canonical>()
-        (function.parameterIds zip expression.parameters).forEach { frame[it.first] = evaluate(it.second).valueOrDie()!! }
-        (function.typeParameterIds zip type.typeParameters).forEach { frame[it.first] = it.second }
-        stack.addLast(frame)
-        val outcome = try
+        // Otherwise, we figure out if what we are dealing with is a function call or a structure instantiation.
+        val symbol = env.declarations[type.functionId]
+        
+        if (symbol is ThirDeclaration.Function)
         {
-            execute(function.def!!.statements)
-            null.toSuccess()
+            val frame = mutableMapOf<UUID, ThirExpression.Canonical>()
+            
+            (symbol.typeParameterIds zip type.typeParameters).forEach { frame[it.first] = it.second }
+            (symbol.parameterIds zip expression.parameters).forEach { frame[it.first] = evaluate(it.second).valueOrDie()!! }
+            stack.addLast(frame)
+            val outcome = try
+            {
+                execute(symbol.def!!.statements)
+                null.toSuccess()
+            }
+            catch (e: ReturnException)
+            {
+                null.toSuccess()
+            }
+            catch (e: ReturnValueException)
+            {
+                e.value.toSuccess()
+            }
+            catch (e: ReturnErrorException)
+            {
+                e.error.toFailure()
+            }
+            stack.removeLast()
+            return outcome
         }
-        catch (e: ReturnException)
+        
+        if (symbol is ThirDeclaration.Structure)
         {
-            null.toSuccess()
+            val frame = mutableMapOf<UUID, ThirExpression.Canonical>()
+            
+            (symbol.typeParameterIds zip type.typeParameters).forEach { frame[it.first] = it.second }
+            (symbol.ctorEntryIds zip expression.parameters).forEach { frame[it.first] = evaluate(it.second).valueOrDie()!! }
+            
+            val fields = symbol.fieldIds
+                .map { env.declarations[it] }
+                .filterIsInstance<ThirDeclaration.Field>()
+            val typeParameters = symbol.typeParameterIds
+                .map { env.declarations[it] }
+                .filterIsInstance<ThirDeclaration.TypeParameter>()
+    
+            stack.addLast(frame)
+            fields.filter { it.id !in frame }.forEach { frame[it.id] = evaluate(it.def!!.default!!).valueOrDie()!! }
+            stack.removeLast()
+            
+            return ThirExpression.Instance(
+                fields = symbol.fieldIds.associateWith { frame[it]!! }.toMutableMap(),
+                valueKind = ThirKind.Value(ThirType.Structure(symbol.id, typeParameters.map { frame[it.id]!! })),
+            ).toSuccess()
         }
-        catch (e: ReturnValueException)
-        {
-            e.value.toSuccess()
-        }
-        catch (e: ReturnErrorException)
-        {
-            e.error.toFailure()
-        }
-        stack.removeLast()
-        return outcome
+        
+        throw IllegalStateException("Expected a function, but received '${env.declarations[type.functionId]}'")
     }
     
     private fun evaluateCatch(expression: ThirExpression.Catch): Result<ThirExpression.Canonical?, ThirExpression.Canonical?>
@@ -201,16 +231,16 @@ class Interpreter(private val env: Environment)
     }
     
     /**
-     * Attempts to invoke the given [function] as if it was a primitive. If the function could be invoked with the given
-     * [parameters], the function returns the outcome of the operation. Otherwise, if the function could not be
+     * Attempts to invoke the given [functionId] as if it was a primitive. If the function could be invoked with the
+     * given [parameters], the function returns the outcome of the operation. Otherwise, if the function could not be
      * interpreted as a builtin function, this method returns an error case.
      */
-    private fun invokeBuiltin(function: ThirDeclaration.Function, parameters: List<ThirExpression>): Result<ThirExpression.Canonical?, Unit>
+    private fun invokeBuiltin(functionId: UUID, parameters: List<ThirExpression>): Result<ThirExpression.Canonical?, Unit>
     {
         val lhs = parameters.firstOrNull()?.let { evaluate(it) }?.valueOrDie()
         val rhs = parameters.lastOrNull()?.let { evaluate(it) }?.valueOrDie()
         
-        return when (function.id)
+        return when (functionId)
         {
             Builtin.BOOL_AND.id    -> ThirExpression.Bool(lhs.bool && rhs.bool).toSuccess()
             Builtin.BOOL_EQ.id     -> ThirExpression.Bool(lhs.bool == rhs.bool).toSuccess()
@@ -278,11 +308,11 @@ class Interpreter(private val env: Environment)
         }
     }
     
-    private val ThirExpression?.bool: Boolean get() = (this as ThirExpression.Bool).raw
-    private val ThirExpression?.int32: Int get() = (this as ThirExpression.Int32).raw
-    private val ThirExpression?.int64: Long get() = (this as ThirExpression.Int64).raw
-    private val ThirExpression?.float32: Float get() = (this as ThirExpression.Float32).raw
-    private val ThirExpression?.float64: Double get() = (this as ThirExpression.Float64).raw
-    private val ThirExpression?.str: String get() = (this as ThirExpression.Str).raw
-    private val ThirExpression?.instance: ThirExpression.Instance get() = this as ThirExpression.Instance
+    private val ThirExpression.Canonical?.bool: Boolean get() = (this as ThirExpression.Bool).raw
+    private val ThirExpression.Canonical?.int32: Int get() = (this as ThirExpression.Int32).raw
+    private val ThirExpression.Canonical?.int64: Long get() = (this as ThirExpression.Int64).raw
+    private val ThirExpression.Canonical?.float32: Float get() = (this as ThirExpression.Float32).raw
+    private val ThirExpression.Canonical?.float64: Double get() = (this as ThirExpression.Float64).raw
+    private val ThirExpression.Canonical?.str: String get() = (this as ThirExpression.Str).raw
+    private val ThirExpression.Canonical?.instance: ThirExpression.Instance get() = this as ThirExpression.Instance
 }

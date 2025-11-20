@@ -191,11 +191,13 @@ fun astFieldOf(
 fun astStructOf(
     name: String = UUID.randomUUID().toString(),
     typeParameters: List<AstTypeParameter> = emptyList(),
+    ctorEntries: List<AstConstructorEntry> = emptyList(),
     props: List<AstProperty> = emptyList(),
     vis: Visibility = Visibility.PRIVATE,
 ) = AstStruct(
     name = name,
     typeParameters = typeParameters,
+    ctorEntries = ctorEntries,
     fields = props,
     visibility = vis,
 )
