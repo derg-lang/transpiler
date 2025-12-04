@@ -97,6 +97,13 @@ sealed interface Outcome
      */
     data class ReturnHasError(val errorKind: ThirKind) : Outcome
     
+    // Assignment-related errors.
+    
+    /**
+     * The variable with the given [name] was attempted to be re-assigned, but it is not marked assignable.
+     */
+    data class VariableNotAssignable(val name: String) : Outcome
+    
     // Call-related errors.
     
     /**

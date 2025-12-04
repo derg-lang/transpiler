@@ -1,6 +1,7 @@
 fun main() -> __builtin_i32
 {
-    val foo = 2
+    var foo = 4
     val bar = 3
+    foo = 2
     return foo + bar
 }

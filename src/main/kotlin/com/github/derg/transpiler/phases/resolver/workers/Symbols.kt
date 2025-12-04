@@ -85,7 +85,7 @@ internal class ParameterDefiner(
         if (node.id !in env.declarations)
         {
             val type = worker.resolveDeclaration().valueOr { return it.toFailure() }
-            env.declarations[node.id] = ThirDeclaration.Parameter(id = node.id, name = node.name, passability = node.passability, kind = type, def = null)
+            env.declarations[node.id] = ThirDeclaration.Parameter(node.id, node.name, node.passability, type, null)
             return Phase.Declared.toSuccess()
         }
         
@@ -113,7 +113,7 @@ internal class VariableDefiner(
         // variable is fully defined during this process.
         val type = worker.resolveDeclaration().valueOr { return it.toFailure() }
         val value = worker.resolveDefinition().valueOr { return it.toFailure() }
-        env.declarations[node.id] = ThirDeclaration.Variable(id = node.id, name = node.name, kind = type, def = ThirDeclaration.VariableDef(value!!))
+        env.declarations[node.id] = ThirDeclaration.Variable(node.id, node.name, node.assignability, type, ThirDeclaration.VariableDef(value!!))
         return Phase.Declared.toSuccess()
     }
 }

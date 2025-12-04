@@ -98,7 +98,12 @@ private fun hirUnary(rhs: HirExpression, operator: UnaryOperator): HirExpression
 // Statement helpers //
 ///////////////////////
 
-private fun hirAssign(lhs: HirExpression, rhs: HirExpression) = HirStatement.Assign(lhs, rhs, AssignOperator.EQUAL)
+infix fun HirExpression.hirAssign(that: HirExpression) = HirStatement.Assign(this, that, AssignOperator.EQUAL)
+infix fun HirExpression.hirAssignAdd(that: HirExpression) = HirStatement.Assign(this, that, AssignOperator.ADD)
+infix fun HirExpression.hirAssignDiv(that: HirExpression) = HirStatement.Assign(this, that, AssignOperator.DIVIDE)
+infix fun HirExpression.hirAssignMod(that: HirExpression) = HirStatement.Assign(this, that, AssignOperator.MODULO)
+infix fun HirExpression.hirAssignMul(that: HirExpression) = HirStatement.Assign(this, that, AssignOperator.MULTIPLY)
+infix fun HirExpression.hirAssignSub(that: HirExpression) = HirStatement.Assign(this, that, AssignOperator.SUBTRACT)
 
 val Any.hirEval get() = HirStatement.Evaluate(hir)
 val Any.hirReturnError get() = HirStatement.ReturnError(hir)

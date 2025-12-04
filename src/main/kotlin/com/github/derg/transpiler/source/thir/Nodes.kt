@@ -290,6 +290,7 @@ sealed interface ThirDeclaration
     data class Variable(
         override val id: UUID,
         override val name: String,
+        val assignability: Assignability,
         val kind: ThirKind,
         var def: VariableDef?,
     ) : ThirDeclaration

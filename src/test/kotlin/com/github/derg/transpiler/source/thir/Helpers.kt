@@ -242,11 +242,13 @@ fun thirTypeParamOf(
 fun thirVarOf(
     id: UUID = UUID.randomUUID(),
     name: String = UUID.randomUUID().toString(),
+    assignability: Assignability = Assignability.FINAL,
     kind: ThirKind = ThirKind.Value(ThirType.Int32),
     value: ThirExpression = ThirExpression.Int32(0),
 ) = ThirDeclaration.Variable(
     id = id,
     name = name,
+    assignability = assignability,
     kind = kind,
     def = ThirDeclaration.VariableDef(value = value),
 )

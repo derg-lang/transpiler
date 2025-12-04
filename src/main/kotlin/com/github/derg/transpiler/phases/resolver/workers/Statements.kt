@@ -1,6 +1,7 @@
 package com.github.derg.transpiler.phases.resolver.workers
 
 import com.github.derg.transpiler.phases.resolver.*
+import com.github.derg.transpiler.source.*
 import com.github.derg.transpiler.source.hir.*
 import com.github.derg.transpiler.source.thir.*
 import com.github.derg.transpiler.utils.*
@@ -29,11 +30,33 @@ fun statementDefinerOf(
 /**
  * Issues an initialization statement for the variable node.
  */
-internal class AssignDefiner(node: HirStatement.Assign, env: Environment, scope: Scope) : Worker<ThirStatement>
+internal class AssignDefiner(
+    private val node: HirStatement.Assign,
+    private val env: Environment,
+    private val scope: Scope,
+) : Worker<ThirStatement>
 {
+    private val instanceWorker: Worker<ThirExpression> = expressionDefinerOf(node.instance, env, scope, null, false)
+    private var expressionWorker: Worker<ThirExpression>? = null
+    
+    private var instance: ThirExpression? = null
+    private var expression: ThirExpression? = null
+    
     override fun process(): Result<ThirStatement, Outcome>
     {
-        TODO("Not yet implemented")
+        if (instance == null)
+            instance = instanceWorker.process().valueOr { return it.toFailure() }
+        if (expressionWorker == null)
+            expressionWorker = expressionDefinerOf(node.expression, env, scope, instance!!.valueKind, false)
+        if (expression == null)
+            expression = expressionWorker!!.process().valueOr { return it.toFailure() }
+        
+        val load = instance!! as? ThirExpression.Load
+        val symbol = load?.symbolId?.let { env.declarations[it] } as? ThirDeclaration.Variable
+        if (symbol != null && symbol.assignability != Assignability.ASSIGNABLE)
+            return Outcome.VariableNotAssignable(symbol.name).toFailure()
+        
+        return ThirStatement.Assign(instance!!, expression!!).toSuccess()
     }
 }
 
