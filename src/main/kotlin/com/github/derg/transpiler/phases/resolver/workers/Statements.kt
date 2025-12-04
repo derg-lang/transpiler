@@ -1,6 +1,7 @@
 package com.github.derg.transpiler.phases.resolver.workers
 
 import com.github.derg.transpiler.phases.resolver.*
+import com.github.derg.transpiler.source.*
 import com.github.derg.transpiler.source.hir.*
 import com.github.derg.transpiler.source.thir.*
 import com.github.derg.transpiler.utils.*
@@ -49,6 +50,11 @@ internal class AssignDefiner(
             expressionWorker = expressionDefinerOf(node.expression, env, scope, instance!!.valueKind, false)
         if (expression == null)
             expression = expressionWorker!!.process().valueOr { return it.toFailure() }
+        
+        val load = instance!! as? ThirExpression.Load
+        val symbol = load?.symbolId?.let { env.declarations[it] } as? ThirDeclaration.Variable
+        if (symbol != null && symbol.assignability != Assignability.ASSIGNABLE)
+            return Outcome.VariableNotAssignable(symbol.name).toFailure()
         
         return ThirStatement.Assign(instance!!, expression!!).toSuccess()
     }

@@ -1,6 +1,7 @@
 package com.github.derg.transpiler.phases.resolver.workers
 
 import com.github.derg.transpiler.phases.resolver.*
+import com.github.derg.transpiler.source.*
 import com.github.derg.transpiler.source.hir.*
 import com.github.derg.transpiler.source.thir.*
 import com.github.derg.transpiler.utils.*
@@ -13,14 +14,36 @@ class TestAssignDefiner
     private val scope = Scope()
     
     @Test
-    fun `Given varying variable, when processing, then successful`()
+    fun `Given assignable variable, when processing, then successful`()
     {
-        val variable = thirVarOf().register(scope).declare(env)
+        val variable = thirVarOf(assignability = Assignability.ASSIGNABLE).register(scope).declare(env)
         
         val worker = AssignDefiner(variable.name.hirIdent() hirAssign 0.hir, env, scope)
         val expected = variable.thirLoad() thirAssign 0.thir
         
         assertSuccess(expected, worker.process())
+    }
+    
+    @Test
+    fun `Given final variable, when processing, then error`()
+    {
+        val variable = thirVarOf(assignability = Assignability.FINAL).register(scope).declare(env)
+        
+        val worker = AssignDefiner(variable.name.hirIdent() hirAssign 0.hir, env, scope)
+        val expected = Outcome.VariableNotAssignable(variable.name)
+        
+        assertFailure(expected, worker.process())
+    }
+    
+    @Test
+    fun `Given reference variable, when processing, then error`()
+    {
+        val variable = thirVarOf(assignability = Assignability.REFERENCE).register(scope).declare(env)
+        
+        val worker = AssignDefiner(variable.name.hirIdent() hirAssign 0.hir, env, scope)
+        val expected = Outcome.VariableNotAssignable(variable.name)
+        
+        assertFailure(expected, worker.process())
     }
 }
 
