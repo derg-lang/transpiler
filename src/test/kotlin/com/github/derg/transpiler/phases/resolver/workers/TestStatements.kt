@@ -7,6 +7,23 @@ import com.github.derg.transpiler.utils.*
 import org.junit.jupiter.api.*
 import org.junit.jupiter.api.Assertions.*
 
+class TestAssignDefiner
+{
+    private val env = Environment()
+    private val scope = Scope()
+    
+    @Test
+    fun `Given varying variable, when processing, then successful`()
+    {
+        val variable = thirVarOf().register(scope).declare(env)
+        
+        val worker = AssignDefiner(variable.name.hirIdent() hirAssign 0.hir, env, scope)
+        val expected = variable.thirLoad() thirAssign 0.thir
+        
+        assertSuccess(expected, worker.process())
+    }
+}
+
 class TestEvaluateDefiner
 {
     private val env = Environment()

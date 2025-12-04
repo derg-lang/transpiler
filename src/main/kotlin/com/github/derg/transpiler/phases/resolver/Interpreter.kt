@@ -170,7 +170,7 @@ class Interpreter(private val env: Environment)
     
     private fun evaluateLoad(expression: ThirExpression.Load): ThirExpression.Canonical
     {
-        val stackValue = stack.last()[expression.symbolId]
+        val stackValue = stack.last()[expression.symbolId] ?: memory[expression.symbolId]
         if (stackValue != null)
             return stackValue
         
