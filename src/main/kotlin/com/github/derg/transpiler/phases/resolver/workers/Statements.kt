@@ -51,12 +51,17 @@ internal class AssignDefiner(
         if (expression == null)
             expression = expressionWorker!!.process().valueOr { return it.toFailure() }
         
-        val load = instance!! as? ThirExpression.Load
-        val symbol = load?.symbolId?.let { env.declarations[it] } as? ThirDeclaration.Variable
-        if (symbol != null && symbol.assignability != Assignability.ASSIGNABLE)
-            return Outcome.VariableNotAssignable(symbol.name).toFailure()
+        val instance = instance!!
+        if (instance is ThirExpression.Load)
+        {
+            val symbol = env.declarations[instance.symbolId]!!
+            if (symbol !is ThirDeclaration.Variable)
+                return Outcome.SymbolNotAssignable(symbol.name).toFailure()
+            if (symbol.assignability != Assignability.ASSIGNABLE)
+                return Outcome.VariableNotAssignable(symbol.name).toFailure()
+        }
         
-        return ThirStatement.Assign(instance!!, expression!!).toSuccess()
+        return ThirStatement.Assign(instance, expression!!).toSuccess()
     }
 }
 

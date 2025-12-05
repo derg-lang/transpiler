@@ -100,6 +100,11 @@ sealed interface Outcome
     // Assignment-related errors.
     
     /**
+     * The symbol with the given [name] cannot be assigned a value.
+     */
+    data class SymbolNotAssignable(val name: String) : Outcome
+    
+    /**
      * The variable with the given [name] was attempted to be re-assigned, but it is not marked assignable.
      */
     data class VariableNotAssignable(val name: String) : Outcome

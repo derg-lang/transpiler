@@ -45,6 +45,50 @@ class TestAssignDefiner
         
         assertFailure(expected, worker.process())
     }
+    
+    @Test
+    fun `Given function, when processing, then error`()
+    {
+        val function = thirFunOf().register(scope).declare(env)
+        
+        val worker = AssignDefiner(function.name.hirIdent() hirAssign 0.hir, env, scope)
+        val expected = Outcome.SymbolNotAssignable(function.name)
+        
+        assertFailure(expected, worker.process())
+    }
+    
+    @Test
+    fun `Given parameter, when processing, then error`()
+    {
+        val parameter = thirParamOf().register(scope).declare(env)
+        
+        val worker = AssignDefiner(parameter.name.hirIdent() hirAssign 0.hir, env, scope)
+        val expected = Outcome.SymbolNotAssignable(parameter.name)
+        
+        assertFailure(expected, worker.process())
+    }
+    
+    @Test
+    fun `Given structure, when processing, then error`()
+    {
+        val structure = thirStructOf().register(scope).declare(env)
+        
+        val worker = AssignDefiner(structure.name.hirIdent() hirAssign 0.hir, env, scope)
+        val expected = Outcome.SymbolNotAssignable(structure.name)
+        
+        assertFailure(expected, worker.process())
+    }
+    
+    @Test
+    fun `Given type parameter, when processing, then error`()
+    {
+        val parameter = thirTypeParamOf().register(scope).declare(env)
+        
+        val worker = AssignDefiner(parameter.name.hirIdent() hirAssign 0.hir, env, scope)
+        val expected = Outcome.SymbolNotAssignable(parameter.name)
+        
+        assertFailure(expected, worker.process())
+    }
 }
 
 class TestEvaluateDefiner
