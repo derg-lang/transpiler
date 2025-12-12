@@ -1,5 +1,6 @@
 package com.github.derg.transpiler.phases.resolver.workers
 
+import com.github.derg.transpiler.phases.interpreter.*
 import com.github.derg.transpiler.phases.resolver.*
 import com.github.derg.transpiler.source.*
 import com.github.derg.transpiler.source.hir.*
@@ -24,12 +25,13 @@ internal sealed interface Phase
 }
 
 internal class ConstDefiner(
+    private val evaluator: Evaluator,
     private val node: HirDeclaration.ConstantDecl,
     private val env: Environment,
     scope: Scope,
 ) : Worker<Phase>
 {
-    private val worker = TypeExprResolver(node.kind, node.value, env, scope, true)
+    private val worker = TypeExprResolver(evaluator, node.kind, node.value, env, scope, true)
     
     override fun process(): Result<Phase, Outcome>
     {
@@ -49,12 +51,13 @@ internal class ConstDefiner(
 }
 
 internal class FieldDefiner(
+    private val evaluator: Evaluator,
     private val node: HirDeclaration.FieldDecl,
     private val env: Environment,
     scope: Scope,
 ) : Worker<Phase>
 {
-    private val worker = TypeExprResolver(node.kind, node.default, env, scope, false)
+    private val worker = TypeExprResolver(evaluator, node.kind, node.default, env, scope, false)
     
     override fun process(): Result<Phase, Outcome>
     {
@@ -73,12 +76,13 @@ internal class FieldDefiner(
 }
 
 internal class ParameterDefiner(
+    private val evaluator: Evaluator,
     private val node: HirDeclaration.ParameterDecl,
     private val env: Environment,
     scope: Scope,
 ) : Worker<Phase>
 {
-    private val worker = TypeExprResolver(node.kind, node.default, env, scope, false)
+    private val worker = TypeExprResolver(evaluator, node.kind, node.default, env, scope, false)
     
     override fun process(): Result<Phase, Outcome>
     {
@@ -97,12 +101,13 @@ internal class ParameterDefiner(
 }
 
 internal class VariableDefiner(
+    private val evaluator: Evaluator,
     private val node: HirStatement.Variable,
     private val env: Environment,
     scope: Scope,
 ) : Worker<Phase>
 {
-    private val worker = TypeExprResolver(node.kind, node.value, env, scope, true)
+    private val worker = TypeExprResolver(evaluator, node.kind, node.value, env, scope, true)
     
     override fun process(): Result<Phase, Outcome>
     {
@@ -122,6 +127,7 @@ internal class VariableDefiner(
  * Converts a HIR type parameter into a THIR declaration.
  */
 internal class TypeParameterDefiner(
+    private val evaluator: Evaluator,
     private val node: HirDeclaration.TypeParameterDecl,
     private val env: Environment,
     private val scope: Scope,
@@ -135,7 +141,7 @@ internal class TypeParameterDefiner(
     override fun process(): Result<Phase, Outcome>
     {
         if (kindWorker == null)
-            kindWorker = node.kind.let { KindDefiner(it, env, scope) }
+            kindWorker = node.kind.let { KindDefiner(evaluator, it, env, scope) }
         if (kindOutcome == null)
             kindOutcome = kindWorker!!.process().valueOr { return it.toFailure() }
         
@@ -146,7 +152,7 @@ internal class TypeParameterDefiner(
         }
         
         if (exprWorker == null)
-            exprWorker = node.default?.let { expressionDefinerOf(it, env, scope, kindOutcome, true) }
+            exprWorker = node.default?.let { expressionDefinerOf(evaluator, it, env, scope, kindOutcome, true) }
         if (exprOutcome == null)
             exprOutcome = exprWorker?.process()?.valueOr { return it.toFailure() }
         
@@ -168,6 +174,7 @@ internal class TypeParameterDefiner(
  * Converts a HIR function into a THIR declaration.
  */
 internal class FunctionDefiner(
+    private val evaluator: Evaluator,
     private val node: HirDeclaration.FunctionDecl,
     private val env: Environment,
     parentScope: Scope,
@@ -180,9 +187,9 @@ internal class FunctionDefiner(
         node.typeParameters.forEach { register(it.id, it.name) }
     }
     
-    private val valueKindWorker = KindDefiner(node.valueKind, env, scope)
-    private val errorKindWorker = KindDefiner(node.errorKind, env, scope)
-    private val statementWorker = WorkerList(node.body) { statementDefinerOf(it, env, scope) }
+    private val valueKindWorker = KindDefiner(evaluator, node.valueKind, env, scope)
+    private val errorKindWorker = KindDefiner(evaluator, node.errorKind, env, scope)
+    private val statementWorker = WorkerList(node.body) { statementDefinerOf(evaluator, it, env, scope) }
     
     private var valueKind: ThirKind? = null
     private var errorKind: ThirKind? = null
@@ -197,9 +204,9 @@ internal class FunctionDefiner(
         if (!hasSpawnedChildren)
         {
             hasSpawnedChildren = true
-            val typeParameters = node.typeParameters.associate { it.id to TypeParameterDefiner(it, env, scope) }
-            val parameters = node.parameters.associate { it.id to ParameterDefiner(it, env, scope) }
-            val variables = node.body.filterIsInstance<HirStatement.Variable>().associate { it.id to VariableDefiner(it, env, scope) }
+            val typeParameters = node.typeParameters.associate { it.id to TypeParameterDefiner(evaluator, it, env, scope) }
+            val parameters = node.parameters.associate { it.id to ParameterDefiner(evaluator, it, env, scope) }
+            val variables = node.body.filterIsInstance<HirStatement.Variable>().associate { it.id to VariableDefiner(evaluator, it, env, scope) }
             val children = typeParameters + parameters + variables
             if (children.isNotEmpty())
                 return Phase.Spawn(children).toSuccess()
@@ -250,6 +257,7 @@ internal class FunctionDefiner(
  * Converts from a HIR structure to a THIR declaration.
  */
 internal class StructureDefiner(
+    private val evaluator: Evaluator,
     private val node: HirDeclaration.StructureDecl,
     private val env: Environment,
     parentScope: Scope,
@@ -272,9 +280,9 @@ internal class StructureDefiner(
         if (!hasSpawnedChildren)
         {
             hasSpawnedChildren = true
-            val typeParameters = node.typeParameters.associate { it.id to TypeParameterDefiner(it, env, scope) }
-            val fieldParameters = node.ctorEntries.filterIsInstance<HirDeclaration.FieldDecl>().associate { it.id to FieldDefiner(it, env, scope) }
-            val fields = node.fields.associate { it.id to FieldDefiner(it, env, scope) }
+            val typeParameters = node.typeParameters.associate { it.id to TypeParameterDefiner(evaluator, it, env, scope) }
+            val fieldParameters = node.ctorEntries.filterIsInstance<HirDeclaration.FieldDecl>().associate { it.id to FieldDefiner(evaluator, it, env, scope) }
+            val fields = node.fields.associate { it.id to FieldDefiner(evaluator, it, env, scope) }
             val children = typeParameters + fieldParameters + fields
             if (children.isNotEmpty())
                 return Phase.Spawn(children).toSuccess()
@@ -307,6 +315,7 @@ internal class StructureDefiner(
  * Converts a HIR segment into a THIR declaration.
  */
 internal class SegmentDefiner(
+    private val evaluator: Evaluator,
     private val node: HirDeclaration.SegmentDecl,
     private val env: Environment,
     parentScope: Scope,
@@ -334,9 +343,9 @@ internal class SegmentDefiner(
         }
         
         hasSpawnedChildren = true
-        val constants = node.constants.associate { it.id to ConstDefiner(it, env, scope) }
-        val functions = node.functions.associate { it.id to FunctionDefiner(it, env, scope) }
-        val structures = node.structures.associate { it.id to StructureDefiner(it, env, scope) }
+        val constants = node.constants.associate { it.id to ConstDefiner(evaluator, it, env, scope) }
+        val functions = node.functions.associate { it.id to FunctionDefiner(evaluator, it, env, scope) }
+        val structures = node.structures.associate { it.id to StructureDefiner(evaluator, it, env, scope) }
         return Phase.Spawn(constants + functions + structures).toSuccess()
     }
 }

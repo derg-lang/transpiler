@@ -1,5 +1,6 @@
 package com.github.derg.transpiler.phases.resolver.workers
 
+import com.github.derg.transpiler.phases.interpreter.*
 import com.github.derg.transpiler.phases.resolver.*
 import com.github.derg.transpiler.source.*
 import com.github.derg.transpiler.source.hir.*
@@ -12,13 +13,14 @@ class TestAssignDefiner
 {
     private val env = Environment()
     private val scope = Scope()
+    private val evaluator = Evaluator(env, StackFrame())
     
     @Test
     fun `Given assignable variable, when processing, then successful`()
     {
         val variable = thirVarOf(assignability = Assignability.ASSIGNABLE).register(scope).declare(env)
         
-        val worker = AssignDefiner(variable.name.hirIdent() hirAssign 0.hir, env, scope)
+        val worker = AssignDefiner(evaluator, variable.name.hirIdent() hirAssign 0.hir, env, scope)
         val expected = variable.thirLoad() thirAssign 0.thir
         
         assertSuccess(expected, worker.process())
@@ -29,7 +31,7 @@ class TestAssignDefiner
     {
         val variable = thirVarOf(assignability = Assignability.FINAL).register(scope).declare(env)
         
-        val worker = AssignDefiner(variable.name.hirIdent() hirAssign 0.hir, env, scope)
+        val worker = AssignDefiner(evaluator, variable.name.hirIdent() hirAssign 0.hir, env, scope)
         val expected = Outcome.VariableNotAssignable(variable.name)
         
         assertFailure(expected, worker.process())
@@ -40,7 +42,7 @@ class TestAssignDefiner
     {
         val variable = thirVarOf(assignability = Assignability.REFERENCE).register(scope).declare(env)
         
-        val worker = AssignDefiner(variable.name.hirIdent() hirAssign 0.hir, env, scope)
+        val worker = AssignDefiner(evaluator, variable.name.hirIdent() hirAssign 0.hir, env, scope)
         val expected = Outcome.VariableNotAssignable(variable.name)
         
         assertFailure(expected, worker.process())
@@ -51,7 +53,7 @@ class TestAssignDefiner
     {
         val function = thirFunOf().register(scope).declare(env)
         
-        val worker = AssignDefiner(function.name.hirIdent() hirAssign 0.hir, env, scope)
+        val worker = AssignDefiner(evaluator, function.name.hirIdent() hirAssign 0.hir, env, scope)
         val expected = Outcome.SymbolNotAssignable(function.name)
         
         assertFailure(expected, worker.process())
@@ -62,7 +64,7 @@ class TestAssignDefiner
     {
         val parameter = thirParamOf().register(scope).declare(env)
         
-        val worker = AssignDefiner(parameter.name.hirIdent() hirAssign 0.hir, env, scope)
+        val worker = AssignDefiner(evaluator, parameter.name.hirIdent() hirAssign 0.hir, env, scope)
         val expected = Outcome.SymbolNotAssignable(parameter.name)
         
         assertFailure(expected, worker.process())
@@ -73,7 +75,7 @@ class TestAssignDefiner
     {
         val structure = thirStructOf().register(scope).declare(env)
         
-        val worker = AssignDefiner(structure.name.hirIdent() hirAssign 0.hir, env, scope)
+        val worker = AssignDefiner(evaluator, structure.name.hirIdent() hirAssign 0.hir, env, scope)
         val expected = Outcome.SymbolNotAssignable(structure.name)
         
         assertFailure(expected, worker.process())
@@ -84,7 +86,7 @@ class TestAssignDefiner
     {
         val parameter = thirTypeParamOf().register(scope).declare(env)
         
-        val worker = AssignDefiner(parameter.name.hirIdent() hirAssign 0.hir, env, scope)
+        val worker = AssignDefiner(evaluator, parameter.name.hirIdent() hirAssign 0.hir, env, scope)
         val expected = Outcome.SymbolNotAssignable(parameter.name)
         
         assertFailure(expected, worker.process())
@@ -95,6 +97,7 @@ class TestEvaluateDefiner
 {
     private val env = Environment()
     private val scope = Scope()
+    private val evaluator = Evaluator(env, StackFrame())
     
     /**
      * Registers [this] declaration to the current scope.
@@ -113,7 +116,7 @@ class TestEvaluateDefiner
     {
         val function = thirFunOf(valueKind = ThirKind.Value(ThirType.Int32), errorKind = ThirKind.Nothing).register().declare()
         
-        val worker = EvaluateDefiner(function.name.hirIdent().hirCall().hirEval, env, scope)
+        val worker = EvaluateDefiner(evaluator, function.name.hirIdent().hirCall().hirEval, env, scope)
         val expected = Outcome.EvaluationHasValue(ThirKind.Value(ThirType.Int32))
         
         assertFailure(expected, worker.process())
@@ -124,7 +127,7 @@ class TestEvaluateDefiner
     {
         val function = thirFunOf(valueKind = ThirKind.Nothing, errorKind = ThirKind.Value(ThirType.Int32)).register().declare()
         
-        val worker = EvaluateDefiner(function.name.hirIdent().hirCall().hirEval, env, scope)
+        val worker = EvaluateDefiner(evaluator, function.name.hirIdent().hirCall().hirEval, env, scope)
         val expected = Outcome.EvaluationHasError(ThirKind.Value(ThirType.Int32))
         
         assertFailure(expected, worker.process())
@@ -135,7 +138,7 @@ class TestEvaluateDefiner
     {
         val function = thirFunOf(valueKind = ThirKind.Nothing, errorKind = ThirKind.Nothing).register().declare()
         
-        val worker = EvaluateDefiner(function.name.hirIdent().hirCall().hirEval, env, scope)
+        val worker = EvaluateDefiner(evaluator, function.name.hirIdent().hirCall().hirEval, env, scope)
         val expected = function.thirLoad().thirCall().thirEval
         
         assertSuccess(expected, worker.process())
@@ -146,6 +149,7 @@ class TestIfDefiner
 {
     private val env = Environment()
     private val scope = Scope()
+    private val evaluator = Evaluator(env, StackFrame())
     
     /**
      * Registers [this] declaration to the current scope.
@@ -165,7 +169,7 @@ class TestIfDefiner
         @Test
         fun `Given valid predicate value type, when processing, then success`()
         {
-            val worker = IfDefiner(true.hirIf(), env, scope)
+            val worker = IfDefiner(evaluator, true.hirIf(), env, scope)
             val expected = true.thir.thirIf()
             
             assertSuccess(expected, worker.process())
@@ -174,7 +178,7 @@ class TestIfDefiner
         @Test
         fun `Given invalid predicate value type, when processing, then error`()
         {
-            val worker = IfDefiner(0.hirIf(), env, scope)
+            val worker = IfDefiner(evaluator, 0.hirIf(), env, scope)
             val expected = Outcome.PredicateWrongType(ThirType.Int32)
             
             assertFailure(expected, worker.process())
@@ -185,7 +189,7 @@ class TestIfDefiner
         {
             val function = thirFunOf(valueKind = ThirKind.Nothing, errorKind = ThirKind.Nothing).register().declare()
             
-            val worker = IfDefiner(function.name.hirIdent().hirCall().hirIf(), env, scope)
+            val worker = IfDefiner(evaluator, function.name.hirIdent().hirCall().hirIf(), env, scope)
             val expected = Outcome.PredicateWrongKind(ThirKind.Nothing)
             
             assertFailure(expected, worker.process())
@@ -196,7 +200,7 @@ class TestIfDefiner
         {
             val function = thirFunOf(valueKind = ThirKind.Value(ThirType.Bool), errorKind = ThirKind.Value(ThirType.Int32)).register().declare()
             
-            val worker = IfDefiner(function.name.hirIdent().hirCall().hirIf(), env, scope)
+            val worker = IfDefiner(evaluator, function.name.hirIdent().hirCall().hirIf(), env, scope)
             val expected = Outcome.PredicateHasError(ThirKind.Value(ThirType.Int32))
             
             assertFailure(expected, worker.process())
@@ -209,7 +213,7 @@ class TestIfDefiner
         @Test
         fun `Given valid success branch statement, when processing, then success`()
         {
-            val worker = IfDefiner(true.hirIf(success = listOf(0.hirReturnValue)), env, scope)
+            val worker = IfDefiner(evaluator, true.hirIf(success = listOf(0.hirReturnValue)), env, scope)
             val expected = true.thir.thirIf(success = listOf(0.thir.returnValue))
             
             assertSuccess(expected, worker.process())
@@ -218,7 +222,7 @@ class TestIfDefiner
         @Test
         fun `Given valid failure branch statement, when processing, then success`()
         {
-            val worker = IfDefiner(true.hirIf(failure = listOf(0.hirReturnValue)), env, scope)
+            val worker = IfDefiner(evaluator, true.hirIf(failure = listOf(0.hirReturnValue)), env, scope)
             val expected = true.thir.thirIf(failure = listOf(0.thir.returnValue))
             
             assertSuccess(expected, worker.process())
@@ -263,6 +267,7 @@ class TestReturnErrorDefiner
 {
     private val env = Environment()
     private val scope = Scope()
+    private val evaluator = Evaluator(env, StackFrame())
     
     /**
      * Registers [this] declaration to the current scope.
@@ -279,7 +284,7 @@ class TestReturnErrorDefiner
     @Test
     fun `Given valid expression, when processing, then success`()
     {
-        val worker = ReturnErrorDefiner(0.hirReturnError, env, scope)
+        val worker = ReturnErrorDefiner(evaluator, 0.hirReturnError, env, scope)
         val expected = 0.thir.returnError
         
         assertSuccess(expected, worker.process())
@@ -290,7 +295,7 @@ class TestReturnErrorDefiner
     {
         val function = thirFunOf(valueKind = ThirKind.Value(ThirType.Bool), errorKind = ThirKind.Value(ThirType.Int32)).register().declare()
         
-        val worker = ReturnErrorDefiner(function.name.hirIdent().hirCall().hirReturnError, env, scope)
+        val worker = ReturnErrorDefiner(evaluator, function.name.hirIdent().hirCall().hirReturnError, env, scope)
         val expected = Outcome.ReturnHasError(ThirKind.Value(ThirType.Int32))
         
         assertFailure(expected, worker.process())
@@ -301,6 +306,7 @@ class TestReturnValueDefiner
 {
     private val env = Environment()
     private val scope = Scope()
+    private val evaluator = Evaluator(env, StackFrame())
     
     /**
      * Registers [this] declaration to the current scope.
@@ -317,7 +323,7 @@ class TestReturnValueDefiner
     @Test
     fun `Given valid expression, when processing, then success`()
     {
-        val worker = ReturnValueDefiner(0.hirReturnValue, env, scope)
+        val worker = ReturnValueDefiner(evaluator, 0.hirReturnValue, env, scope)
         val expected = 0.thir.returnValue
         
         assertSuccess(expected, worker.process())
@@ -328,7 +334,7 @@ class TestReturnValueDefiner
     {
         val function = thirFunOf(valueKind = ThirKind.Value(ThirType.Bool), errorKind = ThirKind.Value(ThirType.Int32)).register().declare()
         
-        val worker = ReturnValueDefiner(function.name.hirIdent().hirCall().hirReturnValue, env, scope)
+        val worker = ReturnValueDefiner(evaluator, function.name.hirIdent().hirCall().hirReturnValue, env, scope)
         val expected = Outcome.ReturnHasError(ThirKind.Value(ThirType.Int32))
         
         assertFailure(expected, worker.process())
@@ -339,6 +345,7 @@ class TestWhileDefiner
 {
     private val env = Environment()
     private val scope = Scope()
+    private val evaluator = Evaluator(env, StackFrame())
     
     /**
      * Registers [this] declaration to the current scope.
@@ -358,7 +365,7 @@ class TestWhileDefiner
         @Test
         fun `Given valid predicate value type, when processing, then success`()
         {
-            val worker = WhileDefiner(true.hirWhile(), env, scope)
+            val worker = WhileDefiner(evaluator, true.hirWhile(), env, scope)
             val expected = true.thir.thirWhile()
             
             assertSuccess(expected, worker.process())
@@ -367,7 +374,7 @@ class TestWhileDefiner
         @Test
         fun `Given invalid predicate value type, when processing, then error`()
         {
-            val worker = WhileDefiner(0.hirWhile(), env, scope)
+            val worker = WhileDefiner(evaluator, 0.hirWhile(), env, scope)
             val expected = Outcome.PredicateWrongType(ThirType.Int32)
             
             assertFailure(expected, worker.process())
@@ -378,7 +385,7 @@ class TestWhileDefiner
         {
             val function = thirFunOf(valueKind = ThirKind.Nothing, errorKind = ThirKind.Nothing).register().declare()
             
-            val worker = WhileDefiner(function.name.hirIdent().hirCall().hirWhile(), env, scope)
+            val worker = WhileDefiner(evaluator, function.name.hirIdent().hirCall().hirWhile(), env, scope)
             val expected = Outcome.PredicateWrongKind(ThirKind.Nothing)
             
             assertFailure(expected, worker.process())
@@ -389,7 +396,7 @@ class TestWhileDefiner
         {
             val function = thirFunOf(valueKind = ThirKind.Value(ThirType.Bool), errorKind = ThirKind.Value(ThirType.Int32)).register().declare()
             
-            val worker = WhileDefiner(function.name.hirIdent().hirCall().hirWhile(), env, scope)
+            val worker = WhileDefiner(evaluator, function.name.hirIdent().hirCall().hirWhile(), env, scope)
             val expected = Outcome.PredicateHasError(ThirKind.Value(ThirType.Int32))
             
             assertFailure(expected, worker.process())
@@ -402,7 +409,7 @@ class TestWhileDefiner
         @Test
         fun `Given valid statement, when processing, then success`()
         {
-            val worker = WhileDefiner(true.hirWhile(statements = listOf(0.hirReturnValue)), env, scope)
+            val worker = WhileDefiner(evaluator, true.hirWhile(statements = listOf(0.hirReturnValue)), env, scope)
             val expected = true.thir.thirWhile(statements = listOf(0.thir.returnValue))
             
             assertSuccess(expected, worker.process())

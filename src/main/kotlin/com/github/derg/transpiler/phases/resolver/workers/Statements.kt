@@ -1,5 +1,6 @@
 package com.github.derg.transpiler.phases.resolver.workers
 
+import com.github.derg.transpiler.phases.interpreter.*
 import com.github.derg.transpiler.phases.resolver.*
 import com.github.derg.transpiler.source.*
 import com.github.derg.transpiler.source.hir.*
@@ -11,32 +12,34 @@ import com.github.derg.transpiler.utils.*
  * the given [scope], using the information provided through the given [env].
  */
 fun statementDefinerOf(
+    evaluator: Evaluator,
     node: HirStatement,
     env: Environment,
     scope: Scope,
 ): Worker<ThirStatement> = when (node)
 {
-    is HirStatement.Assign      -> AssignDefiner(node, env, scope)
-    is HirStatement.Evaluate    -> EvaluateDefiner(node, env, scope)
+    is HirStatement.Assign      -> AssignDefiner(evaluator, node, env, scope)
+    is HirStatement.Evaluate    -> EvaluateDefiner(evaluator, node, env, scope)
     is HirStatement.For         -> TODO("Not yet implemented")
-    is HirStatement.If          -> IfDefiner(node, env, scope)
+    is HirStatement.If          -> IfDefiner(evaluator, node, env, scope)
     is HirStatement.Return      -> ReturnDefiner
-    is HirStatement.ReturnError -> ReturnErrorDefiner(node, env, scope)
-    is HirStatement.ReturnValue -> ReturnValueDefiner(node, env, scope)
+    is HirStatement.ReturnError -> ReturnErrorDefiner(evaluator, node, env, scope)
+    is HirStatement.ReturnValue -> ReturnValueDefiner(evaluator, node, env, scope)
     is HirStatement.Variable    -> InitializeDefiner(node, env, scope)
-    is HirStatement.While       -> WhileDefiner(node, env, scope)
+    is HirStatement.While       -> WhileDefiner(evaluator, node, env, scope)
 }
 
 /**
  * Issues an initialization statement for the variable node.
  */
 internal class AssignDefiner(
+    private val evaluator: Evaluator,
     private val node: HirStatement.Assign,
     private val env: Environment,
     private val scope: Scope,
 ) : Worker<ThirStatement>
 {
-    private val instanceWorker: Worker<ThirExpression> = expressionDefinerOf(node.instance, env, scope, null, false)
+    private val instanceWorker: Worker<ThirExpression> = expressionDefinerOf(evaluator, node.instance, env, scope, null, false)
     private var expressionWorker: Worker<ThirExpression>? = null
     
     private var instance: ThirExpression? = null
@@ -47,7 +50,7 @@ internal class AssignDefiner(
         if (instance == null)
             instance = instanceWorker.process().valueOr { return it.toFailure() }
         if (expressionWorker == null)
-            expressionWorker = expressionDefinerOf(node.expression, env, scope, instance!!.valueKind, false)
+            expressionWorker = expressionDefinerOf(evaluator, node.expression, env, scope, instance!!.valueKind, false)
         if (expression == null)
             expression = expressionWorker!!.process().valueOr { return it.toFailure() }
         
@@ -68,9 +71,14 @@ internal class AssignDefiner(
 /**
  * Converts from a HIR evaluation statement to a THIR statement.
  */
-internal class EvaluateDefiner(node: HirStatement.Evaluate, env: Environment, scope: Scope) : Worker<ThirStatement>
+internal class EvaluateDefiner(
+    evaluator: Evaluator,
+    node: HirStatement.Evaluate,
+    env: Environment,
+    scope: Scope,
+) : Worker<ThirStatement>
 {
-    private val worker = expressionDefinerOf(node.expression, env, scope, null, false)
+    private val worker = expressionDefinerOf(evaluator, node.expression, env, scope, null, false)
     
     override fun process(): Result<ThirStatement, Outcome>
     {
@@ -87,11 +95,16 @@ internal class EvaluateDefiner(node: HirStatement.Evaluate, env: Environment, sc
 /**
  * Converts from a HIR if statement to a THIR statement.
  */
-internal class IfDefiner(node: HirStatement.If, env: Environment, scope: Scope) : Worker<ThirStatement>
+internal class IfDefiner(
+    evaluator: Evaluator,
+    node: HirStatement.If,
+    env: Environment,
+    scope: Scope,
+) : Worker<ThirStatement>
 {
-    private val predicateWorker = expressionDefinerOf(node.predicate, env, scope, ThirKind.Value(ThirType.Bool), false)
-    private val successWorker = WorkerList(node.success) { statementDefinerOf(it, env, scope) }
-    private val failureWorker = WorkerList(node.failure) { statementDefinerOf(it, env, scope) }
+    private val predicateWorker = expressionDefinerOf(evaluator, node.predicate, env, scope, ThirKind.Value(ThirType.Bool), false)
+    private val successWorker = WorkerList(node.success) { statementDefinerOf(evaluator, it, env, scope) }
+    private val failureWorker = WorkerList(node.failure) { statementDefinerOf(evaluator, it, env, scope) }
     
     private var predicate: ThirExpression? = null
     private var success: List<ThirStatement>? = null
@@ -157,9 +170,14 @@ internal object ReturnDefiner : Worker<ThirStatement>
 /**
  * Converts from a HIR error return to a THIR statement.
  */
-internal class ReturnErrorDefiner(node: HirStatement.ReturnError, env: Environment, scope: Scope) : Worker<ThirStatement>
+internal class ReturnErrorDefiner(
+    evaluator: Evaluator,
+    node: HirStatement.ReturnError,
+    env: Environment,
+    scope: Scope,
+) : Worker<ThirStatement>
 {
-    private val worker = expressionDefinerOf(node.expression, env, scope, null, false)
+    private val worker = expressionDefinerOf(evaluator, node.expression, env, scope, null, false)
     
     override fun process(): Result<ThirStatement, Outcome>
     {
@@ -174,9 +192,14 @@ internal class ReturnErrorDefiner(node: HirStatement.ReturnError, env: Environme
 /**
  * Converts from a HIR value return to a THIR statement.
  */
-internal class ReturnValueDefiner(node: HirStatement.ReturnValue, env: Environment, scope: Scope) : Worker<ThirStatement>
+internal class ReturnValueDefiner(
+    evaluator: Evaluator,
+    node: HirStatement.ReturnValue,
+    env: Environment,
+    scope: Scope,
+) : Worker<ThirStatement>
 {
-    private val worker = expressionDefinerOf(node.expression, env, scope, null, false)
+    private val worker = expressionDefinerOf(evaluator, node.expression, env, scope, null, false)
     
     override fun process(): Result<ThirStatement, Outcome>
     {
@@ -191,10 +214,15 @@ internal class ReturnValueDefiner(node: HirStatement.ReturnValue, env: Environme
 /**
  * Converts from a HIR if statement to a THIR statement.
  */
-internal class WhileDefiner(node: HirStatement.While, env: Environment, scope: Scope) : Worker<ThirStatement>
+internal class WhileDefiner(
+    evaluator: Evaluator,
+    node: HirStatement.While,
+    env: Environment,
+    scope: Scope,
+) : Worker<ThirStatement>
 {
-    private val predicateWorker = expressionDefinerOf(node.predicate, env, scope, null, false)
-    private val statementsWorker = WorkerList(node.body) { statementDefinerOf(it, env, scope) }
+    private val predicateWorker = expressionDefinerOf(evaluator, node.predicate, env, scope, null, false)
+    private val statementsWorker = WorkerList(node.body) { statementDefinerOf(evaluator, it, env, scope) }
     
     private var predicate: ThirExpression? = null
     private var statements: List<ThirStatement>? = null

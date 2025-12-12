@@ -114,15 +114,28 @@ fun <Value, Error, T> Result<Value, Error>.flatMapError(transformation: (Error) 
     }
 
 /**
- * Transforms the collection of failable operations into either all successes, or the first failure case. Each element
+ * Transforms the collection of fallible operations into either all successes, or the first failure case. Each element
  * is transformed using the [transformation] function.
  */
 fun <Value, Error, T> Iterable<T>.mapUntilError(transformation: (T) -> Result<Value, Error>): Result<List<Value>, Error> =
     map { result -> transformation(result).valueOr { return it.toFailure() } }.toSuccess()
 
 /**
- * Transforms the collection of failable operations into two lists, one containing all the success cases and the other
+ * Transforms the collection of fallible operations into two lists, one containing all the success cases and the other
  * containing all the failure cases.
  */
 fun <Value, Error> Iterable<Result<Value, Error>>.partitionOutcomes(): Pair<List<Value>, List<Error>> =
     mapNotNull { it.valueOrNull() } to mapNotNull { it.errorOrNull() }
+
+/**
+ * Runs the [function] in a try-catch block, if the function succeeds the [Value] is returned as a success. Otherwise,
+ * the exception is returned as an error value.
+ */
+inline fun <Value> tryCatch(function: () -> Value): Result<Value, Throwable> = try
+{
+    function().toSuccess()
+}
+catch (e: Throwable)
+{
+    e.toFailure()
+}

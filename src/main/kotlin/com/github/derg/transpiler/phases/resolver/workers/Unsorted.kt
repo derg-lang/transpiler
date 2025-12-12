@@ -1,5 +1,6 @@
 package com.github.derg.transpiler.phases.resolver.workers
 
+import com.github.derg.transpiler.phases.interpreter.*
 import com.github.derg.transpiler.phases.resolver.*
 import com.github.derg.transpiler.source.hir.*
 import com.github.derg.transpiler.source.thir.*
@@ -12,6 +13,7 @@ import java.util.*
  * the nothing kind.
  */
 internal class TypeExprResolver(
+    private val evaluator: Evaluator,
     private val kind: HirKind?,
     private val expr: HirExpression?,
     private val env: Environment,
@@ -32,7 +34,7 @@ internal class TypeExprResolver(
     private fun resolveExpression(): Result<ThirExpression?, Outcome>
     {
         if (exprWorker == null)
-            exprWorker = expr?.let { expressionDefinerOf(it, env, scope, kindOutput, requireDefinition) }
+            exprWorker = expr?.let { expressionDefinerOf(evaluator, it, env, scope, kindOutput, requireDefinition) }
         if (exprOutput == null)
             exprOutput = exprWorker?.process()?.valueOr { return it.toFailure() }
         return exprOutput.toSuccess()
@@ -45,7 +47,7 @@ internal class TypeExprResolver(
     fun resolveDeclaration(): Result<ThirKind, Outcome>
     {
         if (kindWorker == null)
-            kindWorker = kind?.let { KindDefiner(it, env, scope) }
+            kindWorker = kind?.let { KindDefiner(evaluator, it, env, scope) }
         if (kindOutput == null)
             kindOutput = kindWorker?.process()?.valueOr { return it.toFailure() }
         if (kindOutput == null)
@@ -96,6 +98,7 @@ internal class TypeExprResolver(
 //       omit many details simply to get the ball rolling. We can implement the remaining features at a more fitting
 //       hour.
 internal class ArgumentResolver(
+    private val evaluator: Evaluator,
     private val arguments: List<NamedMaybe<HirExpression>>,
     private val parameters: List<ThirDeclaration.Parameter>,
     private val env: Environment,
@@ -174,7 +177,7 @@ internal class ArgumentResolver(
             val parameter = parameters.getOrNull(slot)
                 ?: return Outcome.UnexpectedParameter(name, value).toFailure()
             
-            workers[slot] = expressionDefinerOf(value, env, scope, parameter.kind, requireDefinition)
+            workers[slot] = expressionDefinerOf(evaluator, value, env, scope, parameter.kind, requireDefinition)
         }
         
         return workers.toSuccess()
@@ -190,6 +193,7 @@ internal class ArgumentResolver(
 //       omit many details simply to get the ball rolling. We can implement the remaining features at a more fitting
 //       hour.
 internal class TypeArgumentResolver(
+    private val evaluator: Evaluator,
     private val arguments: List<NamedMaybe<HirExpression>>,
     private val parameters: List<ThirDeclaration.TypeParameter>,
     private val env: Environment,
@@ -260,7 +264,7 @@ internal class TypeArgumentResolver(
             val parameter = parameters.getOrNull(slot)
                 ?: return Outcome.UnexpectedParameter(name, value).toFailure()
             
-            workers[slot] = expressionDefinerOf(value, env, scope, parameter.kind, requireDefinition)
+            workers[slot] = expressionDefinerOf(evaluator, value, env, scope, parameter.kind, requireDefinition)
         }
         
         return workers.toSuccess()

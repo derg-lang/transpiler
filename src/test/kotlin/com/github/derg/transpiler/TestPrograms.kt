@@ -1,6 +1,7 @@
 package com.github.derg.transpiler
 
 import com.github.derg.transpiler.phases.converter.*
+import com.github.derg.transpiler.phases.interpreter.*
 import com.github.derg.transpiler.phases.parser.*
 import com.github.derg.transpiler.phases.resolver.*
 import com.github.derg.transpiler.source.thir.*
@@ -29,14 +30,19 @@ class TestProgram
     @ArgumentsSource(ProgramList::class)
     fun `Given program, when running it, then expected value is returned`(input: Pair<String, Result<ThirExpression?, ThirExpression?>>)
     {
+        val environment = Builtin.environment
+        val scope = Builtin.scope
+        val globals = StackFrame()
+        val evaluator = Evaluator(environment, globals)
+        val resolver = Resolver(environment, scope, evaluator)
+        
         val source = File("src/test/resources/programs/${input.first}.derg").readText()
         val ast = parse(source).valueOrDie()
         val hir = convert(ast)
-        val thir = resolve(hir).valueOrDie()
+        resolver.resolve(hir).valueOrDie()
         
-        val interpreter = Interpreter(thir)
-        val main = thir.declarations.values.last { it.name == "main" } as ThirDeclaration.Function
+        val main = environment.declarations.values.last { it.name == "main" } as ThirDeclaration.Function
         
-        assertEquals(input.second, interpreter.evaluate(main.thirLoad().thirCall()))
+        assertEquals(input.second, evaluator.evaluate(main.thirLoad().thirCall()))
     }
 }

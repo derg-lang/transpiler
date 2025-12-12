@@ -119,9 +119,22 @@ fun ThirExpression.thirCall(vararg parameters: ThirExpression): ThirExpression
 {
     val type = this as? ThirExpression.Type
         ?: throw IllegalArgumentException("Invoking non-type expressions does not work")
-    val signature = type.raw as? ThirType.Function
-        ?: throw IllegalArgumentException("Invoking non-function expressions does not work")
-    return ThirExpression.Call(this, parameters.toList(), signature.valueKind, signature.errorKind)
+    
+    val raw = type.raw
+    if (raw is ThirType.Function)
+        return ThirExpression.Call(this, parameters.toList(), raw.valueKind, raw.errorKind)
+    if (raw is ThirType.Structure)
+    {
+        val instance = ThirType.Function(
+            functionId = raw.structureId,
+            typeParameters = raw.typeParameters,
+            valueKind = ThirKind.Value(raw),
+            errorKind = ThirKind.Nothing,
+        )
+        return ThirExpression.Call(ThirExpression.Type(instance), parameters.toList(), ThirKind.Value(raw), ThirKind.Nothing)
+    }
+    
+    throw IllegalArgumentException("Invoking non-function expressions does not work")
 }
 
 fun ThirDeclaration.Function.thirLoad(vararg typeParameters: ThirExpression.Canonical) =
@@ -130,8 +143,14 @@ fun ThirDeclaration.Function.thirLoad(vararg typeParameters: ThirExpression.Cano
 fun ThirDeclaration.Structure.thirLoad(vararg typeParameters: ThirExpression.Canonical) =
     ThirExpression.Type(ThirType.Structure(id, typeParameters.toList()))
 
+fun ThirDeclaration.Parameter.thirLoad() =
+    ThirExpression.Load(id, kind)
+
 fun ThirDeclaration.Variable.thirLoad() =
     ThirExpression.Load(id, kind)
+
+fun ThirExpression.thirField(field: ThirDeclaration.Field) =
+    ThirExpression.Field(this, field.id, field.kind)
 
 ///////////////////////
 // Statement helpers //

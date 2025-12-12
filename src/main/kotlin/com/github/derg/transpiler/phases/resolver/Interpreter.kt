@@ -56,18 +56,11 @@ class Interpreter(private val env: Environment)
      */
     fun evaluate(expression: ThirExpression): Result<ThirExpression.Canonical?, ThirExpression.Canonical?> = when (expression)
     {
-        is ThirExpression.Bool     -> expression.toSuccess()
-        is ThirExpression.Float32  -> expression.toSuccess()
-        is ThirExpression.Float64  -> expression.toSuccess()
-        is ThirExpression.Int32    -> expression.toSuccess()
-        is ThirExpression.Int64    -> expression.toSuccess()
-        is ThirExpression.Str      -> expression.toSuccess()
-        is ThirExpression.Instance -> expression.toSuccess()
-        is ThirExpression.Type     -> expression.toSuccess()
-        is ThirExpression.Call     -> evaluateCall(expression)
-        is ThirExpression.Catch    -> evaluateCatch(expression)
-        is ThirExpression.Field    -> evaluateField(expression).toSuccess()
-        is ThirExpression.Load     -> evaluateLoad(expression).toSuccess()
+        is ThirExpression.Canonical -> expression.toSuccess()
+        is ThirExpression.Call      -> evaluateCall(expression)
+        is ThirExpression.Catch     -> evaluateCatch(expression)
+        is ThirExpression.Field     -> evaluateField(expression).toSuccess()
+        is ThirExpression.Load      -> evaluateLoad(expression).toSuccess()
     }
     
     private fun evaluateCall(expression: ThirExpression.Call): Result<ThirExpression.Canonical?, ThirExpression.Canonical?>
@@ -126,7 +119,7 @@ class Interpreter(private val env: Environment)
             val typeParameters = symbol.typeParameterIds
                 .map { env.declarations[it] }
                 .filterIsInstance<ThirDeclaration.TypeParameter>()
-    
+            
             stack.addLast(frame)
             fields.filter { it.id !in frame }.forEach { frame[it.id] = evaluate(it.def!!.default!!).valueOrDie()!! }
             stack.removeLast()

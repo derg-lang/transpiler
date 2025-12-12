@@ -1,6 +1,7 @@
 package com.github.derg.transpiler
 
 import com.github.derg.transpiler.phases.converter.*
+import com.github.derg.transpiler.phases.interpreter.*
 import com.github.derg.transpiler.phases.parser.*
 import com.github.derg.transpiler.phases.resolver.*
 import com.github.derg.transpiler.source.thir.*
@@ -34,23 +35,29 @@ private const val SOURCE = """
 
 fun main(args: Array<String>)
 {
+    val environment = Builtin.environment
+    val scope = Builtin.scope
+    val globals = StackFrame()
+    val evaluator = Evaluator(environment, globals)
+    val resolver = Resolver(environment, scope, evaluator)
+    
     val compileStart = OffsetDateTime.now()
     val ast = parse(SOURCE).valueOrDie()
     val hir = convert(ast)
-    val thir = resolve(hir).valueOrDie()
+    resolver.resolve(hir).valueOrDie()
     val compileEnd = OffsetDateTime.now()
     
     // Find the entry point into the program and load the run command.
-    val main = thir.declarations.values.last { it.name == "main" }
-    val type = ThirExpression.Type(ThirType.Function(main.id, emptyList(), ThirKind.Value(ThirType.Int32), ThirKind.Nothing))
-    val call = ThirExpression.Call(type, emptyList(), ThirKind.Value(ThirType.Int32), ThirKind.Nothing)
+    val main = environment.declarations.values.filterIsInstance<ThirDeclaration.Function>().single { it.name == "main" }
+    val type = ThirExpression.Type(ThirType.Function(main.id, emptyList(), main.valueKind, main.errorKind))
+    val call = ThirExpression.Call(type, emptyList(), main.valueKind, main.errorKind)
     
     // Analyze the outcome, lets us know what the compiler found in the source code and runtime analytics.
-    val constants = thir.declarations.values.filterIsInstance<ThirDeclaration.Const>()
-    val functions = thir.declarations.values.filterIsInstance<ThirDeclaration.Function>()
-    val parameters = thir.declarations.values.filterIsInstance<ThirDeclaration.Parameter>()
-    val structures = thir.declarations.values.filterIsInstance<ThirDeclaration.Structure>()
-    val fields = thir.declarations.values.filterIsInstance<ThirDeclaration.Field>()
+    val constants = environment.declarations.values.filterIsInstance<ThirDeclaration.Const>()
+    val functions = environment.declarations.values.filterIsInstance<ThirDeclaration.Function>()
+    val parameters = environment.declarations.values.filterIsInstance<ThirDeclaration.Parameter>()
+    val structures = environment.declarations.values.filterIsInstance<ThirDeclaration.Structure>()
+    val fields = environment.declarations.values.filterIsInstance<ThirDeclaration.Field>()
     
     println("")
     println("Constants: \n\t" + constants.joinToString("\n\t") { it.toString() })
@@ -66,7 +73,7 @@ fun main(args: Array<String>)
     
     // Run program, timing the duration of it.
     val runStart = OffsetDateTime.now()
-    val outcome = Interpreter(thir).evaluate(call)
+    val outcome = evaluator.evaluate(call)
     val runEnd = OffsetDateTime.now()
     
     println("")

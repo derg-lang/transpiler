@@ -1,5 +1,6 @@
 package com.github.derg.transpiler.phases.resolver
 
+import com.github.derg.transpiler.phases.interpreter.*
 import com.github.derg.transpiler.phases.resolver.workers.*
 import com.github.derg.transpiler.source.hir.*
 import com.github.derg.transpiler.source.thir.*
@@ -7,20 +8,14 @@ import com.github.derg.transpiler.utils.*
 import java.util.*
 
 /**
- * Converts the input [node] into an environment of type-checked symbols. All symbols within the environment should be
- * ready for further semantic analysis and interpretation or lowering.
- */
-fun resolve(node: HirDeclaration.SegmentDecl): Result<Environment, String>
-{
-    val resolver = Resolver(Builtin.environment, Builtin.scope)
-    return resolver.resolve(node).mapValue { Builtin.environment }
-}
-
-/**
  * The resolver is responsible for converting an arbitrary amount of code in a module into a type-checked version of the
  * same code. It works in the provided [environment], inheriting everything visible in the given [scope].
  */
-internal class Resolver(private val environment: Environment, private val scope: Scope)
+internal class Resolver(
+    private val environment: Environment,
+    private val scope: Scope,
+    private val evaluator: Evaluator,
+)
 {
     /**
      * The dependencies associated with a specific node.
@@ -55,7 +50,7 @@ internal class Resolver(private val environment: Environment, private val scope:
      */
     fun resolve(node: HirDeclaration.SegmentDecl): Result<Unit, String>
     {
-        registerNewWorker(node.id, SegmentDefiner(node, environment, scope))
+        registerNewWorker(node.id, SegmentDefiner(evaluator, node, environment, scope))
         
         while (dependencies.isNotEmpty())
             takeOneStep().onFailure { return it.toFailure() }

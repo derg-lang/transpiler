@@ -1,5 +1,6 @@
 package com.github.derg.transpiler.phases.resolver
 
+import com.github.derg.transpiler.phases.interpreter.*
 import com.github.derg.transpiler.source.*
 import com.github.derg.transpiler.source.hir.*
 import com.github.derg.transpiler.source.thir.*
@@ -9,7 +10,8 @@ import org.junit.jupiter.api.Assertions.*
 
 class TestResolver
 {
-    private val resolver = Resolver(Builtin.environment, Builtin.scope)
+    private val evaluator = Evaluator(Builtin.environment, StackFrame())
+    private val resolver = Resolver(Builtin.environment, Builtin.scope, evaluator)
     
     @Test
     fun `Hmm, what to do`()
