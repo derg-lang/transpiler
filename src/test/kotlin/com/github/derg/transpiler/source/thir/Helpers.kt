@@ -126,28 +126,17 @@ infix fun ThirExpression.thirCatchValue(that: ThirExpression) = ThirExpression.C
 
 fun ThirExpression.thirCall(vararg parameters: ThirExpression): ThirExpression
 {
-    val type = this as? ThirExpression.Type
+    val value = this as? ThirExpression.Type
         ?: throw IllegalArgumentException("Invoking non-type expressions does not work")
     
-    val raw = type.raw
-    if (raw is ThirType.Function)
-        return ThirExpression.Call(this, parameters.toList(), raw.valueKind, raw.errorKind)
-    if (raw is ThirType.Structure)
-    {
-        val instance = ThirType.Function(
-            functionId = raw.structureId,
-            typeParameters = raw.typeParameters,
-            valueKind = ThirKind.Value(raw),
-            errorKind = ThirKind.Nothing,
-        )
-        return ThirExpression.Call(ThirExpression.Type(instance), parameters.toList(), ThirKind.Value(raw), ThirKind.Nothing)
-    }
+    val type = value.raw
+    if (type is ThirType.Function)
+        return ThirExpression.Call(this, parameters.toList(), type.valueKind, type.errorKind)
+    if (type is ThirType.Structure)
+        return ThirExpression.Call(this, parameters.toList(), ThirKind.Value(type), ThirKind.Nothing)
     
-    throw IllegalArgumentException("Invoking non-function expressions does not work")
+    throw IllegalArgumentException("Invoking non-callable expressions does not work")
 }
-
-fun ThirType.thirCall(vararg parameters: ThirExpression): ThirExpression =
-    ThirExpression.Call(ThirExpression.Type(this), parameters.toList(), ThirKind.Value(this), ThirKind.Nothing)
 
 fun ThirDeclaration.Function.thirLoad(vararg typeParameters: ThirExpression.Canonical) =
     ThirExpression.Type(ThirType.Function(id, typeParameters.toList(), valueKind, errorKind))
@@ -167,7 +156,7 @@ fun ThirExpression.thirField(field: ThirDeclaration.Field) =
 /**
  * Generates a type description for [this] structure. The type description is an instantiation of the structure type.
  */
-fun ThirDeclaration.Structure.thirType(vararg typeParameters: ThirExpression.Canonical): ThirType = when (id)
+private fun ThirDeclaration.Structure.thirType(vararg typeParameters: ThirExpression.Canonical): ThirType = when (id)
 {
     Builtin.BOOL.id    -> ThirType.Bool
     Builtin.INT32.id   -> ThirType.Int32

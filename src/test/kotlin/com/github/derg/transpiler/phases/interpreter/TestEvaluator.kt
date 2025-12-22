@@ -133,7 +133,7 @@ class TestEvaluator
             globals[variable.id] = 42.thir
     
             assertSuccess(42.thir, evaluator.evaluate(variable.thirLoad()))
-            assertSuccess(structure.thirType().thir, evaluator.evaluate(structure.thirLoad()))
+            assertSuccess(structure.thirLoad(), evaluator.evaluate(structure.thirLoad()))
         }
         
         @Test
@@ -184,7 +184,7 @@ class TestEvaluator
                 valueKind = ThirKind.Value(ThirType.Structure(structure.id, emptyList())),
             )
             
-            assertSuccess(expected, evaluator.evaluate(structure.thirType().thirCall()))
+            assertSuccess(expected, evaluator.evaluate(structure.thirLoad().thirCall()))
         }
         
         @Test
@@ -198,7 +198,7 @@ class TestEvaluator
                 valueKind = ThirKind.Value(ThirType.Structure(structure.id, emptyList())),
             )
             
-            assertSuccess(instance, evaluator.evaluate(structure.thirType().thirCall(42.thir)))
+            assertSuccess(instance, evaluator.evaluate(structure.thirLoad().thirCall(42.thir)))
         }
     }
     
