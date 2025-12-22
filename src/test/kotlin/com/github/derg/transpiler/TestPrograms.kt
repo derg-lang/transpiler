@@ -4,6 +4,7 @@ import com.github.derg.transpiler.phases.converter.*
 import com.github.derg.transpiler.phases.interpreter.*
 import com.github.derg.transpiler.phases.parser.*
 import com.github.derg.transpiler.phases.resolver.*
+import com.github.derg.transpiler.source.ast.*
 import com.github.derg.transpiler.source.thir.*
 import com.github.derg.transpiler.utils.*
 import org.junit.jupiter.api.Assertions.*
@@ -37,9 +38,9 @@ class TestProgram
         val resolver = Resolver(env, scope, globals, evaluator)
         
         val source = File("src/test/resources/programs/${input.first}.derg").readText()
-        val ast = parse(source).valueOrDie()
-        val hir = convert(ast)
-        resolver.resolve(hir).valueOrDie()
+        val segment = parse(source).valueOrDie()
+        val module = AstModule("test", listOf(segment))
+        resolver.resolve(convert(module)).valueOrDie()
         
         val main = env.declarations.values.last { it.name == "main" } as ThirDeclaration.Function
         

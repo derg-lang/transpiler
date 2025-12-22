@@ -126,23 +126,26 @@ fun hirConstOf(
     name: String = UUID.randomUUID().toString(),
     kind: HirKind? = INT32_TYPE_NAME.hirIdent().type.kind,
     value: HirExpression = 0.hir,
+    visibility: Visibility = Visibility.PRIVATE,
 ) = HirDeclaration.ConstantDecl(
     id = UUID.randomUUID(),
     name = name,
     kind = kind,
     value = value,
+    visibility = visibility,
 )
 
 fun hirFieldOf(
     name: String = UUID.randomUUID().toString(),
     kind: HirKind = INT32_TYPE_NAME.hirIdent().type.kind,
     default: HirExpression? = null,
+    visibility: Visibility = Visibility.PRIVATE,
 ) = HirDeclaration.FieldDecl(
     id = UUID.randomUUID(),
     name = name,
     kind = kind,
     default = default,
-    visibility = Visibility.PRIVATE,
+    visibility = visibility,
     assignability = Assignability.FINAL,
 )
 
@@ -153,15 +156,25 @@ fun hirFunOf(
     valueKind: HirKind = HirKind.Nothing,
     errorKind: HirKind = HirKind.Nothing,
     statements: List<HirStatement> = emptyList(),
+    visibility: Visibility = Visibility.PRIVATE,
 ) = HirDeclaration.FunctionDecl(
     id = UUID.randomUUID(),
     name = name,
-    visibility = Visibility.PRIVATE,
+    visibility = visibility,
     typeParameters = typeParameters,
     parameters = parameters,
     valueKind = valueKind,
     errorKind = errorKind,
     body = statements,
+)
+
+fun hirModuleOf(
+    name: String = UUID.randomUUID().toString(),
+    segments: List<HirDeclaration.SegmentDecl> = emptyList(),
+) = HirDeclaration.ModuleDecl(
+    id = UUID.randomUUID(),
+    name = name,
+    segments = segments,
 )
 
 fun hirParamOf(

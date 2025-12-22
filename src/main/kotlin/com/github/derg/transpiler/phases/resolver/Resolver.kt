@@ -49,9 +49,9 @@ internal class Resolver(
      * value when the provided code type-checked. Otherwise, an error indicating the problem in the source code is
      * returned.
      */
-    fun resolve(node: HirDeclaration.SegmentDecl): Result<Unit, String>
+    fun resolve(node: HirDeclaration.ModuleDecl): Result<Unit, String>
     {
-        registerNewWorker(node.id, SegmentDefiner(evaluator, node, environment, scope, globals))
+        registerNewWorker(node.id, ModuleDefiner(evaluator, node, environment, scope, scope, globals))
         
         while (dependencies.isNotEmpty())
             takeOneStep().onFailure { return it.toFailure() }

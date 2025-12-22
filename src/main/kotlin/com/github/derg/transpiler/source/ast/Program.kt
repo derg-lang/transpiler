@@ -29,12 +29,10 @@ data class AstPackage(
  * enabling it to be modularized.
  *
  * @param name The name of the module.
- * @param modules The submodules residing within this module.
  * @param segments The source code files which reside within this module.
  */
 data class AstModule(
     val name: String,
-    val modules: List<AstModule>,
     val segments: List<AstSegment>,
 )
 

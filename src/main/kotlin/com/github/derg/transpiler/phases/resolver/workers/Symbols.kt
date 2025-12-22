@@ -2,6 +2,7 @@ package com.github.derg.transpiler.phases.resolver.workers
 
 import com.github.derg.transpiler.phases.interpreter.*
 import com.github.derg.transpiler.phases.resolver.*
+import com.github.derg.transpiler.source.*
 import com.github.derg.transpiler.source.hir.*
 import com.github.derg.transpiler.source.thir.*
 import com.github.derg.transpiler.utils.*
@@ -311,21 +312,64 @@ internal class StructureDefiner(
 }
 
 /**
+ * Converts a HIR module into a THIR declaration.
+ */
+internal class ModuleDefiner(
+    private val evaluator: Evaluator,
+    private val node: HirDeclaration.ModuleDecl,
+    private val env: Environment,
+    private val externalScope: Scope,
+    private val packageScope: Scope,
+    private val globals: StackFrame,
+) : Worker<Phase>
+{
+    private val moduleScope = Scope(packageScope)
+    private var hasSpawnedChildren = false
+    private var hasDeclaredItself = false
+    
+    override fun process(): Result<Phase, Outcome>
+    {
+        if (hasDeclaredItself)
+            return Phase.Defined.toSuccess()
+        if (hasSpawnedChildren)
+        {
+            hasDeclaredItself = true
+            return Phase.Declared.toSuccess()
+        }
+        
+        hasSpawnedChildren = true
+        val segments = node.segments.associate { it.id to SegmentDefiner(evaluator, it, env, externalScope, packageScope, moduleScope, globals) }
+        return Phase.Spawn(segments).toSuccess()
+    }
+}
+
+/**
  * Converts a HIR segment into a THIR declaration.
  */
 internal class SegmentDefiner(
     private val evaluator: Evaluator,
     private val node: HirDeclaration.SegmentDecl,
     private val env: Environment,
-    parentScope: Scope,
+    externalScope: Scope,
+    packageScope: Scope,
+    moduleScope: Scope,
     private val globals: StackFrame,
 ) : Worker<Phase>
 {
-    val scope = Scope(parentScope).apply()
+    private val segmentScope = Scope(moduleScope)
+    
+    init
     {
-        node.constants.forEach { register(it.id, it.name) }
-        node.functions.forEach { register(it.id, it.name) }
-        node.structures.forEach { register(it.id, it.name) }
+        // All declarations must be registered into their corresponding scopes based on visibility.
+        val symbols = node.constants.map { it.visibility to it } +
+                node.functions.map { it.visibility to it } +
+                node.structures.map { it.visibility to it }
+        
+        val declarations = symbols.groupBy { it.first }.mapValues { it.value.map { foo -> foo.second } }
+        declarations[Visibility.PRIVATE]?.forEach { segmentScope.register(it.id, it.name) }
+        declarations[Visibility.PROTECTED]?.forEach { moduleScope.register(it.id, it.name) }
+        declarations[Visibility.PUBLIC]?.forEach { packageScope.register(it.id, it.name) }
+        declarations[Visibility.EXPORTED]?.forEach { externalScope.register(it.id, it.name) }
     }
     
     private var hasSpawnedChildren = false
@@ -342,9 +386,9 @@ internal class SegmentDefiner(
         }
         
         hasSpawnedChildren = true
-        val constants = node.constants.associate { it.id to ConstDefiner(evaluator, it, env, scope, globals) }
-        val functions = node.functions.associate { it.id to FunctionDefiner(evaluator, it, env, scope) }
-        val structures = node.structures.associate { it.id to StructureDefiner(evaluator, it, env, scope) }
+        val constants = node.constants.associate { it.id to ConstDefiner(evaluator, it, env, segmentScope, globals) }
+        val functions = node.functions.associate { it.id to FunctionDefiner(evaluator, it, env, segmentScope) }
+        val structures = node.structures.associate { it.id to StructureDefiner(evaluator, it, env, segmentScope) }
         return Phase.Spawn(constants + functions + structures).toSuccess()
     }
 }
