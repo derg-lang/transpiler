@@ -1,6 +1,9 @@
 name: Continuous integration
 
 on:
+  push:
+    branches:
+      - "master"
   pull_request:
     branches:
       - "master"
@@ -17,5 +20,6 @@ jobs:
         with:
           java-version: "16"
           distribution: "temurin"
+          cache: "maven"
       - name: Test
         run: mvn --batch-mode verify
