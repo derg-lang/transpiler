@@ -2,7 +2,6 @@ package com.github.derg.transpiler.phases.resolver.workers
 
 import com.github.derg.transpiler.phases.interpreter.*
 import com.github.derg.transpiler.phases.resolver.*
-import com.github.derg.transpiler.source.*
 import com.github.derg.transpiler.source.hir.*
 import com.github.derg.transpiler.source.thir.*
 import com.github.derg.transpiler.utils.*
@@ -29,6 +28,7 @@ internal class ConstDefiner(
     private val node: HirDeclaration.ConstantDecl,
     private val env: Environment,
     scope: Scope,
+    private val globals: StackFrame,
 ) : Worker<Phase>
 {
     private val worker = TypeExprResolver(evaluator, node.kind, node.value, env, scope, true)
@@ -43,9 +43,10 @@ internal class ConstDefiner(
         }
         
         val expr = worker.resolveDefinition().valueOr { return it.toFailure() }
-        val value = Interpreter(env).evaluate(expr!!).valueOrDie()!!
+        val value = evaluator.evaluate(expr!!).valueOrDie()!!
         val symbol = env.declarations[node.id]!! as ThirDeclaration.Const
         symbol.def = ThirDeclaration.ConstDef(value = value)
+        globals[symbol.id] = value
         return Phase.Defined.toSuccess()
     }
 }
@@ -156,7 +157,7 @@ internal class TypeParameterDefiner(
         if (exprOutcome == null)
             exprOutcome = exprWorker?.process()?.valueOr { return it.toFailure() }
         
-        val value = exprOutcome?.let { Interpreter(env).evaluate(it).valueOrDie()!! }
+        val value = exprOutcome?.let { evaluator.evaluate(it).valueOrDie()!! }
         val symbol = env.declarations[node.id]!! as ThirDeclaration.TypeParameter
         symbol.def = ThirDeclaration.TypeParameterDef(default = value)
         return Phase.Defined.toSuccess()
@@ -319,6 +320,7 @@ internal class SegmentDefiner(
     private val node: HirDeclaration.SegmentDecl,
     private val env: Environment,
     parentScope: Scope,
+    private val globals: StackFrame,
 ) : Worker<Phase>
 {
     // TODO: Create a new scope from the parent instead.
@@ -343,7 +345,7 @@ internal class SegmentDefiner(
         }
         
         hasSpawnedChildren = true
-        val constants = node.constants.associate { it.id to ConstDefiner(evaluator, it, env, scope) }
+        val constants = node.constants.associate { it.id to ConstDefiner(evaluator, it, env, scope, globals) }
         val functions = node.functions.associate { it.id to FunctionDefiner(evaluator, it, env, scope) }
         val structures = node.structures.associate { it.id to StructureDefiner(evaluator, it, env, scope) }
         return Phase.Spawn(constants + functions + structures).toSuccess()

@@ -26,14 +26,13 @@ fun typeDefinerOf(
  * be fully resolved.
  */
 internal class TypeExpressionDefiner(
-    evaluator: Evaluator,
+    private val evaluator: Evaluator,
     node: HirType.Expression,
     private val env: Environment,
     scope: Scope,
 ) : Worker<ThirType>
 {
     private val exprWorker = expressionDefinerOf(evaluator, node.value, env, scope, null, true)
-    private val interpreter = Interpreter(env)
     
     override fun process(): Result<ThirType, Outcome>
     {
@@ -59,7 +58,7 @@ internal class TypeExpressionDefiner(
                 return ThirExpression.Type(ThirType.TypeParameterRef(symbol.id)).toSuccess()
         }
         
-        val evaluation = interpreter.evaluate(expression)
+        val evaluation = evaluator.evaluate(expression)
             .valueOr { return Outcome.Unhandled("Expression '$expression' evaluated to error '$it'").toFailure() }
             ?: return Outcome.Unhandled("Expression '$expression' did not evaluate to anything").toFailure()
         

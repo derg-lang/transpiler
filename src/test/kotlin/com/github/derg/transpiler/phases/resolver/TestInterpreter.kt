@@ -6,7 +6,8 @@ import org.junit.jupiter.api.*
 
 class TestInterpreter
 {
-    private val interpreter = Interpreter(Builtin.environment)
+    private val env = Builtin.generateEnvironment()
+    private val interpreter = Interpreter(env)
     
     @Test
     fun `Given primitive expressions, when evaluating, they evaluate to themselves`()

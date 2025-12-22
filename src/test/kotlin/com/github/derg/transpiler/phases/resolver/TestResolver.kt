@@ -10,8 +10,12 @@ import org.junit.jupiter.api.Assertions.*
 
 class TestResolver
 {
-    private val evaluator = Evaluator(Builtin.environment, StackFrame())
-    private val resolver = Resolver(Builtin.environment, Builtin.scope, evaluator)
+    private val env = Builtin.generateEnvironment()
+    private val scope = Builtin.generateScope()
+    private val globals = Builtin.generateGlobals()
+    
+    private val evaluator = Evaluator(env, globals)
+    private val resolver = Resolver(env, scope, globals, evaluator)
     
     @Test
     fun `Hmm, what to do`()
@@ -21,6 +25,6 @@ class TestResolver
         val expected = thirConstOf(id = input.id, name = input.name, kind = ThirKind.Value(ThirType.Bool), value = true.thir)
         
         assertSuccess(Unit, resolver.resolve(segment))
-        assertEquals(expected, Builtin.environment.declarations[input.id])
+        assertEquals(expected, env.declarations[input.id])
     }
 }

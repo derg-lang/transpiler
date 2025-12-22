@@ -35,11 +35,11 @@ private const val SOURCE = """
 
 fun main(args: Array<String>)
 {
-    val environment = Builtin.environment
-    val scope = Builtin.scope
+    val environment = Builtin.generateEnvironment()
+    val scope = Builtin.generateScope()
     val globals = StackFrame()
     val evaluator = Evaluator(environment, globals)
-    val resolver = Resolver(environment, scope, evaluator)
+    val resolver = Resolver(environment, scope, globals, evaluator)
     
     val compileStart = OffsetDateTime.now()
     val ast = parse(SOURCE).valueOrDie()

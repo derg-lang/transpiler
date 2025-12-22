@@ -119,24 +119,34 @@ class Evaluator(private val environment: Environment, private val globals: Stack
     private fun evaluate(expression: ThirExpression.Call): Result<ThirExpression.Canonical?, ThirExpression.Canonical?>
     {
         val instance = evaluate(expression.instance).valueOr { throw IllegalFunction(expression.instance, it) }
-        if (instance !is ThirExpression.Type || instance.raw !is ThirType.Function)
+        if (instance !is ThirExpression.Type)
             throw NotCallable(expression.instance, instance)
         
+        val (symbolId, rawTypeParameters) = when (val raw = instance.raw)
+        {
+            is ThirType.Function  -> raw.functionId to raw.typeParameters
+            is ThirType.Structure -> raw.structureId to raw.typeParameters
+            else                  -> throw NotCallable(expression.instance, instance)
+        }
+        
         val parameters = expression.parameters.map { param -> evaluate(param).valueOr { throw IllegalParameter(param, it) } }
-        val typeParameters = instance.raw.typeParameters.map { param -> evaluate(param).valueOr { throw IllegalParameter(param, it) } }
+        val typeParameters = rawTypeParameters.map { param -> evaluate(param).valueOr { throw IllegalParameter(param, it) } }
         val lhs = parameters.firstOrNull()
         val rhs = parameters.lastOrNull()
         
         // All builtin functions must be handled explicitly, there are no implementations for these functions. We can
         // implement them directly into the compiler, and evaluate them without doing much extra faffing around.
-        when (instance.raw.functionId)
+        when (symbolId)
         {
+            // Bool
             Builtin.BOOL_AND.id    -> return ThirExpression.Bool(lhs.bool && rhs.bool).toSuccess()
             Builtin.BOOL_EQ.id     -> return ThirExpression.Bool(lhs.bool == rhs.bool).toSuccess()
             Builtin.BOOL_NE.id     -> return ThirExpression.Bool(lhs.bool != rhs.bool).toSuccess()
             Builtin.BOOL_NOT.id    -> return ThirExpression.Bool(!rhs.bool).toSuccess()
             Builtin.BOOL_OR.id     -> return ThirExpression.Bool(lhs.bool || rhs.bool).toSuccess()
             Builtin.BOOL_XOR.id    -> return ThirExpression.Bool(lhs.bool xor rhs.bool).toSuccess()
+            
+            // Int32
             Builtin.INT32_EQ.id    -> return ThirExpression.Bool(lhs.int32 == rhs.int32).toSuccess()
             Builtin.INT32_GE.id    -> return ThirExpression.Bool(lhs.int32 >= rhs.int32).toSuccess()
             Builtin.INT32_GT.id    -> return ThirExpression.Bool(lhs.int32 > rhs.int32).toSuccess()
@@ -150,6 +160,8 @@ class Evaluator(private val environment: Environment, private val globals: Stack
             Builtin.INT32_NEG.id   -> return ThirExpression.Int32(-rhs.int32).toSuccess()
             Builtin.INT32_POS.id   -> return ThirExpression.Int32(+rhs.int32).toSuccess()
             Builtin.INT32_SUB.id   -> return ThirExpression.Int32(lhs.int32 - rhs.int32).toSuccess()
+            
+            // Int64
             Builtin.INT64_EQ.id    -> return ThirExpression.Bool(lhs.int64 == rhs.int64).toSuccess()
             Builtin.INT64_GE.id    -> return ThirExpression.Bool(lhs.int64 >= rhs.int64).toSuccess()
             Builtin.INT64_GT.id    -> return ThirExpression.Bool(lhs.int64 > rhs.int64).toSuccess()
@@ -163,6 +175,8 @@ class Evaluator(private val environment: Environment, private val globals: Stack
             Builtin.INT64_NEG.id   -> return ThirExpression.Int64(-rhs.int64).toSuccess()
             Builtin.INT64_POS.id   -> return ThirExpression.Int64(+rhs.int64).toSuccess()
             Builtin.INT64_SUB.id   -> return ThirExpression.Int64(lhs.int64 - rhs.int64).toSuccess()
+            
+            // Float32
             Builtin.FLOAT32_EQ.id  -> return ThirExpression.Bool(lhs.float32 == rhs.float32).toSuccess()
             Builtin.FLOAT32_GE.id  -> return ThirExpression.Bool(lhs.float32 >= rhs.float32).toSuccess()
             Builtin.FLOAT32_GT.id  -> return ThirExpression.Bool(lhs.float32 > rhs.float32).toSuccess()
@@ -176,6 +190,8 @@ class Evaluator(private val environment: Environment, private val globals: Stack
             Builtin.FLOAT32_NEG.id -> return ThirExpression.Float32(-rhs.float32).toSuccess()
             Builtin.FLOAT32_POS.id -> return ThirExpression.Float32(+rhs.float32).toSuccess()
             Builtin.FLOAT32_SUB.id -> return ThirExpression.Float32(lhs.float32 - rhs.float32).toSuccess()
+            
+            // Float64
             Builtin.FLOAT64_EQ.id  -> return ThirExpression.Bool(lhs.float64 == rhs.float64).toSuccess()
             Builtin.FLOAT64_GE.id  -> return ThirExpression.Bool(lhs.float64 >= rhs.float64).toSuccess()
             Builtin.FLOAT64_GT.id  -> return ThirExpression.Bool(lhs.float64 > rhs.float64).toSuccess()
@@ -189,15 +205,19 @@ class Evaluator(private val environment: Environment, private val globals: Stack
             Builtin.FLOAT64_NEG.id -> return ThirExpression.Float64(-rhs.float64).toSuccess()
             Builtin.FLOAT64_POS.id -> return ThirExpression.Float64(+rhs.float64).toSuccess()
             Builtin.FLOAT64_SUB.id -> return ThirExpression.Float64(lhs.float64 - rhs.float64).toSuccess()
+            
+            // Str
             Builtin.STR_EQ.id      -> return ThirExpression.Bool(lhs.str == rhs.str).toSuccess()
             Builtin.STR_NE.id      -> return ThirExpression.Bool(lhs.str != rhs.str).toSuccess()
             Builtin.STR_ADD.id     -> return ThirExpression.Str(lhs.str + rhs.str).toSuccess()
+            
+            // Functions
             Builtin.STR_PRINTLN.id -> return println(lhs.str).let { null.toSuccess() }
         }
         
         // If we did not find a builtin function, we will need to do something more clever. If we find a function
         // symbol, we must invoke it. If we find a structure, we must instantiate it.
-        val symbol = environment.declarations[instance.raw.functionId]
+        val symbol = environment.declarations[symbolId]
         
         if (symbol is ThirDeclaration.Function)
         {
@@ -267,6 +287,26 @@ class Evaluator(private val environment: Environment, private val globals: Stack
     
     private fun evaluate(expression: ThirExpression.Load): ThirExpression.Canonical
     {
+        // All builtin structures must be handled explicitly, there are no implementations for these structures. We can
+        // implement them directly into the compiler, and evaluate them without doing much extra faffing around.
+        when (expression.symbolId)
+        {
+            Builtin.BOOL.id    -> return ThirExpression.Type(ThirType.Bool)
+            Builtin.INT32.id   -> return ThirExpression.Type(ThirType.Int32)
+            Builtin.INT64.id   -> return ThirExpression.Type(ThirType.Int64)
+            Builtin.FLOAT32.id -> return ThirExpression.Type(ThirType.Float32)
+            Builtin.FLOAT64.id -> return ThirExpression.Type(ThirType.Float64)
+            Builtin.STR.id     -> return ThirExpression.Type(ThirType.Str)
+        }
+        
+        // If we found a structure, we need to evaluate it in a particular manner - the type information must be
+        // extracted from the load and appended to the structure, essentially instantiating it here.
+        val symbol = environment.declarations[expression.symbolId]
+        if (symbol is ThirDeclaration.Structure && expression.valueKind is ThirKind.Value && expression.valueKind.type is ThirType.Structure)
+            return ThirExpression.Type(ThirType.Structure(symbol.id, expression.valueKind.type.typeParameters))
+        
+        // Otherwise, we assume we are looking at some constant which has been stored on either the stack or in global
+        // memory.
         val currentFrame = stack.last()
         if (expression.symbolId in currentFrame)
             return currentFrame[expression.symbolId]

@@ -8,8 +8,8 @@ import org.junit.jupiter.api.*
 
 class TestEvaluator
 {
-    private val env = Environment()
-    private val globals = StackFrame()
+    private val env = Builtin.generateEnvironment()
+    private val globals = Builtin.generateGlobals()
     private val evaluator = Evaluator(env, globals)
     
     @Nested
@@ -24,6 +24,17 @@ class TestEvaluator
             assertSuccess(3.14f.thir, evaluator.evaluate(3.14f.thir))
             assertSuccess(0.5.thir, evaluator.evaluate(0.5.thir))
             assertSuccess("foo".thir, evaluator.evaluate("foo".thir))
+        }
+        
+        @Test
+        fun `Given builtin structures, when evaluating, they evaluate correctly`()
+        {
+            assertSuccess(ThirType.Bool.thir, evaluator.evaluate(Builtin.BOOL.thirLoad()))
+            assertSuccess(ThirType.Int32.thir, evaluator.evaluate(Builtin.INT32.thirLoad()))
+            assertSuccess(ThirType.Int64.thir, evaluator.evaluate(Builtin.INT64.thirLoad()))
+            assertSuccess(ThirType.Float32.thir, evaluator.evaluate(Builtin.FLOAT32.thirLoad()))
+            assertSuccess(ThirType.Float64.thir, evaluator.evaluate(Builtin.FLOAT64.thirLoad()))
+            assertSuccess(ThirType.Str.thir, evaluator.evaluate(Builtin.STR.thirLoad()))
         }
         
         @Test
@@ -117,10 +128,12 @@ class TestEvaluator
         fun `Given load, when evaluating, then correct`()
         {
             val variable = thirVarOf().declare(env)
+            val structure = thirStructOf().declare(env)
             
             globals[variable.id] = 42.thir
-            
+    
             assertSuccess(42.thir, evaluator.evaluate(variable.thirLoad()))
+            assertSuccess(structure.thirType().thir, evaluator.evaluate(structure.thirLoad()))
         }
         
         @Test
@@ -171,7 +184,7 @@ class TestEvaluator
                 valueKind = ThirKind.Value(ThirType.Structure(structure.id, emptyList())),
             )
             
-            assertSuccess(expected, evaluator.evaluate(structure.thirLoad().thirCall()))
+            assertSuccess(expected, evaluator.evaluate(structure.thirType().thirCall()))
         }
         
         @Test
@@ -185,7 +198,7 @@ class TestEvaluator
                 valueKind = ThirKind.Value(ThirType.Structure(structure.id, emptyList())),
             )
             
-            assertSuccess(instance, evaluator.evaluate(structure.thirLoad().thirCall(42.thir)))
+            assertSuccess(instance, evaluator.evaluate(structure.thirType().thirCall(42.thir)))
         }
     }
     

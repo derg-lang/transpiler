@@ -215,7 +215,7 @@ internal class TypeArgumentResolver(
         
         for ((slot, parameter) in parameters.withIndex().filter { it.index !in outputs })
         {
-            val value = Interpreter(env).evaluate(process(workers!![slot], parameter).valueOr { return it.toFailure() }).valueOrDie()!!
+            val value = evaluator.evaluate(process(workers!![slot], parameter).valueOr { return it.toFailure() }).valueOrDie()!!
             val kind = value.valueKind
             
             if (parameter.kind is ThirKind.Type && kind !is ThirKind.Type)

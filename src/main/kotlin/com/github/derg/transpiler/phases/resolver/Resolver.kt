@@ -9,11 +9,13 @@ import java.util.*
 
 /**
  * The resolver is responsible for converting an arbitrary amount of code in a module into a type-checked version of the
- * same code. It works in the provided [environment], inheriting everything visible in the given [scope].
+ * same code. It works in the provided [environment], inheriting everything visible in the given [scope]. During
+ * resolution, any constants found will be written to the [globals].
  */
 internal class Resolver(
     private val environment: Environment,
     private val scope: Scope,
+    private val globals: StackFrame,
     private val evaluator: Evaluator,
 )
 {
@@ -50,7 +52,7 @@ internal class Resolver(
      */
     fun resolve(node: HirDeclaration.SegmentDecl): Result<Unit, String>
     {
-        registerNewWorker(node.id, SegmentDefiner(evaluator, node, environment, scope))
+        registerNewWorker(node.id, SegmentDefiner(evaluator, node, environment, scope, globals))
         
         while (dependencies.isNotEmpty())
             takeOneStep().onFailure { return it.toFailure() }

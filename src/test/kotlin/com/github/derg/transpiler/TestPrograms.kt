@@ -30,18 +30,18 @@ class TestProgram
     @ArgumentsSource(ProgramList::class)
     fun `Given program, when running it, then expected value is returned`(input: Pair<String, Result<ThirExpression?, ThirExpression?>>)
     {
-        val environment = Builtin.environment
-        val scope = Builtin.scope
-        val globals = StackFrame()
-        val evaluator = Evaluator(environment, globals)
-        val resolver = Resolver(environment, scope, evaluator)
+        val env = Builtin.generateEnvironment()
+        val scope = Builtin.generateScope()
+        val globals = Builtin.generateGlobals()
+        val evaluator = Evaluator(env, globals)
+        val resolver = Resolver(env, scope, globals, evaluator)
         
         val source = File("src/test/resources/programs/${input.first}.derg").readText()
         val ast = parse(source).valueOrDie()
         val hir = convert(ast)
         resolver.resolve(hir).valueOrDie()
         
-        val main = environment.declarations.values.last { it.name == "main" } as ThirDeclaration.Function
+        val main = env.declarations.values.last { it.name == "main" } as ThirDeclaration.Function
         
         assertEquals(input.second, evaluator.evaluate(main.thirLoad().thirCall()))
     }

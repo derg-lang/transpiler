@@ -230,8 +230,7 @@ internal class IdentifierDefiner(
         if (requireDefinition && def == null)
             return Outcome.RequireDefinition(setOf(symbol.id)).toFailure()
         
-        
-        
+        // TODO: Somehow handle the type parameters here as well. This is where the magic happens, after all!
         val type = when (symbol)
         {
             is ThirDeclaration.Const         -> symbol.kind
@@ -337,7 +336,7 @@ internal class CallDefiner(
         
         val foo = TypeArgumentResolver(evaluator, instance.typeParameters, typeParameters, env, scope, requireDefinition)
         val bar = foo.process().valueOr { return it.toFailure() }
-        val baz = bar.map { Interpreter(env).evaluate(it).valueOrDie()!! }
+        val baz = bar.map { evaluator.evaluate(it).valueOrDie()!! }
         val worker = ArgumentResolver(evaluator, node.parameters, parameters, env, scope, requireDefinition)
         
         return ThirExpression.Call(
@@ -373,7 +372,7 @@ internal class CallDefiner(
         
         val foo = TypeArgumentResolver(evaluator, instance.typeParameters, typeParameters, env, scope, requireDefinition)
         val bar = foo.process().valueOr { return it.toFailure() }
-        val baz = bar.map { Interpreter(env).evaluate(it).valueOrDie()!! }
+        val baz = bar.map { evaluator.evaluate(it).valueOrDie()!! }
         val worker = ArgumentResolver(evaluator, node.parameters, ctorParams.map { it.fix() }, env, scope, requireDefinition)
     
         // TODO: Handle fallible constructors. When any field raises an error, the error type must be updated to be
