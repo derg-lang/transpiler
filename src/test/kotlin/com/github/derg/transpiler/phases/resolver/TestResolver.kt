@@ -22,9 +22,10 @@ class TestResolver
     {
         val input = hirConstOf(kind = BOOL_TYPE_NAME.hirIdent().type.kind, value = true.hir)
         val segment = hirSegmentOf(constants = listOf(input))
+        val module = hirModuleOf(segments = listOf(segment))
         val expected = thirConstOf(id = input.id, name = input.name, kind = ThirKind.Value(ThirType.Bool), value = true.thir)
         
-        assertSuccess(Unit, resolver.resolve(segment))
+        assertSuccess(Unit, resolver.resolve(module))
         assertEquals(expected, env.declarations[input.id])
     }
 }

@@ -186,6 +186,7 @@ sealed interface HirDeclaration : HirNode
         override val name: String,
         val kind: HirKind?,
         val value: HirExpression,
+        val visibility: Visibility,
     ) : HirDeclaration
     
     /**
@@ -212,6 +213,15 @@ sealed interface HirDeclaration : HirNode
         val valueKind: HirKind,
         val errorKind: HirKind,
         val body: List<HirStatement>,
+    ) : HirDeclaration
+    
+    /**
+     * Modules are collections of segments which are grouped logically, but not necessarily grouped physically.
+     */
+    data class ModuleDecl(
+        override val id: UUID,
+        override val name: String,
+        val segments: List<SegmentDecl>,
     ) : HirDeclaration
     
     /**

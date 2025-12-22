@@ -6,7 +6,7 @@ import java.util.*
  * Scopes represents the symbols which are accessible at a certain layer in the source code. Scopes may be nested inside
  * each other, forming a hierarchy of scopes.
  */
-class Scope
+class Scope(private val parent: Scope?)
 {
     private val nameToSymbols = mutableMapOf<String, MutableSet<UUID>>()
     
@@ -25,6 +25,6 @@ class Scope
      */
     fun find(name: String): Set<UUID>
     {
-        return nameToSymbols[name].orEmpty()
+        return nameToSymbols[name].orEmpty() + parent?.find(name).orEmpty()
     }
 }

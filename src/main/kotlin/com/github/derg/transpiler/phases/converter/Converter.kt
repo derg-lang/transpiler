@@ -9,7 +9,7 @@ import java.util.*
  * Converts the provided AST [program] into a HIR program. The input segments are all used to form the single package.
  * Note that segments from another package, must be separately converted into the HIR structure.
  */
-fun convert(program: AstSegment): HirDeclaration.SegmentDecl
+fun convert(program: AstModule): HirDeclaration.ModuleDecl
 {
     return program.toHir()
 }
@@ -23,6 +23,7 @@ private fun AstConstant.toHir() = HirDeclaration.ConstantDecl(
     name = name,
     kind = kind?.toHir(),
     value = value.toHir(),
+    visibility = visibility,
 )
 
 private fun AstFunction.toHir() = HirDeclaration.FunctionDecl(
@@ -34,6 +35,12 @@ private fun AstFunction.toHir() = HirDeclaration.FunctionDecl(
     valueKind = valueKind.toHir(),
     errorKind = errorKind.toHir(),
     body = statements.map { it.toHir() },
+)
+
+private fun AstModule.toHir() = HirDeclaration.ModuleDecl(
+    id = UUID.randomUUID(),
+    name = name,
+    segments = segments.map { it.toHir() },
 )
 
 private fun AstParameter.toHir() = HirDeclaration.ParameterDecl(

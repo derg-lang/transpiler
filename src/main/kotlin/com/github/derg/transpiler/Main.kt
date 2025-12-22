@@ -4,11 +4,31 @@ import com.github.derg.transpiler.phases.converter.*
 import com.github.derg.transpiler.phases.interpreter.*
 import com.github.derg.transpiler.phases.parser.*
 import com.github.derg.transpiler.phases.resolver.*
+import com.github.derg.transpiler.source.ast.*
 import com.github.derg.transpiler.source.thir.*
 import com.github.derg.transpiler.utils.*
 import java.time.*
 
-private const val SOURCE = """
+/**
+ * Some sample code representing source code which is imported from some library. This source code is intended as some
+ * dummy code for testing and verifying manually that running multiple files works as intended.
+ */
+private const val LIBRARY = """
+    protected fun fibonacci(n: __builtin_i32) -> __builtin_i32
+    {
+        if n <= 0
+            return 0
+        if n == 1 || n == 2
+            return 1
+        return fibonacci(n - 2) + fibonacci(n - 1)
+    }
+"""
+
+/**
+ * Some sample code representing a binary file. This source code contains a main function which will be executed once
+ * the program is running.
+ */
+private const val PROGRAM = """
     struct Test(val foo: __builtin_i32)
     {
         val bar: __builtin_i32 = 23
@@ -22,15 +42,6 @@ private const val SOURCE = """
 
         return fibonacci(test.foo + test.bar)
     }
-
-    fun fibonacci(n: __builtin_i32) -> __builtin_i32
-    {
-        if n <= 0
-            return 0
-        if n == 1 || n == 2
-            return 1
-        return fibonacci(n - 2) + fibonacci(n - 1)
-    }
 """
 
 fun main(args: Array<String>)
@@ -42,9 +53,12 @@ fun main(args: Array<String>)
     val resolver = Resolver(environment, scope, globals, evaluator)
     
     val compileStart = OffsetDateTime.now()
-    val ast = parse(SOURCE).valueOrDie()
-    val hir = convert(ast)
-    resolver.resolve(hir).valueOrDie()
+    val segments = listOf(
+        parse(PROGRAM).valueOrDie(),
+        parse(LIBRARY).valueOrDie(),
+    )
+    val module = AstModule("test", segments)
+    resolver.resolve(convert(module)).valueOrDie()
     val compileEnd = OffsetDateTime.now()
     
     // Find the entry point into the program and load the run command.

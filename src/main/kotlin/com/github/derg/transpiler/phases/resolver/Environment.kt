@@ -1,5 +1,6 @@
-package com.github.derg.transpiler.source.thir
+package com.github.derg.transpiler.phases.resolver
 
+import com.github.derg.transpiler.source.thir.*
 import java.util.*
 
 /**
