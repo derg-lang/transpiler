@@ -124,7 +124,7 @@ object Builtin
      */
     fun generateScope(): Scope
     {
-        val scope = Scope()
+        val scope = Scope(null)
         functions.forEach { scope.register(it.id, it.name) }
         structures.forEach { scope.register(it.id, it.name) }
         return scope

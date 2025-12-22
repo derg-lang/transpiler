@@ -52,7 +52,7 @@ internal class ConstDefiner(
 }
 
 internal class FieldDefiner(
-    private val evaluator: Evaluator,
+    evaluator: Evaluator,
     private val node: HirDeclaration.FieldDecl,
     private val env: Environment,
     scope: Scope,
@@ -77,7 +77,7 @@ internal class FieldDefiner(
 }
 
 internal class ParameterDefiner(
-    private val evaluator: Evaluator,
+    evaluator: Evaluator,
     private val node: HirDeclaration.ParameterDecl,
     private val env: Environment,
     scope: Scope,
@@ -102,7 +102,7 @@ internal class ParameterDefiner(
 }
 
 internal class VariableDefiner(
-    private val evaluator: Evaluator,
+    evaluator: Evaluator,
     private val node: HirStatement.Variable,
     private val env: Environment,
     scope: Scope,
@@ -181,8 +181,7 @@ internal class FunctionDefiner(
     parentScope: Scope,
 ) : Worker<Phase>
 {
-    // TODO: Create a new scope from the parent instead.
-    val scope = parentScope.apply()
+    val scope = Scope(parentScope).apply()
     {
         node.parameters.forEach { register(it.id, it.name) }
         node.typeParameters.forEach { register(it.id, it.name) }
@@ -264,8 +263,7 @@ internal class StructureDefiner(
     parentScope: Scope,
 ) : Worker<Phase>
 {
-    // TODO: Create a new scope from the parent instead.
-    val scope = parentScope.apply()
+    val scope = Scope(parentScope).apply()
     {
         node.fields.forEach { register(it.id, it.name) }
         node.ctorEntries.forEach { register(it.id, it.name) }
@@ -323,8 +321,7 @@ internal class SegmentDefiner(
     private val globals: StackFrame,
 ) : Worker<Phase>
 {
-    // TODO: Create a new scope from the parent instead.
-    val scope = parentScope.apply()
+    val scope = Scope(parentScope).apply()
     {
         node.constants.forEach { register(it.id, it.name) }
         node.functions.forEach { register(it.id, it.name) }

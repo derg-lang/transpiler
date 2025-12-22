@@ -3,7 +3,6 @@ package com.github.derg.transpiler.phases.resolver
 import com.github.derg.transpiler.phases.interpreter.*
 import com.github.derg.transpiler.phases.resolver.workers.*
 import com.github.derg.transpiler.source.hir.*
-import com.github.derg.transpiler.source.thir.*
 import com.github.derg.transpiler.utils.*
 import java.util.*
 

@@ -103,8 +103,8 @@ internal class IfDefiner(
 ) : Worker<ThirStatement>
 {
     private val predicateWorker = expressionDefinerOf(evaluator, node.predicate, env, scope, ThirKind.Value(ThirType.Bool), false)
-    private val successWorker = WorkerList(node.success) { statementDefinerOf(evaluator, it, env, scope) }
-    private val failureWorker = WorkerList(node.failure) { statementDefinerOf(evaluator, it, env, scope) }
+    private val successWorker = WorkerList(node.success) { statementDefinerOf(evaluator, it, env, Scope(scope)) }
+    private val failureWorker = WorkerList(node.failure) { statementDefinerOf(evaluator, it, env, Scope(scope)) }
     
     private var predicate: ThirExpression? = null
     private var success: List<ThirStatement>? = null
@@ -222,7 +222,7 @@ internal class WhileDefiner(
 ) : Worker<ThirStatement>
 {
     private val predicateWorker = expressionDefinerOf(evaluator, node.predicate, env, scope, null, false)
-    private val statementsWorker = WorkerList(node.body) { statementDefinerOf(evaluator, it, env, scope) }
+    private val statementsWorker = WorkerList(node.body) { statementDefinerOf(evaluator, it, env, Scope(scope)) }
     
     private var predicate: ThirExpression? = null
     private var statements: List<ThirStatement>? = null

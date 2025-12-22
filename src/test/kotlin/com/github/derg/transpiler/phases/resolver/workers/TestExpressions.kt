@@ -188,9 +188,8 @@ class TestStringDefiner
 
 class TestIdentifierDefiner
 {
-    private val env = Environment()
-    private val scope = Scope()
-    private val evaluator = Evaluator(env, StackFrame())
+    private val env = Builtin.generateEnvironment()
+    private val scope = Builtin.generateScope()
     
     @Test
     fun `Given declared const in scope, when processing, then success`()
@@ -275,9 +274,10 @@ class TestIdentifierDefiner
 
 class TestCallDefiner
 {
-    private val env = Environment()
-    private val scope = Scope()
-    private val evaluator = Evaluator(env, StackFrame())
+    private val env = Builtin.generateEnvironment()
+    private val scope = Builtin.generateScope()
+    private val globals = Builtin.generateGlobals()
+    private val evaluator = Evaluator(env, globals)
     
     @Test
     fun `Given no inputs or outputs, when processing, then success`()
@@ -766,9 +766,10 @@ class TestCallDefiner
 
 class TestCatchDefiner
 {
-    private val env = Environment()
-    private val scope = Scope()
-    private val evaluator = Evaluator(env, StackFrame())
+    private val env = Builtin.generateEnvironment()
+    private val scope = Builtin.generateScope()
+    private val globals = Builtin.generateGlobals()
+    private val evaluator = Evaluator(env, globals)
     
     @Nested
     inner class Handle
