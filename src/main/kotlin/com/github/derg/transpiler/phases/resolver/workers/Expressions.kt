@@ -1,5 +1,6 @@
 package com.github.derg.transpiler.phases.resolver.workers
 
+import com.github.derg.transpiler.phases.interpreter.*
 import com.github.derg.transpiler.phases.resolver.*
 import com.github.derg.transpiler.source.*
 import com.github.derg.transpiler.source.hir.*
@@ -32,6 +33,7 @@ val FLOAT64_MAX = Double.MAX_VALUE.toBigDecimal()
  * @param requireDefinition Whether the expression require all symbol dependencies to be defined before resolution.
  */
 fun expressionDefinerOf(
+    evaluator: Evaluator,
     node: HirExpression,
     env: Environment,
     scope: Scope,
@@ -40,10 +42,10 @@ fun expressionDefinerOf(
 ): Worker<ThirExpression> = when (node)
 {
     is HirExpression.Bool       -> BoolDefiner(node)
-    is HirExpression.Call       -> CallDefiner(node, env, scope, requireDefinition)
-    is HirExpression.Catch      -> CatchDefiner(node, env, scope, requireDefinition)
+    is HirExpression.Call       -> CallDefiner(evaluator, node, env, scope, requireDefinition)
+    is HirExpression.Catch      -> CatchDefiner(evaluator, node, env, scope, requireDefinition)
     is HirExpression.Decimal    -> DecimalDefiner(node)
-    is HirExpression.Field      -> FieldAccessDefiner(node, env, scope, kindHint, requireDefinition)
+    is HirExpression.Field      -> FieldAccessDefiner(evaluator, node, env, scope, kindHint, requireDefinition)
     is HirExpression.Identifier -> IdentifierDefiner(node, env, scope, kindHint, requireDefinition)
     is HirExpression.Integer    -> IntegerDefiner(node)
     is HirExpression.Text       -> StringDefiner(node)
@@ -132,6 +134,7 @@ internal class StringDefiner(private val node: HirExpression.Text) : Worker<Thir
  *
  */
 internal class FieldAccessDefiner(
+    evaluator: Evaluator,
     private val node: HirExpression.Field,
     private val env: Environment,
     scope: Scope,
@@ -139,7 +142,7 @@ internal class FieldAccessDefiner(
     requireDefinition: Boolean,
 ) : Worker<ThirExpression>
 {
-    val worker = expressionDefinerOf(node.instance, env, scope, null, requireDefinition)
+    val worker = expressionDefinerOf(evaluator, node.instance, env, scope, null, requireDefinition)
     
     var instance: ThirExpression? = null
     
@@ -227,8 +230,7 @@ internal class IdentifierDefiner(
         if (requireDefinition && def == null)
             return Outcome.RequireDefinition(setOf(symbol.id)).toFailure()
         
-        
-        
+        // TODO: Somehow handle the type parameters here as well. This is where the magic happens, after all!
         val type = when (symbol)
         {
             is ThirDeclaration.Const         -> symbol.kind
@@ -254,6 +256,7 @@ internal class IdentifierDefiner(
  * offending symbol has been defined.
  */
 internal class CallDefiner(
+    private val evaluator: Evaluator,
     private val node: HirExpression.Call,
     private val env: Environment,
     private val scope: Scope,
@@ -331,10 +334,10 @@ internal class CallDefiner(
         if (undefined.isNotEmpty())
             return Outcome.RequireDefinition(undefined.toSet()).toFailure()
         
-        val foo = TypeArgumentResolver(instance.typeParameters, typeParameters, env, scope, requireDefinition)
+        val foo = TypeArgumentResolver(evaluator, instance.typeParameters, typeParameters, env, scope, requireDefinition)
         val bar = foo.process().valueOr { return it.toFailure() }
-        val baz = bar.map { Interpreter(env).evaluate(it).valueOrDie()!! }
-        val worker = ArgumentResolver(node.parameters, parameters, env, scope, requireDefinition)
+        val baz = bar.map { evaluator.evaluate(it).valueOrDie()!! }
+        val worker = ArgumentResolver(evaluator, node.parameters, parameters, env, scope, requireDefinition)
         
         return ThirExpression.Call(
             instance = ThirExpression.Type(ThirType.Function(symbol.id, baz, symbol.valueKind, symbol.errorKind)),
@@ -367,10 +370,10 @@ internal class CallDefiner(
             else -> throw IllegalArgumentException("Temporary code is busted - symbol '$symbol', instance '$instance'")
         }
         
-        val foo = TypeArgumentResolver(instance.typeParameters, typeParameters, env, scope, requireDefinition)
+        val foo = TypeArgumentResolver(evaluator, instance.typeParameters, typeParameters, env, scope, requireDefinition)
         val bar = foo.process().valueOr { return it.toFailure() }
-        val baz = bar.map { Interpreter(env).evaluate(it).valueOrDie()!! }
-        val worker = ArgumentResolver(node.parameters, ctorParams.map { it.fix() }, env, scope, requireDefinition)
+        val baz = bar.map { evaluator.evaluate(it).valueOrDie()!! }
+        val worker = ArgumentResolver(evaluator, node.parameters, ctorParams.map { it.fix() }, env, scope, requireDefinition)
     
         // TODO: Handle fallible constructors. When any field raises an error, the error type must be updated to be
         //       exactly the union of all field initializer errors.
@@ -390,14 +393,15 @@ internal class CallDefiner(
  * Converts from a HIR catch to a THIR catch.
  */
 internal class CatchDefiner(
+    evaluator: Evaluator,
     private val node: HirExpression.Catch,
     env: Environment,
     parentScope: Scope,
     requireDefinition: Boolean,
 ) : Worker<ThirExpression>
 {
-    private val lhsWorker = expressionDefinerOf(node.lhs, env, parentScope, null, requireDefinition)
-    private val rhsWorker = expressionDefinerOf(node.rhs, env, parentScope, null, requireDefinition)
+    private val lhsWorker = expressionDefinerOf(evaluator, node.lhs, env, parentScope, null, requireDefinition)
+    private val rhsWorker = expressionDefinerOf(evaluator, node.rhs, env, parentScope, null, requireDefinition)
     
     private var lhs: ThirExpression? = null
     private var rhs: ThirExpression? = null

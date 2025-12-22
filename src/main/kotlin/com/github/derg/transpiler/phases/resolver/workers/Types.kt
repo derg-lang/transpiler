@@ -1,5 +1,6 @@
 package com.github.derg.transpiler.phases.resolver.workers
 
+import com.github.derg.transpiler.phases.interpreter.*
 import com.github.derg.transpiler.phases.resolver.*
 import com.github.derg.transpiler.source.hir.*
 import com.github.derg.transpiler.source.thir.*
@@ -10,12 +11,13 @@ import com.github.derg.transpiler.utils.*
  * given [scope], using the information provided through the given [env].
  */
 fun typeDefinerOf(
+    evaluator: Evaluator,
     node: HirType,
     env: Environment,
     scope: Scope,
 ): Worker<ThirType> = when (node)
 {
-    is HirType.Expression -> TypeExpressionDefiner(node, env, scope)
+    is HirType.Expression -> TypeExpressionDefiner(evaluator, node, env, scope)
     is HirType.Function   -> TODO("Not yet implemented")
 }
 
@@ -24,13 +26,13 @@ fun typeDefinerOf(
  * be fully resolved.
  */
 internal class TypeExpressionDefiner(
+    private val evaluator: Evaluator,
     node: HirType.Expression,
     private val env: Environment,
     scope: Scope,
 ) : Worker<ThirType>
 {
-    private val exprWorker = expressionDefinerOf(node.value, env, scope, null, true)
-    private val interpreter = Interpreter(env)
+    private val exprWorker = expressionDefinerOf(evaluator, node.value, env, scope, null, true)
     
     override fun process(): Result<ThirType, Outcome>
     {
@@ -56,7 +58,7 @@ internal class TypeExpressionDefiner(
                 return ThirExpression.Type(ThirType.TypeParameterRef(symbol.id)).toSuccess()
         }
         
-        val evaluation = interpreter.evaluate(expression)
+        val evaluation = evaluator.evaluate(expression)
             .valueOr { return Outcome.Unhandled("Expression '$expression' evaluated to error '$it'").toFailure() }
             ?: return Outcome.Unhandled("Expression '$expression' did not evaluate to anything").toFailure()
         
@@ -68,6 +70,7 @@ internal class TypeExpressionDefiner(
  * Converts from a HIR type kind to a THIR type kind.
  */
 internal class KindDefiner(
+    private val evaluator: Evaluator,
     private val node: HirKind,
     private val env: Environment,
     private val scope: Scope,
@@ -82,7 +85,7 @@ internal class KindDefiner(
         {
             is HirKind.Nothing -> return ThirKind.Nothing.toSuccess()
             is HirKind.Type    -> return ThirKind.Type.toSuccess()
-            is HirKind.Value   -> worker ?: typeDefinerOf(node.type, env, scope)
+            is HirKind.Value   -> worker ?: typeDefinerOf(evaluator, node.type, env, scope)
         }
         if (type == null)
             type = worker!!.process().valueOr { return it.toFailure() }

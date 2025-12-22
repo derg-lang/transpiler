@@ -1,5 +1,6 @@
 package com.github.derg.transpiler.phases.resolver
 
+import com.github.derg.transpiler.phases.interpreter.*
 import com.github.derg.transpiler.source.*
 import com.github.derg.transpiler.source.thir.*
 import java.util.*
@@ -10,8 +11,9 @@ import java.util.*
  */
 object Builtin
 {
-    val scope = Scope()
-    val environment = Environment()
+    private val functions = mutableListOf<ThirDeclaration.Function>()
+    private val parameters = mutableListOf<ThirDeclaration.Parameter>()
+    private val structures = mutableListOf<ThirDeclaration.Structure>()
     
     val BOOL = registerPrimitive(BOOL_TYPE_NAME)
     val BOOL_AND = registerBinary(BinaryOperator.AND, ThirType.Bool, ThirType.Bool)
@@ -86,106 +88,155 @@ object Builtin
     val STR_NE = registerBinary(BinaryOperator.NOT_EQUAL, ThirType.Str, ThirType.Bool)
     val STR_ADD = registerBinary(BinaryOperator.ADD, ThirType.Str, ThirType.Str)
     val STR_PRINTLN = registerConsumer(FUN_PRINTLN_NAME, ThirType.Str)
-}
-
-private fun registerPrimitive(name: String): ThirDeclaration.Structure
-{
-    val primitive = ThirDeclaration.Structure(
-        id = UUID.randomUUID(),
-        name = name,
-        typeParameterIds = emptyList(),
-        ctorEntryIds = emptyList(),
-        fieldIds = emptyList(),
-        def = ThirDeclaration.StructureDef(null),
-    )
     
-    Builtin.scope.register(primitive.id, primitive.name)
-    Builtin.environment.declarations[primitive.id] = primitive
-    return primitive
-}
-
-private fun registerBinary(operator: BinaryOperator, inputType: ThirType, outputType: ThirType): ThirDeclaration.Function
-{
-    val lhs = ThirDeclaration.Parameter(
-        id = UUID.randomUUID(),
-        name = "lhs",
-        passability = Passability.IN,
-        kind = ThirKind.Value(inputType),
-        def = ThirDeclaration.ParameterDef(default = null)
-    )
-    val rhs = ThirDeclaration.Parameter(
-        id = UUID.randomUUID(),
-        name = "rhs",
-        passability = Passability.IN,
-        kind = ThirKind.Value(inputType),
-        def = ThirDeclaration.ParameterDef(default = null)
-    )
-    val function = ThirDeclaration.Function(
-        id = UUID.randomUUID(),
-        name = operator.symbol,
-        valueKind = ThirKind.Value(outputType),
-        errorKind = ThirKind.Nothing,
-        typeParameterIds = emptyList(),
-        parameterIds = listOf(lhs.id, rhs.id),
-        def = ThirDeclaration.FunctionDef(statements = emptyList())
-    )
+    /**
+     * Generates a new environment in which all global symbols reside. The environment should be modified during
+     * compilation to include all new symbols discovered while compiling.
+     */
+    fun generateEnvironment(): Environment
+    {
+        val environment = Environment()
+        functions.forEach { environment.declarations[it.id] = it }
+        parameters.forEach { environment.declarations[it.id] = it }
+        structures.forEach { environment.declarations[it.id] = it }
+        return environment
+    }
     
-    // Note that the parameters are not registered in the scope. The parameters must be registered to the env, though.
-    Builtin.scope.register(function.id, function.name)
-    Builtin.environment.declarations[lhs.id] = lhs
-    Builtin.environment.declarations[rhs.id] = rhs
-    Builtin.environment.declarations[function.id] = function
-    return function
-}
-
-private fun registerUnary(operator: UnaryOperator, inputType: ThirType, outputType: ThirType): ThirDeclaration.Function
-{
-    val rhs = ThirDeclaration.Parameter(
-        id = UUID.randomUUID(),
-        name = "rhs",
-        passability = Passability.IN,
-        kind = ThirKind.Value(inputType),
-        def = ThirDeclaration.ParameterDef(default = null)
-    )
-    val function = ThirDeclaration.Function(
-        id = UUID.randomUUID(),
-        name = operator.symbol,
-        valueKind = ThirKind.Value(outputType),
-        errorKind = ThirKind.Nothing,
-        typeParameterIds = emptyList(),
-        parameterIds = listOf(rhs.id),
-        def = ThirDeclaration.FunctionDef(statements = emptyList())
-    )
+    /**
+     * Generates a stack frame which contains the value of all builtin globals. This frame should be used during
+     * compilation to ensure all globals are given proper values initially.
+     */
+    fun generateGlobals(): StackFrame
+    {
+        val globals = StackFrame()
+        globals[BOOL.id] = ThirExpression.Type(ThirType.Bool)
+        globals[INT32.id] = ThirExpression.Type(ThirType.Int32)
+        globals[INT64.id] = ThirExpression.Type(ThirType.Int64)
+        globals[FLOAT32.id] = ThirExpression.Type(ThirType.Float32)
+        globals[FLOAT64.id] = ThirExpression.Type(ThirType.Float64)
+        globals[STR.id] = ThirExpression.Type(ThirType.Str)
+        return globals
+    }
     
-    // Note that the parameters are not registered in the scope. The parameters must be registered to the env, though.
-    Builtin.scope.register(function.id, function.name)
-    Builtin.environment.declarations[rhs.id] = rhs
-    Builtin.environment.declarations[function.id] = function
-    return function
-}
-
-private fun registerConsumer(name: String, inputType: ThirType): ThirDeclaration.Function
-{
-    val input = ThirDeclaration.Parameter(
-        id = UUID.randomUUID(),
-        name = "input",
-        passability = Passability.IN,
-        kind = ThirKind.Value(inputType),
-        def = ThirDeclaration.ParameterDef(default = null)
-    )
-    val function = ThirDeclaration.Function(
-        id = UUID.randomUUID(),
-        name = name,
-        valueKind = ThirKind.Nothing,
-        errorKind = ThirKind.Nothing,
-        typeParameterIds = emptyList(),
-        parameterIds = listOf(input.id),
-        def = ThirDeclaration.FunctionDef(statements = emptyList())
-    )
+    /**
+     * Generates a new scope in which all global symbols are visible. This scope should be used as the base of all
+     * scopes when compiling any program.
+     */
+    fun generateScope(): Scope
+    {
+        val scope = Scope()
+        functions.forEach { scope.register(it.id, it.name) }
+        structures.forEach { scope.register(it.id, it.name) }
+        return scope
+    }
     
-    // Note that the parameters are not registered in the scope. The parameters must be registered to the env, though.
-    Builtin.scope.register(function.id, function.name)
-    Builtin.environment.declarations[input.id] = input
-    Builtin.environment.declarations[function.id] = function
-    return function
+    /**
+     * Registers a new builtin primitive with the given [name] to the global system. Primitives are the most fundamental
+     * building blocks in any program, representing the simplest bits of data possible.
+     */
+    private fun registerPrimitive(name: String): ThirDeclaration.Structure
+    {
+        val primitive = ThirDeclaration.Structure(
+            id = UUID.randomUUID(),
+            name = name,
+            typeParameterIds = emptyList(),
+            ctorEntryIds = emptyList(),
+            fieldIds = emptyList(),
+            def = ThirDeclaration.StructureDef(null),
+        )
+        
+        structures += primitive
+        return primitive
+    }
+    
+    /**
+     * Registers a new builtin binary [operator] between two different types. The operator takes two [inputType]s and
+     * emits a single [outputType].
+     */
+    private fun registerBinary(operator: BinaryOperator, inputType: ThirType, outputType: ThirType): ThirDeclaration.Function
+    {
+        val lhs = ThirDeclaration.Parameter(
+            id = UUID.randomUUID(),
+            name = "lhs",
+            passability = Passability.IN,
+            kind = ThirKind.Value(inputType),
+            def = ThirDeclaration.ParameterDef(default = null)
+        )
+        val rhs = ThirDeclaration.Parameter(
+            id = UUID.randomUUID(),
+            name = "rhs",
+            passability = Passability.IN,
+            kind = ThirKind.Value(inputType),
+            def = ThirDeclaration.ParameterDef(default = null)
+        )
+        val function = ThirDeclaration.Function(
+            id = UUID.randomUUID(),
+            name = operator.symbol,
+            valueKind = ThirKind.Value(outputType),
+            errorKind = ThirKind.Nothing,
+            typeParameterIds = emptyList(),
+            parameterIds = listOf(lhs.id, rhs.id),
+            def = ThirDeclaration.FunctionDef(statements = emptyList())
+        )
+        
+        parameters += lhs
+        parameters += rhs
+        functions += function
+        return function
+    }
+    
+    /**
+     * Registers a new builtin unary [operator] between two different types. The operator takes one [inputType] and
+     * emits a single [outputType].
+     */
+    private fun registerUnary(operator: UnaryOperator, inputType: ThirType, outputType: ThirType): ThirDeclaration.Function
+    {
+        val rhs = ThirDeclaration.Parameter(
+            id = UUID.randomUUID(),
+            name = "rhs",
+            passability = Passability.IN,
+            kind = ThirKind.Value(inputType),
+            def = ThirDeclaration.ParameterDef(default = null)
+        )
+        val function = ThirDeclaration.Function(
+            id = UUID.randomUUID(),
+            name = operator.symbol,
+            valueKind = ThirKind.Value(outputType),
+            errorKind = ThirKind.Nothing,
+            typeParameterIds = emptyList(),
+            parameterIds = listOf(rhs.id),
+            def = ThirDeclaration.FunctionDef(statements = emptyList())
+        )
+        
+        parameters += rhs
+        functions += function
+        return function
+    }
+    
+    /**
+     * Registers a new builtin function with the given [name], which consumes a single [inputType].
+     */
+    private fun registerConsumer(name: String, inputType: ThirType): ThirDeclaration.Function
+    {
+        val input = ThirDeclaration.Parameter(
+            id = UUID.randomUUID(),
+            name = "input",
+            passability = Passability.IN,
+            kind = ThirKind.Value(inputType),
+            def = ThirDeclaration.ParameterDef(default = null)
+        )
+        val function = ThirDeclaration.Function(
+            id = UUID.randomUUID(),
+            name = name,
+            valueKind = ThirKind.Nothing,
+            errorKind = ThirKind.Nothing,
+            typeParameterIds = emptyList(),
+            parameterIds = listOf(input.id),
+            def = ThirDeclaration.FunctionDef(statements = emptyList())
+        )
+        
+        parameters += input
+        functions += function
+        return function
+    }
 }

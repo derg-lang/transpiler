@@ -1,5 +1,6 @@
 package com.github.derg.transpiler.source.thir
 
+import com.github.derg.transpiler.phases.interpreter.*
 import com.github.derg.transpiler.phases.resolver.*
 import com.github.derg.transpiler.source.*
 import java.util.*
@@ -17,6 +18,13 @@ fun <Type : ThirDeclaration> Type.register(scope: Scope): Type =
 fun <Type : ThirDeclaration> Type.declare(environment: Environment): Type =
     apply { environment.declarations[id] = this }
 
+/**
+ * Records [this] declaration as something which has a value in the given [globals] frame. Note that the declaration
+ * must be fully defined for this operation to succeed.
+ */
+fun ThirDeclaration.Const.record(globals: StackFrame): ThirDeclaration.Const =
+    apply { globals[id] = def!!.value }
+
 /////////////////////
 // Literal helpers //
 /////////////////////
@@ -24,13 +32,14 @@ fun <Type : ThirDeclaration> Type.declare(environment: Environment): Type =
 val Any.thir: ThirExpression.Canonical
     get() = when (this)
     {
-        is Boolean -> ThirExpression.Bool(this)
-        is Int     -> ThirExpression.Int32(this)
-        is Long    -> ThirExpression.Int64(this)
-        is Float   -> ThirExpression.Float32(this)
-        is Double  -> ThirExpression.Float64(this)
-        is String  -> ThirExpression.Str(this)
-        else       -> throw IllegalArgumentException("Value $this does not represent a valid thir value")
+        is Boolean  -> ThirExpression.Bool(this)
+        is Int      -> ThirExpression.Int32(this)
+        is Long     -> ThirExpression.Int64(this)
+        is Float    -> ThirExpression.Float32(this)
+        is Double   -> ThirExpression.Float64(this)
+        is String   -> ThirExpression.Str(this)
+        is ThirType -> ThirExpression.Type(this)
+        else        -> throw IllegalArgumentException("Value $this does not represent a valid thir value")
     }
 
 ////////////////////////
@@ -117,21 +126,46 @@ infix fun ThirExpression.thirCatchValue(that: ThirExpression) = ThirExpression.C
 
 fun ThirExpression.thirCall(vararg parameters: ThirExpression): ThirExpression
 {
-    val type = this as? ThirExpression.Type
+    val value = this as? ThirExpression.Type
         ?: throw IllegalArgumentException("Invoking non-type expressions does not work")
-    val signature = type.raw as? ThirType.Function
-        ?: throw IllegalArgumentException("Invoking non-function expressions does not work")
-    return ThirExpression.Call(this, parameters.toList(), signature.valueKind, signature.errorKind)
+    
+    val type = value.raw
+    if (type is ThirType.Function)
+        return ThirExpression.Call(this, parameters.toList(), type.valueKind, type.errorKind)
+    if (type is ThirType.Structure)
+        return ThirExpression.Call(this, parameters.toList(), ThirKind.Value(type), ThirKind.Nothing)
+    
+    throw IllegalArgumentException("Invoking non-callable expressions does not work")
 }
 
 fun ThirDeclaration.Function.thirLoad(vararg typeParameters: ThirExpression.Canonical) =
     ThirExpression.Type(ThirType.Function(id, typeParameters.toList(), valueKind, errorKind))
 
-fun ThirDeclaration.Structure.thirLoad(vararg typeParameters: ThirExpression.Canonical) =
-    ThirExpression.Type(ThirType.Structure(id, typeParameters.toList()))
+fun ThirDeclaration.Structure.thirLoad(vararg typeParameters: ThirExpression.Canonical): ThirExpression =
+    ThirExpression.Type(thirType(*typeParameters))
+
+fun ThirDeclaration.Parameter.thirLoad() =
+    ThirExpression.Load(id, kind)
 
 fun ThirDeclaration.Variable.thirLoad() =
     ThirExpression.Load(id, kind)
+
+fun ThirExpression.thirField(field: ThirDeclaration.Field) =
+    ThirExpression.Field(this, field.id, field.kind)
+
+/**
+ * Generates a type description for [this] structure. The type description is an instantiation of the structure type.
+ */
+private fun ThirDeclaration.Structure.thirType(vararg typeParameters: ThirExpression.Canonical): ThirType = when (id)
+{
+    Builtin.BOOL.id    -> ThirType.Bool
+    Builtin.INT32.id   -> ThirType.Int32
+    Builtin.INT64.id   -> ThirType.Int64
+    Builtin.FLOAT32.id -> ThirType.Float32
+    Builtin.FLOAT64.id -> ThirType.Float64
+    Builtin.STR.id     -> ThirType.Str
+    else               -> ThirType.Structure(id, typeParameters.toList())
+}
 
 ///////////////////////
 // Statement helpers //
