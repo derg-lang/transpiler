@@ -64,10 +64,46 @@ private fun functionOutcomeOf(values: Parsers) = AstFunction(
 )
 
 /**
+ * Parses a method definition from the token stream.
+ */
+fun methodParserOf(): Parser<AstMethod> =
+    ParserPattern(::methodPatternOf, ::methodOutcomeOf)
+
+private fun methodPatternOf() = ParserSequence(
+    "visibility" to visibilityParserOf(),
+    "mutability" to mutabilityParserOf(),
+    "fun" to ParserSymbol(Symbol.FUN),
+    "name" to ParserIdentifier(),
+    "templates" to ParserOptional(typeParameterListParserOf()),
+    "parameters" to parameterListParserOf(),
+    "error" to optionalKindParserOf(Symbol.COLON),
+    "value" to optionalKindParserOf(Symbol.ARROW),
+    "open_brace" to ParserSymbol(Symbol.OPEN_BRACE),
+    "statements" to ParserRepeating(statementParserOf()),
+    "close_brace" to ParserSymbol(Symbol.CLOSE_BRACE),
+)
+
+private fun methodOutcomeOf(values: Parsers) = AstMethod(
+    name = values["name"],
+    valueKind = values["value"] ?: AstKind.Nothing,
+    errorKind = values["error"] ?: AstKind.Nothing,
+    typeParameters = values["templates"] ?: emptyList(),
+    parameters = values["parameters"],
+    mutability = values["mutability"],
+    visibility = values["visibility"],
+    statements = values["statements"],
+)
+
+/**
  * Parses a struct definition from the token stream.
  */
 fun structParserOf(): Parser<AstStruct> =
     ParserPattern(::structPatternOf, ::structOutcomeOf)
+
+private data class AstStructBody(
+    val fields: List<AstProperty>,
+    val methods: List<AstMethod>,
+)
 
 private fun structPatternOf() = ParserSequence(
     "visibility" to visibilityParserOf(),
@@ -75,14 +111,15 @@ private fun structPatternOf() = ParserSequence(
     "name" to ParserIdentifier(),
     "type_params" to ParserOptional(typeParameterListParserOf()),
     "ctor_entries" to ParserOptional(constructorEntryParserOf()),
-    "fields" to ParserOptional(structBodyParserOf()),
+    "body" to ParserOptional(structBodyParserOf()),
 )
 
 private fun structOutcomeOf(values: Parsers) = AstStruct(
     name = values["name"],
     typeParameters = values["type_params"] ?: emptyList(),
     ctorEntries = values["ctor_entries"] ?: emptyList(),
-    fields = values["fields"] ?: emptyList(),
+    fields = values.get<AstStructBody?>("body")?.fields ?: emptyList(),
+    methods = values.get<AstStructBody?>("body")?.methods ?: emptyList(),
     visibility = values["visibility"],
 )
 
@@ -95,14 +132,22 @@ private fun constructorEntryPatternOf() = ParserSequence(
     "close_parenthesis" to ParserSymbol(Symbol.CLOSE_PARENTHESIS),
 )
 
-private fun structBodyParserOf(): Parser<List<AstProperty>> =
-    ParserPattern(::structBodyPatternOf) { it["fields"] }
+private fun structBodyParserOf(): Parser<AstStructBody> =
+    ParserPattern(::structBodyPatternOf, ::structBodyOutcomeOf)
 
 private fun structBodyPatternOf() = ParserSequence(
     "open_brace" to ParserSymbol(Symbol.OPEN_BRACE),
-    "fields" to ParserRepeating(propertyParserOf()),
+    "objects" to ParserRepeating(ParserAnyOf(propertyParserOf(), methodParserOf())),
     "close_brace" to ParserSymbol(Symbol.CLOSE_BRACE),
 )
+
+private fun structBodyOutcomeOf(values: Parsers): AstStructBody
+{
+    val objects = values.get<List<Any>>("objects")
+    val fields = objects.filterIsInstance<AstProperty>()
+    val methods = objects.filterIsInstance<AstMethod>()
+    return AstStructBody(fields = fields, methods = methods)
+}
 
 /**
  * Parses a variable definition from the token stream.

@@ -53,9 +53,32 @@ data class AstFunction(
 ) : AstSymbol
 
 /**
+ * Methods are smaller subroutines of a program which can perform a specialized workload, that are given a [name]. Every
+ * method is associated with exactly one structure - a method may only be invoked from an instance of that structure.
+ *
+ * Every function may return a [valueKind], or raise an [errorKind]. The value and error types are not required to be
+ * specified. Methods accept any number of [parameters], which allows different outcomes of invoking the function to
+ * take place.
+ *
+ * @param mutability The mutability of the method, whether it is possible to mutate its instance or not.
+ * @param visibility The visibility of the method, to whom it is possible to access.
+ * @param statements The executable code which defines the function body.
+ */
+data class AstMethod(
+    override val name: String,
+    val valueKind: AstKind,
+    val errorKind: AstKind,
+    val typeParameters: List<AstTypeParameter>,
+    val parameters: List<AstParameter>,
+    val mutability: Mutability,
+    val visibility: Visibility,
+    val statements: List<AstInstruction>,
+) : AstSymbol
+
+/**
  * All data structures are represented as types, which determines the shape of all data within a program. Types are not
  * values within the program, but represents the shapes of values. This shape is given a [name], and may hold any number
- * of additional [fields].
+ * of additional [fields] and [methods].
  *
  * @param visibility The visibility of the type, to whom it is possible to access.
  */
@@ -64,6 +87,7 @@ data class AstStruct(
     val typeParameters: List<AstTypeParameter>,
     val ctorEntries: List<AstConstructorEntry>,
     val fields: List<AstProperty>,
+    val methods: List<AstMethod>,
     val visibility: Visibility,
 ) : AstSymbol
 

@@ -188,17 +188,39 @@ fun astFieldOf(
     assignability = ass,
 )
 
+fun astMethodOf(
+    name: String = UUID.randomUUID().toString(),
+    valueKind: AstKind = AstKind.Nothing,
+    errorKind: AstKind = AstKind.Nothing,
+    mutability: Mutability = Mutability.IMMUTABLE,
+    visibility: Visibility = Visibility.PRIVATE,
+    typeParameters: List<AstTypeParameter> = emptyList(),
+    parameters: List<AstParameter> = emptyList(),
+    statements: List<AstInstruction> = emptyList(),
+) = AstMethod(
+    name = name,
+    valueKind = valueKind,
+    errorKind = errorKind,
+    typeParameters = typeParameters,
+    parameters = parameters,
+    mutability = mutability,
+    visibility = visibility,
+    statements = statements,
+)
+
 fun astStructOf(
     name: String = UUID.randomUUID().toString(),
     typeParameters: List<AstTypeParameter> = emptyList(),
     ctorEntries: List<AstConstructorEntry> = emptyList(),
     props: List<AstProperty> = emptyList(),
+    methods: List<AstMethod> = emptyList(),
     vis: Visibility = Visibility.PRIVATE,
 ) = AstStruct(
     name = name,
     typeParameters = typeParameters,
     ctorEntries = ctorEntries,
     fields = props,
+    methods = methods,
     visibility = vis,
 )
 
