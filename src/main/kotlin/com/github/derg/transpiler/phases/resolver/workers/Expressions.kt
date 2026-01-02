@@ -225,7 +225,7 @@ internal class IdentifierDefiner(
             is ThirDeclaration.Parameter     -> symbol.def
             is ThirDeclaration.Structure     -> symbol.def
             is ThirDeclaration.TypeParameter -> symbol.def
-            is ThirDeclaration.Variable      -> null
+            is ThirDeclaration.Variable      -> symbol.def
         }
         if (requireDefinition && def == null)
             return Outcome.RequireDefinition(setOf(symbol.id)).toFailure()

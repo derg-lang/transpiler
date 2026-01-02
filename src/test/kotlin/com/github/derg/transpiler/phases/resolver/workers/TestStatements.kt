@@ -209,33 +209,6 @@ class TestIfDefiner
     }
 }
 
-class TestInitializeDefiner
-{
-    private val env = Builtin.generateEnvironment()
-    private val scope = Builtin.generateScope()
-    
-    @Test
-    fun `Given unknown variable, when processing, then error`()
-    {
-        val input = hirVarOf(name = "whatever")
-        val expected = Outcome.RequireDefinition(setOf(input.id))
-        
-        assertFailure(expected, InitializeDefiner(input, env, scope).process())
-    }
-    
-    @Test
-    fun `Given defined variable, when processing, then registered in scope`()
-    {
-        val input = hirVarOf(kind = Builtin.BOOL.name.hirIdent().type.kind, value = 0.hir)
-        val variable = thirVarOf(id = input.id, name = input.name, kind = ThirKind.Value(ThirType.Int32), value = 0.thir).declare(env)
-        val expected = variable.thirLoad() thirAssign 0.thir
-        
-        assertFalse(variable.id in scope.find(input.name))
-        assertSuccess(expected, InitializeDefiner(input, env, scope).process())
-        assertTrue(variable.id in scope.find(variable.name))
-    }
-}
-
 class TestReturnErrorDefiner
 {
     private val env = Builtin.generateEnvironment()
@@ -289,6 +262,47 @@ class TestReturnValueDefiner
         val expected = Outcome.ReturnHasError(ThirKind.Value(ThirType.Int32))
         
         assertFailure(expected, worker.process())
+    }
+}
+
+class TestVariableDefiner
+{
+    private val env = Builtin.generateEnvironment()
+    private val scope = Builtin.generateScope()
+    private val globals = Builtin.generateGlobals()
+    private val evaluator = Evaluator(env, globals)
+    
+    @Test
+    fun `Given both type and value, when processing, then declared and defined`()
+    {
+        val input = hirVarOf(kind = INT32_TYPE_NAME.hirIdent().type.kind, value = 1.hir)
+        val variable = thirVarOf(id = input.id, name = input.name, kind = ThirKind.Value(ThirType.Int32), value = 1.thir)
+        val expected = variable.thirLoad() thirAssign 1.thir
+        
+        assertSuccess(expected, VariableDefiner(evaluator, input, env, scope).process())
+        assertEquals(variable, env.declarations[input.id])
+        assertTrue(variable.id in scope.find(variable.name))
+    }
+    
+    @Test
+    fun `Given only value, when processing, then declared and defined`()
+    {
+        val input = hirVarOf(kind = null, value = 1.hir)
+        val variable = thirVarOf(id = input.id, name = input.name, kind = ThirKind.Value(ThirType.Int32), value = 1.thir)
+        val expected = variable.thirLoad() thirAssign 1.thir
+        
+        assertSuccess(expected, VariableDefiner(evaluator, input, env, scope).process())
+        assertEquals(variable, env.declarations[input.id])
+        assertTrue(variable.id in scope.find(variable.name))
+    }
+    
+    @Test
+    fun `Given mismatched type and value, when processing, then error`()
+    {
+        val input = hirVarOf(kind = INT32_TYPE_NAME.hirIdent().type.kind, value = true.hir)
+        val expected = Outcome.BindingWrongType(ThirType.Int32, ThirType.Bool)
+        
+        assertFailure(expected, VariableDefiner(evaluator, input, env, scope).process())
     }
 }
 

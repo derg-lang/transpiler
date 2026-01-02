@@ -102,29 +102,6 @@ internal class ParameterDefiner(
     }
 }
 
-internal class VariableDefiner(
-    evaluator: Evaluator,
-    private val node: HirStatement.Variable,
-    private val env: Environment,
-    scope: Scope,
-) : Worker<Phase>
-{
-    private val worker = TypeExprResolver(evaluator, node.kind, node.value, env, scope, true)
-    
-    override fun process(): Result<Phase, Outcome>
-    {
-        if (node.id in env.declarations)
-            return Phase.Defined.toSuccess()
-        
-        // When processing a variable, we are in the context of processing statements. Thus, we must ensure that the
-        // variable is fully defined during this process.
-        val type = worker.resolveDeclaration().valueOr { return it.toFailure() }
-        val value = worker.resolveDefinition().valueOr { return it.toFailure() }
-        env.declarations[node.id] = ThirDeclaration.Variable(node.id, node.name, node.assignability, type, ThirDeclaration.VariableDef(value!!))
-        return Phase.Declared.toSuccess()
-    }
-}
-
 /**
  * Converts a HIR type parameter into a THIR declaration.
  */
@@ -207,8 +184,7 @@ internal class FunctionDefiner(
             hasSpawnedChildren = true
             val typeParameters = node.typeParameters.associate { it.id to TypeParameterDefiner(evaluator, it, env, scope) }
             val parameters = node.parameters.associate { it.id to ParameterDefiner(evaluator, it, env, scope) }
-            val variables = node.body.filterIsInstance<HirStatement.Variable>().associate { it.id to VariableDefiner(evaluator, it, env, scope) }
-            val children = typeParameters + parameters + variables
+            val children = typeParameters + parameters
             if (children.isNotEmpty())
                 return Phase.Spawn(children).toSuccess()
         }
