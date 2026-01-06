@@ -48,9 +48,9 @@ fun main(args: Array<String>)
 {
     val environment = Builtin.generateEnvironment()
     val scope = Builtin.generateScope()
-    val globals = StackFrame()
-    val evaluator = Evaluator(environment, globals)
-    val resolver = Resolver(environment, scope, globals, evaluator)
+    val stack = Stack()
+    val evaluator = Evaluator(environment, stack)
+    val resolver = Resolver(environment, scope, stack, evaluator)
     
     val compileStart = OffsetDateTime.now()
     val segments = listOf(

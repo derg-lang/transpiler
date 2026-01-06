@@ -1,6 +1,7 @@
 package com.github.derg.transpiler.phases.resolver.workers
 
 import com.github.derg.transpiler.phases.interpreter.*
+import com.github.derg.transpiler.phases.interpreter.Stack
 import com.github.derg.transpiler.phases.resolver.*
 import com.github.derg.transpiler.source.*
 import com.github.derg.transpiler.source.hir.*
@@ -276,8 +277,8 @@ class TestCallDefiner
 {
     private val env = Builtin.generateEnvironment()
     private val scope = Builtin.generateScope()
-    private val globals = Builtin.generateGlobals()
-    private val evaluator = Evaluator(env, globals)
+    private val stack = Stack()
+    private val evaluator = Evaluator(env, stack)
     
     @Test
     fun `Given no inputs or outputs, when processing, then success`()
@@ -768,8 +769,8 @@ class TestCatchDefiner
 {
     private val env = Builtin.generateEnvironment()
     private val scope = Builtin.generateScope()
-    private val globals = Builtin.generateGlobals()
-    private val evaluator = Evaluator(env, globals)
+    private val stack = Stack()
+    private val evaluator = Evaluator(env, stack)
     
     @Nested
     inner class Handle

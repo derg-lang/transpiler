@@ -1,6 +1,5 @@
 package com.github.derg.transpiler.phases.resolver
 
-import com.github.derg.transpiler.phases.interpreter.*
 import com.github.derg.transpiler.source.*
 import com.github.derg.transpiler.source.thir.*
 import java.util.*
@@ -100,22 +99,6 @@ object Builtin
         parameters.forEach { environment.declarations[it.id] = it }
         structures.forEach { environment.declarations[it.id] = it }
         return environment
-    }
-    
-    /**
-     * Generates a stack frame which contains the value of all builtin globals. This frame should be used during
-     * compilation to ensure all globals are given proper values initially.
-     */
-    fun generateGlobals(): StackFrame
-    {
-        val globals = StackFrame()
-        globals[BOOL.id] = ThirExpression.Type(ThirType.Bool)
-        globals[INT32.id] = ThirExpression.Type(ThirType.Int32)
-        globals[INT64.id] = ThirExpression.Type(ThirType.Int64)
-        globals[FLOAT32.id] = ThirExpression.Type(ThirType.Float32)
-        globals[FLOAT64.id] = ThirExpression.Type(ThirType.Float64)
-        globals[STR.id] = ThirExpression.Type(ThirType.Str)
-        return globals
     }
     
     /**

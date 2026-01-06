@@ -24,6 +24,15 @@ sealed interface ThirExpression
     val errorKind: ThirKind
     
     /**
+     * A location in memory.
+     */
+    data class Address(val raw: Int) : Canonical
+    {
+        override val valueKind: ThirKind get() = ThirKind.Nothing
+        override val errorKind: ThirKind get() = ThirKind.Nothing
+    }
+    
+    /**
      * Boolean values, `true` and `false`.
      */
     data class Bool(val raw: Boolean) : Canonical

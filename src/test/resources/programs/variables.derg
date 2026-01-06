@@ -2,6 +2,7 @@ fun main() -> __builtin_i32
 {
     var foo = 4
     val bar = 3
+    ref baz = foo
     foo = 2
-    return foo + bar
+    return bar + baz
 }

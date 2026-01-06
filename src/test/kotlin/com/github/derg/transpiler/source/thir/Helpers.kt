@@ -1,6 +1,6 @@
 package com.github.derg.transpiler.source.thir
 
-import com.github.derg.transpiler.phases.interpreter.*
+import com.github.derg.transpiler.phases.interpreter.Stack
 import com.github.derg.transpiler.phases.resolver.*
 import com.github.derg.transpiler.source.*
 import java.util.*
@@ -19,11 +19,11 @@ fun <Type : ThirDeclaration> Type.declare(environment: Environment): Type =
     apply { environment.declarations[id] = this }
 
 /**
- * Records [this] declaration as something which has a value in the given [globals] frame. Note that the declaration
- * must be fully defined for this operation to succeed.
+ * Pushes [this] value on the given [stack], ensuring the value is accessible during evaluation. Note that the
+ * declaration must be fully defined for this operation to succeed.
  */
-fun ThirDeclaration.Const.record(globals: StackFrame): ThirDeclaration.Const =
-    apply { globals[id] = def!!.value }
+fun ThirDeclaration.Const.push(stack: Stack): ThirDeclaration.Const =
+    apply { stack.register(id, def!!.value) }
 
 /////////////////////
 // Literal helpers //

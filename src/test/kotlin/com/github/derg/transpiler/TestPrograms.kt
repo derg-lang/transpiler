@@ -33,9 +33,9 @@ class TestProgram
     {
         val env = Builtin.generateEnvironment()
         val scope = Builtin.generateScope()
-        val globals = Builtin.generateGlobals()
-        val evaluator = Evaluator(env, globals)
-        val resolver = Resolver(env, scope, globals, evaluator)
+        val stack = Stack()
+        val evaluator = Evaluator(env, stack)
+        val resolver = Resolver(env, scope, stack, evaluator)
         
         val source = File("src/test/resources/programs/${input.first}.derg").readText()
         val segment = parse(source).valueOrDie()

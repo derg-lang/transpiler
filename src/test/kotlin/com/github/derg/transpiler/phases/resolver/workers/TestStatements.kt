@@ -13,8 +13,8 @@ class TestAssignDefiner
 {
     private val env = Builtin.generateEnvironment()
     private val scope = Builtin.generateScope()
-    private val globals = Builtin.generateGlobals()
-    private val evaluator = Evaluator(env, globals)
+    private val stack = Stack()
+    private val evaluator = Evaluator(env, stack)
     
     @Test
     fun `Given assignable variable, when processing, then successful`()
@@ -98,8 +98,8 @@ class TestEvaluateDefiner
 {
     private val env = Builtin.generateEnvironment()
     private val scope = Builtin.generateScope()
-    private val globals = Builtin.generateGlobals()
-    private val evaluator = Evaluator(env, globals)
+    private val stack = Stack()
+    private val evaluator = Evaluator(env, stack)
     
     @Test
     fun `Given value type, when processing, then error`()
@@ -139,8 +139,8 @@ class TestIfDefiner
 {
     private val env = Builtin.generateEnvironment()
     private val scope = Builtin.generateScope()
-    private val globals = Builtin.generateGlobals()
-    private val evaluator = Evaluator(env, globals)
+    private val stack = Stack()
+    private val evaluator = Evaluator(env, stack)
     
     @Nested
     inner class `Predicate cases`
@@ -213,8 +213,8 @@ class TestReturnErrorDefiner
 {
     private val env = Builtin.generateEnvironment()
     private val scope = Builtin.generateScope()
-    private val globals = Builtin.generateGlobals()
-    private val evaluator = Evaluator(env, globals)
+    private val stack = Stack()
+    private val evaluator = Evaluator(env, stack)
     
     @Test
     fun `Given valid expression, when processing, then success`()
@@ -241,8 +241,8 @@ class TestReturnValueDefiner
 {
     private val env = Builtin.generateEnvironment()
     private val scope = Builtin.generateScope()
-    private val globals = Builtin.generateGlobals()
-    private val evaluator = Evaluator(env, globals)
+    private val stack = Stack()
+    private val evaluator = Evaluator(env, stack)
     
     @Test
     fun `Given valid expression, when processing, then success`()
@@ -269,8 +269,8 @@ class TestVariableDefiner
 {
     private val env = Builtin.generateEnvironment()
     private val scope = Builtin.generateScope()
-    private val globals = Builtin.generateGlobals()
-    private val evaluator = Evaluator(env, globals)
+    private val stack = Stack()
+    private val evaluator = Evaluator(env, stack)
     
     @Test
     fun `Given both type and value, when processing, then declared and defined`()
@@ -310,8 +310,8 @@ class TestWhileDefiner
 {
     private val env = Builtin.generateEnvironment()
     private val scope = Builtin.generateScope()
-    private val globals = Builtin.generateGlobals()
-    private val evaluator = Evaluator(env, globals)
+    private val stack = Stack()
+    private val evaluator = Evaluator(env, stack)
     
     @Nested
     inner class `Predicate cases`
