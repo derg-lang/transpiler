@@ -1,6 +1,7 @@
 package com.github.derg.transpiler.phases.resolver
 
 import com.github.derg.transpiler.phases.interpreter.*
+import com.github.derg.transpiler.phases.interpreter.Stack
 import com.github.derg.transpiler.phases.resolver.workers.*
 import com.github.derg.transpiler.source.hir.*
 import com.github.derg.transpiler.utils.*
@@ -9,12 +10,12 @@ import java.util.*
 /**
  * The resolver is responsible for converting an arbitrary amount of code in a module into a type-checked version of the
  * same code. It works in the provided [environment], inheriting everything visible in the given [scope]. During
- * resolution, any constants found will be written to the [globals].
+ * resolution, any constants found will be written to the [stack].
  */
 internal class Resolver(
     private val environment: Environment,
     private val scope: Scope,
-    private val globals: StackFrame,
+    private val stack: Stack,
     private val evaluator: Evaluator,
 )
 {
@@ -51,7 +52,7 @@ internal class Resolver(
      */
     fun resolve(node: HirDeclaration.ModuleDecl): Result<Unit, String>
     {
-        registerNewWorker(node.id, ModuleDefiner(evaluator, node, environment, scope, scope, globals))
+        registerNewWorker(node.id, ModuleDefiner(evaluator, node, environment, scope, scope, stack))
         
         while (dependencies.isNotEmpty())
             takeOneStep().onFailure { return it.toFailure() }

@@ -12,10 +12,10 @@ class TestResolver
 {
     private val env = Builtin.generateEnvironment()
     private val scope = Builtin.generateScope()
-    private val globals = Builtin.generateGlobals()
+    private val stack = Stack()
     
-    private val evaluator = Evaluator(env, globals)
-    private val resolver = Resolver(env, scope, globals, evaluator)
+    private val evaluator = Evaluator(env, stack)
+    private val resolver = Resolver(env, scope, stack, evaluator)
     
     @Test
     fun `Hmm, what to do`()

@@ -9,8 +9,8 @@ import org.junit.jupiter.api.*
 class TestEvaluator
 {
     private val env = Builtin.generateEnvironment()
-    private val globals = Builtin.generateGlobals()
-    private val evaluator = Evaluator(env, globals)
+    private val stack = Stack()
+    private val evaluator = Evaluator(env, stack)
     
     @Nested
     inner class Expressions
@@ -130,7 +130,7 @@ class TestEvaluator
             val variable = thirVarOf().declare(env)
             val structure = thirStructOf().declare(env)
             
-            globals[variable.id] = 42.thir
+            stack.register(variable.id, 42.thir)
     
             assertSuccess(42.thir, evaluator.evaluate(variable.thirLoad()))
             assertSuccess(structure.thirLoad(), evaluator.evaluate(structure.thirLoad()))
@@ -146,7 +146,7 @@ class TestEvaluator
                 valueKind = ThirKind.Value(ThirType.Structure(structure.id, emptyList())),
             )
             
-            globals[structure.id] = instance
+            stack.register(structure.id, instance)
             
             assertSuccess(42.thir, evaluator.evaluate(instance.thirField(field)))
         }

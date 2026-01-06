@@ -13,15 +13,15 @@ class TestConstDefiner
 {
     private val env = Builtin.generateEnvironment()
     private val scope = Builtin.generateScope()
-    private val globals = Builtin.generateGlobals()
-    private val evaluator = Evaluator(env, globals)
+    private val stack = Stack()
+    private val evaluator = Evaluator(env, stack)
     
     @Test
     fun `Given both type and value, when processing, then declared then defined`()
     {
         val input = hirConstOf(kind = INT32_TYPE_NAME.hirIdent().type.kind, value = 1.hir)
         val expected = thirConstOf(id = input.id, name = input.name, kind = ThirKind.Value(ThirType.Int32), value = 1.thir)
-        val worker = ConstDefiner(evaluator, input, env, scope, globals)
+        val worker = ConstDefiner(evaluator, input, env, scope, stack)
         
         assertSuccess(Phase.Declared, worker.process())
         assertEquals(expected.copy(def = null), env.declarations[input.id])
@@ -34,7 +34,7 @@ class TestConstDefiner
     {
         val input = hirConstOf(kind = null, value = 1.hir)
         val expected = thirConstOf(id = input.id, name = input.name, kind = ThirKind.Value(ThirType.Int32), value = 1.thir)
-        val worker = ConstDefiner(evaluator, input, env, scope, globals)
+        val worker = ConstDefiner(evaluator, input, env, scope, stack)
         
         assertSuccess(Phase.Declared, worker.process())
         assertEquals(expected.copy(def = null), env.declarations[input.id])
@@ -47,7 +47,7 @@ class TestConstDefiner
     {
         val input = hirConstOf(kind = INT32_TYPE_NAME.hirIdent().type.kind, value = true.hir)
         val expected = Outcome.BindingWrongType(ThirType.Int32, ThirType.Bool)
-        val worker = ConstDefiner(evaluator, input, env, scope, globals)
+        val worker = ConstDefiner(evaluator, input, env, scope, stack)
         
         assertSuccess(Phase.Declared, worker.process())
         assertFailure(expected, worker.process())
@@ -58,8 +58,8 @@ class TestParameterDefiner
 {
     private val env = Builtin.generateEnvironment()
     private val scope = Builtin.generateScope()
-    private val globals = Builtin.generateGlobals()
-    private val evaluator = Evaluator(env, globals)
+    private val stack = Stack()
+    private val evaluator = Evaluator(env, stack)
     
     @Test
     fun `Given both type and default, when processing, then declared then defined`()
@@ -103,8 +103,8 @@ class TestFunctionDefiner
 {
     private val env = Builtin.generateEnvironment()
     private val scope = Builtin.generateScope()
-    private val globals = Builtin.generateGlobals()
-    private val evaluator = Evaluator(env, globals)
+    private val stack = Stack()
+    private val evaluator = Evaluator(env, stack)
     
     @Test
     fun `Given empty, when processing, then declared then defined`()
@@ -178,8 +178,8 @@ class TestStructureDefiner
 {
     private val env = Builtin.generateEnvironment()
     private val scope = Builtin.generateScope()
-    private val globals = Builtin.generateGlobals()
-    private val evaluator = Evaluator(env, globals)
+    private val stack = Stack()
+    private val evaluator = Evaluator(env, stack)
     
     @Test
     fun `Given empty, when processing, then declared then defined`()
@@ -207,48 +207,5 @@ class TestStructureDefiner
         assertEquals(expected.copy(def = null), env.declarations[input.id])
         assertSuccess(Phase.Defined, worker.process())
         assertEquals(expected, env.declarations[input.id])
-    }
-}
-
-class TestVariableDefiner
-{
-    private val env = Builtin.generateEnvironment()
-    private val scope = Builtin.generateScope()
-    private val globals = Builtin.generateGlobals()
-    private val evaluator = Evaluator(env, globals)
-    
-    @Test
-    fun `Given both type and value, when processing, then declared and defined`()
-    {
-        val input = hirVarOf(kind = INT32_TYPE_NAME.hirIdent().type.kind, value = 1.hir)
-        val expected = thirVarOf(id = input.id, name = input.name, kind = ThirKind.Value(ThirType.Int32), value = 1.thir)
-        val worker = VariableDefiner(evaluator, input, env, scope)
-        
-        assertSuccess(Phase.Declared, worker.process())
-        assertEquals(expected, env.declarations[input.id])
-        assertSuccess(Phase.Defined, worker.process())
-        assertEquals(expected, env.declarations[input.id])
-    }
-    
-    @Test
-    fun `Given only value, when processing, then declared and defined`()
-    {
-        val input = hirVarOf(kind = null, value = 1.hir)
-        val expected = thirVarOf(id = input.id, name = input.name, kind = ThirKind.Value(ThirType.Int32), value = 1.thir)
-        val worker = VariableDefiner(evaluator, input, env, scope)
-        
-        assertSuccess(Phase.Declared, worker.process())
-        assertEquals(expected, env.declarations[input.id])
-        assertSuccess(Phase.Defined, worker.process())
-        assertEquals(expected, env.declarations[input.id])
-    }
-    
-    @Test
-    fun `Given mismatched type and value, when processing, then error`()
-    {
-        val input = hirVarOf(kind = INT32_TYPE_NAME.hirIdent().type.kind, value = true.hir)
-        val expected = Outcome.BindingWrongType(ThirType.Int32, ThirType.Bool)
-        
-        assertFailure(expected, VariableDefiner(evaluator, input, env, scope).process())
     }
 }

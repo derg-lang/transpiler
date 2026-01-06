@@ -11,8 +11,8 @@ class TestTypeExpressionDefiner
 {
     private val env = Builtin.generateEnvironment()
     private val scope = Builtin.generateScope()
-    private val globals = Builtin.generateGlobals()
-    private val evaluator = Evaluator(env, globals)
+    private val stack = Stack()
+    private val evaluator = Evaluator(env, stack)
     
     @Test
     fun `Given unknown structure identifier, when processing, then error`()
@@ -56,7 +56,7 @@ class TestTypeExpressionDefiner
     @Test
     fun `Given const indirection to invalid expression, when processing, then error`()
     {
-        val const = thirConstOf(kind = ThirKind.Value(ThirType.Bool), value = true.thir).register(scope).declare(env).record(globals)
+        val const = thirConstOf(kind = ThirKind.Value(ThirType.Bool), value = true.thir).register(scope).declare(env).push(stack)
         
         val worker = TypeExpressionDefiner(evaluator, const.name.hirIdent().type, env, scope)
         val expected = Outcome.Unhandled("Expression 'Load(symbolId=${const.id}, valueKind=Value(type=Bool))' evaluated to a non-type value 'Bool(raw=true)'")
@@ -69,7 +69,7 @@ class TestTypeExpressionDefiner
     {
         val structure = thirStructOf().register(scope).declare(env)
         val value = ThirExpression.Type(ThirType.Structure(structure.id, emptyList()))
-        val const = thirConstOf(kind = ThirKind.Type, value = value).register(scope).declare(env).record(globals)
+        val const = thirConstOf(kind = ThirKind.Type, value = value).register(scope).declare(env).push(stack)
         
         val worker = TypeExpressionDefiner(evaluator, const.name.hirIdent().type, env, scope)
         val expected = ThirType.Structure(structure.id, emptyList())

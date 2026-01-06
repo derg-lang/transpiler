@@ -25,7 +25,7 @@ fun statementDefinerOf(
     is HirStatement.Return      -> ReturnDefiner
     is HirStatement.ReturnError -> ReturnErrorDefiner(evaluator, node, env, scope)
     is HirStatement.ReturnValue -> ReturnValueDefiner(evaluator, node, env, scope)
-    is HirStatement.Variable    -> InitializeDefiner(node, env, scope)
+    is HirStatement.Variable    -> VariableDefiner(evaluator, node, env, scope)
     is HirStatement.While       -> WhileDefiner(evaluator, node, env, scope)
 }
 
@@ -138,27 +138,6 @@ internal class IfDefiner(
 }
 
 /**
- * Issues an initialization statement for the variable node.
- */
-internal class InitializeDefiner(
-    private val node: HirStatement.Variable,
-    private val env: Environment,
-    private val scope: Scope,
-) : Worker<ThirStatement>
-{
-    override fun process(): Result<ThirStatement, Outcome>
-    {
-        val symbol = env.declarations[node.id] as? ThirDeclaration.Variable
-            ?: return Outcome.RequireDefinition(setOf(node.id)).toFailure()
-        
-        scope.register(node.id, node.name)
-        
-        val instance = ThirExpression.Load(node.id, symbol.kind)
-        return ThirStatement.Assign(instance, symbol.def!!.value).toSuccess()
-    }
-}
-
-/**
  * Converts from a HIR return to a THIR return.
  */
 internal object ReturnDefiner : Worker<ThirStatement>
@@ -208,6 +187,34 @@ internal class ReturnValueDefiner(
             return Outcome.ReturnHasError(expr.errorKind).toFailure()
         
         return worker.process().mapValue { ThirStatement.ReturnValue(it) }
+    }
+}
+
+/**
+ * Issues an initialization statement for the variable node.
+ */
+internal class VariableDefiner(
+    evaluator: Evaluator,
+    private val node: HirStatement.Variable,
+    private val env: Environment,
+    private val scope: Scope,
+) : Worker<ThirStatement>
+{
+    private val worker = TypeExprResolver(evaluator, node.kind, node.value, env, scope, true)
+    
+    override fun process(): Result<ThirStatement, Outcome>
+    {
+        // When processing a variable, we are in the context of processing statements. Thus, we must ensure that the
+        // variable is fully defined during this process.
+        val type = worker.resolveDeclaration().valueOr { return it.toFailure() }
+        val value = worker.resolveDefinition().valueOr { return it.toFailure() }
+        val symbol = ThirDeclaration.Variable(node.id, node.name, node.assignability, type, ThirDeclaration.VariableDef(value!!))
+        
+        env.declarations[node.id] = symbol
+        scope.register(node.id, node.name)
+
+        val instance = ThirExpression.Load(node.id, symbol.kind)
+        return ThirStatement.Assign(instance, symbol.def!!.value).toSuccess()
     }
 }
 

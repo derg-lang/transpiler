@@ -25,6 +25,12 @@ private class NotStructure(val instance: ThirExpression, val value: ThirExpressi
     Exception("Cannot access fields of '$instance', as it evaluate to '$value'")
 
 /**
+ * An expression [instance] was evaluated to something which is not a variable.
+ */
+private class NotVariable(val instance: ThirExpression) :
+    Exception("Cannot access variable information of '$instance', as it is not a variable")
+
+/**
  * An [expression] was evaluated to something where nothing was expected.
  */
 private class IllegalExpression(val expression: ThirExpression, val value: ThirExpression.Canonical?) :
@@ -92,16 +98,12 @@ data class EvaluatorReturnValue(val value: ThirExpression.Canonical) : Exception
 data class EvaluatorReturnError(val error: ThirExpression.Canonical) : Exception()
 
 /**
- * The evaluator is responsible for evaluating expressions and statements, executing any and all side effects. All state
- * which can never change is stored in the [globals] stack frame. The globals will never be modified as a consequence of
- * evaluating statements or expressions.
+ * The evaluator is responsible for evaluating expressions and statements, executing any and all side effects. All
+ * symbols must be present in the [environment] and global values must be stored in the [stack] before any code is
+ * executed.
  */
-class Evaluator(private val environment: Environment, private val globals: StackFrame)
+class Evaluator(private val environment: Environment, private val stack: Stack)
 {
-    // The stack should be initialized with one dummy element to ensure that any code executed outside a function
-    // context behaves as intended.
-    private val stack = mutableListOf(StackFrame())
-    
     /**
      * Evaluates the [expression] to its canonical form. Expressions are always reduced to their most simple
      * counterpart, if any. In the case the expression evaluates to the happy path, the evaluation is returned as the
@@ -129,6 +131,8 @@ class Evaluator(private val environment: Environment, private val globals: Stack
             else                  -> throw NotCallable(expression.instance, instance)
         }
         
+        // TODO: Perform short-hand evaluation when we are using builtin operations such as `&&` and `||`, etc. We do
+        //       not want to evaluate the parameters right away, instead we should do it as late as possible!
         val parameters = expression.parameters.map { param -> evaluate(param).valueOr { throw IllegalParameter(param, it) } }
         val typeParameters = rawTypeParameters.map { param -> evaluate(param).valueOr { throw IllegalParameter(param, it) } }
         val lhs = parameters.firstOrNull()
@@ -221,49 +225,44 @@ class Evaluator(private val environment: Environment, private val globals: Stack
         
         if (symbol is ThirDeclaration.Function)
         {
-            val frame = StackFrame()
-            (symbol.parameterIds zip parameters).forEach { frame[it.first] = it.second!! }
-            (symbol.typeParameterIds zip typeParameters).forEach { frame[it.first] = it.second!! }
-            stack += frame
-            
-            return try
+            val values = (symbol.parameterIds zip parameters) + (symbol.typeParameterIds zip typeParameters)
+            val frame = values.associate { it.first to it.second!! }
+            return stack.push(frame)
             {
-                symbol.def!!.statements.forEach { execute(it) }
-                null.toSuccess()
-            }
-            catch (e: EvaluatorReturn)
-            {
-                null.toSuccess()
-            }
-            catch (e: EvaluatorReturnValue)
-            {
-                e.value.toSuccess()
-            }
-            catch (e: EvaluatorReturnError)
-            {
-                e.error.toFailure()
-            }
-            finally
-            {
-                stack.removeLast()
+                try
+                {
+                    symbol.def!!.statements.forEach { execute(it) }
+                    null.toSuccess()
+                }
+                catch (e: EvaluatorReturn)
+                {
+                    null.toSuccess()
+                }
+                catch (e: EvaluatorReturnValue)
+                {
+                    e.value.toSuccess()
+                }
+                catch (e: EvaluatorReturnError)
+                {
+                    e.error.toFailure()
+                }
             }
         }
         if (symbol is ThirDeclaration.Structure)
         {
-            val frame = StackFrame()
-            (symbol.ctorEntryIds zip parameters).forEach { frame[it.first] = it.second!! }
-            (symbol.typeParameterIds zip typeParameters).forEach { frame[it.first] = it.second!! }
-            stack += frame
-            
-            // TODO: The ordering in which fields are initialized must be defined. Here we just select an arbitrary
-            //       ordering, which may or may not be what is desired.
-            val fields = symbol.fieldIds
-                .mapNotNull { environment.declarations[it] as? ThirDeclaration.Field }
-                .associate { it.id to if (it.id in frame) frame[it.id] else evaluate(it.def!!.default!!).valueOrDie()!! }
-            val kind = ThirKind.Value(ThirType.Structure(symbol.id, emptyList()))
-            
-            stack.removeLast()
-            return ThirExpression.Instance(fields.toMutableMap(), kind).toSuccess()
+            val values = (symbol.ctorEntryIds zip parameters) + (symbol.typeParameterIds zip typeParameters)
+            val frame = values.associate { it.first to it.second!! }
+            return stack.push(frame)
+            {
+                // TODO: The ordering in which fields are initialized must be defined. Here we just select an arbitrary
+                //       ordering, which may or may not be what is desired.
+                val fields = symbol.fieldIds
+                    .mapNotNull { environment.declarations[it] as? ThirDeclaration.Field }
+                    .associate { it.id to (stack.addressOf(it.id)?.let { id -> stack[id] } ?: evaluate(it.def!!.default!!).valueOrDie()!!) }
+                val kind = ThirKind.Value(ThirType.Structure(symbol.id, emptyList()))
+                
+                ThirExpression.Instance(fields.toMutableMap(), kind).toSuccess()
+            }
         }
         
         // If we ever end up down here, that is because we attempted to evaluate something as a callable, when it is
@@ -305,12 +304,10 @@ class Evaluator(private val environment: Environment, private val globals: Stack
         if (symbol is ThirDeclaration.Structure && expression.valueKind is ThirKind.Value && expression.valueKind.type is ThirType.Structure)
             return ThirExpression.Type(ThirType.Structure(symbol.id, expression.valueKind.type.typeParameters))
         
-        // Otherwise, we assume we are looking at some constant which has been stored on either the stack or in global
-        // memory.
-        val currentFrame = stack.last()
-        if (expression.symbolId in currentFrame)
-            return currentFrame[expression.symbolId]
-        return globals[expression.symbolId]
+        // Otherwise, we assume we are looking at some value which has been stored on the stack.
+        val address = stack.addressOf(expression.symbolId)
+            ?: throw IllegalStateException("Expression '$expression' is not present on the stack")
+        return stack[address]
     }
     
     private fun evaluate(expression: ThirExpression.Field): ThirExpression.Canonical
@@ -341,9 +338,29 @@ class Evaluator(private val environment: Environment, private val globals: Stack
         if (statement.instance !is ThirExpression.Load)
             throw IllegalStateException("Assigning to '${statement.instance}' is not supported - only loads are")
         
-        stack.last()[statement.instance.symbolId] = evaluate(statement.expression)
-            .valueOr { throw IllegalValue(statement.instance, it) }
-            ?: throw IllegalValue(statement.instance, null)
+        val symbol = environment.declarations[statement.instance.symbolId] as? ThirDeclaration.Variable
+            ?: throw NotVariable(statement.instance)
+        
+        val value = if (symbol.assignability == Assignability.REFERENCE)
+        {
+            (statement.expression as? ThirExpression.Load)
+                ?.let { stack.addressOf(it.symbolId) }
+                ?: throw IllegalStateException("Expression '${statement.expression}' refers to a non-existing l-value")
+        }
+        else
+        {
+            evaluate(statement.expression)
+                .valueOr { throw IllegalValue(statement.instance, it) }
+                ?: throw IllegalValue(statement.instance, null)
+        }
+        
+        // TODO: We are not supposed to register the variable onto the stack at this point! We are supposed to have
+        //       allocated the required stack space already by now.
+        val address = stack.addressOf(symbol.id)
+        if (address == null)
+            stack.register(symbol.id, value)
+        else
+            stack[address] = value
     }
     
     private fun execute(statement: ThirStatement.Evaluate)

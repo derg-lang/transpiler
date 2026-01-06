@@ -1,6 +1,7 @@
 package com.github.derg.transpiler.phases.resolver.workers
 
 import com.github.derg.transpiler.phases.interpreter.*
+import com.github.derg.transpiler.phases.interpreter.Stack
 import com.github.derg.transpiler.phases.resolver.*
 import com.github.derg.transpiler.source.*
 import com.github.derg.transpiler.source.hir.*
@@ -29,7 +30,7 @@ internal class ConstDefiner(
     private val node: HirDeclaration.ConstantDecl,
     private val env: Environment,
     scope: Scope,
-    private val globals: StackFrame,
+    private val stack: Stack,
 ) : Worker<Phase>
 {
     private val worker = TypeExprResolver(evaluator, node.kind, node.value, env, scope, true)
@@ -47,7 +48,7 @@ internal class ConstDefiner(
         val value = evaluator.evaluate(expr!!).valueOrDie()!!
         val symbol = env.declarations[node.id]!! as ThirDeclaration.Const
         symbol.def = ThirDeclaration.ConstDef(value = value)
-        globals[symbol.id] = value
+        stack.register(symbol.id, value)
         return Phase.Defined.toSuccess()
     }
 }
@@ -99,29 +100,6 @@ internal class ParameterDefiner(
         val symbol = env.declarations[node.id]!! as ThirDeclaration.Parameter
         symbol.def = ThirDeclaration.ParameterDef(default = value)
         return Phase.Defined.toSuccess()
-    }
-}
-
-internal class VariableDefiner(
-    evaluator: Evaluator,
-    private val node: HirStatement.Variable,
-    private val env: Environment,
-    scope: Scope,
-) : Worker<Phase>
-{
-    private val worker = TypeExprResolver(evaluator, node.kind, node.value, env, scope, true)
-    
-    override fun process(): Result<Phase, Outcome>
-    {
-        if (node.id in env.declarations)
-            return Phase.Defined.toSuccess()
-        
-        // When processing a variable, we are in the context of processing statements. Thus, we must ensure that the
-        // variable is fully defined during this process.
-        val type = worker.resolveDeclaration().valueOr { return it.toFailure() }
-        val value = worker.resolveDefinition().valueOr { return it.toFailure() }
-        env.declarations[node.id] = ThirDeclaration.Variable(node.id, node.name, node.assignability, type, ThirDeclaration.VariableDef(value!!))
-        return Phase.Declared.toSuccess()
     }
 }
 
@@ -207,8 +185,7 @@ internal class FunctionDefiner(
             hasSpawnedChildren = true
             val typeParameters = node.typeParameters.associate { it.id to TypeParameterDefiner(evaluator, it, env, scope) }
             val parameters = node.parameters.associate { it.id to ParameterDefiner(evaluator, it, env, scope) }
-            val variables = node.body.filterIsInstance<HirStatement.Variable>().associate { it.id to VariableDefiner(evaluator, it, env, scope) }
-            val children = typeParameters + parameters + variables
+            val children = typeParameters + parameters
             if (children.isNotEmpty())
                 return Phase.Spawn(children).toSuccess()
         }
@@ -320,7 +297,7 @@ internal class ModuleDefiner(
     private val env: Environment,
     private val externalScope: Scope,
     private val packageScope: Scope,
-    private val globals: StackFrame,
+    private val stack: Stack,
 ) : Worker<Phase>
 {
     private val moduleScope = Scope(packageScope)
@@ -338,7 +315,7 @@ internal class ModuleDefiner(
         }
         
         hasSpawnedChildren = true
-        val segments = node.segments.associate { it.id to SegmentDefiner(evaluator, it, env, externalScope, packageScope, moduleScope, globals) }
+        val segments = node.segments.associate { it.id to SegmentDefiner(evaluator, it, env, externalScope, packageScope, moduleScope, stack) }
         return Phase.Spawn(segments).toSuccess()
     }
 }
@@ -353,7 +330,7 @@ internal class SegmentDefiner(
     externalScope: Scope,
     packageScope: Scope,
     moduleScope: Scope,
-    private val globals: StackFrame,
+    private val stack: Stack,
 ) : Worker<Phase>
 {
     private val segmentScope = Scope(moduleScope)
@@ -386,7 +363,7 @@ internal class SegmentDefiner(
         }
         
         hasSpawnedChildren = true
-        val constants = node.constants.associate { it.id to ConstDefiner(evaluator, it, env, segmentScope, globals) }
+        val constants = node.constants.associate { it.id to ConstDefiner(evaluator, it, env, segmentScope, stack) }
         val functions = node.functions.associate { it.id to FunctionDefiner(evaluator, it, env, segmentScope) }
         val structures = node.structures.associate { it.id to StructureDefiner(evaluator, it, env, segmentScope) }
         return Phase.Spawn(constants + functions + structures).toSuccess()
