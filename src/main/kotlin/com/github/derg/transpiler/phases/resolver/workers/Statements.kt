@@ -102,9 +102,11 @@ internal class IfDefiner(
     scope: Scope,
 ) : Worker<ThirStatement>
 {
+    private val innerScopeTrue = Scope(scope)
+    private val innerScopeFalse = Scope(scope)
     private val predicateWorker = expressionDefinerOf(evaluator, node.predicate, env, scope, ThirKind.Value(ThirType.Bool), false)
-    private val successWorker = WorkerList(node.success) { statementDefinerOf(evaluator, it, env, Scope(scope)) }
-    private val failureWorker = WorkerList(node.failure) { statementDefinerOf(evaluator, it, env, Scope(scope)) }
+    private val successWorker = WorkerList(node.success) { statementDefinerOf(evaluator, it, env, innerScopeTrue) }
+    private val failureWorker = WorkerList(node.failure) { statementDefinerOf(evaluator, it, env, innerScopeFalse) }
     
     private var predicate: ThirExpression? = null
     private var success: List<ThirStatement>? = null
@@ -228,8 +230,9 @@ internal class WhileDefiner(
     scope: Scope,
 ) : Worker<ThirStatement>
 {
+    private val innerScope = Scope(scope)
     private val predicateWorker = expressionDefinerOf(evaluator, node.predicate, env, scope, null, false)
-    private val statementsWorker = WorkerList(node.body) { statementDefinerOf(evaluator, it, env, Scope(scope)) }
+    private val statementsWorker = WorkerList(node.body) { statementDefinerOf(evaluator, it, env, innerScope) }
     
     private var predicate: ThirExpression? = null
     private var statements: List<ThirStatement>? = null

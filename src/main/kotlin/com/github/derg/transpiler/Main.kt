@@ -34,13 +34,57 @@ private const val PROGRAM = """
         val bar: __builtin_i32 = 23
     }
 
+    fun str(value: __builtin_i32) -> __builtin_str
+    {
+        var sign = ""
+        var string = ""
+        var current = value
+        
+        if current < 0
+        {
+            sign = "-"
+            current = -current
+        }
+        
+        while current > 0
+        {
+            val remainder = current % 10
+            
+            if remainder == 0
+                string = "0" + string
+            else if remainder == 1
+                string = "1" + string
+            else if remainder == 2
+                string = "2" + string
+            else if remainder == 3
+                string = "3" + string
+            else if remainder == 4
+                string = "4" + string
+            else if remainder == 5
+                string = "5" + string
+            else if remainder == 6
+                string = "6" + string
+            else if remainder == 7
+                string = "7" + string
+            else if remainder == 8
+                string = "8" + string
+            else if remainder == 9
+                string = "9" + string
+            
+            current = current / 10
+        }
+        
+        return sign + string
+    }
+    
     fun main() -> __builtin_i32
     {
         val test = Test(foo = 2)
+        val data = fibonacci(test.foo + test.bar)
 
-        __builtin_println("Hello World!")
-
-        return fibonacci(test.foo + test.bar)
+        __builtin_println("fibonacci(" + str(test.foo + test.bar) + ") = " + str(data))
+        
+        return data
     }
 """
 
