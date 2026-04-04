@@ -1,6 +1,10 @@
+struct Data(var inner: __builtin_i32)
+
 fun main() -> __builtin_i32
 {
-    var foo = 4
+    val data = Data(inner = 1)
+    data.inner = 4
+    var foo = data.inner
     val bar = 3
     ref baz = foo
     foo = 2

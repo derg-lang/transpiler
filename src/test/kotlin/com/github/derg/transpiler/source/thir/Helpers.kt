@@ -205,11 +205,13 @@ fun thirConstOf(
 fun thirFieldOf(
     id: UUID = UUID.randomUUID(),
     name: String = UUID.randomUUID().toString(),
+    assignability: Assignability = Assignability.FINAL,
     kind: ThirKind = ThirKind.Value(ThirType.Int32),
     default: ThirExpression? = null,
 ) = ThirDeclaration.Field(
     id = id,
     name = name,
+    assignability = assignability,
     kind = kind,
     def = ThirDeclaration.FieldDef(default = default),
 )
