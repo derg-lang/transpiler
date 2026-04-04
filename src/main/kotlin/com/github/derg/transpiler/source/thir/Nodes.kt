@@ -249,6 +249,24 @@ sealed interface ThirDeclaration
     )
     
     /**
+     * Methods represents a subroutine which may be invoked to produce a single value.
+     */
+    data class Method(
+        override val id: UUID,
+        override val name: String,
+        val mutability: Mutability,
+        val valueKind: ThirKind,
+        val errorKind: ThirKind,
+        val typeParameterIds: List<UUID>,
+        val parameterIds: List<UUID>,
+        var def: MethodDef?,
+    ) : ThirDeclaration
+    
+    data class MethodDef(
+        val statements: List<ThirStatement>,
+    )
+    
+    /**
      * Parameters are values which are passed into functions.
      */
     data class Parameter(
@@ -272,6 +290,7 @@ sealed interface ThirDeclaration
         val typeParameterIds: List<UUID>,
         val ctorEntryIds: List<UUID>, // The collection of ONLY constructor parameters.
         val fieldIds: List<UUID>, // The collection of ALL fields, including constructor parameters.
+        val methodIds: List<UUID>,
         var def: StructureDef?,
     ) : ThirDeclaration
     
@@ -362,6 +381,7 @@ val ptr = ThirDeclaration.Structure(
     typeParameterIds = listOf(ptrType.id),
     ctorEntryIds = emptyList(),
     fieldIds = emptyList(),
+    methodIds = emptyList(),
     def = ThirDeclaration.StructureDef(null),
 )
 
@@ -403,6 +423,7 @@ val array = ThirDeclaration.Structure(
     typeParameterIds = listOf(arrayElement.id, arraySize.id),
     ctorEntryIds = emptyList(),
     fieldIds = listOf(arrayData.id, arrayTest.id),
+    methodIds = emptyList(),
     def = ThirDeclaration.StructureDef(null),
 )
 

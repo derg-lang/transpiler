@@ -7,6 +7,11 @@ import com.github.derg.transpiler.utils.*
 import java.util.*
 
 /**
+ * A specific id used to reference the `this` instance when invoking a method.
+ */
+private val THIS_REFERENCE: UUID = UUID(0L, 0L)
+
+/**
  * An expression [instance] was evaluated to something which is not a function kind.
  */
 private class NotCallable(val instance: ThirExpression, val value: ThirExpression.Canonical?) :
@@ -248,20 +253,49 @@ class Evaluator(private val environment: Environment, private val stack: Stack)
                 }
             }
         }
+        if (symbol is ThirDeclaration.Method)
+        {
+            val values = (symbol.parameterIds zip parameters.drop(1)) + (symbol.typeParameterIds zip typeParameters)
+            val frame = values.associate { it.first to it.second!! } + (THIS_REFERENCE to parameters.first()!!)
+            return stack.push(frame)
+            {
+                try
+                {
+                    symbol.def!!.statements.forEach { execute(it) }
+                    null.toSuccess()
+                }
+                catch (e: EvaluatorReturn)
+                {
+                    null.toSuccess()
+                }
+                catch (e: EvaluatorReturnValue)
+                {
+                    e.value.toSuccess()
+                }
+                catch (e: EvaluatorReturnError)
+                {
+                    e.error.toFailure()
+                }
+            }
+        }
         if (symbol is ThirDeclaration.Structure)
         {
+            val kind = ThirKind.Value(ThirType.Structure(symbol.id, emptyList()))
+            val `this` = ThirExpression.Instance(mutableMapOf(), kind)
             val values = (symbol.ctorEntryIds zip parameters) + (symbol.typeParameterIds zip typeParameters)
-            val frame = values.associate { it.first to it.second!! }
+            val frame = values.associate { it.first to it.second!! } + (THIS_REFERENCE to `this`)
             return stack.push(frame)
             {
                 // TODO: The ordering in which fields are initialized must be defined. Here we just select an arbitrary
                 //       ordering, which may or may not be what is desired.
-                val fields = symbol.fieldIds
-                    .mapNotNull { environment.declarations[it] as? ThirDeclaration.Field }
-                    .associate { it.id to (stack.addressOf(it.id)?.let { id -> stack[id] } ?: evaluate(it.def!!.default!!).valueOrDie()!!) }
-                val kind = ThirKind.Value(ThirType.Structure(symbol.id, emptyList()))
+                for (fieldId in symbol.fieldIds)
+                {
+                    val field = environment.declarations[fieldId] as? ThirDeclaration.Field ?: continue
+                    val value = stack.addressOf(fieldId)?.let { stack[it] }
+                    `this`.fields[fieldId] = value ?: evaluate(field.def!!.default!!).valueOrDie()!!
+                }
                 
-                ThirExpression.Instance(fields.toMutableMap(), kind).toSuccess()
+                stack[stack.addressOf(THIS_REFERENCE)!!].toSuccess()
             }
         }
         
@@ -312,7 +346,11 @@ class Evaluator(private val environment: Environment, private val stack: Stack)
     
     private fun evaluate(expression: ThirExpression.Field): ThirExpression.Canonical
     {
-        val instance = evaluate(expression.instance).valueOr { throw IllegalStructure(expression.instance, it) }
+        val instance = if (expression.instance is ThirExpression.Address && expression.instance.raw == 0)
+            stack[stack.addressOf(THIS_REFERENCE)!!]
+        else
+            evaluate(expression.instance).valueOr { throw IllegalStructure(expression.instance, it) }
+        
         if (instance !is ThirExpression.Instance)
             throw NotStructure(expression.instance, instance)
         return instance.fields[expression.fieldId] ?: throw NoSuchField(instance, expression.fieldId)

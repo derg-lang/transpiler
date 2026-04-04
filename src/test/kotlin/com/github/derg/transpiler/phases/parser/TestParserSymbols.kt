@@ -124,12 +124,99 @@ class TestParserFunction
     }
 }
 
+class TestParserMethod
+{
+    private val tester = Tester { methodParserOf() }
+    
+    @Test
+    fun `Given valid token, when parsing, then correctly parsed`()
+    {
+        // Basic structure must be correctly parsed
+        tester.parse("fun foo  (){}").isChain(5, 1).isValue(astMethodOf("foo"))
+        tester.parse("fun foo[](){}").isChain(7, 1).isValue(astMethodOf("foo"))
+        tester.parse("fun foo() -> Foo {}").isChain(7, 1)
+            .isValue(astMethodOf("foo", valueKind = "Foo".astLoad().type.kind))
+        tester.parse("fun foo(): Foo {}").isChain(7, 1)
+            .isValue(astMethodOf("foo", errorKind = "Foo".astLoad().type.kind))
+        tester.parse("fun foo(): Foo -> Bar {}").isChain(9, 1)
+            .isValue(astMethodOf("foo", valueKind = "Bar".astLoad().type.kind, errorKind = "Foo".astLoad().type.kind))
+        
+        // Type parameters must be correctly parsed
+        tester.parse("fun foo[]() {}").isChain(7, 1)
+            .isValue(astMethodOf("foo", typeParameters = emptyList()))
+        tester.parse("fun foo[T: Type]() {}").isChain(10, 1)
+            .isValue(astMethodOf("foo", typeParameters = listOf(astTypeParamOf(name = "T", kind = AstKind.Type))))
+        tester.parse("fun foo[a: T]() {}").isChain(10, 1)
+            .isValue(astMethodOf("foo", typeParameters = listOf(astTypeParamOf(name = "a", kind = "T".astLoad().type.kind))))
+        
+        // Parameters must be correctly parsed
+        tester.parse("fun foo(mut a: Foo) {}").isChain(9, 1)
+            .isValue(astMethodOf("foo", parameters = listOf(astParOf("a", type = "Foo", mut = Mutability.MUTABLE))))
+        tester.parse("fun foo(    a: Foo) {}").isChain(8, 1)
+            .isValue(astMethodOf("foo", parameters = listOf(astParOf("a", type = "Foo", mut = Mutability.IMMUTABLE))))
+        
+        tester.parse("fun foo(in     a: Foo) {}").isChain(9, 1)
+            .isValue(astMethodOf("foo", parameters = listOf(astParOf("a", type = "Foo", pas = Passability.IN))))
+        tester.parse("fun foo(out    a: Foo) {}").isChain(9, 1)
+            .isValue(astMethodOf("foo", parameters = listOf(astParOf("a", type = "Foo", pas = Passability.OUT))))
+        tester.parse("fun foo(move   a: Foo) {}").isChain(9, 1)
+            .isValue(astMethodOf("foo", parameters = listOf(astParOf("a", type = "Foo", pas = Passability.MOVE))))
+        tester.parse("fun foo(borrow a: Foo) {}").isChain(9, 1)
+            .isValue(astMethodOf("foo", parameters = listOf(astParOf("a", type = "Foo", pas = Passability.BORROW))))
+        tester.parse("fun foo(       a: Foo) {}").isChain(8, 1)
+            .isValue(astMethodOf("foo", parameters = listOf(astParOf("a", type = "Foo", pas = Passability.IN))))
+        
+        tester.parse("fun foo(a: Foo, b: Bar) {}").isChain(12, 1)
+            .isValue(astMethodOf("foo", parameters = listOf(astParOf("a", type = "Foo"), astParOf("b", type = "Bar"))))
+        
+        // Default values for parameters must be supported
+        tester.parse("fun foo(a: Foo = 1) {}").isChain(10, 1)
+            .isValue(astMethodOf("foo", parameters = listOf(astParOf("a", type = "Foo", value = 1))))
+    
+        // Mutability must be correctly parsed
+        tester.parse("mut fun foo() {}").isChain(6, 1).isValue(astMethodOf("foo", mutability = Mutability.MUTABLE))
+        tester.parse("    fun foo() {}").isChain(5, 1).isValue(astMethodOf("foo", mutability = Mutability.IMMUTABLE))
+        
+        // Visibility must be correctly parsed
+        tester.parse("exported  fun foo() {}").isChain(6, 1).isValue(astMethodOf("foo", visibility = Visibility.EXPORTED))
+        tester.parse("public    fun foo() {}").isChain(6, 1).isValue(astMethodOf("foo", visibility = Visibility.PUBLIC))
+        tester.parse("protected fun foo() {}").isChain(6, 1).isValue(astMethodOf("foo", visibility = Visibility.PROTECTED))
+        tester.parse("private   fun foo() {}").isChain(6, 1).isValue(astMethodOf("foo", visibility = Visibility.PRIVATE))
+        tester.parse("          fun foo() {}").isChain(5, 1).isValue(astMethodOf("foo", visibility = Visibility.PRIVATE))
+    }
+    
+    @Test
+    fun `Given return statement, when parsing, then correctly parsed`()
+    {
+        tester.parse("fun f() { return _ }").isChain(7, 1)
+            .isValue(astMethodOf("f", valueKind = AstKind.Nothing, statements = listOf(AstReturn)))
+        tester.parse("fun f() -> Int { return 0 }").isChain(9, 1)
+            .isValue(astMethodOf("f", valueKind = "Int".astLoad().type.kind, statements = listOf(0.astReturnValue)))
+    }
+    
+    @Test
+    fun `Given invalid token, when parsing, then correct error`()
+    {
+        tester.parse("").isBad { ParseError.UnexpectedToken(EndOfFile) }
+        tester.parse("fun").isWip(1).isBad { ParseError.UnexpectedToken(EndOfFile) }
+        tester.parse("fun foo(").isWip(3).isBad { ParseError.UnexpectedToken(EndOfFile) }
+    }
+    
+    @Test
+    fun `Given method with variable, when parsing, then correctly parsed`()
+    {
+        val expected = astMethodOf("foo", statements = listOf(astVarOf("bar", 0)))
+        
+        tester.parse("fun foo() { val bar = 0 }").isChain(9, 1).isValue(expected)
+    }
+}
+
 class TestParserStruct
 {
     private val tester = Tester { structParserOf() }
     
     @Test
-    fun `Given valid segment, when parsing, then correctly parsed`()
+    fun `Given valid token, when parsing, then correctly parsed`()
     {
         // Basic structure must be correctly parsed
         tester.parse("struct Foo      ").step(2).isDone().isValue(astStructOf("Foo"))
@@ -185,6 +272,26 @@ class TestParserStruct
             .isValue(astStructOf("Foo", props = listOf(astFieldOf("a", type = null, value = 1))))
         tester.parse("struct Foo { val a: Bar = 1 }").isWip(1).isOk(1).isChain(7, 1)
             .isValue(astStructOf("Foo", props = listOf(astFieldOf("a", type = "Bar", value = 1))))
+    
+        // Methods must be correctly parsed
+        tester.parse("struct Foo {     fun a(){} }").isWip(1).isOk(1).isChain(7, 1)
+            .isValue(astStructOf("Foo", methods = listOf(astMethodOf("a", mutability = Mutability.IMMUTABLE))))
+        tester.parse("struct Foo { mut fun a(){} }").isWip(1).isOk(1).isChain(8, 1)
+            .isValue(astStructOf("Foo", methods = listOf(astMethodOf("a", mutability = Mutability.MUTABLE))))
+    
+        tester.parse("struct Foo { exported  fun a(){} }").isWip(1).isOk(1).isChain(8, 1)
+            .isValue(astStructOf("Foo", methods = listOf(astMethodOf("a", visibility = Visibility.EXPORTED))))
+        tester.parse("struct Foo { public    fun a(){} }").isWip(1).isOk(1).isChain(8, 1)
+            .isValue(astStructOf("Foo", methods = listOf(astMethodOf("a", visibility = Visibility.PUBLIC))))
+        tester.parse("struct Foo { protected fun a(){} }").isWip(1).isOk(1).isChain(8, 1)
+            .isValue(astStructOf("Foo", methods = listOf(astMethodOf("a", visibility = Visibility.PROTECTED))))
+        tester.parse("struct Foo { private   fun a(){} }").isWip(1).isOk(1).isChain(8, 1)
+            .isValue(astStructOf("Foo", methods = listOf(astMethodOf("a", visibility = Visibility.PRIVATE))))
+        tester.parse("struct Foo {           fun a(){} }").isWip(1).isOk(1).isChain(7, 1)
+            .isValue(astStructOf("Foo", methods = listOf(astMethodOf("a", visibility = Visibility.PRIVATE))))
+    
+        tester.parse("struct Foo { fun a(){} fun b(){} }").isWip(1).isOk(1).isChain(13, 1)
+            .isValue(astStructOf("Foo", methods = listOf(astMethodOf("a"), astMethodOf("b"))))
         
         // Visibility must be correctly parsed
         tester.parse("exported  struct Foo").isChain(2, 1).isValue(astStructOf("Foo", vis = Visibility.EXPORTED))
