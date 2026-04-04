@@ -232,6 +232,88 @@ internal class FunctionDefiner(
 }
 
 /**
+ * Converts a HIR method into a THIR declaration.
+ */
+internal class MethodDefiner(
+    private val evaluator: Evaluator,
+    private val node: HirDeclaration.MethodDecl,
+    private val env: Environment,
+    parentScope: Scope,
+) : Worker<Phase>
+{
+    val scope = Scope(parentScope).apply()
+    {
+        node.parameters.forEach { register(it.id, it.name) }
+        node.typeParameters.forEach { register(it.id, it.name) }
+    }
+    
+    private val valueKindWorker = KindDefiner(evaluator, node.valueKind, env, scope)
+    private val errorKindWorker = KindDefiner(evaluator, node.errorKind, env, scope)
+    private val statementWorker = WorkerList(node.body) { statementDefinerOf(evaluator, it, env, scope) }
+    
+    private var valueKind: ThirKind? = null
+    private var errorKind: ThirKind? = null
+    private var statements: List<ThirStatement>? = null
+    
+    private var hasSpawnedChildren = false
+    
+    override fun process(): Result<Phase, Outcome>
+    {
+        // Functions which have a non-zero number of parameters must ensure that all the parameters are worked on as
+        // well. We spawn new workers for each and every parameter, letting them all run in parallel.
+        if (!hasSpawnedChildren)
+        {
+            hasSpawnedChildren = true
+            val typeParameters = node.typeParameters.associate { it.id to TypeParameterDefiner(evaluator, it, env, scope) }
+            val parameters = node.parameters.associate { it.id to ParameterDefiner(evaluator, it, env, scope) }
+            val children = typeParameters + parameters
+            if (children.isNotEmpty())
+                return Phase.Spawn(children).toSuccess()
+        }
+        
+        // Function declarations depend primarily on their value and error types. The parameters are crucial as well,
+        // although they are treated as their own resource and resolved independently. Thus, to declare the function all
+        // we need is the type information.
+        if (valueKind == null)
+            valueKind = valueKindWorker.process().valueOr { return it.toFailure() }
+        if (errorKind == null)
+            errorKind = errorKindWorker.process().valueOr { return it.toFailure() }
+        
+        if (node.id !in env.declarations)
+        {
+            env.declarations[node.id] = declare(valueKind, errorKind)
+            return Phase.Declared.toSuccess()
+        }
+        
+        // Once the function is fully declared, we can process the statements. Statements must be resolved after the
+        // type of the function has been determined, enabling us recursion and self-reference within the statements.
+        if (statements == null)
+            statements = statementWorker.process().valueOr { return it.toFailure() }
+        
+        // TODO: Perform type-checking on all statements. We need to enforce that all return statements only returns
+        //       types which are compatible with the function's value and error types. This is also where we should
+        //       perform smart-casting where possible, reducing user friction.
+        
+        // Once the symbol has been thoroughly declared, and we have all statements, we are ready to define it and call
+        // it a day!
+        val symbol = env.declarations[node.id]!! as ThirDeclaration.Method
+        symbol.def = ThirDeclaration.MethodDef(statements = statements!!)
+        return Phase.Defined.toSuccess()
+    }
+    
+    private fun declare(valueKind: ThirKind?, errorKind: ThirKind?) = ThirDeclaration.Method(
+        id = node.id,
+        name = node.name,
+        mutability = node.mutability,
+        valueKind = valueKind ?: ThirKind.Nothing,
+        errorKind = errorKind ?: ThirKind.Nothing,
+        typeParameterIds = node.typeParameters.map { it.id },
+        parameterIds = node.parameters.map { it.id },
+        def = null,
+    )
+}
+
+/**
  * Converts from a HIR structure to a THIR declaration.
  */
 internal class StructureDefiner(
@@ -244,6 +326,7 @@ internal class StructureDefiner(
     val scope = Scope(parentScope).apply()
     {
         node.fields.forEach { register(it.id, it.name) }
+        node.methods.forEach { register(it.id, it.name) }
         node.ctorEntries.forEach { register(it.id, it.name) }
         node.typeParameters.forEach { register(it.id, it.name) }
     }
@@ -260,7 +343,8 @@ internal class StructureDefiner(
             val typeParameters = node.typeParameters.associate { it.id to TypeParameterDefiner(evaluator, it, env, scope) }
             val fieldParameters = node.ctorEntries.filterIsInstance<HirDeclaration.FieldDecl>().associate { it.id to FieldDefiner(evaluator, it, env, scope) }
             val fields = node.fields.associate { it.id to FieldDefiner(evaluator, it, env, scope) }
-            val children = typeParameters + fieldParameters + fields
+            val methods = node.methods.associate { it.id to MethodDefiner(evaluator, it, env, scope) }
+            val children = typeParameters + fieldParameters + fields + methods
             if (children.isNotEmpty())
                 return Phase.Spawn(children).toSuccess()
         }
@@ -284,6 +368,7 @@ internal class StructureDefiner(
         typeParameterIds = emptyList(),
         ctorEntryIds = node.ctorEntries.map { it.id },
         fieldIds = node.ctorEntries.filterIsInstance<HirDeclaration.FieldDecl>().map { it.id } + node.fields.map { it.id },
+        methodIds = node.methods.map { it.id },
         def = null,
     )
 }

@@ -232,6 +232,26 @@ fun thirFunOf(
     def = ThirDeclaration.FunctionDef(statements = statements),
 )
 
+fun thirMethodOf(
+    id: UUID = UUID.randomUUID(),
+    name: String = UUID.randomUUID().toString(),
+    mutability: Mutability = Mutability.IMMUTABLE,
+    valueKind: ThirKind = ThirKind.Nothing,
+    errorKind: ThirKind = ThirKind.Nothing,
+    typeParameterIds: List<UUID> = emptyList(),
+    parameterIds: List<UUID> = emptyList(),
+    statements: List<ThirStatement> = emptyList(),
+) = ThirDeclaration.Method(
+    id = id,
+    name = name,
+    mutability = mutability,
+    valueKind = valueKind,
+    errorKind = errorKind,
+    typeParameterIds = typeParameterIds,
+    parameterIds = parameterIds,
+    def = ThirDeclaration.MethodDef(statements = statements),
+)
+
 fun thirParamOf(
     id: UUID = UUID.randomUUID(),
     name: String = UUID.randomUUID().toString(),
@@ -252,12 +272,14 @@ fun thirStructOf(
     typeParameterIds: List<UUID> = emptyList(),
     ctorEntryIds: List<UUID> = emptyList(),
     fieldIds: List<UUID> = emptyList(),
+    methodIds: List<UUID> = emptyList(),
 ) = ThirDeclaration.Structure(
     id = id,
     name = name,
     typeParameterIds = typeParameterIds,
     ctorEntryIds = ctorEntryIds,
     fieldIds = fieldIds,
+    methodIds = methodIds,
     def = ThirDeclaration.StructureDef(null),
 )
 

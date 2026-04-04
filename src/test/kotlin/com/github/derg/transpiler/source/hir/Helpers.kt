@@ -168,6 +168,27 @@ fun hirFunOf(
     body = statements,
 )
 
+fun hirMethodOf(
+    name: String = UUID.randomUUID().toString(),
+    typeParameters: List<HirDeclaration.TypeParameterDecl> = emptyList(),
+    parameters: List<HirDeclaration.ParameterDecl> = emptyList(),
+    valueKind: HirKind = HirKind.Nothing,
+    errorKind: HirKind = HirKind.Nothing,
+    statements: List<HirStatement> = emptyList(),
+    mutability: Mutability = Mutability.IMMUTABLE,
+    visibility: Visibility = Visibility.PRIVATE,
+) = HirDeclaration.MethodDecl(
+    id = UUID.randomUUID(),
+    name = name,
+    mutability = mutability,
+    visibility = visibility,
+    typeParameters = typeParameters,
+    parameters = parameters,
+    valueKind = valueKind,
+    errorKind = errorKind,
+    body = statements,
+)
+
 fun hirModuleOf(
     name: String = UUID.randomUUID().toString(),
     segments: List<HirDeclaration.SegmentDecl> = emptyList(),
@@ -207,12 +228,14 @@ fun hirStructOf(
     typeParameters: List<HirDeclaration.TypeParameterDecl> = emptyList(),
     ctorEntries: List<HirDeclaration.ConstructorEntry> = emptyList(),
     fields: List<HirDeclaration.FieldDecl> = emptyList(),
+    methods: List<HirDeclaration.MethodDecl> = emptyList(),
 ) = HirDeclaration.StructureDecl(
     id = UUID.randomUUID(),
     name = name,
     typeParameters = typeParameters,
     ctorEntries = ctorEntries,
     fields = fields,
+    methods = methods,
     visibility = Visibility.PRIVATE,
 )
 

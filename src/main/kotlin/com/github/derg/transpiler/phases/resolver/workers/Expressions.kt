@@ -157,6 +157,8 @@ internal class FieldAccessDefiner(
             ?: return Outcome.InvalidStructure(kind.type).toFailure()
         val symbol = env.declarations[type.structureId] as? ThirDeclaration.Structure
             ?: return Outcome.RequireDeclaration(setOf(type.structureId)).toFailure()
+        
+        // TODO: Handle methods as well here!
         val field = symbol.fieldIds
             .mapNotNull { env.declarations[it] as? ThirDeclaration.Field }
             .singleOrNull { it.name == node.identifier.name }
@@ -222,6 +224,7 @@ internal class IdentifierDefiner(
             is ThirDeclaration.Const         -> symbol.def
             is ThirDeclaration.Field         -> symbol.def
             is ThirDeclaration.Function      -> symbol.def
+            is ThirDeclaration.Method        -> symbol.def
             is ThirDeclaration.Parameter     -> symbol.def
             is ThirDeclaration.Structure     -> symbol.def
             is ThirDeclaration.TypeParameter -> symbol.def
@@ -234,8 +237,9 @@ internal class IdentifierDefiner(
         val type = when (symbol)
         {
             is ThirDeclaration.Const         -> symbol.kind
-            is ThirDeclaration.Field         -> symbol.kind
+            is ThirDeclaration.Field         -> return ThirExpression.Field(ThirExpression.Address(0), symbol.id, symbol.kind).toSuccess()
             is ThirDeclaration.Function      -> ThirKind.Value(ThirType.Function(symbol.id, emptyList(), symbol.valueKind, symbol.errorKind))
+            is ThirDeclaration.Method        -> ThirKind.Value(ThirType.Function(symbol.id, emptyList(), symbol.valueKind, symbol.errorKind))
             is ThirDeclaration.Parameter     -> symbol.kind
             is ThirDeclaration.Structure     -> ThirKind.Value(ThirType.Structure(symbol.id, emptyList()))
             is ThirDeclaration.TypeParameter -> symbol.kind
@@ -267,8 +271,45 @@ internal class CallDefiner(
     {
         // TODO: We need to be able to work with function signatures provided from cases when the function is passed as
         //       a parameter, not just when we can read it directly from the environment.
+        if (node.instance is HirExpression.Field)
+        {
+            val worker = expressionDefinerOf(evaluator, node.instance.instance, env, scope, null, requireDefinition)
+            val instance = worker.process().valueOr { return it.toFailure() }
+            if (instance.errorKind !is ThirKind.Nothing)
+                return Outcome.Unhandled("The error kind must be nothing when resolving '${node.instance}'").toFailure()
+            val type = instance.valueKind as? ThirKind.Value
+                ?: return Outcome.Unhandled("The value kind must be a type when resolving '${node.instance}'").toFailure()
+            val structure = type.type as? ThirType.Structure
+                ?: return Outcome.Unhandled("The value kind must be a structure when resolving '${node.instance}'").toFailure()
+            val symbol = env.declarations[structure.structureId] as? ThirDeclaration.Structure
+                ?: return Outcome.Unhandled("Could not find the structure when resolving '${node.instance}'").toFailure()
+            
+            val candidates = symbol.methodIds.mapNotNull { env.declarations[it] }.filter { it.name == node.instance.identifier.name }
+            if (candidates.isEmpty())
+                return Outcome.UnknownIdentifier(node.instance.identifier.name).toFailure()
+    
+            val (overloads, errors) = candidates.map { resolve(it, node.instance.identifier.typeParameters, instance) }.partitionOutcomes()
+            val undeclaredParams = errors.filterIsInstance<Outcome.RequireDeclaration>().flatMap { it.ids }
+            if (undeclaredParams.isNotEmpty())
+                return Outcome.RequireDeclaration(undeclaredParams.toSet()).toFailure()
+            val undefinedParams = errors.filterIsInstance<Outcome.RequireDefinition>().flatMap { it.ids }
+            if (undefinedParams.isNotEmpty())
+                return Outcome.RequireDefinition(undefinedParams.toSet()).toFailure()
+    
+            // TODO: If the overload has not yet been defined, we need to halt analysis if `requireDefinition` is true.
+            return when (overloads.size)
+            {
+                1    -> overloads.single().toSuccess()
+                0    -> Outcome.NoOverloadAvailable(node.instance.identifier.name, errors).toFailure()
+                else -> Outcome.OverloadedIdentifier(node.instance.identifier.name).toFailure()
+            }
+        }
         if (node.instance !is HirExpression.Identifier)
-            return Outcome.Unsupported("Functions as r-values are not supported yet").toFailure()
+        {
+            val worker = expressionDefinerOf(evaluator, node.instance, env, scope, null, requireDefinition)
+            val instance = worker.process().valueOr { return it.toFailure() }
+            return Outcome.Unsupported("Functions as r-values are not supported yet, cannot handle '$instance'").toFailure()
+        }
         
         // In order to resolve a function call, we need to find all possible overloads which are involved. Since we do
         // not know which candidate we will select ahead of time, we require that all candidates are declared before we
@@ -284,7 +325,7 @@ internal class CallDefiner(
         if (candidates.isEmpty())
             return Outcome.UnknownIdentifier(node.instance.name).toFailure()
         
-        val (overloads, errors) = candidates.map { resolve(it, node.instance) }.partitionOutcomes()
+        val (overloads, errors) = candidates.map { resolve(it, node.instance.typeParameters, ThirExpression.Address(0)) }.partitionOutcomes()
         val undeclaredParams = errors.filterIsInstance<Outcome.RequireDeclaration>().flatMap { it.ids }
         if (undeclaredParams.isNotEmpty())
             return Outcome.RequireDeclaration(undeclaredParams.toSet()).toFailure()
@@ -306,18 +347,23 @@ internal class CallDefiner(
      * we know which target we are applying it to - that is, to support use-friendly two-way type inference, we need to
      * know what types the callable expects.
      */
-    private fun resolve(symbol: ThirDeclaration, instance: HirExpression.Identifier): Result<ThirExpression, Outcome> = when (symbol)
+    private fun resolve(
+        symbol: ThirDeclaration,
+        inTypeParameters: List<NamedMaybe<HirExpression>>,
+        instance: ThirExpression,
+    ): Result<ThirExpression, Outcome> = when (symbol)
     {
         is ThirDeclaration.Const         -> TODO()
         is ThirDeclaration.Field         -> TODO()
-        is ThirDeclaration.Function      -> resolve(symbol, instance)
+        is ThirDeclaration.Function      -> resolve(symbol, inTypeParameters)
+        is ThirDeclaration.Method        -> resolve(symbol, inTypeParameters, instance)
         is ThirDeclaration.Parameter     -> TODO()
-        is ThirDeclaration.Structure     -> resolve(symbol, instance)
+        is ThirDeclaration.Structure     -> resolve(symbol, inTypeParameters)
         is ThirDeclaration.TypeParameter -> TODO()
         is ThirDeclaration.Variable      -> TODO()
     }
     
-    private fun resolve(symbol: ThirDeclaration.Function, instance: HirExpression.Identifier): Result<ThirExpression, Outcome>
+    private fun resolve(symbol: ThirDeclaration.Function, inTypeParameters: List<NamedMaybe<HirExpression>>): Result<ThirExpression, Outcome>
     {
         val missing = (symbol.parameterIds + symbol.typeParameterIds).filter { it !in env.declarations }
         if (missing.isNotEmpty())
@@ -334,7 +380,7 @@ internal class CallDefiner(
         if (undefined.isNotEmpty())
             return Outcome.RequireDefinition(undefined.toSet()).toFailure()
         
-        val foo = TypeArgumentResolver(evaluator, instance.typeParameters, typeParameters, env, scope, requireDefinition)
+        val foo = TypeArgumentResolver(evaluator, inTypeParameters, typeParameters, env, scope, requireDefinition)
         val bar = foo.process().valueOr { return it.toFailure() }
         val baz = bar.map { evaluator.evaluate(it).valueOrDie()!! }
         val worker = ArgumentResolver(evaluator, node.parameters, parameters, env, scope, requireDefinition)
@@ -347,7 +393,37 @@ internal class CallDefiner(
         ).toSuccess()
     }
     
-    private fun resolve(symbol: ThirDeclaration.Structure, instance: HirExpression.Identifier): Result<ThirExpression, Outcome>
+    private fun resolve(symbol: ThirDeclaration.Method, inTypeParameters: List<NamedMaybe<HirExpression>>, instance: ThirExpression): Result<ThirExpression, Outcome>
+    {
+        val missing = (symbol.parameterIds + symbol.typeParameterIds).filter { it !in env.declarations }
+        if (missing.isNotEmpty())
+            return Outcome.RequireDeclaration(missing.toSet()).toFailure()
+        
+        val parameters = symbol.parameterIds
+            .mapNotNull { env.declarations[it] }
+            .filterIsInstance<ThirDeclaration.Parameter>()
+        val typeParameters = symbol.typeParameterIds
+            .mapNotNull { env.declarations[it] }
+            .filterIsInstance<ThirDeclaration.TypeParameter>()
+        
+        val undefined = typeParameters.filter { it.def == null }.map { it.id }
+        if (undefined.isNotEmpty())
+            return Outcome.RequireDefinition(undefined.toSet()).toFailure()
+        
+        val foo = TypeArgumentResolver(evaluator, inTypeParameters, typeParameters, env, scope, requireDefinition)
+        val bar = foo.process().valueOr { return it.toFailure() }
+        val baz = bar.map { evaluator.evaluate(it).valueOrDie()!! }
+        val worker = ArgumentResolver(evaluator, node.parameters, parameters, env, scope, requireDefinition)
+        
+        return ThirExpression.Call(
+            instance = ThirExpression.Type(ThirType.Function(symbol.id, baz, symbol.valueKind, symbol.errorKind)),
+            parameters = listOf(instance) + worker.process().valueOr { return it.toFailure() },
+            valueKind = symbol.valueKind,
+            errorKind = symbol.errorKind,
+        ).toSuccess()
+    }
+    
+    private fun resolve(symbol: ThirDeclaration.Structure, inTypeParameters: List<NamedMaybe<HirExpression>>): Result<ThirExpression, Outcome>
     {
         val missing = symbol.fieldIds.filter { it !in env.declarations }
         if (missing.isNotEmpty())
@@ -358,23 +434,23 @@ internal class CallDefiner(
         val typeParameters = symbol.typeParameterIds
             .mapNotNull { env.declarations[it] }
             .filterIsInstance<ThirDeclaration.TypeParameter>()
-    
+        
         val undefined = typeParameters.filter { it.def == null }.map { it.id }
         if (undefined.isNotEmpty())
             return Outcome.RequireDefinition(undefined.toSet()).toFailure()
-    
+        
         fun ThirDeclaration.fix(): ThirDeclaration.Parameter = when (this)
         {
-            is ThirDeclaration.Field         -> ThirDeclaration.Parameter(id, name, Passability.MOVE, kind, null)
-            is ThirDeclaration.Parameter     -> this
-            else -> throw IllegalArgumentException("Temporary code is busted - symbol '$symbol', instance '$instance'")
+            is ThirDeclaration.Field     -> ThirDeclaration.Parameter(id, name, Passability.MOVE, kind, null)
+            is ThirDeclaration.Parameter -> this
+            else                         -> throw IllegalArgumentException("Temporary code is busted - symbol '$symbol'")
         }
         
-        val foo = TypeArgumentResolver(evaluator, instance.typeParameters, typeParameters, env, scope, requireDefinition)
+        val foo = TypeArgumentResolver(evaluator, inTypeParameters, typeParameters, env, scope, requireDefinition)
         val bar = foo.process().valueOr { return it.toFailure() }
         val baz = bar.map { evaluator.evaluate(it).valueOrDie()!! }
         val worker = ArgumentResolver(evaluator, node.parameters, ctorParams.map { it.fix() }, env, scope, requireDefinition)
-    
+        
         // TODO: Handle fallible constructors. When any field raises an error, the error type must be updated to be
         //       exactly the union of all field initializer errors.
         val type = ThirType.Structure(structureId = symbol.id, typeParameters = baz)

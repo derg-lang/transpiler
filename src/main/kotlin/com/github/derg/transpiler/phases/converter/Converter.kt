@@ -37,6 +37,18 @@ private fun AstFunction.toHir() = HirDeclaration.FunctionDecl(
     body = statements.map { it.toHir() },
 )
 
+private fun AstMethod.toHir() = HirDeclaration.MethodDecl(
+    id = UUID.randomUUID(),
+    name = name,
+    mutability = mutability,
+    visibility = visibility,
+    typeParameters = typeParameters.map { it.toHir() },
+    parameters = parameters.map { it.toHir() },
+    valueKind = valueKind.toHir(),
+    errorKind = errorKind.toHir(),
+    body = statements.map { it.toHir() },
+)
+
 private fun AstModule.toHir() = HirDeclaration.ModuleDecl(
     id = UUID.randomUUID(),
     name = name,
@@ -74,6 +86,7 @@ private fun AstStruct.toHir() = HirDeclaration.StructureDecl(
     typeParameters = typeParameters.map { it.toHir() },
     ctorEntries = ctorEntries.map { it.toHir() },
     fields = fields.map { it.toHir() },
+    methods = methods.map { it.toHir() },
     visibility = visibility,
 )
 

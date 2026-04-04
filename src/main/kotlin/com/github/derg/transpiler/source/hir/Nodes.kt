@@ -216,6 +216,21 @@ sealed interface HirDeclaration : HirNode
     ) : HirDeclaration
     
     /**
+     * Methods are callable subroutines which allows a program to be structured into smaller segments.
+     */
+    data class MethodDecl(
+        override val id: UUID,
+        override val name: String,
+        val mutability: Mutability,
+        val visibility: Visibility,
+        val typeParameters: List<TypeParameterDecl>,
+        val parameters: List<ParameterDecl>,
+        val valueKind: HirKind,
+        val errorKind: HirKind,
+        val body: List<HirStatement>,
+    ) : HirDeclaration
+    
+    /**
      * Modules are collections of segments which are grouped logically, but not necessarily grouped physically.
      */
     data class ModuleDecl(
@@ -255,6 +270,7 @@ sealed interface HirDeclaration : HirNode
         val typeParameters: List<TypeParameterDecl>,
         val ctorEntries: List<ConstructorEntry>,
         val fields: List<FieldDecl>,
+        val methods: List<MethodDecl>,
         val visibility: Visibility,
     ) : HirDeclaration
     

@@ -125,6 +125,7 @@ object Builtin
             typeParameterIds = emptyList(),
             ctorEntryIds = emptyList(),
             fieldIds = emptyList(),
+            methodIds = emptyList(),
             def = ThirDeclaration.StructureDef(null),
         )
         

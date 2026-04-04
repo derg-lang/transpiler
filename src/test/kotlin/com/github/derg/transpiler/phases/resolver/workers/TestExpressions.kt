@@ -744,6 +744,13 @@ class TestCallDefiner
     }
     
     @Nested
+    inner class `Function instance cases`
+    {
+        val method = thirMethodOf().register(scope).declare(env)
+        
+    }
+    
+    @Nested
     inner class `Constructor cases`
     {
         @Test
