@@ -67,12 +67,12 @@ val Any.astArg: NamedMaybe<AstValue>
 // Statement helpers //
 ///////////////////////
 
-infix fun String.astAssign(that: Any) = AstAssign(this, that.ast)
-infix fun String.astAssignAdd(that: Any) = AstAssignAdd(this, that.ast)
-infix fun String.astAssignSub(that: Any) = AstAssignSubtract(this, that.ast)
-infix fun String.astAssignMul(that: Any) = AstAssignMultiply(this, that.ast)
-infix fun String.astAssignMod(that: Any) = AstAssignModulo(this, that.ast)
-infix fun String.astAssignDiv(that: Any) = AstAssignDivide(this, that.ast)
+infix fun AstValue.astAssign(that: Any) = AstAssign(this, that.ast)
+infix fun AstValue.astAssignAdd(that: Any) = AstAssignAdd(this, that.ast)
+infix fun AstValue.astAssignSub(that: Any) = AstAssignSubtract(this, that.ast)
+infix fun AstValue.astAssignMul(that: Any) = AstAssignMultiply(this, that.ast)
+infix fun AstValue.astAssignMod(that: Any) = AstAssignModulo(this, that.ast)
+infix fun AstValue.astAssignDiv(that: Any) = AstAssignDivide(this, that.ast)
 
 val Any.astReturnError get() = AstReturnError(ast)
 val Any.astReturnValue get() = AstReturnValue(ast)

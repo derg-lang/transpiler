@@ -185,12 +185,12 @@ private fun AstValue.toHirCall(operator: UnaryOperator, rhs: AstValue): HirExpre
  */
 internal fun AstInstruction.toHir(): HirStatement = when (this)
 {
-    is AstAssign         -> HirStatement.Assign(name.toHirLoad(), expression.toHir(), AssignOperator.EQUAL)
-    is AstAssignDivide   -> HirStatement.Assign(name.toHirLoad(), expression.toHir(), AssignOperator.DIVIDE)
-    is AstAssignSubtract -> HirStatement.Assign(name.toHirLoad(), expression.toHir(), AssignOperator.SUBTRACT)
-    is AstAssignModulo   -> HirStatement.Assign(name.toHirLoad(), expression.toHir(), AssignOperator.MODULO)
-    is AstAssignMultiply -> HirStatement.Assign(name.toHirLoad(), expression.toHir(), AssignOperator.MULTIPLY)
-    is AstAssignAdd      -> HirStatement.Assign(name.toHirLoad(), expression.toHir(), AssignOperator.ADD)
+    is AstAssign         -> HirStatement.Assign(instance.toHir(), expression.toHir(), AssignOperator.EQUAL)
+    is AstAssignDivide   -> HirStatement.Assign(instance.toHir(), expression.toHir(), AssignOperator.DIVIDE)
+    is AstAssignSubtract -> HirStatement.Assign(instance.toHir(), expression.toHir(), AssignOperator.SUBTRACT)
+    is AstAssignModulo   -> HirStatement.Assign(instance.toHir(), expression.toHir(), AssignOperator.MODULO)
+    is AstAssignMultiply -> HirStatement.Assign(instance.toHir(), expression.toHir(), AssignOperator.MULTIPLY)
+    is AstAssignAdd      -> HirStatement.Assign(instance.toHir(), expression.toHir(), AssignOperator.ADD)
     is AstBranch         -> HirStatement.If(predicate.toHir(), success.toHir(), failure.toHir())
     is AstEvaluate       -> HirStatement.Evaluate(expression.toHir())
     is AstFor            -> HirStatement.For(identifier, expression.toHir(), instructions.toHir())
@@ -200,9 +200,6 @@ internal fun AstInstruction.toHir(): HirStatement = when (this)
     is AstVariable       -> toHir()
     is AstWhile          -> HirStatement.While(predicate.toHir(), instructions.toHir())
 }
-
-private fun String.toHirLoad() =
-    HirExpression.Identifier(UUID.randomUUID(), this, emptyList())
 
 private fun List<AstInstruction>.toHir() =
     map { it.toHir() }

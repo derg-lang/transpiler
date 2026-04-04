@@ -20,19 +20,20 @@ class TestParserInstructions
     fun `Given valid token, when parsing, then correct statement`()
     {
         // Assignments
-        tester.parse("a = 1").isChain(1, 1, 1).isValue("a" astAssign 1)
-        tester.parse("a += 1").isChain(1, 1, 1).isValue("a" astAssignAdd 1)
-        tester.parse("a -= 1").isChain(1, 1, 1).isValue("a" astAssignSub 1)
-        tester.parse("a *= 1").isChain(1, 1, 1).isValue("a" astAssignMul 1)
-        tester.parse("a %= 1").isChain(1, 1, 1).isValue("a" astAssignMod 1)
-        tester.parse("a /= 1").isChain(1, 1, 1).isValue("a" astAssignDiv 1)
+        tester.parse("a = 1").isChain(1, 1, 1).isValue("a".astLoad() astAssign 1)
+        tester.parse("a += 1").isChain(1, 1, 1).isValue("a".astLoad() astAssignAdd 1)
+        tester.parse("a -= 1").isChain(1, 1, 1).isValue("a".astLoad() astAssignSub 1)
+        tester.parse("a *= 1").isChain(1, 1, 1).isValue("a".astLoad() astAssignMul 1)
+        tester.parse("a %= 1").isChain(1, 1, 1).isValue("a".astLoad() astAssignMod 1)
+        tester.parse("a /= 1").isChain(1, 1, 1).isValue("a".astLoad() astAssignDiv 1)
         tester.parse("val foo = 0").isChain(0, 3, 1).isValue(astVarOf("foo", 0))
+        tester.parse("a.b = 1").isOk(1).isWip(1).isOk(1).isWip(1).isOk(1).isDone().isValue("a".astLoad().astMember("b") astAssign 1)
         
         // Control flow
         tester.parse("if 1 a = 2").isWip(2).isOk(1).isWip(1).isOk(1).isDone()
-            .isValue(astIfOf(1, success = listOf("a" astAssign 2)))
+            .isValue(astIfOf(1, success = listOf("a".astLoad() astAssign 2)))
         tester.parse("if 1 {} else a = 2").isWip(3).isOk(1).isWip(1).isOk(1).isWip(1).isOk(1).isDone()
-            .isValue(astIfOf(1, success = emptyList(), failure = listOf("a" astAssign 2)))
+            .isValue(astIfOf(1, success = emptyList(), failure = listOf("a".astLoad() astAssign 2)))
         
         tester.parse("for a in b {}").isChain(0, 5, 1).isValue(astForOf("a", "b".astLoad(), emptyList()))
         tester.parse("for a in b 0").isChain(0, 4, 1).isValue(astForOf("a", "b".astLoad(), listOf(0.astEval)))

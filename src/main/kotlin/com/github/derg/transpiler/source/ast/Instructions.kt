@@ -12,14 +12,14 @@ sealed interface AstInstruction
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 /**
- * Assigns the given [expression] to [name], returning the new value of [name].
+ * Assigns the given [expression] to [instance].
  */
-data class AstAssign(val name: String, val expression: AstValue) : AstInstruction
-data class AstAssignAdd(val name: String, val expression: AstValue) : AstInstruction
-data class AstAssignDivide(val name: String, val expression: AstValue) : AstInstruction
-data class AstAssignModulo(val name: String, val expression: AstValue) : AstInstruction
-data class AstAssignMultiply(val name: String, val expression: AstValue) : AstInstruction
-data class AstAssignSubtract(val name: String, val expression: AstValue) : AstInstruction
+data class AstAssign(val instance: AstValue, val expression: AstValue) : AstInstruction
+data class AstAssignAdd(val instance: AstValue, val expression: AstValue) : AstInstruction
+data class AstAssignDivide(val instance: AstValue, val expression: AstValue) : AstInstruction
+data class AstAssignModulo(val instance: AstValue, val expression: AstValue) : AstInstruction
+data class AstAssignMultiply(val instance: AstValue, val expression: AstValue) : AstInstruction
+data class AstAssignSubtract(val instance: AstValue, val expression: AstValue) : AstInstruction
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Control flow

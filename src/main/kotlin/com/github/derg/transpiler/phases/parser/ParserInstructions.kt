@@ -4,16 +4,16 @@ import com.github.derg.transpiler.source.*
 import com.github.derg.transpiler.source.ast.*
 
 /**
- * Joins together the [name] with the [operator] and the [rhs] expression.
+ * Joins together the [instance] with the [operator] and the [rhs] expression.
  */
-private fun merge(name: String, operator: Symbol, rhs: AstValue): AstInstruction = when (operator)
+private fun merge(instance: AstValue, operator: Symbol, rhs: AstValue): AstInstruction = when (operator)
 {
-    Symbol.ASSIGN          -> AstAssign(name, rhs)
-    Symbol.ASSIGN_PLUS     -> AstAssignAdd(name, rhs)
-    Symbol.ASSIGN_MINUS    -> AstAssignSubtract(name, rhs)
-    Symbol.ASSIGN_MULTIPLY -> AstAssignMultiply(name, rhs)
-    Symbol.ASSIGN_MODULO   -> AstAssignModulo(name, rhs)
-    Symbol.ASSIGN_DIVIDE   -> AstAssignDivide(name, rhs)
+    Symbol.ASSIGN          -> AstAssign(instance, rhs)
+    Symbol.ASSIGN_PLUS     -> AstAssignAdd(instance, rhs)
+    Symbol.ASSIGN_MINUS    -> AstAssignSubtract(instance, rhs)
+    Symbol.ASSIGN_MULTIPLY -> AstAssignMultiply(instance, rhs)
+    Symbol.ASSIGN_MODULO   -> AstAssignModulo(instance, rhs)
+    Symbol.ASSIGN_DIVIDE   -> AstAssignDivide(instance, rhs)
     else                   -> throw IllegalStateException("Illegal operator $operator when parsing assignment")
 }
 
@@ -38,7 +38,7 @@ private fun assignmentParserOf(): Parser<AstInstruction> =
     ParserPattern(::assignmentPatternOf, ::assignmentOutcomeOf)
 
 private fun assignmentPatternOf() = ParserSequence(
-    "name" to ParserIdentifier(),
+    "instance" to ParserExpression(),
     "op" to ParserSymbol(
         Symbol.ASSIGN,
         Symbol.ASSIGN_PLUS,
@@ -51,7 +51,7 @@ private fun assignmentPatternOf() = ParserSequence(
 )
 
 private fun assignmentOutcomeOf(values: Parsers): AstInstruction =
-    merge(values["name"], values["op"], values["rhs"])
+    merge(values["instance"], values["op"], values["rhs"])
 
 /**
  * Parses a single branch control from the token stream.
