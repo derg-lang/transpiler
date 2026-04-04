@@ -223,6 +223,7 @@ sealed interface ThirDeclaration
     data class Field(
         override val id: UUID,
         override val name: String,
+        val assignability: Assignability,
         val kind: ThirKind,
         var def: FieldDef?,
     ) : ThirDeclaration
@@ -404,6 +405,7 @@ val arraySize = ThirDeclaration.TypeParameter(
 val arrayData = ThirDeclaration.Field(
     id = UUID.randomUUID(),
     name = "data",
+    assignability = Assignability.FINAL,
     kind = ThirKind.Value(ThirType.Structure(ptr.id, listOf(ThirExpression.Type(ThirType.TypeParameterRef(arrayElement.id))))),
     def = ThirDeclaration.FieldDef(
         default = null,
@@ -412,6 +414,7 @@ val arrayData = ThirDeclaration.Field(
 val arrayTest = ThirDeclaration.Field(
     id = UUID.randomUUID(),
     name = "test",
+    assignability = Assignability.FINAL,
     kind = ThirKind.Value(ThirType.Int32),
     def = ThirDeclaration.FieldDef(
         default = ThirExpression.Load(arraySize.id, ThirKind.Value(ThirType.Int32)),

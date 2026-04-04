@@ -67,7 +67,7 @@ internal class FieldDefiner(
         if (node.id !in env.declarations)
         {
             val type = worker.resolveDeclaration().valueOr { return it.toFailure() }
-            env.declarations[node.id] = ThirDeclaration.Field(id = node.id, name = node.name, kind = type, def = null)
+            env.declarations[node.id] = ThirDeclaration.Field(node.id, node.name, node.assignability, type, null)
             return Phase.Declared.toSuccess()
         }
         

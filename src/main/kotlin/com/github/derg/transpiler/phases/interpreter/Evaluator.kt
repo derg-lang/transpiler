@@ -373,13 +373,24 @@ class Evaluator(private val environment: Environment, private val stack: Stack)
     
     private fun execute(statement: ThirStatement.Assign)
     {
-        if (statement.instance !is ThirExpression.Load)
-            throw IllegalStateException("Assigning to '${statement.instance}' is not supported - only loads are")
+        fun magic(expression: ThirExpression): ThirDeclaration = when (expression)
+        {
+            is ThirExpression.Canonical -> throw IllegalStateException("Assigning to '${statement.instance}' is not supported - canonical values are not supported")
+            is ThirExpression.Call      -> magic(expression)
+            is ThirExpression.Catch     -> magic(expression)
+            is ThirExpression.Field     -> environment.declarations[expression.fieldId]!!
+            is ThirExpression.Load      -> environment.declarations[expression.symbolId]!!
+        }
         
-        val symbol = environment.declarations[statement.instance.symbolId] as? ThirDeclaration.Variable
-            ?: throw NotVariable(statement.instance)
+        val symbol = magic(statement.instance)
+        val assignability = when (symbol)
+        {
+            is ThirDeclaration.Field    -> Assignability.FINAL
+            is ThirDeclaration.Variable -> symbol.assignability
+            else                        -> throw NotVariable(statement.instance)
+        }
         
-        val value = if (symbol.assignability == Assignability.REFERENCE)
+        val value = if (assignability == Assignability.REFERENCE)
         {
             (statement.expression as? ThirExpression.Load)
                 ?.let { stack.addressOf(it.symbolId) }

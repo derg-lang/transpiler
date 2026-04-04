@@ -21,9 +21,9 @@ class TestParserScope
     fun `Given valid token, when parsing, then correct scope`()
     {
         tester.parse("{}").isChain(0, 1, 1).isValue(emptyList())
-        tester.parse("a = 1").isChain(1, 1, 1).isValue(listOf("a" astAssign 1))
-        tester.parse("{ a = 1 }").isChain(0, 4, 1).isValue(listOf("a" astAssign 1))
-        tester.parse("{ a = 1 b = 2 }").isChain(0, 7, 1).isValue(listOf("a" astAssign 1, "b" astAssign 2))
+        tester.parse("a = 1").isChain(1, 1, 1).isValue(listOf("a".astLoad() astAssign 1))
+        tester.parse("{ a = 1 }").isChain(0, 4, 1).isValue(listOf("a".astLoad() astAssign 1))
+        tester.parse("{ a = 1 b = 2 }").isChain(0, 7, 1).isValue(listOf("a".astLoad() astAssign 1, "b".astLoad() astAssign 2))
     }
     
     @Test
