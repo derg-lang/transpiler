@@ -94,7 +94,7 @@ class TestTypeExpressionDefiner
         val generic = thirParamOf().register(scope).declare(env)
         
         val worker = TypeExpressionDefiner(evaluator, generic.name.hirIdent().type, env, scope)
-        val expected = ThirType.TypeParameterRef(generic.id)
+        val expected = ThirType.Var(generic.id)
         
         assertSuccess(expected, worker.process())
     }

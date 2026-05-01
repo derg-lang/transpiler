@@ -459,8 +459,8 @@ internal class CallDefiner(
         return ThirExpression.Call(
             instance = ThirExpression.Type(call),
             parameters = worker.process().valueOr { return it.toFailure() },
-            valueKind = call.valueKind,
-            errorKind = call.errorKind,
+            valueKind = call.parameterKind,
+            errorKind = call.returnKind,
         ).toSuccess()
     }
 }

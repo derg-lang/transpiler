@@ -406,7 +406,7 @@ val arrayData = ThirDeclaration.Field(
     id = UUID.randomUUID(),
     name = "data",
     assignability = Assignability.FINAL,
-    kind = ThirKind.Value(ThirType.Structure(ptr.id, listOf(ThirExpression.Type(ThirType.TypeParameterRef(arrayElement.id))))),
+    kind = ThirKind.Value(ThirType.Structure(ptr.id, listOf(ThirExpression.Type(ThirType.Var(arrayElement.id))))),
     def = ThirDeclaration.FieldDef(
         default = null,
     )

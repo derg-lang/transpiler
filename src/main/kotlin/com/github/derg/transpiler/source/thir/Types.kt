@@ -67,8 +67,8 @@ sealed interface ThirType
     data class Function(
         val functionId: UUID,
         val typeParameters: List<ThirExpression.Canonical>,
-        val valueKind: ThirKind,
-        val errorKind: ThirKind,
+        val parameterKind: ThirKind,
+        val returnKind: ThirKind,
     ) : ThirType
     
     /**
@@ -80,9 +80,16 @@ sealed interface ThirType
     ) : ThirType
     
     /**
-     * A value representation for type parameters.
+     * A sequence of kinds in an exact order.
      */
-    data class TypeParameterRef(
-        val typeParameterId: UUID,
+    data class Tuple(
+        val kinds: List<ThirKind>,
+    ) : ThirType
+    
+    /**
+     * A placeholder type variable. Used during type-checking to represent an unresolved type.
+     */
+    data class Var(
+        val nodeId: UUID,
     ) : ThirType
 }

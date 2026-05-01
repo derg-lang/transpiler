@@ -166,8 +166,8 @@ internal class FunctionDefiner(
         node.typeParameters.forEach { register(it.id, it.name) }
     }
     
-    private val valueKindWorker = KindDefiner(evaluator, node.valueKind, env, scope)
-    private val errorKindWorker = KindDefiner(evaluator, node.errorKind, env, scope)
+    private val valueKindWorker = node.valueKind?.let { KindDefiner(evaluator, it, env, scope) }
+    private val errorKindWorker = node.errorKind?.let { KindDefiner(evaluator, it, env, scope) }
     private val statementWorker = WorkerList(node.body) { statementDefinerOf(evaluator, it, env, scope) }
     
     private var valueKind: ThirKind? = null
@@ -194,9 +194,9 @@ internal class FunctionDefiner(
         // although they are treated as their own resource and resolved independently. Thus, to declare the function all
         // we need is the type information.
         if (valueKind == null)
-            valueKind = valueKindWorker.process().valueOr { return it.toFailure() }
+            valueKind = valueKindWorker?.process()?.valueOr { return it.toFailure() }
         if (errorKind == null)
-            errorKind = errorKindWorker.process().valueOr { return it.toFailure() }
+            errorKind = errorKindWorker?.process()?.valueOr { return it.toFailure() }
         
         if (node.id !in env.declarations)
         {
@@ -247,8 +247,8 @@ internal class MethodDefiner(
         node.typeParameters.forEach { register(it.id, it.name) }
     }
     
-    private val valueKindWorker = KindDefiner(evaluator, node.valueKind, env, scope)
-    private val errorKindWorker = KindDefiner(evaluator, node.errorKind, env, scope)
+    private val valueKindWorker = node.valueKind?.let { KindDefiner(evaluator, it, env, scope) }
+    private val errorKindWorker = node.errorKind?.let { KindDefiner(evaluator, it, env, scope) }
     private val statementWorker = WorkerList(node.body) { statementDefinerOf(evaluator, it, env, scope) }
     
     private var valueKind: ThirKind? = null
@@ -275,9 +275,9 @@ internal class MethodDefiner(
         // although they are treated as their own resource and resolved independently. Thus, to declare the function all
         // we need is the type information.
         if (valueKind == null)
-            valueKind = valueKindWorker.process().valueOr { return it.toFailure() }
+            valueKind = valueKindWorker?.process()?.valueOr { return it.toFailure() }
         if (errorKind == null)
-            errorKind = errorKindWorker.process().valueOr { return it.toFailure() }
+            errorKind = errorKindWorker?.process()?.valueOr { return it.toFailure() }
         
         if (node.id !in env.declarations)
         {

@@ -98,25 +98,25 @@ private fun hirUnary(rhs: HirExpression, operator: UnaryOperator): HirExpression
 // Statement helpers //
 ///////////////////////
 
-infix fun HirExpression.hirAssign(that: HirExpression) = HirStatement.Assign(this, that, AssignOperator.EQUAL)
-infix fun HirExpression.hirAssignAdd(that: HirExpression) = HirStatement.Assign(this, that, AssignOperator.ADD)
-infix fun HirExpression.hirAssignDiv(that: HirExpression) = HirStatement.Assign(this, that, AssignOperator.DIVIDE)
-infix fun HirExpression.hirAssignMod(that: HirExpression) = HirStatement.Assign(this, that, AssignOperator.MODULO)
-infix fun HirExpression.hirAssignMul(that: HirExpression) = HirStatement.Assign(this, that, AssignOperator.MULTIPLY)
-infix fun HirExpression.hirAssignSub(that: HirExpression) = HirStatement.Assign(this, that, AssignOperator.SUBTRACT)
+infix fun HirExpression.hirAssign(that: HirExpression) = HirStatement.Assign(UUID.randomUUID(), this, that, AssignOperator.EQUAL)
+infix fun HirExpression.hirAssignAdd(that: HirExpression) = HirStatement.Assign(UUID.randomUUID(), this, that, AssignOperator.ADD)
+infix fun HirExpression.hirAssignDiv(that: HirExpression) = HirStatement.Assign(UUID.randomUUID(), this, that, AssignOperator.DIVIDE)
+infix fun HirExpression.hirAssignMod(that: HirExpression) = HirStatement.Assign(UUID.randomUUID(), this, that, AssignOperator.MODULO)
+infix fun HirExpression.hirAssignMul(that: HirExpression) = HirStatement.Assign(UUID.randomUUID(), this, that, AssignOperator.MULTIPLY)
+infix fun HirExpression.hirAssignSub(that: HirExpression) = HirStatement.Assign(UUID.randomUUID(), this, that, AssignOperator.SUBTRACT)
 
-val Any.hirEval get() = HirStatement.Evaluate(hir)
-val Any.hirReturnError get() = HirStatement.ReturnError(hir)
-val Any.hirReturnValue get() = HirStatement.ReturnValue(hir)
+val Any.hirEval get() = HirStatement.Evaluate(UUID.randomUUID(), hir)
+val Any.hirReturnError get() = HirStatement.ReturnError(UUID.randomUUID(), hir)
+val Any.hirReturnValue get() = HirStatement.ReturnValue(UUID.randomUUID(), hir)
 
 fun Any.hirIf(
     success: List<HirStatement> = emptyList(),
     failure: List<HirStatement> = emptyList(),
-) = HirStatement.If(hir, success, failure)
+) = HirStatement.If(UUID.randomUUID(), hir, success, failure)
 
 fun Any.hirWhile(
     statements: List<HirStatement> = emptyList(),
-) = HirStatement.While(hir, statements)
+) = HirStatement.While(UUID.randomUUID(), hir, statements)
 
 /////////////////////////
 // Declaration helpers //

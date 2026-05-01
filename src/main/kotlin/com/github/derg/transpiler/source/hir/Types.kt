@@ -1,7 +1,5 @@
 package com.github.derg.transpiler.source.hir
 
-import com.github.derg.transpiler.source.*
-
 /**
  * The different kinds for types in the type system.
  */
@@ -50,19 +48,9 @@ sealed interface HirType
      * Function types, which describes a callable object. Functions are permitted to return either a value type, or an
      * error type, never both. Functions are allowed to take an arbitrary number of parameters.
      *
-     * @param valueType The value type returned by this callable.
-     * @param errorType The error type returned by this callable.
+     * @param valueKind The value type returned by this callable.
+     * @param errorKind The error type returned by this callable.
      * @param parameters The parameters which are acceptable by this callable.
      */
-    data class Function(val valueType: HirType?, val errorType: HirType?, val parameters: List<Parameter>) : HirType
-    
-    /**
-     * Parameters represents an input into a callable object.
-     *
-     * @param name The name of the parameter.
-     * @param type The type information of the value provided with this parameter.
-     * @param default The default value of the parameter, if any.
-     * @param passability The specific mechanism of how the parameter should be passed into the function.
-     */
-    data class Parameter(val name: String, val type: HirType, val default: HirExpression?, val passability: Passability)
+    data class Function(val valueKind: HirKind?, val errorKind: HirKind?, val parameters: List<HirKind>) : HirType
 }

@@ -23,3 +23,22 @@ inline fun <K, T> Map<K, T>.partition(predicate: (Map.Entry<K, T>) -> Boolean): 
  * Generates a list with [this] as the only element.
  */
 fun <Type> Type.asList(): List<Type> = listOf(this)
+
+/**
+ * Removes all elements of type [Type] from the collection, returning all elements which were removed.
+ */
+inline fun <reified Type> MutableCollection<*>.removeInstance(): List<Type>
+{
+    val collection = mutableListOf<Type>()
+    val iterator = iterator()
+    while (iterator.hasNext())
+    {
+        val entry = iterator.next()
+        if (entry !is Type)
+            continue
+        
+        iterator.remove()
+        collection += entry
+    }
+    return collection
+}

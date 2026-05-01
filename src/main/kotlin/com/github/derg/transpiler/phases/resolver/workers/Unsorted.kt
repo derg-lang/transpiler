@@ -125,9 +125,9 @@ internal class ArgumentResolver(
         {
             if (expected !is ThirKind.Value)
                 return expected
-            if (expected.type !is ThirType.TypeParameterRef)
+            if (expected.type !is ThirType.Var)
                 return expected
-            return typeParameterBindings.getOrPut(expected.type.typeParameterId) { actual }
+            return typeParameterBindings.getOrPut(expected.type.nodeId) { actual }
         }
         
         for ((slot, parameter) in parameters.withIndex().filter { it.index !in outputs })

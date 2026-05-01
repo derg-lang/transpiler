@@ -122,11 +122,12 @@ private fun AstKind.toHir(): HirKind = when (this)
 private fun AstType.toHir(): HirType = when (this)
 {
     is AstType.Expression -> HirType.Expression(value.toHir())
-    is AstType.Function   -> HirType.Function(value?.toHir(), error?.toHir(), parameters.map { it.toHir() })
+    is AstType.Function   -> HirType.Function(
+        value?.toHir()?.let { HirKind.Value(it) } ?: HirKind.Nothing,
+        error?.toHir()?.let { HirKind.Value(it) } ?: HirKind.Nothing,
+        parameters.map { HirKind.Value(it.type.toHir()) },
+    )
 }
-
-private fun AstType.Parameter.toHir(): HirType.Parameter =
-    HirType.Parameter(name, type.toHir(), null, passability)
 
 /**
  * Converts [this] expression from AST to HIR. The data structure will be encoded with appropriate default information
@@ -186,20 +187,20 @@ private fun AstValue.toHirCall(operator: UnaryOperator, rhs: AstValue): HirExpre
  */
 internal fun AstInstruction.toHir(): HirStatement = when (this)
 {
-    is AstAssign         -> HirStatement.Assign(instance.toHir(), expression.toHir(), AssignOperator.EQUAL)
-    is AstAssignDivide   -> HirStatement.Assign(instance.toHir(), expression.toHir(), AssignOperator.DIVIDE)
-    is AstAssignSubtract -> HirStatement.Assign(instance.toHir(), expression.toHir(), AssignOperator.SUBTRACT)
-    is AstAssignModulo   -> HirStatement.Assign(instance.toHir(), expression.toHir(), AssignOperator.MODULO)
-    is AstAssignMultiply -> HirStatement.Assign(instance.toHir(), expression.toHir(), AssignOperator.MULTIPLY)
-    is AstAssignAdd      -> HirStatement.Assign(instance.toHir(), expression.toHir(), AssignOperator.ADD)
-    is AstBranch         -> HirStatement.If(predicate.toHir(), success.toHir(), failure.toHir())
-    is AstEvaluate       -> HirStatement.Evaluate(expression.toHir())
-    is AstFor            -> HirStatement.For(identifier, expression.toHir(), instructions.toHir())
-    is AstReturn         -> HirStatement.Return
-    is AstReturnError    -> HirStatement.ReturnError(expression.toHir())
-    is AstReturnValue    -> HirStatement.ReturnValue(expression.toHir())
+    is AstAssign         -> HirStatement.Assign(UUID.randomUUID(), instance.toHir(), expression.toHir(), AssignOperator.EQUAL)
+    is AstAssignDivide   -> HirStatement.Assign(UUID.randomUUID(), instance.toHir(), expression.toHir(), AssignOperator.DIVIDE)
+    is AstAssignSubtract -> HirStatement.Assign(UUID.randomUUID(), instance.toHir(), expression.toHir(), AssignOperator.SUBTRACT)
+    is AstAssignModulo   -> HirStatement.Assign(UUID.randomUUID(), instance.toHir(), expression.toHir(), AssignOperator.MODULO)
+    is AstAssignMultiply -> HirStatement.Assign(UUID.randomUUID(), instance.toHir(), expression.toHir(), AssignOperator.MULTIPLY)
+    is AstAssignAdd      -> HirStatement.Assign(UUID.randomUUID(), instance.toHir(), expression.toHir(), AssignOperator.ADD)
+    is AstBranch         -> HirStatement.If(UUID.randomUUID(), predicate.toHir(), success.toHir(), failure.toHir())
+    is AstEvaluate       -> HirStatement.Evaluate(UUID.randomUUID(), expression.toHir())
+    is AstFor            -> HirStatement.For(UUID.randomUUID(), identifier, expression.toHir(), instructions.toHir())
+    is AstReturn         -> HirStatement.Return(UUID.randomUUID())
+    is AstReturnError    -> HirStatement.ReturnError(UUID.randomUUID(), expression.toHir())
+    is AstReturnValue    -> HirStatement.ReturnValue(UUID.randomUUID(), expression.toHir())
     is AstVariable       -> toHir()
-    is AstWhile          -> HirStatement.While(predicate.toHir(), instructions.toHir())
+    is AstWhile          -> HirStatement.While(UUID.randomUUID(), predicate.toHir(), instructions.toHir())
 }
 
 private fun List<AstInstruction>.toHir() =

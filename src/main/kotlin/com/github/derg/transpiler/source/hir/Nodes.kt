@@ -87,13 +87,18 @@ sealed interface HirExpression : HirNode
  * Statements are typically considered the executable parts of the program. They direct the control flow, handles side
  * effects, determines how the expressions are used after evaluation, and so on.
  */
-sealed interface HirStatement
+sealed interface HirStatement : HirNode
 {
     /**
      * Assigns the specified [expression] to the object located under the given [instance]. The expression is assigned
      * to the instance using the given [operator].
      */
-    data class Assign(val instance: HirExpression, val expression: HirExpression, val operator: AssignOperator) : HirStatement
+    data class Assign(
+        override val id: UUID,
+        val instance: HirExpression,
+        val expression: HirExpression,
+        val operator: AssignOperator,
+    ) : HirStatement
     
     /**
      * A body represents a sequence of any number of statements. They can be used to describe a certain scope,
@@ -105,26 +110,39 @@ sealed interface HirStatement
      * Evaluates the [expression], and executes any side effects which may arise as a consequence. The [expression] is
      * not permitted to evaluate to any non-void value or error.
      */
-    data class Evaluate(val expression: HirExpression) : HirStatement
+    data class Evaluate(
+        override val id: UUID,
+        val expression: HirExpression,
+    ) : HirStatement
     
     /**
      * Loops are a control flow construct which iterates over the [expression] until all elements in the expression has
      * been looped over. The [identifier] denotes the name of the variable which holds the current element in the loop.
      * The [body] block will be repeatedly executed until no more elements remains in the loop.
      */
-    data class For(val identifier: String, val expression: HirExpression, val body: List<HirStatement>) : HirStatement
+    data class For(
+        override val id: UUID,
+        val identifier: String,
+        val expression: HirExpression,
+        val body: List<HirStatement>,
+    ) : HirStatement
     
     /**
      * Conditional execution is possible by branching the control flow one a [predicate]. If the predicates matches, the
      * [success] branch is selected, otherwise the [failure] branch is selected.
      */
-    data class If(val predicate: HirExpression, val success: List<HirStatement>, val failure: List<HirStatement>) : HirStatement
+    data class If(
+        override val id: UUID,
+        val predicate: HirExpression,
+        val success: List<HirStatement>,
+        val failure: List<HirStatement>,
+    ) : HirStatement
     
     /**
      * Specifies that the execution flow should exit the current function, returning control flow back to the caller.
      * Note that the function cannot be exited in this manner if the function expects a return value.
      */
-    data object Return : HirStatement
+    data class Return(override val id: UUID) : HirStatement
     
     /**
      * Specifies that a function should raise a specific [expression]. The raise statement functions similarly to the
@@ -132,19 +150,23 @@ sealed interface HirStatement
      * function, this usually indicates that the function has failed to uphold its contract and produced a value which
      * does not conform to the expectations of the caller.
      */
-    data class ReturnError(val expression: HirExpression) : HirStatement
+    data class ReturnError(override val id: UUID, val expression: HirExpression) : HirStatement
     
     /**
      * Specifies that a function should return a specific [expression]. The return statement marks the point where the
      * execution is resumed to the caller of the function, executing nothing else in the body of the function.
      * Returning a value from a function indicates usually that the function has succeeded in producing a usable value.
      */
-    data class ReturnValue(val expression: HirExpression) : HirStatement
+    data class ReturnValue(override val id: UUID, val expression: HirExpression) : HirStatement
     
     /**
      * While loops are a control flow construct which execute the [body] until the [predicate] evaluates to false.
      */
-    data class While(val predicate: HirExpression, val body: List<HirStatement>) : HirStatement
+    data class While(
+        override val id: UUID,
+        val predicate: HirExpression,
+        val body: List<HirStatement>,
+    ) : HirStatement
     
     /**
      * Variables are units which hold a specific [value] and associates the value with a binding [name]. Variables may
@@ -153,7 +175,7 @@ sealed interface HirStatement
      * assigned a new value or not.
      */
     data class Variable(
-        val id: UUID,
+        override val id: UUID,
         val name: String,
         val kind: HirKind,
         val value: HirExpression,
@@ -210,8 +232,8 @@ sealed interface HirDeclaration : HirNode
         val visibility: Visibility,
         val typeParameters: List<TypeParameterDecl>,
         val parameters: List<ParameterDecl>,
-        val valueKind: HirKind,
-        val errorKind: HirKind,
+        val valueKind: HirKind?,
+        val errorKind: HirKind?,
         val body: List<HirStatement>,
     ) : HirDeclaration
     
@@ -225,8 +247,8 @@ sealed interface HirDeclaration : HirNode
         val visibility: Visibility,
         val typeParameters: List<TypeParameterDecl>,
         val parameters: List<ParameterDecl>,
-        val valueKind: HirKind,
-        val errorKind: HirKind,
+        val valueKind: HirKind?,
+        val errorKind: HirKind?,
         val body: List<HirStatement>,
     ) : HirDeclaration
     

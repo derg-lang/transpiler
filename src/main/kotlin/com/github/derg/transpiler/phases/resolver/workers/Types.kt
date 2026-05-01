@@ -52,10 +52,10 @@ internal class TypeExpressionDefiner(
                 ?: return Outcome.RequireDeclaration(setOf(expression.symbolId)).toFailure()
             val typeParameter = symbol as? ThirDeclaration.TypeParameter
             if (typeParameter != null)
-                return ThirExpression.Type(ThirType.TypeParameterRef(symbol.id)).toSuccess()
+                return ThirExpression.Type(ThirType.Var(symbol.id)).toSuccess()
             val parameter = symbol as? ThirDeclaration.Parameter
             if (parameter != null)
-                return ThirExpression.Type(ThirType.TypeParameterRef(symbol.id)).toSuccess()
+                return ThirExpression.Type(ThirType.Var(symbol.id)).toSuccess()
         }
         
         val evaluation = evaluator.evaluate(expression)

@@ -131,7 +131,7 @@ fun ThirExpression.thirCall(vararg parameters: ThirExpression): ThirExpression
     
     val type = value.raw
     if (type is ThirType.Function)
-        return ThirExpression.Call(this, parameters.toList(), type.valueKind, type.errorKind)
+        return ThirExpression.Call(this, parameters.toList(), type.parameterKind, type.returnKind)
     if (type is ThirType.Structure)
         return ThirExpression.Call(this, parameters.toList(), ThirKind.Value(type), ThirKind.Nothing)
     
