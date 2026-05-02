@@ -13,12 +13,12 @@ class Solution(private val parent: Solution?)
 {
     private val types = mutableMapOf<UUID, ThirType>()
     
-    /**
-     * Generates a new type variable representing the expression type. Note that the type variable must be constrained
-     * in order to be solved by the solver.
-     */
-    fun generateFlexible(): ThirType.Var =
-        ThirType.Var(UUID.randomUUID()).also { types[it.nodeId] = it }
+//    /**
+//     * Generates a new type variable representing the expression type. Note that the type variable must be constrained
+//     * in order to be solved by the solver.
+//     */
+//    fun generateFlexible(): ThirType.Var =
+//        ThirType.Var(UUID.randomUUID()).also { types[it.nodeId] = it }
     
     /**
      * Determines what the type of the element with the given [id] is. If the current solution does not contain the

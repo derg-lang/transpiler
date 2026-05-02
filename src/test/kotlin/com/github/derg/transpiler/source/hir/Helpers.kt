@@ -124,7 +124,7 @@ fun Any.hirWhile(
 
 fun hirConstOf(
     name: String = UUID.randomUUID().toString(),
-    kind: HirKind = INT32_TYPE_NAME.hirIdent().type.kind,
+    kind: HirKind = HirKind.Deduce,
     value: HirExpression = 0.hir,
     visibility: Visibility = Visibility.PRIVATE,
 ) = HirDeclaration.ConstantDecl(

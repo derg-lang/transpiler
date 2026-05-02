@@ -1,60 +1,8 @@
 package com.github.derg.transpiler.experimental.resolver.workers
 
 import com.github.derg.transpiler.experimental.resolver.*
-import com.github.derg.transpiler.source.thir.*
 import com.github.derg.transpiler.utils.*
 import java.util.*
-
-/**
- * The different phases represents how far along the processing the symbol worked on proceeded. Certain symbols may have
- * dependencies which prevents it from being fully resolved in one go - this implies that every symbol goes through
- * multiple phases before they are fully resolved.
- */
-sealed interface Phase
-{
-    /**
-     * Requires that the given [nodeId] is fully type-checked before this worker can proceed anymore with its processing. This
-     * typically occurs when type information within a worker is not available at compile-time.
-     */
-    data class DependsOn(val nodeId: UUID) : Phase
-    
-    /**
-     * Indicates that the worker has detected one or more [constraints] on the [type] involved in its inner working. These
-     * constraints are used to ensure the program  is well-typed at the end of the process; one all type constraints have been
-     * solved successfully, the program is well-typed and valid.
-     */
-    data class Constrain(val type: ThirType, val constraints: List<Constraint>) : Phase
-    
-    /**
-     * Instantiates any number of [workers] which are required to fully solve the parent worker. These workers are all assumed to
-     * be independent of the parent worker, and can be solved in parallel. Any cross-worker dependencies must be resolved through
-     * a dependency phase.
-     *
-     * These spawned workers are intended on solving sub-parts of the program stemming from the parent worker. Examples include
-     * resolving the parameter list in a function definition, statements in a method, fields in a structure, and so on.
-     */
-    data class Spawn(val workers: List<Worker>) : Phase
-    
-    /**
-     * Indicates that the worker has completely finished all its tasks, and has nothing more to do. The output of the worker has
-     * been made available in the relevant data structures - the worker should be discarded and no longer used for any
-     * processing.
-     */
-    data object Done : Phase
-}
-
-/**
- * The failure mode which occurred during the processing. Certain symbols cannot be processed for any reason. All
- * possible failure modes are encapsulated by the outcome.
- */
-sealed interface Outcome
-{
-    /**
-     * A temporary data structure used to simply gather information. We use this placeholder as a way to pass error
-     * cases out from the workers, before we know what the error cases actually are.
-     */
-    data class Placeholder(val message: String) : Outcome
-}
 
 /**
  * The worker represents a construction process for declaring and defining a symbol, or some other part of the source
@@ -70,9 +18,15 @@ sealed interface Outcome
 interface Worker
 {
     /**
-     * Takes one step of the processing of the worker. If the worker is finished, it will return the output node as the success
-     * value. Otherwise, whether the worker encountered a compilation failure or some dependency ordering error, its current
-     * state is reported as a failure value.
+     * The unique id for this worker. This id represents the worker instance, and must be unique across all workers
+     * which have ever been spawned.
+     */
+    val id: UUID
+    
+    /**
+     * Takes one step of the processing of the worker. If the worker is finished, it will return the output node as the
+     * success value. Otherwise, whether the worker encountered a compilation failure or some dependency ordering error,
+     * its current state is reported as a failure value.
      *
      * @param context The current state of the compilation process, holding all relevant information for the workers.
      */
@@ -80,34 +34,104 @@ interface Worker
 }
 
 /**
- * The worker takes in a list of inputs, and processes them all sequentially until no more work remains to be done. Every element
- * in the input list is worked on using a fresh worker instantiated from the worker factory. Once all inputs have been processed,
- * the worker sequence is considered to be done.
+ * A basic worker class for performing the common operations which are desired for workers. This worker can be used for
+ * a great number of simplistic workers, which all follow the same uniform pattern.
  *
- * If any worker in the chain encounters any blockers, dependencies, or other concerns, the worker sequence will halt until the
- * underlying issue has been resolved.
- *
- * @param inputs The collection of data which should be processed by the worker.
- * @param factory The way the worker is instantiated per data entry in the inputs.
+ * @param id The id of the worker. This value must be unique across all possible workers.
  */
-class WorkerSequence<Input>(inputs: List<Input>, factory: (Input) -> Worker) : Worker
+abstract class WorkerBase(override val id: UUID) : Worker
 {
-    private val workers = inputs.map { factory(it) }.asReversed().toMutableList()
+    private var generatedData = false
+    private var generatedConstraints = false
+    private var generatedWorkers = false
     
-    override fun process(context: Context): Result<Phase, Outcome>
+    final override fun process(context: Context): Result<Phase, Outcome>
     {
-        while (workers.isNotEmpty())
+        if (!generatedWorkers)
         {
-            val worker = workers.last()
-            val phase = worker.process(context).valueOr { return it.toFailure() }
-            
-            when (phase)
-            {
-                Phase.Done -> workers.removeLast()
-                else       -> return phase.toSuccess()
-            }
+            generatedWorkers = true
+            val workers = generateWorkers()
+            if (workers.isNotEmpty())
+                return Phase.Spawn(workers).toSuccess()
+        }
+        
+        if (!generatedConstraints)
+        {
+            generatedConstraints = true
+            val constraints = generateConstraints(context).valueOr { return it.toFailure() }
+            if (constraints.isNotEmpty())
+                return Phase.Constrain(constraints).toSuccess()
+        }
+        
+        if (!generatedData)
+        {
+            generatedData = true
+            generateData(context)
         }
         
         return Phase.Done.toSuccess()
     }
+    
+    /**
+     * Generates a series of workers which should process some internal part of the parent worker. Spawning workers is
+     * useful as it enables a worker to delegate some responsibility to an orchestration layer instead of inlining all
+     * resolution in a single function.
+     *
+     * Once workers have been generated, no additional workers will be generated afterwards. This method will only be
+     * invoked exactly once per worker. Note that if no workers should be generated, this method should return an empty
+     * list.
+     */
+    protected abstract fun generateWorkers(): List<Worker>
+    
+    /**
+     * Generates the series of constraints which restricts what kinds the node the worker operates on can take.
+     * Constraints can be generated across multiple workers, and will be consolidated in the resolver once all workers
+     * are done.
+     *
+     * Once constraints have been generated, no additional constraints will be generated afterwards. This method will
+     * only be invoked exactly once per worker. Note that if no constraints should be generated, this method should
+     * return an empty list.
+     *
+     * @param context The context holding all information about type resolution during the type-checking phase.
+     */
+    protected abstract fun generateConstraints(context: Context): Result<List<Constraint>, Outcome>
+    
+    /**
+     * Generates and writes relevant data to the provided [context]. The worker is free to write what information it
+     * deems necessary to make headway on type-checking.
+     */
+    protected abstract fun generateData(context: Context)
 }
+
+///**
+// * The worker takes in a list of inputs, and processes them all sequentially until no more work remains to be done. Every element
+// * in the input list is worked on using a fresh worker instantiated from the worker factory. Once all inputs have been processed,
+// * the worker sequence is considered to be done.
+// *
+// * If any worker in the chain encounters any blockers, dependencies, or other concerns, the worker sequence will halt until the
+// * underlying issue has been resolved.
+// *
+// * @param inputs The collection of data which should be processed by the worker.
+// * @param factory The way the worker is instantiated per data entry in the inputs.
+// */
+//class WorkerSequence<Input>(inputs: List<Input>, factory: (Input) -> Worker) : Worker
+//{
+//    private val workers = inputs.map { factory(it) }.asReversed().toMutableList()
+//
+//    override fun process(context: Context): Result<Phase, Outcome>
+//    {
+//        while (workers.isNotEmpty())
+//        {
+//            val worker = workers.last()
+//            val phase = worker.process(context).valueOr { return it.toFailure() }
+//
+//            when (phase)
+//            {
+//                Phase.Done -> workers.removeLast()
+//                else       -> return phase.toSuccess()
+//            }
+//        }
+//
+//        return Phase.Done.toSuccess()
+//    }
+//}

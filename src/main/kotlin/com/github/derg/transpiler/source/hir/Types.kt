@@ -52,5 +52,5 @@ sealed interface HirType
      * @param errorKind The error type returned by this callable.
      * @param parameters The parameters which are acceptable by this callable.
      */
-    data class Function(val valueKind: HirKind?, val errorKind: HirKind?, val parameters: List<HirKind>) : HirType
+    data class Function(val valueKind: HirKind, val errorKind: HirKind, val parameters: List<HirKind>) : HirType
 }

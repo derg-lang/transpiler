@@ -1,7 +1,5 @@
 package com.github.derg.transpiler.experimental.resolver
 
-import com.github.derg.transpiler.source.thir.*
-
 /**
  * The set of constraints which are relevant to the type-checker. Constraints narrow down what a type may be, and are
  * used to solve the full type solution of a program.

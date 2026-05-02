@@ -80,15 +80,9 @@ sealed interface ThirType
     ) : ThirType
     
     /**
-     * A sequence of kinds in an exact order.
-     */
-    data class Tuple(
-        val kinds: List<ThirKind>,
-    ) : ThirType
-    
-    /**
      * A placeholder type variable. Used during type-checking to represent an unresolved type.
      */
+    // TODO: Remove me once we have dealt with the kind system fully.
     data class Var(
         val nodeId: UUID,
     ) : ThirType
