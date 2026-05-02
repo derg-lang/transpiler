@@ -10,6 +10,11 @@ sealed interface AstKind
     /**
      * TODO: Write me.
      */
+    data object Deduce : AstKind
+    
+    /**
+     * TODO: Write me.
+     */
     data object Nothing : AstKind
     
     /**

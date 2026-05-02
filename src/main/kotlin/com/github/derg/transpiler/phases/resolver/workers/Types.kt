@@ -74,15 +74,16 @@ internal class KindDefiner(
     private val node: HirKind,
     private val env: Environment,
     private val scope: Scope,
-) : Worker<ThirKind>
+) : Worker<ThirKind?>
 {
     private var worker: Worker<ThirType>? = null
     private var type: ThirType? = null
     
-    override fun process(): Result<ThirKind, Outcome>
+    override fun process(): Result<ThirKind?, Outcome>
     {
         worker = when (node)
         {
+            is HirKind.Deduce  -> return null.toSuccess()
             is HirKind.Nothing -> return ThirKind.Nothing.toSuccess()
             is HirKind.Type    -> return ThirKind.Type.toSuccess()
             is HirKind.Value   -> worker ?: typeDefinerOf(evaluator, node.type, env, scope)

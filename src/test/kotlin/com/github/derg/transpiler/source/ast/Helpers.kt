@@ -135,7 +135,7 @@ fun astConstOf(
     vis: Visibility = Visibility.PRIVATE,
 ) = AstConstant(
     name = name,
-    kind = type?.astLoad()?.type?.let { AstKind.Value(it) },
+    kind = type?.astLoad()?.type?.let { AstKind.Value(it) } ?: AstKind.Deduce,
     value = value.ast,
     visibility = vis,
 )
@@ -166,7 +166,7 @@ fun astParOf(
     mut: Mutability = Mutability.IMMUTABLE,
 ) = AstParameter(
     name = name,
-    kind = type?.astLoad()?.type?.let { AstKind.Value(it) },
+    kind = type?.astLoad()?.type?.let { AstKind.Value(it) } ?: AstKind.Deduce,
     value = value?.ast,
     mutability = mut,
     passability = pas,
@@ -181,7 +181,7 @@ fun astFieldOf(
     ass: Assignability = Assignability.FINAL,
 ) = AstProperty(
     name = name,
-    kind = type?.astLoad()?.type?.let { AstKind.Value(it) },
+    kind = type?.astLoad()?.type?.let { AstKind.Value(it) } ?: AstKind.Deduce,
     value = value?.ast,
     mutability = mut,
     visibility = vis,
@@ -243,7 +243,7 @@ fun astVarOf(
     ass: Assignability = Assignability.FINAL,
 ) = AstVariable(
     name = name,
-    kind = type?.astLoad()?.type?.let { AstKind.Value(it) },
+    kind = type?.astLoad()?.type?.let { AstKind.Value(it) } ?: AstKind.Deduce,
     value = value.ast,
     mutability = mut,
     visibility = vis,

@@ -155,7 +155,7 @@ sealed interface HirStatement
     data class Variable(
         val id: UUID,
         val name: String,
-        val kind: HirKind?,
+        val kind: HirKind,
         val value: HirExpression,
         val assignability: Assignability,
     ) : HirStatement
@@ -184,7 +184,7 @@ sealed interface HirDeclaration : HirNode
     data class ConstantDecl(
         override val id: UUID,
         override val name: String,
-        val kind: HirKind?,
+        val kind: HirKind,
         val value: HirExpression,
         val visibility: Visibility,
     ) : HirDeclaration
@@ -195,7 +195,7 @@ sealed interface HirDeclaration : HirNode
     data class FieldDecl(
         override val id: UUID,
         override val name: String,
-        val kind: HirKind?,
+        val kind: HirKind,
         val default: HirExpression?,
         val visibility: Visibility,
         val assignability: Assignability,
@@ -245,7 +245,7 @@ sealed interface HirDeclaration : HirNode
     data class ParameterDecl(
         override val id: UUID,
         override val name: String,
-        val kind: HirKind?,
+        val kind: HirKind,
         val default: HirExpression?,
         val passability: Passability,
     ) : HirDeclaration, ConstructorEntry

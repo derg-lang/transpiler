@@ -113,7 +113,7 @@ internal class TypeParameterDefiner(
     private val scope: Scope,
 ) : Worker<Phase>
 {
-    private var kindWorker: Worker<ThirKind>? = null
+    private var kindWorker: Worker<ThirKind?>? = null
     private var kindOutcome: ThirKind? = null
     private var exprWorker: Worker<ThirExpression>? = null
     private var exprOutcome: ThirExpression? = null
@@ -121,7 +121,7 @@ internal class TypeParameterDefiner(
     override fun process(): Result<Phase, Outcome>
     {
         if (kindWorker == null)
-            kindWorker = node.kind.let { KindDefiner(evaluator, it, env, scope) }
+            kindWorker = KindDefiner(evaluator, node.kind, env, scope)
         if (kindOutcome == null)
             kindOutcome = kindWorker!!.process().valueOr { return it.toFailure() }
         
