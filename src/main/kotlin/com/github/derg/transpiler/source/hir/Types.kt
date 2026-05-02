@@ -8,6 +8,13 @@ import com.github.derg.transpiler.source.*
 sealed interface HirKind
 {
     /**
+     * The kind which indicates that the kind of the symbol should be automatically deduced from its implementation.
+     * This may manifest itself as a constant deducing its kind from its expression, a function's return type from its
+     * return statements, and so on.
+     */
+    data object Deduce : HirKind
+    
+    /**
      * The kind of nothing. Any symbol which evaluates to this kind cannot ever be permitted to provide any value of any
      * sort.
      */

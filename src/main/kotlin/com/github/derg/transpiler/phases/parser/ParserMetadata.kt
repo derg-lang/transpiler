@@ -161,7 +161,7 @@ private fun propertyPatternOf() = ParserSequence(
 
 private fun propertyOutcomeOf(values: Parsers) = AstProperty(
     name = values["name"],
-    kind = values["kind"],
+    kind = values["kind"] ?: AstKind.Deduce,
     value = values["value"],
     mutability = values["mutability"],
     visibility = values["visibility"],

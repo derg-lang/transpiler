@@ -14,21 +14,21 @@ import java.util.*
  */
 internal class TypeExprResolver(
     private val evaluator: Evaluator,
-    private val kind: HirKind?,
+    private val kind: HirKind,
     private val expr: HirExpression?,
     private val env: Environment,
     private val scope: Scope,
     private val requireDefinition: Boolean,
 )
 {
-    private var kindWorker: Worker<ThirKind>? = null
+    private var kindWorker: Worker<ThirKind?>? = null
     private var kindOutput: ThirKind? = null
     private var exprWorker: Worker<ThirExpression>? = null
     private var exprOutput: ThirExpression? = null
     
     init
     {
-        assert(kind != null || expr != null)
+        assert(kind != HirKind.Deduce || expr != null)
     }
     
     private fun resolveExpression(): Result<ThirExpression?, Outcome>
@@ -47,7 +47,7 @@ internal class TypeExprResolver(
     fun resolveDeclaration(): Result<ThirKind, Outcome>
     {
         if (kindWorker == null)
-            kindWorker = kind?.let { KindDefiner(evaluator, it, env, scope) }
+            kindWorker = KindDefiner(evaluator, kind, env, scope)
         if (kindOutput == null)
             kindOutput = kindWorker?.process()?.valueOr { return it.toFailure() }
         if (kindOutput == null)

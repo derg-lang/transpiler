@@ -29,7 +29,7 @@ private fun constantPatternOf() = ParserSequence(
 
 private fun constantOutcomeOf(values: Parsers) = AstConstant(
     name = values["name"],
-    kind = values["kind"],
+    kind = values["kind"] ?: AstKind.Deduce,
     value = values["value"],
     visibility = values["visibility"],
 )
@@ -167,7 +167,7 @@ private fun variablePatternOf() = ParserSequence(
 
 private fun variableOutcomeOf(values: Parsers) = AstVariable(
     name = values["name"],
-    kind = values["kind"],
+    kind = values["kind"] ?: AstKind.Deduce,
     value = values["value"],
     mutability = values["mutability"],
     visibility = values["visibility"],

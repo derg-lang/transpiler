@@ -21,7 +21,7 @@ fun convert(program: AstModule): HirDeclaration.ModuleDecl
 private fun AstConstant.toHir() = HirDeclaration.ConstantDecl(
     id = UUID.randomUUID(),
     name = name,
-    kind = kind?.toHir(),
+    kind = kind.toHir(),
     value = value.toHir(),
     visibility = visibility,
 )
@@ -58,7 +58,7 @@ private fun AstModule.toHir() = HirDeclaration.ModuleDecl(
 private fun AstParameter.toHir() = HirDeclaration.ParameterDecl(
     id = UUID.randomUUID(),
     name = name,
-    kind = kind?.toHir(),
+    kind = kind.toHir(),
     default = value?.toHir(),
     passability = passability,
 )
@@ -66,7 +66,7 @@ private fun AstParameter.toHir() = HirDeclaration.ParameterDecl(
 private fun AstProperty.toHir() = HirDeclaration.FieldDecl(
     id = UUID.randomUUID(),
     name = name,
-    kind = kind?.toHir(),
+    kind = kind.toHir(),
     default = value?.toHir(),
     visibility = visibility,
     assignability = assignability,
@@ -100,7 +100,7 @@ private fun AstTypeParameter.toHir() = HirDeclaration.TypeParameterDecl(
 private fun AstVariable.toHir() = HirStatement.Variable(
     id = UUID.randomUUID(),
     name = name,
-    kind = kind?.toHir(),
+    kind = kind.toHir(),
     value = value.toHir(),
     assignability = assignability,
 )
@@ -113,6 +113,7 @@ private fun AstConstructorEntry.toHir(): HirDeclaration.ConstructorEntry = when 
 
 private fun AstKind.toHir(): HirKind = when (this)
 {
+    is AstKind.Deduce  -> HirKind.Deduce
     is AstKind.Nothing -> HirKind.Nothing
     is AstKind.Type    -> HirKind.Type
     is AstKind.Value   -> HirKind.Value(type.toHir())

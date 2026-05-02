@@ -287,7 +287,7 @@ class TestVariableDefiner
     @Test
     fun `Given only value, when processing, then declared and defined`()
     {
-        val input = hirVarOf(kind = null, value = 1.hir)
+        val input = hirVarOf(kind = HirKind.Deduce, value = 1.hir)
         val variable = thirVarOf(id = input.id, name = input.name, kind = ThirKind.Value(ThirType.Int32), value = 1.thir)
         val expected = variable.thirLoad() thirAssign 1.thir
         

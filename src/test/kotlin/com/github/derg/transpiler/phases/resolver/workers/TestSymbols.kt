@@ -32,7 +32,7 @@ class TestConstDefiner
     @Test
     fun `Given only value, when processing, then declared then defined`()
     {
-        val input = hirConstOf(kind = null, value = 1.hir)
+        val input = hirConstOf(kind = HirKind.Deduce, value = 1.hir)
         val expected = thirConstOf(id = input.id, name = input.name, kind = ThirKind.Value(ThirType.Int32), value = 1.thir)
         val worker = ConstDefiner(evaluator, input, env, scope, stack)
         

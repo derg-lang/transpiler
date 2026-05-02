@@ -28,7 +28,7 @@ sealed interface AstConstructorEntry
  */
 data class AstConstant(
     override val name: String,
-    val kind: AstKind?,
+    val kind: AstKind,
     val value: AstValue,
     val visibility: Visibility,
 ) : AstSymbol
@@ -102,7 +102,7 @@ data class AstStruct(
  */
 data class AstVariable(
     override val name: String,
-    val kind: AstKind?,
+    val kind: AstKind,
     val value: AstValue,
     val mutability: Mutability,
     val visibility: Visibility,
@@ -115,7 +115,7 @@ data class AstVariable(
  */
 data class AstParameter(
     val name: String,
-    val kind: AstKind?,
+    val kind: AstKind,
     val value: AstValue?,
     val mutability: Mutability,
     val passability: Passability,
@@ -131,7 +131,7 @@ data class AstParameter(
  */
 data class AstProperty(
     val name: String,
-    val kind: AstKind?,
+    val kind: AstKind,
     val value: AstValue?,
     val mutability: Mutability,
     val visibility: Visibility,
