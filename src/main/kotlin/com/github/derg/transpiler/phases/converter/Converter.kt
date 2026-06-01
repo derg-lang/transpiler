@@ -119,13 +119,14 @@ private fun AstKind.toHir(): HirKind = when (this)
     is AstKind.Value   -> HirKind.Value(type.toHir())
 }
 
-private fun AstType.toHir(): HirType = when (this)
+private fun AstType.toHir(): HirExpression = when (this)
 {
-    is AstType.Expression -> HirType.Expression(value.toHir())
-    is AstType.Function   -> HirType.Function(
-        value?.toHir()?.let { HirKind.Value(it) } ?: HirKind.Nothing,
-        error?.toHir()?.let { HirKind.Value(it) } ?: HirKind.Nothing,
-        parameters.map { HirKind.Value(it.type.toHir()) },
+    is AstType.Expression -> value.toHir()
+    is AstType.Function   -> HirExpression.Callable(
+        id = UUID.randomUUID(),
+        parameters = parameters.map { HirDeclaration.ParameterDecl(UUID.randomUUID(), it.name, HirKind.Value(it.type.toHir()), null, it.passability) },
+        valueKind = value?.toHir()?.let { HirKind.Value(it) } ?: HirKind.Nothing,
+        errorKind = error?.toHir()?.let { HirKind.Value(it) } ?: HirKind.Nothing,
     )
 }
 

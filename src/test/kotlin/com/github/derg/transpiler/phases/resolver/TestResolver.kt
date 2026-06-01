@@ -20,7 +20,7 @@ class TestResolver
     @Test
     fun `Hmm, what to do`()
     {
-        val input = hirConstOf(kind = BOOL_TYPE_NAME.hirIdent().type.kind, value = true.hir)
+        val input = hirConstOf(kind = BOOL_TYPE_NAME.hirIdent().kind, value = true.hir)
         val segment = hirSegmentOf(constants = listOf(input))
         val module = hirModuleOf(segments = listOf(segment))
         val expected = thirConstOf(id = input.id, name = input.name, kind = ThirKind.Value(ThirType.Bool), value = true.thir)

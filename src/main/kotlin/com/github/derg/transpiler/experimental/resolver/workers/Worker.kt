@@ -24,83 +24,43 @@ interface Worker
     val id: UUID
     
     /**
-     * Takes one step of the processing of the worker. If the worker is finished, it will return the output node as the
-     * success value. Otherwise, whether the worker encountered a compilation failure or some dependency ordering error,
-     * its current state is reported as a failure value.
-     *
-     * @param context The current state of the compilation process, holding all relevant information for the workers.
-     */
-    fun process(context: Context): Result<Phase, Outcome>
-}
-
-/**
- * A basic worker class for performing the common operations which are desired for workers. This worker can be used for
- * a great number of simplistic workers, which all follow the same uniform pattern.
- *
- * @param id The id of the worker. This value must be unique across all possible workers.
- */
-abstract class WorkerBase(override val id: UUID) : Worker
-{
-    private var generatedData = false
-    private var generatedConstraints = false
-    private var generatedWorkers = false
-    
-    final override fun process(context: Context): Result<Phase, Outcome>
-    {
-        if (!generatedWorkers)
-        {
-            generatedWorkers = true
-            val workers = generateWorkers()
-            if (workers.isNotEmpty())
-                return Phase.Spawn(workers).toSuccess()
-        }
-        
-        if (!generatedConstraints)
-        {
-            generatedConstraints = true
-            val constraints = generateConstraints(context).valueOr { return it.toFailure() }
-            if (constraints.isNotEmpty())
-                return Phase.Constrain(constraints).toSuccess()
-        }
-        
-        if (!generatedData)
-        {
-            generatedData = true
-            generateData(context)
-        }
-        
-        return Phase.Done.toSuccess()
-    }
-    
-    /**
      * Generates a series of workers which should process some internal part of the parent worker. Spawning workers is
      * useful as it enables a worker to delegate some responsibility to an orchestration layer instead of inlining all
      * resolution in a single function.
      *
-     * Once workers have been generated, no additional workers will be generated afterwards. This method will only be
-     * invoked exactly once per worker. Note that if no workers should be generated, this method should return an empty
-     * list.
+     * These spawned workers are intended on solving sub-parts of the program stemming from the parent worker. Examples
+     * include resolving the parameter list in a function definition, statements in a method, fields in a structure, and
+     * so on.
      */
-    protected abstract fun generateWorkers(): List<Worker>
+    fun generateWorkers(): List<Worker> = emptyList()
+    
+    /**
+     * Generates the declaration relevant for this worker. This should only be the case for any worker operating on a
+     * symbol node, such as constants, functions, structures, and so on. Workers operating on nodes such as statements
+     * or expressions should not need to write and declarations.
+     *
+     * Note that all declarations must be generated up-front. They are necessary during name resolution, and must exist
+     * when processing workers.
+     */
+    fun generateDeclaration(): ThirDeclaration? = null
     
     /**
      * Generates the series of constraints which restricts what kinds the node the worker operates on can take.
      * Constraints can be generated across multiple workers, and will be consolidated in the resolver once all workers
      * are done.
      *
-     * Once constraints have been generated, no additional constraints will be generated afterwards. This method will
-     * only be invoked exactly once per worker. Note that if no constraints should be generated, this method should
-     * return an empty list.
-     *
      * @param context The context holding all information about type resolution during the type-checking phase.
      */
-    protected abstract fun generateConstraints(context: Context): Result<List<Constraint>, Outcome>
+    fun generateConstraints(context: Context): Result<List<Constraint>, Outcome> = Success(emptyList())
     
     /**
-     * Generates and writes relevant data to the provided [context]. The worker is free to write what information it
-     * deems necessary to make headway on type-checking.
+     * Takes one step of the processing of the worker. If the worker is finished, it will return the output node as the
+     * success value. Otherwise, whether the worker encountered a compilation failure or some dependency ordering error,
+     * its current state is reported as a failure value.
+     *
+     * @param context The current state of the compilation process, holding all relevant information for the workers.
      */
-    protected abstract fun generateData(context: Context)
+    fun process(context: Context): Result<Phase, Outcome> = Phase.Done.toSuccess()
 }
 
 ///**

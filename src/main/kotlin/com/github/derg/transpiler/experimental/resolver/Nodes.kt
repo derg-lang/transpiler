@@ -61,9 +61,14 @@ sealed interface ThirExpression
     data class Type(val raw: ThirType) : Canonical
     
     /**
+     * An instance of a function based on the symbol with the given [symbolId].
+     */
+    data class Function(val symbolId: UUID) : Canonical
+    
+    /**
      * An instance containing any number of [fields].
      */
-    data class Instance(val fields: MutableMap<String, Canonical>) : Canonical
+    data class Instance(val fields: Map<String, Canonical>) : Canonical
     
     /**
      * Retrieves the value of the given [name] from the given [instance].
@@ -149,7 +154,6 @@ sealed interface ThirDeclaration
     data class Constant(
         override val id: UUID,
         override val name: String,
-        val kind: ThirKind,
         var def: ConstantDef?,
     ) : ThirDeclaration
     
@@ -164,7 +168,6 @@ sealed interface ThirDeclaration
         override val id: UUID,
         override val name: String,
         val assignability: Assignability,
-        val kind: ThirKind,
         var def: FieldDef?,
     ) : ThirDeclaration
     
@@ -178,8 +181,6 @@ sealed interface ThirDeclaration
     data class Function(
         override val id: UUID,
         override val name: String,
-        val valueKind: ThirKind,
-        val errorKind: ThirKind,
         val typeParameterIds: List<UUID>,
         val parameterIds: List<UUID>,
         var def: FunctionDef?,
@@ -196,8 +197,6 @@ sealed interface ThirDeclaration
         override val id: UUID,
         override val name: String,
         val mutability: Mutability,
-        val valueKind: ThirKind,
-        val errorKind: ThirKind,
         val typeParameterIds: List<UUID>,
         val parameterIds: List<UUID>,
         var def: MethodDef?,
@@ -214,7 +213,6 @@ sealed interface ThirDeclaration
         override val id: UUID,
         override val name: String,
         val passability: Passability,
-        val kind: ThirKind,
         var def: ParameterDef?,
     ) : ThirDeclaration
     
@@ -245,7 +243,6 @@ sealed interface ThirDeclaration
     data class TypeParameter(
         override val id: UUID,
         override val name: String,
-        val kind: ThirKind,
         var def: TypeParameterDef?,
     ) : ThirDeclaration
     
@@ -260,7 +257,6 @@ sealed interface ThirDeclaration
         override val id: UUID,
         override val name: String,
         val assignability: Assignability,
-        val kind: ThirKind,
         var def: VariableDef?,
     ) : ThirDeclaration
     

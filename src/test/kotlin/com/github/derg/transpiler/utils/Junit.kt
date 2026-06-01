@@ -40,7 +40,10 @@ fun <Type, Error> assertSuccess(actual: Result<Type, Error>, message: String? = 
 {
     val error = actual.errorOrNull() ?: return
     
-    fail<Unit> { "Expected a success value, but received $error: $message" }
+    if (message.isNullOrBlank())
+        fail<Unit> { "Expected a success value, but received $error" }
+    else
+        fail<Unit> { "Expected a success value, but received $error: $message" }
 }
 
 /**
@@ -66,7 +69,10 @@ fun <Type, Value> assertFailure(actual: Result<Value, Type>, message: String? = 
 {
     val error = actual.valueOrNull() ?: return
     
-    fail<Unit> { "Expected a failure value, but received $error: $message" }
+    if (message.isNullOrBlank())
+        fail<Unit> { "Expected a failure value, but received $error" }
+    else
+        fail<Unit> { "Expected a failure value, but received $error: $message" }
 }
 
 /**

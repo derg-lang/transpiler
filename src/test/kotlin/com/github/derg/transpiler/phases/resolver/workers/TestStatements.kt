@@ -275,7 +275,7 @@ class TestVariableDefiner
     @Test
     fun `Given both type and value, when processing, then declared and defined`()
     {
-        val input = hirVarOf(kind = INT32_TYPE_NAME.hirIdent().type.kind, value = 1.hir)
+        val input = hirVarOf(kind = INT32_TYPE_NAME.hirIdent().kind, value = 1.hir)
         val variable = thirVarOf(id = input.id, name = input.name, kind = ThirKind.Value(ThirType.Int32), value = 1.thir)
         val expected = variable.thirLoad() thirAssign 1.thir
         
@@ -299,7 +299,7 @@ class TestVariableDefiner
     @Test
     fun `Given mismatched type and value, when processing, then error`()
     {
-        val input = hirVarOf(kind = INT32_TYPE_NAME.hirIdent().type.kind, value = true.hir)
+        val input = hirVarOf(kind = INT32_TYPE_NAME.hirIdent().kind, value = true.hir)
         val expected = Outcome.BindingWrongType(ThirType.Int32, ThirType.Bool)
         
         assertFailure(expected, VariableDefiner(evaluator, input, env, scope).process())

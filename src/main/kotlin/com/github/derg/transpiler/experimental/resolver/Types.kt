@@ -1,35 +1,7 @@
 package com.github.derg.transpiler.experimental.resolver
 
+import com.github.derg.transpiler.utils.*
 import java.util.*
-
-/**
- * The kind of type an object is.
- */
-sealed interface ThirKind
-{
-    /**
-     * The kind of nothing. Any symbol which evaluates to this kind cannot ever be permitted to provide any value of any
-     * sort.
-     */
-    data object Nothing : ThirKind
-    
-    /**
-     * The kind of types which are permitted to have values. This is for example "complete" types, such as `double`,
-     * `bool`, `int`, `list<int>`, and so on.
-     */
-    data object Type : ThirKind
-    
-    /**
-     * The kind of values as type parameters. All type parameters of this kind are shaped according to the [type] they
-     * are associated with.
-     */
-    data class Value(val type: ThirType) : ThirKind
-    
-    /**
-     * A placeholder kind variable. Used during type-checking to represent an unresolved kind.
-     */
-    data class Var(val nodeId: UUID) : ThirKind
-}
 
 /**
  * The types which can be expressed in the type system.
@@ -67,27 +39,43 @@ sealed interface ThirType
     data object Str : ThirType
     
     /**
+     * Type passed as a value.
+     */
+    data object Type : ThirType
+    
+    /**
+     * Absence of a value.
+     */
+    data object Void : ThirType
+    
+    /////////////////////////////////////////////////////////
+    // Composite types, must be handled with special care. //
+    /////////////////////////////////////////////////////////
+    
+    /**
+     * Indicates that the expression is either a [valueType] or an [errorType] at runtime. The two channels are used in
+     * specific expressions and operators to perform error handling, and can be used in the type system to verify that
+     * errors are caught.
+     */
+    data class Channel(val valueType: ThirType, val errorType: ThirType) : ThirType
+    
+    /**
      * The type of function.
      */
-    data class Function(
-        val parameters: List<ThirKind>,
-        val valueKind: ThirKind,
-        val errorKind: ThirKind,
-    ) : ThirType
+    data class Function(val parameters: List<NamedMaybe<ThirType>>, val output: ThirType) : ThirType
     
     /**
      * The type of structure.
      */
-    data class Instance(
-        val typeParameters: List<ThirExpression.Canonical>,
-        val fields: Map<String, ThirKind>,
-    ) : ThirType
+    data class Instance(val structureId: UUID, val typeParameters: List<ThirExpression.Canonical>) : ThirType
+    
+    /**
+     * The type of tuples.
+     */
+    data class Tuple(val variants: List<ThirType>) : ThirType
+    
+    /**
+     * A placeholder type variable. Used during type-checking to represent an unresolved type.
+     */
+    data class Var(val nodeId: UUID) : ThirType
 }
-
-/*
-fun foo(): Int32 -> Bool { ... }
-fun foo(in value: Bool): Str { ... }
-
-val test: foo() = ... // Does not compile, `foo()` is not `type`
-val test: Int32 = ... // Does compile, `Int32` is `type`
-*/

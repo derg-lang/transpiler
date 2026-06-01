@@ -13,7 +13,7 @@ class Context
      * The environment is a collection of all symbols which have been created and recorded during type resolution. Every new
      * symbol encountered should be added to this collection as type-checking takes place.
      */
-    val declarations = Builtin.generateEnvironment().toMutableMap()
+    val declarations = Builtin.generateDeclarations().toMutableMap()
     
     /**
      * A collection of values which have been computed during the type-checking phase. These values are computed when a
@@ -25,5 +25,5 @@ class Context
      * A collection of kinds which have been computed during the type-checking phase. These types are continuously
      * updated as the workers operate on the provided data.
      */
-    val environment = Environment()
+    val environment = Builtin.generateEnvironment()
 }

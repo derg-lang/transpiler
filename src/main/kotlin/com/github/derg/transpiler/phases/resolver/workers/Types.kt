@@ -12,14 +12,10 @@ import com.github.derg.transpiler.utils.*
  */
 fun typeDefinerOf(
     evaluator: Evaluator,
-    node: HirType,
+    node: HirExpression,
     env: Environment,
     scope: Scope,
-): Worker<ThirType> = when (node)
-{
-    is HirType.Expression -> TypeExpressionDefiner(evaluator, node, env, scope)
-    is HirType.Function   -> TODO("Not yet implemented")
-}
+): Worker<ThirType> = TypeExpressionDefiner(evaluator, node, env, scope)
 
 /**
  * Converts from a HIR type to a THIR type. The expression which contains information regarding the type is required to
@@ -27,12 +23,12 @@ fun typeDefinerOf(
  */
 internal class TypeExpressionDefiner(
     private val evaluator: Evaluator,
-    node: HirType.Expression,
+    node: HirExpression,
     private val env: Environment,
     scope: Scope,
 ) : Worker<ThirType>
 {
-    private val exprWorker = expressionDefinerOf(evaluator, node.value, env, scope, null, true)
+    private val exprWorker = expressionDefinerOf(evaluator, node, env, scope, null, true)
     
     override fun process(): Result<ThirType, Outcome>
     {

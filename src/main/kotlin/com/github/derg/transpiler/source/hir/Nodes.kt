@@ -6,6 +6,37 @@ import java.math.*
 import java.util.*
 
 /**
+ * The different kinds for types in the type system.
+ */
+sealed interface HirKind
+{
+    /**
+     * The kind which indicates that the kind of the symbol should be automatically deduced from its implementation.
+     * This may manifest itself as a constant deducing its kind from its expression, a function's return type from its
+     * return statements, and so on.
+     */
+    data object Deduce : HirKind
+    
+    /**
+     * The kind of nothing. Any symbol which evaluates to this kind cannot ever be permitted to provide any value of any
+     * sort.
+     */
+    data object Nothing : HirKind
+    
+    /**
+     * The kind of types which are permitted to have values. This is for example "complete" types, such as `double`,
+     * `bool`, `int`, `list<int>`, and so on.
+     */
+    data object Type : HirKind
+    
+    /**
+     * The kind of values as type parameters. All type parameters of this kind are shaped according to the [type] they
+     * are associated with.
+     */
+    data class Value(val type: HirExpression) : HirKind
+}
+
+/**
  * Every element within the abstract syntax tree may be represented as a node. Each node is merely a piece of the
  * program, ranging from individual tokens like constants, to large sequences of tokens such as a whole data structure.
  */
@@ -29,36 +60,6 @@ sealed interface HirNode
 sealed interface HirExpression : HirNode
 {
     /**
-     * Loads the value bound to the identifier with the given [name]. The identifier may refer to either a value bound
-     * to any memory address, or any named symbol. When referring to a function, [typeParameters] may be used to
-     * disambiguate which instance is intended.
-     *
-     * Loads can be used to retrieve the value of any named node, be it variable, function, structure, union, or any
-     * other type.
-     */
-    data class Identifier(override val id: UUID, val name: String, val typeParameters: List<NamedMaybe<HirExpression>>) : HirExpression
-    
-    /**
-     * Invokes the callable [instance] using the provided [parameters]. The arguments are specified in the same order
-     * in which they appear in source code. In some cases, the callable cannot be resolved without additional
-     * information about the callable template specialization.
-     */
-    data class Call(override val id: UUID, val instance: HirExpression, val parameters: List<NamedMaybe<HirExpression>>) : HirExpression
-    
-    /**
-     * Performs a catch on the [lhs] expression, replacing the failure value in the [lhs] with the success value of the
-     * [rhs] expression handling the failure. Otherwise, the [rhs] expression is returner as a success or a failure
-     * expression.
-     */
-    data class Catch(override val id: UUID, val lhs: HirExpression, val rhs: HirExpression, val operator: CatchOperator) : HirExpression
-    
-    /**
-     * Retrieves the value of the given [identifier] from the given [instance]. The object may be an object which exists
-     * on the stack or heap.
-     */
-    data class Field(override val id: UUID, val instance: HirExpression, val identifier: Identifier) : HirExpression
-    
-    /**
      * Booleans are either `true` or `false`, specified in [value].
      */
     data class Bool(override val id: UUID, val value: Boolean) : HirExpression
@@ -77,6 +78,64 @@ sealed interface HirExpression : HirNode
      * Strings of an arbitrary length, specified in [value].
      */
     data class Text(override val id: UUID, val value: String, val literal: String) : HirExpression
+    
+    /**
+     * Loads a function type taking the given [parameters] and returning the [valueKind] and [errorKind]. This type can
+     * be used in conjunction with identifiers to represent an arbitrary type in the type system.
+     */
+    data class Callable(
+        override val id: UUID,
+        val parameters: List<HirDeclaration.ParameterDecl>,
+        val valueKind: HirKind?,
+        val errorKind: HirKind?,
+    ) : HirExpression
+    
+    /**
+     * Loads the value bound to the identifier with the given [name]. The identifier may refer to either a value bound
+     * to any memory address, or any named symbol. When referring to a function, [typeParameters] may be used to
+     * disambiguate which instance is intended.
+     *
+     * Loads can be used to retrieve the value of any named node, be it variable, function, structure, union, or any
+     * other type.
+     */
+    data class Identifier(
+        override val id: UUID,
+        val name: String,
+        val typeParameters: List<NamedMaybe<HirExpression>>,
+    ) : HirExpression
+    
+    /**
+     * Invokes the callable [instance] using the provided [parameters]. The arguments are specified in the same order
+     * in which they appear in source code. In some cases, the callable cannot be resolved without additional
+     * information about the callable template specialization.
+     */
+    data class Call(
+        override val id: UUID,
+        val instance: HirExpression,
+        val parameters: List<NamedMaybe<HirExpression>>,
+    ) : HirExpression
+    
+    /**
+     * Performs a catch on the [lhs] expression, replacing the failure value in the [lhs] with the success value of the
+     * [rhs] expression handling the failure. Otherwise, the [rhs] expression is returner as a success or a failure
+     * expression.
+     */
+    data class Catch(
+        override val id: UUID,
+        val lhs: HirExpression,
+        val rhs: HirExpression,
+        val operator: CatchOperator,
+    ) : HirExpression
+    
+    /**
+     * Retrieves the value of the given [identifier] from the given [instance]. The object may be an object which exists
+     * on the stack or heap.
+     */
+    data class Field(
+        override val id: UUID,
+        val instance: HirExpression,
+        val identifier: Identifier,
+    ) : HirExpression
     
     // TODO: Add in an if-expression as well. It is different from the if-statement, in the sense that is always return
     //       either the success of failure branch value. It does have a return value, and this return value cannot be
@@ -206,7 +265,7 @@ sealed interface HirDeclaration : HirNode
     data class ConstantDecl(
         override val id: UUID,
         override val name: String,
-        val kind: HirKind,
+        val kind: HirKind, // NOTE: Can only ever be `auto` or a value kind!
         val value: HirExpression,
         val visibility: Visibility,
     ) : HirDeclaration
@@ -217,7 +276,7 @@ sealed interface HirDeclaration : HirNode
     data class FieldDecl(
         override val id: UUID,
         override val name: String,
-        val kind: HirKind,
+        val kind: HirKind, // NOTE: Can only ever be `auto` or a value kind!
         val default: HirExpression?,
         val visibility: Visibility,
         val assignability: Assignability,
@@ -232,8 +291,8 @@ sealed interface HirDeclaration : HirNode
         val visibility: Visibility,
         val typeParameters: List<TypeParameterDecl>,
         val parameters: List<ParameterDecl>,
-        val valueKind: HirKind?,
-        val errorKind: HirKind?,
+        val valueKind: HirKind,
+        val errorKind: HirKind,
         val body: List<HirStatement>,
     ) : HirDeclaration
     
@@ -247,8 +306,8 @@ sealed interface HirDeclaration : HirNode
         val visibility: Visibility,
         val typeParameters: List<TypeParameterDecl>,
         val parameters: List<ParameterDecl>,
-        val valueKind: HirKind?,
-        val errorKind: HirKind?,
+        val valueKind: HirKind,
+        val errorKind: HirKind,
         val body: List<HirStatement>,
     ) : HirDeclaration
     
@@ -267,7 +326,7 @@ sealed interface HirDeclaration : HirNode
     data class ParameterDecl(
         override val id: UUID,
         override val name: String,
-        val kind: HirKind,
+        val kind: HirKind, // NOTE: Can only ever be `auto` or a value kind!
         val default: HirExpression?,
         val passability: Passability,
     ) : HirDeclaration, ConstructorEntry
@@ -302,7 +361,7 @@ sealed interface HirDeclaration : HirNode
     data class TypeParameterDecl(
         override val id: UUID,
         override val name: String,
-        val kind: HirKind,
+        val kind: HirKind, // NOTE: Can only ever be `type` or a value kind!
         val default: HirExpression?,
     ) : HirDeclaration
 }

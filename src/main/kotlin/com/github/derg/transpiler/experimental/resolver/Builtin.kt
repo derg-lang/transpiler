@@ -12,6 +12,7 @@ object Builtin
     private val functions = mutableListOf<ThirDeclaration.Function>()
     private val parameters = mutableListOf<ThirDeclaration.Parameter>()
     private val structures = mutableListOf<ThirDeclaration.Structure>()
+    private val constraints = mutableListOf<Constraint>()
     
     val BOOL = registerPrimitive(BOOL_TYPE_NAME)
     val BOOL_AND = registerBinary(BinaryOperator.AND, ThirType.Bool, ThirType.Bool)
@@ -88,15 +89,26 @@ object Builtin
     val STR_PRINTLN = registerConsumer(FUN_PRINTLN_NAME, ThirType.Str)
     
     /**
-     * Generates a new environment in which all global symbols reside. The environment should be modified during
-     * compilation to include all new symbols discovered while compiling.
+     * Generates a new set of declarations in which all global symbols reside. The declarations should be modified
+     * during compilation to include all new symbols discovered while compiling.
      */
-    fun generateEnvironment(): Map<UUID, ThirDeclaration>
+    fun generateDeclarations(): Map<UUID, ThirDeclaration>
     {
-        val environment = mutableMapOf<UUID, ThirDeclaration>()
-        functions.forEach { environment[it.id] = it }
-        parameters.forEach { environment[it.id] = it }
-        structures.forEach { environment[it.id] = it }
+        val declarations = mutableMapOf<UUID, ThirDeclaration>()
+        functions.forEach { declarations[it.id] = it }
+        parameters.forEach { declarations[it.id] = it }
+        structures.forEach { declarations[it.id] = it }
+        return declarations
+    }
+    
+    /**
+     * Generates a new environment containing the types of all global symbols. The environment should be modified during
+     * compilation to include all new types discovered while compiling.
+     */
+    fun generateEnvironment(): Environment
+    {
+        val environment = Environment()
+        environment.solve(constraints)
         return environment
     }
     
@@ -142,29 +154,34 @@ object Builtin
             id = UUID.randomUUID(),
             name = "lhs",
             passability = Passability.IN,
-            kind = ThirKind.Value(inputType),
             def = ThirDeclaration.ParameterDef(default = null)
         )
         val rhs = ThirDeclaration.Parameter(
             id = UUID.randomUUID(),
             name = "rhs",
             passability = Passability.IN,
-            kind = ThirKind.Value(inputType),
             def = ThirDeclaration.ParameterDef(default = null)
         )
         val function = ThirDeclaration.Function(
             id = UUID.randomUUID(),
             name = operator.symbol,
-            valueKind = ThirKind.Value(outputType),
-            errorKind = ThirKind.Nothing,
             typeParameterIds = emptyList(),
             parameterIds = listOf(lhs.id, rhs.id),
             def = ThirDeclaration.FunctionDef(statements = emptyList())
+        )
+        val functionKind = ThirType.Function(
+            parameters = listOf(lhs.name to inputType, rhs.name to inputType),
+            output = outputType,
         )
         
         parameters += lhs
         parameters += rhs
         functions += function
+        constraints += listOf(
+            Constraint.TypeEq(ThirType.Var(lhs.id), inputType),
+            Constraint.TypeEq(ThirType.Var(rhs.id), inputType),
+            Constraint.TypeEq(ThirType.Var(function.id), functionKind),
+        )
         return function
     }
     
@@ -178,21 +195,26 @@ object Builtin
             id = UUID.randomUUID(),
             name = "rhs",
             passability = Passability.IN,
-            kind = ThirKind.Value(inputType),
             def = ThirDeclaration.ParameterDef(default = null)
         )
         val function = ThirDeclaration.Function(
             id = UUID.randomUUID(),
             name = operator.symbol,
-            valueKind = ThirKind.Value(outputType),
-            errorKind = ThirKind.Nothing,
             typeParameterIds = emptyList(),
             parameterIds = listOf(rhs.id),
             def = ThirDeclaration.FunctionDef(statements = emptyList())
         )
+        val functionKind = ThirType.Function(
+            parameters = listOf(rhs.name to inputType),
+            output = outputType,
+        )
         
         parameters += rhs
         functions += function
+        constraints += listOf(
+            Constraint.TypeEq(ThirType.Var(rhs.id), inputType),
+            Constraint.TypeEq(ThirType.Var(function.id), functionKind),
+        )
         return function
     }
     
@@ -205,21 +227,26 @@ object Builtin
             id = UUID.randomUUID(),
             name = "input",
             passability = Passability.IN,
-            kind = ThirKind.Value(inputType),
             def = ThirDeclaration.ParameterDef(default = null)
         )
         val function = ThirDeclaration.Function(
             id = UUID.randomUUID(),
             name = name,
-            valueKind = ThirKind.Nothing,
-            errorKind = ThirKind.Nothing,
             typeParameterIds = emptyList(),
             parameterIds = listOf(input.id),
             def = ThirDeclaration.FunctionDef(statements = emptyList())
         )
+        val functionKind = ThirType.Function(
+            parameters = listOf(input.name to inputType),
+            output = ThirType.Void,
+        )
         
         parameters += input
         functions += function
+        constraints += listOf(
+            Constraint.TypeEq(ThirType.Var(input.id), inputType),
+            Constraint.TypeEq(ThirType.Var(function.id), functionKind),
+        )
         return function
     }
 }

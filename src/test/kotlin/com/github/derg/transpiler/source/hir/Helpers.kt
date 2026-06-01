@@ -46,8 +46,7 @@ fun hirIntegerOf(
 // Type helpers //
 //////////////////
 
-val HirExpression.type: HirType.Expression get() = HirType.Expression(this)
-val HirType.kind: HirKind.Value get() = HirKind.Value(this)
+val HirExpression.kind: HirKind.Value get() = HirKind.Value(this)
 
 ////////////////////////
 // Expression helpers //
@@ -137,7 +136,7 @@ fun hirConstOf(
 
 fun hirFieldOf(
     name: String = UUID.randomUUID().toString(),
-    kind: HirKind = INT32_TYPE_NAME.hirIdent().type.kind,
+    kind: HirKind = INT32_TYPE_NAME.hirIdent().kind,
     default: HirExpression? = null,
     visibility: Visibility = Visibility.PRIVATE,
 ) = HirDeclaration.FieldDecl(
@@ -200,7 +199,7 @@ fun hirModuleOf(
 
 fun hirParamOf(
     name: String = UUID.randomUUID().toString(),
-    kind: HirKind = INT32_TYPE_NAME.hirIdent().type.kind,
+    kind: HirKind = INT32_TYPE_NAME.hirIdent().kind,
     default: HirExpression? = null,
 ) = HirDeclaration.ParameterDecl(
     id = UUID.randomUUID(),

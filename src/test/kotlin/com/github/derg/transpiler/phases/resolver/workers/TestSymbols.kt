@@ -19,7 +19,7 @@ class TestConstDefiner
     @Test
     fun `Given both type and value, when processing, then declared then defined`()
     {
-        val input = hirConstOf(kind = INT32_TYPE_NAME.hirIdent().type.kind, value = 1.hir)
+        val input = hirConstOf(kind = INT32_TYPE_NAME.hirIdent().kind, value = 1.hir)
         val expected = thirConstOf(id = input.id, name = input.name, kind = ThirKind.Value(ThirType.Int32), value = 1.thir)
         val worker = ConstDefiner(evaluator, input, env, scope, stack)
         
@@ -45,7 +45,7 @@ class TestConstDefiner
     @Test
     fun `Given mismatched type and value, when processing, then error`()
     {
-        val input = hirConstOf(kind = INT32_TYPE_NAME.hirIdent().type.kind, value = true.hir)
+        val input = hirConstOf(kind = INT32_TYPE_NAME.hirIdent().kind, value = true.hir)
         val expected = Outcome.BindingWrongType(ThirType.Int32, ThirType.Bool)
         val worker = ConstDefiner(evaluator, input, env, scope, stack)
         
@@ -64,7 +64,7 @@ class TestParameterDefiner
     @Test
     fun `Given both type and default, when processing, then declared then defined`()
     {
-        val input = hirParamOf(kind = INT32_TYPE_NAME.hirIdent().type.kind, default = 1.hir)
+        val input = hirParamOf(kind = INT32_TYPE_NAME.hirIdent().kind, default = 1.hir)
         val expected = thirParamOf(id = input.id, name = input.name, kind = ThirKind.Value(ThirType.Int32), default = 1.thir)
         val worker = ParameterDefiner(evaluator, input, env, scope)
         
@@ -77,7 +77,7 @@ class TestParameterDefiner
     @Test
     fun `Given only type, when processing, then declared then defined`()
     {
-        val input = hirParamOf(kind = INT32_TYPE_NAME.hirIdent().type.kind, default = null)
+        val input = hirParamOf(kind = INT32_TYPE_NAME.hirIdent().kind, default = null)
         val expected = thirParamOf(id = input.id, name = input.name, kind = ThirKind.Value(ThirType.Int32), default = null)
         val worker = ParameterDefiner(evaluator, input, env, scope)
         
@@ -90,7 +90,7 @@ class TestParameterDefiner
     @Test
     fun `Given mismatched type and default, when processing, then error`()
     {
-        val input = hirParamOf(kind = INT32_TYPE_NAME.hirIdent().type.kind, default = true.hir)
+        val input = hirParamOf(kind = INT32_TYPE_NAME.hirIdent().kind, default = true.hir)
         val expected = Outcome.BindingWrongType(ThirType.Int32, ThirType.Bool)
         val worker = ParameterDefiner(evaluator, input, env, scope)
         
@@ -122,7 +122,7 @@ class TestFunctionDefiner
     @Test
     fun `Given value type, when processing, then declared then defined`()
     {
-        val input = hirFunOf(valueKind = INT32_TYPE_NAME.hirIdent().type.kind)
+        val input = hirFunOf(valueKind = INT32_TYPE_NAME.hirIdent().kind)
         val expected = thirFunOf(id = input.id, name = input.name, valueKind = ThirKind.Value(ThirType.Int32))
         val worker = FunctionDefiner(evaluator, input, env, scope)
         
@@ -135,7 +135,7 @@ class TestFunctionDefiner
     @Test
     fun `Given error type, when processing, then declared then defined`()
     {
-        val input = hirFunOf(errorKind = INT32_TYPE_NAME.hirIdent().type.kind)
+        val input = hirFunOf(errorKind = INT32_TYPE_NAME.hirIdent().kind)
         val expected = thirFunOf(id = input.id, name = input.name, errorKind = ThirKind.Value(ThirType.Int32))
         val worker = FunctionDefiner(evaluator, input, env, scope)
         

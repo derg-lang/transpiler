@@ -8,19 +8,19 @@ import org.junit.jupiter.api.Assertions.*
 
 // Various helpers for reducing the amount of boilerplate code. These helpers can be used as a shorthand for the kinds
 // representing builtin data types.
-private val HIR_BOOL = HirKind.Value(HirType.Expression(BOOL_TYPE_NAME.hirIdent()))
-private val HIR_INT32 = HirKind.Value(HirType.Expression(INT32_TYPE_NAME.hirIdent()))
-private val HIR_INT64 = HirKind.Value(HirType.Expression(INT64_TYPE_NAME.hirIdent()))
-private val HIR_FLOAT32 = HirKind.Value(HirType.Expression(FLOAT32_TYPE_NAME.hirIdent()))
-private val HIR_FLOAT64 = HirKind.Value(HirType.Expression(FLOAT64_TYPE_NAME.hirIdent()))
-private val HIR_STR = HirKind.Value(HirType.Expression(STR_TYPE_NAME.hirIdent()))
+private val HIR_BOOL = HirKind.Value(BOOL_TYPE_NAME.hirIdent())
+private val HIR_INT32 = HirKind.Value(INT32_TYPE_NAME.hirIdent())
+private val HIR_INT64 = HirKind.Value(INT64_TYPE_NAME.hirIdent())
+private val HIR_FLOAT32 = HirKind.Value(FLOAT32_TYPE_NAME.hirIdent())
+private val HIR_FLOAT64 = HirKind.Value(FLOAT64_TYPE_NAME.hirIdent())
+private val HIR_STR = HirKind.Value(STR_TYPE_NAME.hirIdent())
 
-private val THIR_BOOL = ThirKind.Value(ThirType.Bool)
-private val THIR_INT32 = ThirKind.Value(ThirType.Int32)
-private val THIR_INT64 = ThirKind.Value(ThirType.Int64)
-private val THIR_FLOAT32 = ThirKind.Value(ThirType.Float32)
-private val THIR_FLOAT64 = ThirKind.Value(ThirType.Float64)
-private val THIR_STR = ThirKind.Value(ThirType.Str)
+private val THIR_BOOL = ThirType.Bool
+private val THIR_INT32 = ThirType.Int32
+private val THIR_INT64 = ThirType.Int64
+private val THIR_FLOAT32 = ThirType.Float32
+private val THIR_FLOAT64 = ThirType.Float64
+private val THIR_STR = ThirType.Str
 
 class TestSolver
 {
@@ -52,6 +52,80 @@ class TestSolver
             THIR_FLOAT32 to 0.0f.hir,
             THIR_FLOAT64 to 0.0.hir,
             THIR_STR to "".hir,
+        )
+        
+        for ((expected, input) in cases)
+        {
+            val constant = hirConstOf(value = input)
+            
+            assertSuccess(solve(constants = listOf(constant)))
+            assertEquals(expected, context.environment[constant.id])
+        }
+    }
+    
+    @Test
+    fun `Given primitive operators, when solving, then correctly solved`()
+    {
+        val cases = listOf(
+            // Bool
+            THIR_BOOL to (false hirAnd false),
+            THIR_BOOL to (false hirOr false),
+            THIR_BOOL to (false hirXor false),
+            
+            // Int32
+            THIR_INT32 to (0 hirAdd 0),
+            THIR_INT32 to (0 hirDiv 0),
+            THIR_INT32 to (0 hirMod 0),
+            THIR_INT32 to (0 hirMul 0),
+            THIR_INT32 to (0 hirSub 0),
+            THIR_BOOL to (0 hirEq 0),
+            THIR_BOOL to (0 hirNe 0),
+            THIR_BOOL to (0 hirGe 0),
+            THIR_BOOL to (0 hirGt 0),
+            THIR_BOOL to (0 hirLe 0),
+            THIR_BOOL to (0 hirLt 0),
+            
+            // Int64
+            THIR_INT64 to (0L hirAdd 0L),
+            THIR_INT64 to (0L hirDiv 0L),
+            THIR_INT64 to (0L hirMod 0L),
+            THIR_INT64 to (0L hirMul 0L),
+            THIR_INT64 to (0L hirSub 0L),
+            THIR_BOOL to (0L hirEq 0L),
+            THIR_BOOL to (0L hirNe 0L),
+            THIR_BOOL to (0L hirGe 0L),
+            THIR_BOOL to (0L hirGt 0L),
+            THIR_BOOL to (0L hirLe 0L),
+            THIR_BOOL to (0L hirLt 0L),
+            
+            // Float32
+            THIR_FLOAT32 to (0.0f hirAdd 0.0f),
+            THIR_FLOAT32 to (0.0f hirDiv 0.0f),
+            THIR_FLOAT32 to (0.0f hirMod 0.0f),
+            THIR_FLOAT32 to (0.0f hirMul 0.0f),
+            THIR_FLOAT32 to (0.0f hirSub 0.0f),
+            THIR_BOOL to (0.0f hirEq 0.0f),
+            THIR_BOOL to (0.0f hirNe 0.0f),
+            THIR_BOOL to (0.0f hirGe 0.0f),
+            THIR_BOOL to (0.0f hirGt 0.0f),
+            THIR_BOOL to (0.0f hirLe 0.0f),
+            THIR_BOOL to (0.0f hirLt 0.0f),
+            
+            // Float64
+            THIR_FLOAT64 to (0.0 hirAdd 0.0),
+            THIR_FLOAT64 to (0.0 hirDiv 0.0),
+            THIR_FLOAT64 to (0.0 hirMod 0.0),
+            THIR_FLOAT64 to (0.0 hirMul 0.0),
+            THIR_FLOAT64 to (0.0 hirSub 0.0),
+            THIR_BOOL to (0.0 hirEq 0.0),
+            THIR_BOOL to (0.0 hirNe 0.0),
+            THIR_BOOL to (0.0 hirGe 0.0),
+            THIR_BOOL to (0.0 hirGt 0.0),
+            THIR_BOOL to (0.0 hirLe 0.0),
+            THIR_BOOL to (0.0 hirLt 0.0),
+            
+            // Str
+            THIR_STR to ("" hirAdd ""),
         )
         
         for ((expected, input) in cases)

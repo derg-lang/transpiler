@@ -49,6 +49,7 @@ fun expressionDefinerOf(
     is HirExpression.Identifier -> IdentifierDefiner(node, env, scope, kindHint, requireDefinition)
     is HirExpression.Integer    -> IntegerDefiner(node)
     is HirExpression.Text       -> StringDefiner(node)
+    is HirExpression.Callable   -> TODO()
 }
 
 /**

@@ -51,5 +51,6 @@ sealed interface Phase
      * include resolving the parameter list in a function definition, statements in a method, fields in a structure, and
      * so on.
      */
+    @Deprecated("Workers should not be spawned during processing anymore - spawn at setup instead")
     data class Spawn(val workers: List<Worker>) : Phase
 }
