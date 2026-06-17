@@ -9,6 +9,139 @@ In Derg, the type system allows the developer to express their intent clearly an
 with a type, which determines how the value can and cannot be used. The shape of the data, visibility, mutability,
 parameter passing rules, and so on influences the possible ways values may be passed around.
 
+## Encoding types
+
+// TODO: Write me
+
+### Data structures
+
+In order to store information, the shape of the information must be defined. All such information is provided by the
+data structure type. Data structures may contain any number of fields of information, each field being of an arbitrary
+type.
+
+A data structure may be declared in the following manner:
+
+```derg
+struct MyType
+{
+    val field_one: Int32
+    val field_two: Float64
+    // And so on...
+}
+```
+
+The actual layout of the data structure in memory on the computer is implementation-defined by the compiler.
+
+Data structures can be expressed in multiple manners:
+
+```derg
+Int32               // Builtin data types behave just like user-declared types.
+MyType              // Custom types are just the same as builtins.
+Map[Int32, Float64] // Types may be parameterized with additional type information.
+Array[MyType, 5]    // Generics may contain expressions, too.
+```
+
+### Callables
+
+Not all aspects of a program consists of data, however. Sometimes the most appropriate solution is to pass a function of
+some kind as a parameter, or to store one for later use. Types of this object are referred to as a callable type.
+
+These types may be expressed in various manners:
+
+```derg
+fun()                       // The most simple way of representing a callable without input parameters or returns.
+fun(Int32, Bool)            // A callable which takes in two parameters.
+fun() -> Int32              // Callables are permitted to return success values.
+fun(): Error                // They may also return error values, which must be properly handled by the caller.
+fun(MyType): Error -> Bool  // Callables may contain any combination of parameters and return values and errors.
+```
+
+Note that it is not possible to directly specify that a callable should return another callable. In order to specify
+that a callable can return another callable, [Alias types](#aliases) should be used. An example of returning a callable
+from another can be done in the following manner:
+
+```derg
+alias MyCallable = fun(): Error -> Int32 // Aliasing the callable we want to return from another callable type.
+
+fun() -> MyCallable // This is now a permitted type, and is not ambiguous.
+```
+
+### Concepts
+
+// TODO: Write me
+
+### Unions
+
+A common need in programming languages, is the need to express that a value is one of an exact number of types. The
+difference between a union and a concept, is that the concept is an open set of types - it can be extended with new
+types when new code is written. A union is a fixed set of a specific number of types, however. It cannot be extended by
+other source code.
+
+These types may be expressed in the following manner:
+
+```derg
+union JsonValue = JsonObject + JsonArray + JsonNull + Float64 + Int64 + String + Bool
+```
+
+When a value is given a union type, it must take the type of exactly one of the types making it up. Unions support smart
+casting - the type of the value may be deduced by eliminating the types it is not, or by explicitly state which type it
+is:
+
+```derg
+union Data = Int64 + Float64 + Bool
+
+fun example(data: Data)
+{
+    if data.is[Int64]()
+    {
+        // `data` is `Int64` here
+    }
+    else
+    {
+        // `data` is `Float64 + Bool` here
+    
+        if data.is[Bool]()
+            return
+    
+        // `data` is `Bool` here
+    }
+}
+```
+
+Note that smart-casting may not always be possible. When a field within an object is accessed, smart-casting is only
+possible if the field does not change as a side effect. As an example, consider the following example:
+
+```derg
+union Data = Int64 + Float64 + Bool
+
+struct Type
+{
+    var data: Data
+}
+
+fun Type.mutate()
+{
+    // Implementation omitted
+}
+
+fun example(value: Type)
+{
+    if value.data.is[Int64]()
+    {
+        value.mutate()
+        // `value.data` is not necessarily `Int64` at this point
+    }
+    else
+    {
+        // `value.data` is guaranteed to be `Float64 + Bool` at this point
+    }
+}
+```
+
+### Aliases
+
+// TODO: Write me
+
 ## Visibility modifiers
 
 The visibility of a symbol influences where the symbol may be used in source code. The visibility of a symbol details
@@ -40,6 +173,25 @@ export  val CONSTANT_A = 1 // Accessible everywhere.
 public  val CONSTANT_B = 2 // Accessible only in the same package.
 protect val CONSTANT_C = 3 // Accessible only in the same module.
 private val CONSTANT_D = 4 // Accessible only in the same segment.
+```
+
+The visibility modified does not imply accessibility. A symbol which is invisible from one part of the codebase may
+access it via a different part of the codebase which does have access to it. This may for example be the case where
+symbols are passed as parameters or otherwise stored in variables, which enables symbols to cross module boundaries
+while respecting visibility rules.
+
+An example of visibility rules being bypassed can be seen here:
+
+```derg
+// Module A
+private fun hidden() {}
+public fun snitch() -> fun() { return hidden }
+
+// Module B
+public fun using_hidden()
+{
+    snitch()() // This invoked the function returned by `snitch`, namely the `hidden` function
+}
 ```
 
 ## Mutability modifiers
@@ -161,6 +313,24 @@ fun my_function() -> move Int32   // Returns a value together with its ownership
 fun my_function() -> copy Int32   // Returns a copy of some inner value from the function.
 ```
 
+### Borrowing
+
+// TODO: Write me.
+
+### Moving values
+
+Moving a value passes the ownership of the value from the caller to the callee. This means that the caller is no longer
+responsible for freeing the value. The destructor of the value will only be called in the callee instead, preserving the
+guarantee that all values are eventually destroyed.
+
+Values should typically be moved only when the semantics of the program demands that ownership must change. This is the
+case when the lifetime of a value must be extended beyond the scope it was created in. Whenever a value is passed into
+another scope as a `move`, the lifetime of the value is guaranteed to be as long as the new scope's lifetime.
+
+### Copying values
+
+// TODO: Write me.
+
 ## Error handling
 
 Traditional programming languages are often based on a form of exception mechanism, return value, or some form
@@ -168,7 +338,7 @@ of `Result` type. These approaches have advantages and disadvantages, typically 
 unergonomic, easy-to-forget to handle, or some other variant thereof. Derg seeks to use a `Result` approach, but rather
 than repeating the mistakes of other languages with this approach, the error path will be a first-class citizen.
 
-Typically, functions can fail if one or more invariant is violated, and the type system is unable to capture the error
+Typically, functions can fail if one or more invariants are violated, and the type system is unable to capture the error
 to make it impossible. This can for example be the case when the developer wants to access a value stored in a map of
 some sort, and want to access a non-existing key. As we cannot easily or at all detect such errors, we need an
 alternative way to represent this error. Other languages opt in for a `null`, `undef`, or `Option` variant, but Derg can
@@ -176,7 +346,7 @@ express this violation in a far more powerful feature: the error track.
 
 ### Error track
 
-All functions in Derg may be declared with a return value, and error value, neither, or both. A function which does not
+All functions in Derg may be declared with a return value, an error value, both, or neither. A function which does not
 return an error, is not permitted to fail for any reason. All errors *must* be handled inside the function, and it is
 not permitted to propagate errors upwards. On the contrary, a function which does declare an error value, is permitted
 to pass on errors of that type only.
